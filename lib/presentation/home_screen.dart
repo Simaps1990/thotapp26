@@ -1,0 +1,2059 @@
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'package:gap/gap.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:thot/data/thot_provider.dart';
+import 'package:thot/presentation/diagnostic_screen.dart';
+import 'package:thot/presentation/millieme_tool_screen.dart';
+import 'package:thot/presentation/shooting_timer_screen.dart';
+import 'package:thot/presentation/achievements_screen.dart';
+import 'package:thot/presentation/statistics_screen.dart';
+import 'package:thot/presentation/pro_screen.dart';
+import 'package:thot/theme.dart';
+import 'package:thot/utils/exercise_display.dart';
+import 'package:thot/l10n/app_strings.dart';
+import '../utils/achievement_definitions.dart';
+import 'package:thot/utils/app_date_formats.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+void _showDiagnosticModal(BuildContext context) {
+  final provider = Provider.of<ThotProvider>(context, listen: false);
+  if (!provider.isPremium) {
+    showProModal(context);
+    return;
+  }
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const DiagnosticScreen(),
+  );
+}
+// ── Modèle d'alerte ──────────────────────────────────────────────────────────
+
+enum _AlertType { wear, fouling, stock, document }
+
+class _MaintenanceAlert {
+  final String id;
+  /// weaponId, ammoId, or itemId depending on type
+  final String itemId;
+  final String itemName;
+  final _AlertType type;
+  /// progress 0.0–1.0 for wear/fouling/stock, daysRemaining for document
+  final double progress;
+  /// Only for document alerts
+  final String? documentName;
+  final int? daysRemaining;
+  bool isRead;
+
+  _MaintenanceAlert({
+    required this.id,
+    required this.itemId,
+    required this.itemName,
+    required this.type,
+    required this.progress,
+    this.documentName,
+    this.daysRemaining,
+    this.isRead = false,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'itemId': itemId,
+        'itemName': itemName,
+        'type': type.name,
+        'progress': progress,
+        if (documentName != null) 'documentName': documentName,
+        if (daysRemaining != null) 'daysRemaining': daysRemaining,
+        'isRead': isRead,
+      };
+
+  factory _MaintenanceAlert.fromJson(Map<String, dynamic> j) =>
+      _MaintenanceAlert(
+        id: j['id'] as String,
+        itemId: j['itemId'] as String? ?? j['weaponId'] as String? ?? '',
+        itemName: j['itemName'] as String? ?? j['weaponName'] as String? ?? '',
+        type: _AlertType.values.firstWhere((e) => e.name == j['type'],
+            orElse: () => _AlertType.wear),
+        progress: (j['progress'] as num).toDouble(),
+        documentName: j['documentName'] as String?,
+        daysRemaining: j['daysRemaining'] as int?,
+        isRead: j['isRead'] as bool? ?? false,
+      );
+}
+
+
+void _showMilliemeModal(BuildContext context) {
+  final provider = Provider.of<ThotProvider>(context, listen: false);
+  if (!provider.isPremium) {
+    showProModal(context);
+    return;
+  }
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return const MilliemeToolScreen();
+    },
+  );
+}
+
+void _showAchievementsModal(BuildContext context) {
+  final colors = Theme.of(context).colorScheme;
+  final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      final height = MediaQuery.of(context).size.height * 0.8;
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        height: height,
+        decoration: BoxDecoration(
+          color: baseBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.outline,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const Expanded(child: AchievementsScreen(useSafeArea: false)),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+void _showStatisticsModal(BuildContext context) {
+  final colors = Theme.of(context).colorScheme;
+  final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      final height = MediaQuery.of(context).size.height * 0.8;
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        height: height,
+        decoration: BoxDecoration(
+          color: baseBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.outline,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Expanded(
+              child: StatisticsScreen(
+                backgroundColor: baseBackground,
+                useSafeArea: false,
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+void _showTimerModal(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const ShootingTimerScreen(),
+  );
+}
+
+enum _PrecisionRange { day, week, month, year, total }
+
+extension on _PrecisionRange {
+  String labelForLocale(AppStrings strings) {
+    switch (this) {
+      case _PrecisionRange.day:
+        return strings.precisionFilterDayShort;
+      case _PrecisionRange.week:
+        return strings.precisionFilterWeekShort;
+      case _PrecisionRange.month:
+        return strings.precisionFilterMonthShort;
+      case _PrecisionRange.year:
+        return strings.precisionFilterYearShort;
+      case _PrecisionRange.total:
+        return strings.precisionFilterTotalShort;
+    }
+  }
+
+  Duration? get duration {
+    switch (this) {
+      case _PrecisionRange.day:
+        return const Duration(days: 1);
+      case _PrecisionRange.week:
+        return const Duration(days: 7);
+      case _PrecisionRange.month:
+        return const Duration(days: 30);
+      case _PrecisionRange.year:
+        return const Duration(days: 365);
+      case _PrecisionRange.total:
+        return null;
+    }
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  _PrecisionRange _precisionRange = _PrecisionRange.month;
+
+  final GlobalKey _bellKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  List<_MaintenanceAlert> _alerts = [];
+  static const _prefKey = 'maintenance_alerts_v1';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncAlerts());
+  }
+
+  @override
+  void dispose() {
+    _closePanel();
+    super.dispose();
+  }
+Future<void> _syncAlerts() async {
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefKey);
+    final saved = <String, bool>{};
+    if (raw != null) {
+      try {
+        final List decoded = jsonDecode(raw) as List;
+        for (final item in decoded) {
+          final m = _MaintenanceAlert.fromJson(item as Map<String, dynamic>);
+          saved[m.id] = m.isRead;
+        }
+      } catch (_) {}
+    }
+    final fresh = <_MaintenanceAlert>[];
+    final now = DateTime.now();
+
+    // Wear & fouling alerts (weapons)
+    for (final w in provider.weapons) {
+      if (w.trackCleanliness && w.cleaningProgress >= 0.8) {
+        final id = '${w.id}_fouling';
+        fresh.add(_MaintenanceAlert(
+          id: id, itemId: w.id, itemName: w.name,
+          type: _AlertType.fouling, progress: w.cleaningProgress,
+          isRead: saved[id] ?? false,
+        ));
+      }
+      if (w.trackWear && w.revisionProgress >= 0.8) {
+        final id = '${w.id}_wear';
+        fresh.add(_MaintenanceAlert(
+          id: id, itemId: w.id, itemName: w.name,
+          type: _AlertType.wear, progress: w.revisionProgress,
+          isRead: saved[id] ?? false,
+        ));
+      }
+      // Document expiry alerts for weapons
+      for (final doc in w.documents) {
+        if (doc.expiryDate != null && doc.notifyBeforeDays > 0) {
+          final days = doc.expiryDate!.difference(now).inDays;
+          if (days <= doc.notifyBeforeDays) {
+            final id = '${w.id}_doc_${doc.name.hashCode}';
+            fresh.add(_MaintenanceAlert(
+              id: id, itemId: w.id, itemName: w.name,
+              type: _AlertType.document, progress: 0,
+              documentName: doc.name, daysRemaining: days,
+              isRead: saved[id] ?? false,
+            ));
+          }
+        }
+      }
+    }
+
+    // Stock alerts (ammo)
+    for (final a in provider.ammos) {
+      if (a.trackStock) {
+        final threshold = a.lowStockThreshold.toDouble();
+        final rawInitial = a.initialQuantity.toDouble();
+        final current = a.quantity.toDouble();
+        final double criticality;
+        if (rawInitial <= threshold) {
+          criticality = current <= threshold ? 1.0 : 0.0;
+        } else {
+          criticality = (1.0 - ((current - threshold) / (rawInitial - threshold)).clamp(0.0, 1.0)).clamp(0.0, 1.0);
+        }
+        if (criticality >= 0.8) {
+          final id = '${a.id}_stock';
+          fresh.add(_MaintenanceAlert(
+            id: id, itemId: a.id, itemName: a.name,
+            type: _AlertType.stock, progress: criticality,
+            isRead: saved[id] ?? false,
+          ));
+        }
+      }
+      // Document expiry alerts for ammo
+      for (final doc in a.documents) {
+        if (doc.expiryDate != null && doc.notifyBeforeDays > 0) {
+          final days = doc.expiryDate!.difference(now).inDays;
+          if (days <= doc.notifyBeforeDays) {
+            final id = '${a.id}_doc_${doc.name.hashCode}';
+            fresh.add(_MaintenanceAlert(
+              id: id, itemId: a.id, itemName: a.name,
+              type: _AlertType.document, progress: 0,
+              documentName: doc.name, daysRemaining: days,
+              isRead: saved[id] ?? false,
+            ));
+          }
+        }
+      }
+    }
+
+    // Document expiry alerts for accessories
+    for (final acc in provider.accessories) {
+      for (final doc in acc.documents) {
+        if (doc.expiryDate != null && doc.notifyBeforeDays > 0) {
+          final days = doc.expiryDate!.difference(now).inDays;
+          if (days <= doc.notifyBeforeDays) {
+            final id = '${acc.id}_doc_${doc.name.hashCode}';
+            fresh.add(_MaintenanceAlert(
+              id: id, itemId: acc.id, itemName: acc.name,
+              type: _AlertType.document, progress: 0,
+              documentName: doc.name, daysRemaining: days,
+              isRead: saved[id] ?? false,
+            ));
+          }
+        }
+      }
+    }
+
+    // Document expiry alerts for global user documents (settings)
+    for (final doc in provider.userDocuments) {
+      if (doc.expiryDate != null && doc.notifyBeforeDays > 0) {
+        final days = doc.expiryDate!.difference(now).inDays;
+        if (days <= doc.notifyBeforeDays) {
+          final id = 'global_doc_${doc.id}';
+          fresh.add(_MaintenanceAlert(
+            id: id,
+            itemId: 'global',
+            itemName: doc.name,
+            type: _AlertType.document,
+            progress: 0,
+            documentName: doc.name,
+            daysRemaining: days,
+            isRead: saved[id] ?? false,
+          ));
+        }
+      }
+    }
+
+    if (mounted) setState(() => _alerts = fresh);
+    await _saveAlerts();
+  }
+
+
+
+  Future<void> _saveAlerts() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKey, jsonEncode(_alerts.map((a) => a.toJson()).toList()));
+  }
+
+  int get _unreadCount => _alerts.where((a) => !a.isRead).length;
+
+  void _markRead(String id) {
+    setState(() { for (final a in _alerts) { if (a.id == id) a.isRead = true; } });
+    _saveAlerts();
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _markAllRead() {
+    setState(() { for (final a in _alerts) { a.isRead = true; } });
+    _saveAlerts();
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _deleteAlert(String id) {
+    setState(() => _alerts.removeWhere((a) => a.id == id));
+    _saveAlerts();
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _deleteAllRead() {
+    setState(() => _alerts.removeWhere((a) => a.isRead));
+    _saveAlerts();
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _togglePanel() {
+    if (_overlayEntry != null) { _closePanel(); } else { _openPanel(); }
+  }
+
+void _openPanel() {
+    final overlay = Overlay.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final renderBox = _bellKey.currentContext?.findRenderObject() as RenderBox?;
+    double topOffset = 80;
+    if (renderBox != null) {
+      final pos = renderBox.localToGlobal(Offset.zero);
+      topOffset = pos.dy + renderBox.size.height + 8;
+    }
+    _overlayEntry = OverlayEntry(
+      builder: (_) => _NotificationPanel(
+        topOffset: topOffset,
+        leftOffset: 16,
+        width: screenWidth - 32,
+        alerts: _alerts,
+        onMarkRead: _markRead,
+        onMarkAllRead: _markAllRead,
+        onDelete: _deleteAlert,
+        onDeleteAllRead: _deleteAllRead,
+        onNavigate: (itemId) {
+          _closePanel();
+          context.push('/inventory/detail/$itemId');
+        },
+        onDismiss: _closePanel,
+      ),
+    );
+    overlay.insert(_overlayEntry!);
+  }
+
+  void _closePanel() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  BoxDecoration _hardCardDecoration(ColorScheme colors, {double radius = 16}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: colors.surface,
+      borderRadius: BorderRadius.circular(radius),
+      border: isDark ? null : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
+      boxShadow: AppShadows.cardPremium,
+    );
+  }
+
+  Widget _buildSectionTitle({required String title, required TextTheme textStyles, required ColorScheme colors}) {
+    return Text(title, style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: colors.secondary));
+  }
+
+  Widget _buildTimerButton({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    return _HomeStandardActionCard(leading: Icon(Icons.timer_rounded, color: colors.primary, size: 24), title: strings.homeTimerTitle, subtitle: strings.homeTimerSubtitle, onTap: () => _showTimerModal(context), colors: colors, textStyles: textStyles);
+  }
+
+  Widget _buildMilliemeButton({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context);
+    return _HomeStandardActionCard(leading: Icon(Icons.straighten_rounded, color: colors.primary, size: 24), title: strings.milliemeToolTitle, subtitle: strings.milliemeToolSubtitle, onTap: () => _showMilliemeModal(context), showProBadge: !provider.isPremium, colors: colors, textStyles: textStyles);
+  }
+
+  Widget _buildDiagnosticButton({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context);
+    return _HomeStandardActionCard(leading: Icon(Icons.medical_services_outlined, color: colors.primary, size: 24), title: strings.homeDiagnosticTitle, subtitle: strings.homeDiagnosticSubtitle, onTap: () => _showDiagnosticModal(context), showProBadge: !provider.isPremium, colors: colors, textStyles: textStyles);
+  }
+
+  List<Widget> _buildHeaderSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    final brightness = Theme.of(context).brightness;
+    return [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SvgPicture.asset('assets/images/LOGO.svg', height: 34,
+            colorFilter: ColorFilter.mode(brightness == Brightness.dark ? Colors.white : Colors.black, BlendMode.srcIn)),
+          _ProCornerButton(
+            key: _bellKey,
+            isPremium: provider.isPremium,
+            unreadCount: _unreadCount,
+            onTap: () => showProModal(context),
+            onBellTap: _togglePanel,
+          ),
+        ],
+      ),
+      const Gap(AppSpacing.lg),
+    ];
+  }
+
+  Widget _buildAchievementsButton({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    return _HomeStandardActionCard(
+      leading: ShaderMask(
+        shaderCallback: (bounds) {
+          const base = Color(0xFFC2A14A);
+          final light = Color.lerp(base, Colors.white, 0.35) ?? base;
+          final dark = Color.lerp(base, Colors.black, 0.15) ?? base;
+          return LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [light, base, dark], stops: const [0.0, 0.55, 1.0]).createShader(bounds);
+        },
+        blendMode: BlendMode.srcIn,
+        child: const Icon(Icons.emoji_events_rounded, color: Colors.white, size: 24),
+      ),
+      title: strings.homeTrophiesTitle,
+      subtitle: strings.homeTrophiesUnlocked(unlockedAchievementsCount(provider)),
+      onTap: () => _showAchievementsModal(context),
+      colors: colors,
+      textStyles: textStyles,
+    );
+  }
+
+  List<Widget> _buildPrecisionChartSection({required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    if (provider.sessions.isEmpty) return const [];
+    return [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(strings.homePrecisionTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+          PopupMenuButton<_PrecisionRange>(
+            initialValue: _precisionRange,
+            tooltip: strings.homePrecisionFilterTooltip,
+            onSelected: (v) => setState(() => _precisionRange = v),
+            itemBuilder: (context) => [
+              PopupMenuItem(value: _PrecisionRange.day, child: Text(strings.precisionFilterDayLong)),
+              PopupMenuItem(value: _PrecisionRange.week, child: Text(strings.precisionFilterWeekLong)),
+              PopupMenuItem(value: _PrecisionRange.month, child: Text(strings.precisionFilterMonthLong)),
+              PopupMenuItem(value: _PrecisionRange.year, child: Text(strings.precisionFilterYearLong)),
+              PopupMenuItem(value: _PrecisionRange.total, child: Text(strings.precisionFilterTotalLong)),
+            ],
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text(_precisionRange.labelForLocale(strings), style: textStyles.labelSmall?.copyWith(color: colors.secondary, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded, color: colors.secondary, size: 16),
+            ]),
+          ),
+        ],
+      ),
+      const Gap(AppSpacing.md),
+      Builder(builder: (context) {
+        final now = DateTime.now();
+        final sessionsWithPrecision = provider.sessions.where((s) => s.exercises.any((e) => e.isPrecisionCounted)).toList()..sort((a, b) => a.date.compareTo(b.date));
+        final duration = _precisionRange.duration;
+        final filteredSessions = duration == null ? sessionsWithPrecision : sessionsWithPrecision.where((s) => s.date.isAfter(now.subtract(duration))).toList();
+        final spots = <FlSpot>[];
+        for (int i = 0; i < filteredSessions.length; i++) {
+          spots.add(FlSpot(i.toDouble(), filteredSessions[i].averagePrecision));
+        }
+        final allPrecisions = filteredSessions.map((s) => s.averagePrecision).toList();
+        final avgPrecision = allPrecisions.isEmpty ? 0 : allPrecisions.reduce((a, b) => a + b) / allPrecisions.length;
+        final maxPrecision = allPrecisions.isEmpty ? 0 : allPrecisions.reduce((a, b) => a > b ? a : b);
+
+        String labelForIndex(int index) {
+          if (index < 0 || index >= filteredSessions.length) return '';
+          final d = filteredSessions[index].date;
+          if (_precisionRange == _PrecisionRange.day) return AppDateFormats.formatTimeShort(context, d);
+          if (_precisionRange == _PrecisionRange.total || _precisionRange == _PrecisionRange.year) return AppDateFormats.formatMonthYear(context, d);
+          return AppDateFormats.formatDayMonth(context, d);
+        }
+
+        return Container(
+          height: 220,
+          padding: AppSpacing.paddingLg,
+          decoration: _hardCardDecoration(colors, radius: 16),
+          child: spots.isEmpty
+              ? Center(child: Text(allPrecisions.isEmpty ? strings.homePrecisionEmpty : '', style: textStyles.bodyMedium?.copyWith(color: colors.secondary), textAlign: TextAlign.center))
+              : Column(children: [
+                  Expanded(child: LineChart(LineChartData(
+                    gridData: FlGridData(show: false),
+                    lineTouchData: LineTouchData(touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (s) => Colors.grey.shade700,
+                      getTooltipItems: (spots) => spots.map((spot) => LineTooltipItem('${spot.y.toStringAsFixed(1)}%\n${labelForIndex(spot.x.toInt())}', const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))).toList(),
+                    )),
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1, getTitlesWidget: (value, meta) {
+                        final i = value.toInt();
+                        if (i < 0 || i >= filteredSessions.length) return const SizedBox.shrink();
+                        final count = filteredSessions.length;
+                        final step = count <= 6 ? 1 : (count / 5).ceil();
+                        if (i % step != 0 && i != count - 1) return const SizedBox.shrink();
+                        return Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(labelForIndex(i), style: textStyles.labelSmall, maxLines: 1, overflow: TextOverflow.ellipsis));
+                      })),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [LineChartBarData(spots: spots, isCurved: true, color: colors.primary, barWidth: 3, isStrokeCapRound: true, dotData: FlDotData(show: true), belowBarData: BarAreaData(show: true, color: colors.primary.withValues(alpha: 0.1)))],
+                    minY: 0, maxY: 100,
+                  ))),
+                  const Gap(AppSpacing.md),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                    Text('${strings.homePrecisionAvgLabel} ${avgPrecision.toStringAsFixed(0)}%', style: textStyles.labelSmall?.copyWith(color: colors.secondary)),
+                    Text('${strings.homePrecisionMaxLabel} ${maxPrecision.toStringAsFixed(0)}%', style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold)),
+                  ]),
+                ]),
+        );
+      }),
+    ];
+  }
+
+  List<Widget> _buildQuickAccessSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    return [
+      Text(strings.homeQuickAccessTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+      const Gap(AppSpacing.md),
+      Row(children: [
+        for (int i = 0; i < provider.quickActions.length; i++) ...[
+          if (i > 0) const Gap(AppSpacing.sm),
+          Expanded(child: Builder(builder: (context) {
+            final action = _getQuickAction(context, provider.quickActions[i], provider);
+            return _QuickActionItem(icon: action['icon'] as Widget, label: action['label'] as String, onTap: action['onTap'] as VoidCallback);
+          })),
+        ],
+      ]),
+    ];
+  }
+
+  Widget _buildMaintenanceIndicatorsCard({required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    final hasWear = provider.weapons.isNotEmpty && provider.weapons.any((w) => w.trackWear);
+    final hasClean = provider.weapons.isNotEmpty && provider.weapons.any((w) => w.trackCleanliness);
+    final hasAmmo = provider.ammos.isNotEmpty && provider.ammos.any((a) => a.trackStock);
+
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: _hardCardDecoration(colors, radius: 16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Icon(Icons.warning_amber_rounded, color: colors.error, size: 20),
+          const Gap(AppSpacing.sm),
+          Text(strings.homeMaintenanceTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface)),
+        ]),
+        const Gap(AppSpacing.sm),
+        if (provider.weapons.isEmpty && provider.ammos.isEmpty)
+          Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(strings.homeMaintenanceEmpty, style: textStyles.bodyMedium?.copyWith(color: colors.secondary))))
+        else ...[
+          if (hasWear) ...[
+            Builder(builder: (context) {
+              final mostWorn = provider.weapons.where((w) => w.trackWear).reduce((a, b) => a.revisionProgress > b.revisionProgress ? a : b);
+              return _MaintenanceBar(label: '${strings.homeMaintenanceRevisionLabel}${mostWorn.name}', value: (mostWorn.revisionProgress * 100).round(), valueUnit: "%", progress: mostWorn.revisionProgress.clamp(0.0, 1.0), colors: colors);
+            }),
+            if (hasClean || hasAmmo) const Gap(AppSpacing.md),
+          ],
+          if (hasClean) ...[
+            Builder(builder: (context) {
+              final dirtiest = provider.weapons.where((w) => w.trackCleanliness).reduce((a, b) => a.cleaningProgress > b.cleaningProgress ? a : b);
+              return _MaintenanceBar(label: '${strings.homeMaintenanceCleaningLabel}${dirtiest.name}', value: (dirtiest.cleaningProgress * 100).round(), valueUnit: "%", progress: dirtiest.cleaningProgress.clamp(0.0, 1.0), colors: colors);
+            }),
+            if (hasAmmo) const Gap(AppSpacing.md),
+          ],
+          if (hasAmmo) ...[
+            Builder(builder: (context) {
+              final lowestStock = provider.ammos.where((a) => a.trackStock).reduce((a, b) => a.quantity < b.quantity ? a : b);
+              final threshold = lowestStock.lowStockThreshold.toDouble();
+              final rawInitial = lowestStock.initialQuantity.toDouble();
+              final current = lowestStock.quantity.toDouble();
+              final double criticality;
+              if (rawInitial <= threshold) {
+                criticality = current <= threshold ? 1.0 : 0.0;
+              } else {
+                criticality = (1.0 - ((current - threshold) / (rawInitial - threshold)).clamp(0.0, 1.0)).clamp(0.0, 1.0);
+              }
+              return _MaintenanceBar(label: '${strings.homeMaintenanceStockLabel}${lowestStock.name}', value: lowestStock.quantity, valueUnit: strings.homeRemainingSuffix, progress: criticality, colors: colors);
+            }),
+          ],
+        ],
+      ]),
+    );
+  }
+
+  List<Widget> _buildLastSessionSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    if (provider.sessions.isEmpty) return const [];
+    final strings = AppStrings.of(context);
+    return [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(strings.homeLastSessionTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+        TextButton(onPressed: () => StatefulNavigationShell.of(context).goBranch(1), child: Text(strings.homeSeeAll, style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
+      ]),
+      const Gap(AppSpacing.sm),
+      _LastSessionCard(session: provider.sessions.first, provider: provider, colors: colors, textStyles: textStyles),
+    ];
+  }
+
+  List<Widget> _buildStatsOverviewSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    final avgShotsPerSession = provider.totalSessions == 0 ? '0' : (provider.totalRoundsFired / provider.totalSessions).toStringAsFixed(0);
+    return [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(strings.homeStatsTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+        TextButton(onPressed: () => _showStatisticsModal(context), child: Text(strings.homeSeeAll, style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
+      ]),
+      const Gap(AppSpacing.xs),
+      Row(children: [
+        Expanded(child: _StatCard(title: strings.homeStatSessions, value: "${provider.totalSessions}", colors: colors, textStyles: textStyles)),
+        const Gap(AppSpacing.sm),
+        Expanded(child: _StatCard(title: strings.homeStatShotsFired, value: "${provider.totalRoundsFired}", colors: colors, textStyles: textStyles)),
+        const Gap(AppSpacing.sm),
+        Expanded(child: _StatCard(title: strings.homeStatWeapons, value: "${provider.weapons.length}", colors: colors, textStyles: textStyles)),
+      ]),
+      const Gap(AppSpacing.sm),
+      Row(children: [
+        Expanded(child: _StatCard(title: strings.statisticsAmmosLabel, value: "${provider.ammos.length}", colors: colors, textStyles: textStyles)),
+        const Gap(AppSpacing.sm),
+        Expanded(child: _StatCard(title: strings.statisticsAccessoriesLabel, value: "${provider.accessories.length}", colors: colors, textStyles: textStyles)),
+        const Gap(AppSpacing.sm),
+        Expanded(child: _StatCard(title: strings.statisticsShotsPerSessionLabel, value: avgShotsPerSession, colors: colors, textStyles: textStyles)),
+      ]),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<ThotProvider>(context);
+    final textStyles = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+    final strings = AppStrings.of(context);
+    final lastSessionSection = _buildLastSessionSection(context: context, provider: provider, colors: colors, textStyles: textStyles);
+    final precisionSection = _buildPrecisionChartSection(provider: provider, colors: colors, textStyles: textStyles);
+
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: AppSpacing.paddingLg,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            ..._buildHeaderSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
+            ..._buildQuickAccessSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
+            const Gap(AppSpacing.md),
+            _buildMaintenanceIndicatorsCard(provider: provider, colors: colors, textStyles: textStyles),
+            if (lastSessionSection.isNotEmpty) ...[const Gap(AppSpacing.md), ...lastSessionSection],
+            const Gap(AppSpacing.md),
+            ..._buildStatsOverviewSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
+            if (precisionSection.isNotEmpty) ...[const Gap(AppSpacing.lg), ...precisionSection],
+            const Gap(AppSpacing.lg),
+            _buildSectionTitle(title: strings.homeRewardsSectionTitle, textStyles: textStyles, colors: colors),
+            const Gap(AppSpacing.md),
+            _buildAchievementsButton(context: context, provider: provider, colors: colors, textStyles: textStyles),
+            const Gap(AppSpacing.lg),
+            _buildSectionTitle(title: strings.homeToolsSectionTitle, textStyles: textStyles, colors: colors),
+            const Gap(AppSpacing.md),
+            _buildTimerButton(context: context, colors: colors, textStyles: textStyles),
+            const Gap(AppSpacing.md),
+            _buildDiagnosticButton(context: context, colors: colors, textStyles: textStyles),
+            const Gap(AppSpacing.md),
+            _buildMilliemeButton(context: context, colors: colors, textStyles: textStyles),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+class _HomeStandardActionCard extends StatelessWidget {
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool showProBadge;
+  final ColorScheme colors;
+  final TextTheme textStyles;
+
+  const _HomeStandardActionCard({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.showProBadge = false,
+    required this.colors,
+    required this.textStyles,
+  });
+
+  BoxDecoration _hardCardDecoration(ColorScheme colors, {double radius = 16}) {
+    final isDark = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    return BoxDecoration(
+      color: colors.surface,
+      borderRadius: BorderRadius.circular(radius),
+      border: isDark
+          ? null
+          : Border.all(
+              color: LightColors.surfaceHighlight,
+              width: 1.35,
+            ),
+      boxShadow: AppShadows.cardPremium,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            Container(
+              padding: AppSpacing.paddingLg,
+              decoration: _hardCardDecoration(colors, radius: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 28,
+                    child: Center(child: leading),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: textStyles.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const Gap(AppSpacing.xs),
+                        Text(
+                          subtitle,
+                          style: textStyles.bodySmall?.copyWith(
+                            color: colors.secondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: colors.secondary,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+            if (showProBadge)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primary,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: LightColors.surfaceHighlight,
+                      width: 1.35,
+                    ),
+                  ),
+                  child: Text(
+                    strings.proBadge,
+                    style: textStyles.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colors.onPrimary,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Map<String, dynamic> _getQuickAction(
+  BuildContext context,
+  String actionId,
+  ThotProvider provider,
+) {
+  final colors = Theme.of(context).colorScheme;
+  final strings = AppStrings.of(context);
+
+  switch (actionId) {
+    case 'new_session':
+      return {
+        'icon': Icon(
+          Icons.add_circle_outline_rounded,
+          color: colors.primary,
+          size: 24,
+        ),
+        'label': strings.quickActionLabelSession,
+        'onTap': () {
+          if (!provider.canAddSession()) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(provider.getLimitMessage('session'))),
+            );
+            context.push('/pro');
+            return;
+          }
+          context.push('/sessions/new');
+        },
+      };
+
+    case 'new_weapon':
+      return {
+        'icon': SvgPicture.asset(
+          'assets/images/gun.svg',
+          width: 24,
+          height: 24,
+          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+        ),
+        'label': strings.quickActionLabelWeapon,
+        'onTap': () {
+          if (!provider.canAddWeapon()) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(provider.getLimitMessage('weapon'))),
+            );
+            context.push('/pro');
+            return;
+          }
+          context.push('/inventory/add?itemType=ARME');
+        },
+      };
+
+    case 'new_ammo':
+      return {
+        'icon': SvgPicture.asset(
+          'assets/images/bullet.svg',
+          width: 24,
+          height: 24,
+          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+        ),
+        'label': strings.quickActionLabelAmmo,
+        'onTap': () {
+          if (!provider.canAddAmmo()) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(provider.getLimitMessage('ammo'))),
+            );
+            context.push('/pro');
+            return;
+          }
+          context.push('/inventory/add?itemType=MUNITION');
+        },
+      };
+
+    case 'new_accessory':
+      return {
+        'icon': Icon(
+          Icons.inventory_2_rounded,
+          color: colors.primary,
+          size: 24,
+        ),
+        'label': strings.quickActionLabelAccessory,
+        'onTap': () {
+          if (!provider.canAddAccessory()) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(provider.getLimitMessage('accessory'))),
+            );
+            context.push('/pro');
+            return;
+          }
+          context.push('/inventory/add?itemType=ACCESSOIRE');
+        },
+      };
+
+    case 'toggle_theme':
+      return {
+        'icon': Icon(Icons.dark_mode_rounded, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelTheme,
+        'onTap': () => provider.toggleTheme(),
+      };
+
+    case 'view_weapons':
+      return {
+        'icon': Icon(
+          Icons.inventory_2_rounded,
+          color: colors.primary,
+          size: 24,
+        ),
+        'label': strings.quickActionLabelWeapon,
+        'onTap': () => StatefulNavigationShell.of(context).goBranch(2),
+      };
+
+    case 'view_ammo':
+      return {
+        'icon': SvgPicture.asset(
+          'assets/images/bullet.svg',
+          width: 24,
+          height: 24,
+          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+        ),
+        'label': 'Munitions',
+        'onTap': () => StatefulNavigationShell.of(context).goBranch(2),
+      };
+
+    case 'view_accessories':
+      return {
+        'icon': Icon(
+          Icons.inventory_2_rounded,
+          color: colors.primary,
+          size: 24,
+        ),
+        'label': 'Accessoires',
+        'onTap': () => StatefulNavigationShell.of(context).goBranch(2),
+      };
+
+    case 'view_sessions':
+      return {
+        'icon': Icon(Icons.history_rounded, color: colors.primary, size: 24),
+        'label': 'Séances',
+        'onTap': () => StatefulNavigationShell.of(context).goBranch(1),
+      };
+
+    case 'settings':
+      return {
+        'icon': Icon(Icons.settings_rounded, color: colors.primary, size: 24),
+        'label': 'Paramètres',
+        'onTap': () => context.go('/settings'),
+      };
+
+    case 'diagnostic':
+      return {
+        'icon': Icon(
+          Icons.medical_services_outlined,
+          color: colors.primary,
+          size: 24,
+        ),
+        'label': strings.quickActionLabelDiagnostic,
+        'onTap': () => _showDiagnosticModal(context),
+      };
+
+    case 'timer':
+      return {
+        'icon': Icon(Icons.timer_rounded, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelTimer,
+        'onTap': () => _showTimerModal(context),
+      };
+
+    case 'millieme':
+      return {
+        'icon': Icon(Icons.straighten_rounded, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelMillieme,
+        'onTap': () => _showMilliemeModal(context),
+      };
+
+    default:
+      return {
+        'icon':
+            Icon(Icons.help_outline_rounded, color: colors.primary, size: 24),
+        'label': 'Action',
+        'onTap': () {},
+      };
+  }
+}
+
+class _QuickActionItem extends StatelessWidget {
+  final Widget icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Theme.of(context).brightness == Brightness.dark
+                ? null
+                : Border.all(
+                    color: LightColors.surfaceHighlight,
+                    width: 1.35,
+                  ),
+            boxShadow: AppShadows.cardPremium,
+          ),
+          child: Center(
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(color: LightColors.primaryText),
+              child: IconTheme.merge(
+                data: const IconThemeData(color: LightColors.icon),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    icon,
+                    const Gap(AppSpacing.xs),
+                    Text(
+                      label,
+                      style: textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MaintenanceBar extends StatelessWidget {
+  final String label;
+  final int value;
+  final String valueUnit;
+  final double progress;
+  final ColorScheme colors;
+
+  const _MaintenanceBar({
+    required this.label,
+    required this.value,
+    required this.valueUnit,
+    required this.progress,
+    required this.colors,
+  });
+
+  Color _getProgressColor(double progress) {
+    final normalizedProgress = progress.clamp(0.0, 1.0);
+    if (normalizedProgress <= 0.33) {
+      return const Color(0xFF3A7D44);
+    } else if (normalizedProgress <= 0.66) {
+      return const Color(0xFFC2A14A);
+    } else {
+      return const Color(0xFFD64545);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final barColor = _getProgressColor(progress);
+    final valueColor = barColor;
+    final textTheme = Theme.of(context).textTheme;
+
+    return DefaultTextStyle.merge(
+      style: TextStyle(color: colors.onSurface),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: (textTheme.bodySmall ?? const TextStyle()).copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colors.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                "$value$valueUnit",
+                style: (textTheme.labelSmall ?? const TextStyle()).copyWith(
+                  color: valueColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const Gap(AppSpacing.xs),
+          LinearProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            backgroundColor: colors.outline.withValues(alpha: 0.2),
+            color: barColor,
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(AppRadius.full),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final ColorScheme colors;
+  final TextTheme textStyles;
+
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.colors,
+    required this.textStyles,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.paddingMd,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Theme.of(context).brightness == Brightness.dark
+            ? null
+            : Border.all(
+                color: LightColors.surfaceHighlight,
+                width: 1.35,
+              ),
+        boxShadow: AppShadows.cardPremium,
+      ),
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: colors.onSurface),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: (textStyles.labelSmall ?? const TextStyle()).copyWith(
+                color: colors.secondary,
+              ),
+            ),
+            const Gap(AppSpacing.xs),
+            Text(
+              value,
+              style: (textStyles.titleMedium ?? const TextStyle()).copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LastSessionCard extends StatelessWidget {
+  final session;
+  final ThotProvider provider;
+  final ColorScheme colors;
+  final TextTheme textStyles;
+
+  const _LastSessionCard({
+    required this.session,
+    required this.provider,
+    required this.colors,
+    required this.textStyles,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final accuracy = session.averagePrecision.toStringAsFixed(0);
+    final hasPrecision = session.hasCountedPrecision;
+
+    String weaponName = "—";
+    String ammoName = "—";
+    if (session.exercises.isNotEmpty) {
+      final firstEx = session.exercises.first;
+      weaponName = weaponDisplayName(provider, firstEx);
+      ammoName = ammoDisplayName(provider, firstEx);
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => context.push(
+          '/sessions/exercises?sessionId=${Uri.encodeComponent(session.id)}',
+        ),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: AppSpacing.paddingMd,
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Theme.of(context).brightness == Brightness.dark
+                ? null
+                : Border.all(
+                    color: LightColors.surfaceHighlight,
+                    width: 1.35,
+                  ),
+            boxShadow: AppShadows.cardPremium,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          session.name,
+                          style: textStyles.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const Gap(AppSpacing.xs),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.event_rounded,
+                              size: 14,
+                              color: colors.secondary,
+                            ),
+                            const Gap(4),
+                            Text(
+                              AppDateFormats.formatDateTimeShort(
+                                context,
+                                session.date,
+                              ),
+                              style: textStyles.labelSmall?.copyWith(
+                                color: colors.secondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (hasPrecision)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.primary,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: LightColors.surfaceHighlight,
+                          width: 1.35,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          SvgPicture.asset(
+                            'assets/images/target.svg',
+                            width: 16,
+                            height: 16,
+                            colorFilter: ColorFilter.mode(
+                              colors.onPrimary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const Gap(4),
+                          Text(
+                            "$accuracy%",
+                            style: textStyles.labelLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colors.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const Gap(AppSpacing.sm),
+              Container(
+                padding: AppSpacing.paddingMd,
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colors.outline,
+                    width: 1.2,
+                  ),
+                ),
+                child: DefaultTextStyle.merge(
+                  style: TextStyle(color: colors.onSurface),
+                  child: IconTheme.merge(
+                    data: IconThemeData(color: colors.primary),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/images/gun.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: ColorFilter.mode(
+                                      colors.primary,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  Text(
+                                    strings.quickActionLabelWeapon,
+                                    style: (textStyles.labelSmall ??
+                                            const TextStyle())
+                                        .copyWith(
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(4),
+                              Text(
+                                weaponName,
+                                style: (textStyles.bodySmall ??
+                                        const TextStyle())
+                                    .copyWith(
+                                  color: colors.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.xs),
+                        Container(
+                          width: 1,
+                          height: 32,
+                          color: colors.outline,
+                        ),
+                        const Gap(AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/images/bullet.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: ColorFilter.mode(
+                                      colors.primary,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  Text(
+                                    strings.quickActionLabelAmmo,
+                                    style: (textStyles.labelSmall ??
+                                            const TextStyle())
+                                        .copyWith(
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(4),
+                              Text(
+                                ammoName,
+                                style: (textStyles.bodySmall ??
+                                        const TextStyle())
+                                    .copyWith(
+                                  color: colors.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const Gap(AppSpacing.sm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _SessionStat(
+                    icon: SvgPicture.asset(
+                      'assets/images/train.svg',
+                      width: 18,
+                      height: 18,
+                      colorFilter: ColorFilter.mode(
+                        colors.primary,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    label: strings.exercisesLabel,
+                    value: "${session.exercises.length}",
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                  Container(
+                    width: 1,
+                    height: 32,
+                    color: colors.outline,
+                  ),
+                  _SessionStat(
+                    icon: SvgPicture.asset(
+                      'assets/images/hit.svg',
+                      width: 18,
+                      height: 18,
+                      colorFilter: ColorFilter.mode(
+                        colors.primary,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    label: strings.shotsFiredLabel,
+                    value: "${session.totalRounds}",
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                  Container(
+                    width: 1,
+                    height: 32,
+                    color: colors.outline,
+                  ),
+                  _SessionStat(
+                    icon: Icon(
+                      Icons.place_rounded,
+                      size: 18,
+                      color: colors.primary,
+                    ),
+                    label: strings.locationLabel,
+                    value: session.location.split(' ').take(2).join(' '),
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionStat extends StatelessWidget {
+  final Widget icon;
+  final String label;
+  final String value;
+  final ColorScheme colors;
+  final TextTheme textStyles;
+
+  const _SessionStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.colors,
+    required this.textStyles,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTextStyle.merge(
+      style: TextStyle(color: colors.onSurface),
+      child: IconTheme.merge(
+        data: IconThemeData(color: colors.primary),
+        child: Column(
+          children: [
+            icon,
+            const Gap(4),
+            Text(
+              value,
+              style: (textStyles.labelLarge ?? const TextStyle()).copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
+            ),
+            Text(
+              label,
+              style: (textStyles.labelSmall ?? const TextStyle()).copyWith(
+                color: colors.secondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _globalAveragePrecision(ThotProvider provider) {
+  final sessions =
+      provider.sessions.where((s) => s.hasCountedPrecision).toList();
+  if (sessions.isEmpty) return '—';
+  final total = sessions.fold<double>(0, (sum, s) => sum + s.averagePrecision);
+  final avg = total / sessions.length;
+  return "${avg.toStringAsFixed(0)}%";
+}
+
+String _bestSessionPrecision(ThotProvider provider) {
+  final sessions =
+      provider.sessions.where((s) => s.hasCountedPrecision).toList();
+  if (sessions.isEmpty) return '—';
+  final best =
+      sessions.map((s) => s.averagePrecision).reduce((a, b) => a > b ? a : b);
+  return "${best.toStringAsFixed(0)}%";
+}
+class _ProCornerButton extends StatefulWidget {
+  final bool isPremium;
+  final int unreadCount;
+  final VoidCallback onTap;
+  final VoidCallback onBellTap;
+
+  const _ProCornerButton({
+    super.key,
+    required this.isPremium,
+    required this.unreadCount,
+    required this.onTap,
+    required this.onBellTap,
+  });
+
+  @override
+  State<_ProCornerButton> createState() => _ProCornerButtonState();
+}
+
+class _ProCornerButtonState extends State<_ProCornerButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+
+    Widget bell = GestureDetector(
+      onTap: widget.onBellTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(Icons.notifications_outlined, size: 26, color: colors.onSurface),
+          if (widget.unreadCount > 0)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD64545),
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                child: Text(
+                  widget.unreadCount > 99 ? '99+' : '${widget.unreadCount}',
+                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    if (!widget.isPremium) return bell;
+
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOut,
+      scale: _pressed ? 0.98 : 1.0,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        GestureDetector(
+          onTap: widget.onTap,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colors.primary,
+              borderRadius: BorderRadius.circular(AppRadius.full),
+              boxShadow: AppShadows.cardPremium,
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.workspace_premium_rounded, size: 16, color: colors.onPrimary),
+              const Gap(6),
+              Text(strings.homeVersionProLabel, style: textStyles.labelMedium?.copyWith(color: colors.onPrimary, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+            ]),
+          ),
+        ),
+        const Gap(12),
+        bell,
+      ]),
+    );
+  }
+}
+
+// ─── Notification panel overlay ───────────────────────────────────────────────
+class _NotificationPanel extends StatefulWidget {
+  final double topOffset;
+  final double leftOffset;
+  final double width;
+  final List<_MaintenanceAlert> alerts;
+  final void Function(String id) onMarkRead;
+  final VoidCallback onMarkAllRead;
+  final void Function(String id) onDelete;
+  final VoidCallback onDeleteAllRead;
+  final void Function(String itemId) onNavigate;
+  final VoidCallback onDismiss;
+
+  const _NotificationPanel({
+    required this.topOffset,
+    required this.leftOffset,
+    required this.width,
+    required this.alerts,
+    required this.onMarkRead,
+    required this.onMarkAllRead,
+    required this.onDelete,
+    required this.onDeleteAllRead,
+    required this.onNavigate,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_NotificationPanel> createState() => _NotificationPanelState();
+}
+
+class _NotificationPanelState extends State<_NotificationPanel>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _scale = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack);
+    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final allRead = widget.alerts.every((a) => a.isRead);
+    final hasRead = widget.alerts.any((a) => a.isRead);
+    // Kaki clair pour le divider — même teinte que les séparateurs de la dernière séance
+    final dividerColor = const Color(0xFFC2A14A).withValues(alpha: 0.25);
+
+    return Stack(children: [
+      Positioned.fill(
+        child: GestureDetector(
+          onTap: widget.onDismiss,
+          behavior: HitTestBehavior.opaque,
+          child: const SizedBox.expand(),
+        ),
+      ),
+      Positioned(
+        top: widget.topOffset,
+        left: widget.leftOffset,
+        width: widget.width,
+        child: FadeTransition(
+          opacity: _opacity,
+          child: ScaleTransition(
+            scale: _scale,
+            alignment: Alignment.topRight,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: isDark
+                      ? null
+                      : Border.all(
+                          color: LightColors.surfaceHighlight, width: 1.35),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                          alpha: isDark ? 0.45 : 0.14),
+                      blurRadius: 28,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
+                    child: Row(children: [
+                      Icon(Icons.notifications_outlined,
+                          size: 18, color: colors.primary),
+                      const Gap(8),
+                      Expanded(
+                        child: Text(strings.notifPanelTitle,
+                            style: textStyles.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                      ),
+                      if (!allRead)
+                        TextButton(
+                          onPressed: widget.onMarkAllRead,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(strings.notifMarkAllRead,
+                              style: textStyles.labelSmall?.copyWith(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      if (allRead && hasRead)
+                        TextButton(
+                          onPressed: widget.onDeleteAllRead,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(strings.notifDeleteAll,
+                              style: textStyles.labelSmall?.copyWith(
+                                  color: colors.error,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                    ]),
+                  ),
+                  Divider(height: 1, color: dividerColor),
+
+                  // List
+                  if (widget.alerts.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(children: [
+                        Icon(Icons.check_circle_outline_rounded,
+                            color: colors.primary, size: 40),
+                        const Gap(8),
+                        Text(strings.notifPanelEmpty,
+                            style: textStyles.bodyMedium
+                                ?.copyWith(color: colors.secondary),
+                            textAlign: TextAlign.center),
+                      ]),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: widget.alerts.length,
+                        separatorBuilder: (_, __) =>
+                            Divider(height: 1, color: dividerColor),
+                        itemBuilder: (context, index) {
+                          final alert = widget.alerts[index];
+                          return _AlertTile(
+                            alert: alert,
+                            onMarkRead: () => widget.onMarkRead(alert.id),
+                            onDelete: () => widget.onDelete(alert.id),
+                            onNavigate: () => widget.onNavigate(alert.itemId),
+                          );
+                        },
+                      ),
+                    ),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
+}
+
+// ── Alert tile ────────────────────────────────────────────────────────────────
+
+class _AlertTile extends StatelessWidget {
+  final _MaintenanceAlert alert;
+  final VoidCallback onMarkRead;
+  final VoidCallback onDelete;
+  final VoidCallback onNavigate;
+
+  const _AlertTile({
+    required this.alert,
+    required this.onMarkRead,
+    required this.onDelete,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+
+    // Determine icon, label, subtitle, color
+    IconData icon;
+    String typeLabel;
+    String subtitle;
+    Color barColor;
+
+    switch (alert.type) {
+      case _AlertType.wear:
+        icon = Icons.handyman_rounded;
+        typeLabel = strings.notifAlertWear;
+        subtitle = '${(alert.progress * 100).toInt()}%';
+        barColor = alert.progress >= 1.0
+            ? const Color(0xFFD64545)
+            : const Color(0xFFC2A14A);
+        break;
+      case _AlertType.fouling:
+        icon = Icons.cleaning_services_rounded;
+        typeLabel = strings.notifAlertFouling;
+        subtitle = '${(alert.progress * 100).toInt()}%';
+        barColor = alert.progress >= 1.0
+            ? const Color(0xFFD64545)
+            : const Color(0xFFC2A14A);
+        break;
+      case _AlertType.stock:
+        icon = Icons.inventory_2_rounded;
+        typeLabel = strings.notifAlertStock;
+        subtitle = '${(alert.progress * 100).toInt()}%';
+        barColor = alert.progress >= 1.0
+            ? const Color(0xFFD64545)
+            : const Color(0xFFC2A14A);
+        break;
+      case _AlertType.document:
+        icon = Icons.picture_as_pdf_rounded;
+        typeLabel = strings.notifAlertDocument;
+        final docName = alert.documentName ?? typeLabel;
+        final days = alert.daysRemaining ?? 0;
+        if (days < 0) {
+          subtitle = 'Votre garantie "$docName" est expirée.';
+          barColor = const Color(0xFFD64545);
+        } else if (days == 0) {
+          subtitle = 'Votre garantie "$docName" a expiré aujourd\'hui.';
+          barColor = const Color(0xFFD64545);
+        } else {
+          subtitle =
+              'Votre garantie "$docName" arrive à expiration dans $days jour${days > 1 ? 's' : ''}.';
+          barColor = days <= 7
+              ? const Color(0xFFD64545)
+              : const Color(0xFFC2A14A);
+        }
+        break;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (!alert.isRead) onMarkRead();
+        if (alert.type != _AlertType.document) {
+          onNavigate();
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Opacity(
+        opacity: alert.isRead ? 0.55 : 1.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: barColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Icon(icon, size: 15, color: barColor),
+                ),
+                const Gap(10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        alert.type == _AlertType.document
+                            ? '${alert.itemName} — ${alert.documentName ?? ''}'
+                            : alert.itemName,
+                        style: textStyles.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: colors.onSurface),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '$typeLabel — $subtitle',
+                        style: textStyles.labelSmall?.copyWith(
+                            color: barColor, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!alert.isRead)
+                  GestureDetector(
+                    onTap: onMarkRead,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.check_rounded,
+                          size: 18, color: colors.primary),
+                    ),
+                  )
+                else
+                  GestureDetector(
+                    onTap: onDelete,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.close_rounded,
+                          size: 18, color: colors.secondary),
+                    ),
+                  ),
+              ]),
+              if (alert.type != _AlertType.document) ...[
+                const Gap(6),
+                LinearProgressIndicator(
+                  value: alert.progress.clamp(0.0, 1.0),
+                  backgroundColor: colors.outline.withValues(alpha: 0.15),
+                  color: barColor,
+                  minHeight: 4,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

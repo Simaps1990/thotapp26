@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Données chiffrées AES-256 : la clé vit dans le trousseau sécurisé,
+             non transférable via cloud. Un backup cloud serait inutilisable. -->
+        <exclude domain="file" path="." />
+        <exclude domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <!-- Transfert direct entre appareils autorisé (même compte / clé migrée). -->
+        <include domain="file" path="." />
+        <include domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

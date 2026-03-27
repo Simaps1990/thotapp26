@@ -1,0 +1,62 @@
+name: thot
+description: "THOT est un carnet de tir numérique pour organiser vos séances, votre matériel et vos statistiques en toute simplicité."
+publish_to: "none"
+version: 1.0.4+5
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  crypto: ^3.0.3
+  encrypt: ^5.0.3
+  flutter_svg: ^2.0.0
+  web: ^1.0.0
+  http: ^1.0.0
+  geolocator: 13.0.4
+  shared_preferences: ^2.0.0
+  gap: ^3.0.0
+  percent_indicator: ^4.0.0
+  intl: 0.20.2
+  fl_chart: 0.68.0
+  google_fonts: ^6.1.0
+  provider: ^6.1.2
+  go_router: ^16.2.0
+  share_plus: ^12.0.0
+  file_picker: ">=8.1.2"
+  path_provider: ^2.0.0
+  local_auth: ^2.0.0
+  flutter_secure_storage: ^10.0.0
+  url_launcher: ^6.0.0
+  pdf: ^3.11.0
+  printing: ^5.13.0
+  package_info_plus: ^8.0.0
+  purchases_flutter: ^9.13.2
+  purchases_ui_flutter: ^9.13.2
+  audioplayers: ^6.0.0
+  vibration: ^3.1.8
+  permission_handler: ^11.3.0
+  noise_meter: ^5.0.2
+  flutter_local_notifications: ^18.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/audio/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/icone.png
+  remove_alpha_ios: true

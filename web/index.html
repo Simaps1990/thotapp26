@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Carnet de tir numérique THOT.">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="THOT">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>THOT</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    (function () {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua);
+      const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
+      const needsStandaloneIOSFix = isIOS && isStandalone;
+
+      function syncViewport() {
+        const vv = window.visualViewport;
+        const height = vv ? vv.height : window.innerHeight;
+
+        document.documentElement.style.height = height + 'px';
+        document.body.style.height = height + 'px';
+        document.body.style.minHeight = height + 'px';
+
+        // force Flutter/webview relayout
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      function kickLayout() {
+        if (!needsStandaloneIOSFix) return;
+        // iOS standalone can start with a stale layout/tap mapping until a first real resize occurs.
+        // Mimic the effect by forcing a viewport sync + scroll reset.
+        syncViewport();
+        try { window.scrollTo(0, 0); } catch (e) {}
+      }
+
+      function delayedSync(delay) {
+        setTimeout(syncViewport, delay);
+      }
+
+      window.addEventListener('load', function () {
+        delayedSync(0);
+        delayedSync(100);
+        delayedSync(300);
+        delayedSync(700);
+
+        // Extra kicks for iOS PWA standalone.
+        if (needsStandaloneIOSFix) {
+          setTimeout(kickLayout, 50);
+          setTimeout(kickLayout, 250);
+          setTimeout(kickLayout, 800);
+          setTimeout(kickLayout, 1600);
+        }
+      });
+
+      // After Flutter paints its first frame, run another sync.
+      window.addEventListener('flutter-first-frame', function () {
+        if (!needsStandaloneIOSFix) return;
+        setTimeout(kickLayout, 0);
+        setTimeout(kickLayout, 100);
+        setTimeout(kickLayout, 350);
+        setTimeout(kickLayout, 700);
+      });
+
+      window.addEventListener('pageshow', function () {
+        delayedSync(0);
+        delayedSync(100);
+        delayedSync(300);
+      });
+
+      window.addEventListener('orientationchange', function () {
+        delayedSync(100);
+        delayedSync(400);
+      });
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function () {
+          delayedSync(0);
+          delayedSync(100);
+          delayedSync(300);
+        });
+
+        window.visualViewport.addEventListener('scroll', function () {
+          delayedSync(0);
+          delayedSync(100);
+        });
+      }
+
+      document.addEventListener('focusin', function () {
+        delayedSync(100);
+        delayedSync(350);
+        delayedSync(700);
+      }, true);
+
+      document.addEventListener('focusout', function () {
+        delayedSync(100);
+        delayedSync(350);
+        delayedSync(700);
+      }, true);
+    })();
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

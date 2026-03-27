@@ -1,0 +1,84 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localProperties.load(new FileInputStream(localPropertiesFile))
+}
+
+android {
+    namespace = "fr.thotbook.app"
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
+    def flutterVersionCode = project.hasProperty('flutter.versionCode')
+            ? project.property('flutter.versionCode')
+            : (localProperties.getProperty('flutter.versionCode') ?: "1")
+
+    def flutterVersionName = project.hasProperty('flutter.versionName')
+            ? project.property('flutter.versionName')
+            : (localProperties.getProperty('flutter.versionName') ?: "1.0.0")
+
+    defaultConfig {
+        applicationId "fr.thotbook.app"
+        minSdk = 24
+        targetSdk = 36
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    buildTypes {
+        release {
+            // Only enforce release signing when building a release task.
+            // Otherwise it breaks debug builds during Gradle configuration.
+            def isReleaseBuild = gradle.startParameter.taskNames.any { t ->
+                t.toLowerCase().contains('release')
+            }
+
+            if (isReleaseBuild && !keystorePropertiesFile.exists()) {
+                throw new GradleException("Missing key.properties for release signing. Create android/key.properties and configure a release keystore.")
+            }
+
+            // If key.properties exists, use the release keystore. If not, the release build will fail above.
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+}
+
+flutter {
+    source = "../.."
+}

@@ -1,0 +1,31 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: #0F1115;
+  overscroll-behavior-y: contain;
+}
+
+body {
+  position: static;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, textarea, select {
+  font-size: 16px;
+}
+
+flt-glass-pane,
+flt-scene-host,
+flutter-view,
+#flutter-view {
+  width: 100%;
+  height: 100%;
+}

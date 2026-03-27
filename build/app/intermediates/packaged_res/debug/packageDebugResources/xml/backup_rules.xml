@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- On évite de sauvegarder tout le contenu de l’app par défaut. -->
+    <!-- Si tu veux plus tard inclure un sous-ensemble précis, on l’ajoutera ici. -->
+</full-backup-content>
