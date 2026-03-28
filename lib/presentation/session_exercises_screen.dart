@@ -879,9 +879,9 @@ class _ExerciseCard extends StatelessWidget {
                 ),
                 const Gap(AppSpacing.md),
                 if (exercise.steps != null && exercise.steps!.isNotEmpty) ...[
-                  steps_ui.ExerciseStepsCarousel(steps: exercise.steps!),
+steps_ui.ExerciseStepsCarousel(steps: exercise.steps!, useMetric: provider.useMetric),
                   const Gap(AppSpacing.sm),
-                  summary_ui.ExerciseSummaryText(steps: exercise.steps!),
+summary_ui.ExerciseSummaryText(steps: exercise.steps!, useMetric: provider.useMetric),
                   const Gap(AppSpacing.sm),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -919,11 +919,11 @@ class _ExerciseCard extends StatelessWidget {
                         const Gap(10),
                         Expanded(
                           child: Text(
-                            strings.exerciseAutoTotals(
+strings.exerciseAutoTotals(
                               exercise.detailedTotalShots,
                               exercise.steps!.length,
                               (exercise.detailedMaxDistance ?? 0),
-                              'm',
+                              converter.useMetric ? 'm' : 'yd',
                             ),
                             style: textStyles.bodySmall?.copyWith(
                               color: colors.onSurface,

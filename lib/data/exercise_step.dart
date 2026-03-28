@@ -13,11 +13,17 @@ enum StepType {
 /// Position de tir ou de déplacement.
 enum ShootingPosition {
   debout,
-  enMouvement,
-  genouDroit,
-  genouGauche,
+  genou,
   couche,
   assis,
+  autre,
+}
+
+enum MovementType {
+  marche,
+  course,
+  lateral,
+  repli,
   autre,
 }
 
@@ -42,6 +48,8 @@ class ExerciseStep {
   final int? durationSeconds; // attente
   final String? trigger; // attente : déclencheur
   final String? comment;
+final MovementType? movementType;
+
 
   const ExerciseStep({
     required this.id,
@@ -56,6 +64,8 @@ class ExerciseStep {
     this.durationSeconds,
     this.trigger,
     this.comment,
+    this.movementType,
+
   });
 
   Map<String, dynamic> toJson() => {
@@ -71,6 +81,7 @@ class ExerciseStep {
         'durationSeconds': durationSeconds,
         'trigger': trigger,
         'comment': comment,
+        'movementType': movementType?.name,
       };
 
   static ExerciseStep fromJson(Map<String, dynamic> json) {
@@ -89,11 +100,19 @@ class ExerciseStep {
       );
     }
 
-    ReloadType? parseReloadType(String? raw) {
+ReloadType? parseReloadType(String? raw) {
       if (raw == null) return null;
       return ReloadType.values.firstWhere(
         (e) => e.name == raw,
         orElse: () => ReloadType.tactique,
+      );
+    }
+
+    MovementType? parseMovementType(String? raw) {
+      if (raw == null) return null;
+      return MovementType.values.firstWhere(
+        (e) => e.name == raw,
+        orElse: () => MovementType.autre,
       );
     }
 
@@ -109,7 +128,8 @@ class ExerciseStep {
       reloadType: parseReloadType(json['reloadType'] as String?),
       durationSeconds: json['durationSeconds'] as int?,
       trigger: json['trigger'] as String?,
-      comment: json['comment'] as String?,
+comment: json['comment'] as String?,
+      movementType: parseMovementType(json['movementType'] as String?),
     );
   }
 }

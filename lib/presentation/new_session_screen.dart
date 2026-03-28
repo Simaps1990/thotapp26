@@ -1298,6 +1298,7 @@ class WeatherEditableField extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+final distUnit = provider.useMetric ? 'm' : 'yd';
     final radius = BorderRadius.circular(AppRadius.lg);
 
     final field = TextField(
@@ -1494,6 +1495,7 @@ class _ExerciseCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    
     final weapon = provider.getWeaponById(exercise.weaponId);
     final ammo = provider.getAmmoById(exercise.ammoId);
     final equipmentNames = exercise.equipmentIds
@@ -1780,9 +1782,9 @@ class _ExerciseCard extends StatelessWidget {
                           ),
                           _InfoRow(
                             label: strings.shootingDistanceDetailLabel,
-                            value:
-                                "${exercise.distance}${provider.useMetric ? 'm' : 'yd'}",
-                          ),
+value: provider.useMetric
+                                ? '${exercise.distance} m'
+                                : '${(exercise.distance * 1.09361).round()} yd',                          ),
                           if (exercise.targetName != null &&
                               exercise.targetName!.isNotEmpty)
                             _InfoRow(
@@ -2088,23 +2090,14 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     return distances.reduce((a, b) => a > b ? a : b);
   }
 
-  String _stepTitle(StepType type) {
-    return switch (type) {
-      StepType.tir => 'Tir',
-      StepType.deplacement => 'Déplacement',
-      StepType.rechargement => 'Rechargement',
-      StepType.transition => 'Transition',
-      StepType.miseEnJoue => 'Mise en joue',
-      StepType.attente => 'Attente',
-      StepType.securite => 'Sécurité',
-      StepType.autre => 'Autre',
-    };
+String _stepTitle(StepType type) {
+    return AppStrings.of(context).exerciseStepTypeLabel(type);
   }
 
   String _stepIcon(StepType type) {
     return switch (type) {
       StepType.tir => '💥',
-      StepType.deplacement => '🚶',
+      StepType.deplacement => '🏃🏻‍♂️‍➡️',
       StepType.rechargement => '🔄',
       StepType.transition => '🔀',
       StepType.miseEnJoue => '🎯',
@@ -2114,30 +2107,34 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     };
   }
 
-  String _positionShort(ShootingPosition? pos) {
+String _positionShort(ShootingPosition? pos) {
     if (pos == null) return '';
-    return switch (pos) {
-      ShootingPosition.debout => 'Debout',
-      ShootingPosition.enMouvement => 'Mouvement',
-      ShootingPosition.genouDroit => 'Genou D',
-      ShootingPosition.genouGauche => 'Genou G',
-      ShootingPosition.couche => 'Couché',
-      ShootingPosition.assis => 'Assis',
-      ShootingPosition.autre => 'Autre',
-    };
+    final strings = AppStrings.of(context);
+    return strings.exercisePositionLabel(pos);
   }
 
-  String _stepSummary(ExerciseStep s) {
+String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     final parts = <String>[];
-    if (s.type == StepType.tir && s.shots != null) parts.add('${s.shots} coups');
-    if (s.distanceM != null) parts.add('${s.distanceM} m');
+    if (s.type == StepType.tir && s.shots != null) {
+      parts.add('${s.shots} ${strings.exerciseNarrativeShotsWord}');
+    }
+    if (s.distanceM != null) {
+      final dist = useMetric
+          ? '${s.distanceM} m'
+          : '${(s.distanceM! * 1.09361).round()} yd';
+      parts.add(dist);
+    }
     if ((s.target ?? '').trim().isNotEmpty) parts.add(s.target!.trim());
     if (s.type == StepType.transition) {
-      if ((s.weaponFrom ?? '').trim().isNotEmpty) parts.add('de ${s.weaponFrom!.trim()}');
-      if ((s.weaponTo ?? '').trim().isNotEmpty) parts.add('vers ${s.weaponTo!.trim()}');
+      if ((s.weaponFrom ?? '').trim().isNotEmpty) {
+        parts.add('${strings.exerciseNarrativeFrom.trim()} ${s.weaponFrom!.trim()}');
+      }
+      if ((s.weaponTo ?? '').trim().isNotEmpty) {
+        parts.add('${strings.exerciseNarrativeTo.trim()} ${s.weaponTo!.trim()}');
+      }
     }
     if (s.type == StepType.rechargement && s.reloadType != null) {
-      parts.add(s.reloadType!.name);
+      parts.add(strings.exerciseReloadTypeNarrative(s.reloadType!));
     }
     if (s.type == StepType.attente && s.durationSeconds != null) {
       parts.add('${s.durationSeconds}s');
@@ -3207,7 +3204,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                                 ),
                                 const Gap(2),
                                 Text(
-                                  '${_positionShort(s.position)}${_positionShort(s.position).isEmpty ? '' : ' · '}${_stepSummary(s)}',
+                                  '${_positionShort(s.position)}${_positionShort(s.position).isEmpty ? '' : ' · '}${_stepSummary(s, strings, provider.useMetric)}',
                                   style: textStyles.bodySmall?.copyWith(
                                     color: colors.secondary,
                                   ),
@@ -4338,6 +4335,8 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+final distUnit = provider.useMetric ? 'm' : 'yd';
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
 
     InputDecoration decoration(String label) => InputDecoration(
@@ -4490,7 +4489,7 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} (m)${strings.exerciseOptionalHint}'),
+                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
                     ),
                     const Gap(10),
                     TextField(
@@ -4501,7 +4500,7 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} (m)${strings.exerciseOptionalHint}'),
+                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
                     ),
                   ] else if (_type == StepType.rechargement) ...[
                     Text(
@@ -4549,7 +4548,7 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} (m)${strings.exerciseOptionalHint}'),
+                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
                     ),
                   ] else if (_type == StepType.attente) ...[
                     TextField(
@@ -4561,7 +4560,7 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} (m)${strings.exerciseOptionalHint}'),
+                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
                     ),
                     const Gap(10),
                     TextField(

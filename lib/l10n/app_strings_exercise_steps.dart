@@ -110,27 +110,23 @@ extension AppStringsExerciseSteps on AppStrings {
     };
   }
 
-  String exercisePositionLabel(ShootingPosition pos) {
+String exercisePositionLabel(ShootingPosition pos) {
     return switch (pos) {
       ShootingPosition.debout => _pick(fr: 'Debout', en: 'Standing', de: 'Stehend', it: 'In piedi', es: 'De pie'),
-      ShootingPosition.enMouvement => _pick(fr: 'En mouvement', en: 'Moving', de: 'In Bewegung', it: 'In movimento', es: 'En movimiento'),
-      ShootingPosition.genouDroit => _pick(fr: 'Genou droit', en: 'Right knee', de: 'Rechtes Knie', it: 'Ginocchio destro', es: 'Rodilla derecha'),
-      ShootingPosition.genouGauche => _pick(fr: 'Genou gauche', en: 'Left knee', de: 'Linkes Knie', it: 'Ginocchio sinistro', es: 'Rodilla izquierda'),
+      ShootingPosition.genou  => _pick(fr: 'À genou', en: 'Kneeling', de: 'Kniend', it: 'In ginocchio', es: 'De rodillas'),
       ShootingPosition.couche => _pick(fr: 'Couché', en: 'Prone', de: 'Liegend', it: 'Prono', es: 'Tendido'),
-      ShootingPosition.assis => _pick(fr: 'Assis', en: 'Seated', de: 'Sitzend', it: 'Seduto', es: 'Sentado'),
-      ShootingPosition.autre => _pick(fr: 'Autre', en: 'Other', de: 'Andere', it: 'Altro', es: 'Otro'),
+      ShootingPosition.assis  => _pick(fr: 'Assis', en: 'Seated', de: 'Sitzend', it: 'Seduto', es: 'Sentado'),
+      ShootingPosition.autre  => _pick(fr: 'Autre', en: 'Other', de: 'Andere', it: 'Altro', es: 'Otro'),
     };
   }
 
 String exercisePositionNarrative(ShootingPosition pos) {
   return switch (pos) {
     ShootingPosition.debout => _pick(fr: 'debout', en: 'standing', de: 'stehend', it: 'in piedi', es: 'de pie'),
-    ShootingPosition.enMouvement => _pick(fr: 'en mouvement', en: 'moving', de: 'in Bewegung', it: 'in movimento', es: 'en movimiento'),
-    ShootingPosition.genouDroit => _pick(fr: 'genou droit', en: 'right knee', de: 'rechtes Knie', it: 'ginocchio destro', es: 'rodilla derecha'),
-    ShootingPosition.genouGauche => _pick(fr: 'genou gauche', en: 'left knee', de: 'linkes Knie', it: 'ginocchio sinistro', es: 'rodilla izquierda'),
+    ShootingPosition.genou  => _pick(fr: 'à genou', en: 'kneeling', de: 'kniend', it: 'in ginocchio', es: 'de rodillas'),
     ShootingPosition.couche => _pick(fr: 'couché', en: 'prone', de: 'liegend', it: 'prono', es: 'tendido'),
-    ShootingPosition.assis => _pick(fr: 'assis', en: 'seated', de: 'sitzend', it: 'seduto', es: 'sentado'),
-    ShootingPosition.autre => _pick(fr: 'autre', en: 'other', de: 'andere', it: 'altro', es: 'otro'),
+    ShootingPosition.assis  => _pick(fr: 'assis', en: 'seated', de: 'sitzend', it: 'seduto', es: 'sentado'),
+    ShootingPosition.autre  => _pick(fr: 'autre', en: 'other', de: 'andere', it: 'altro', es: 'otro'),
   };
 }
 
@@ -247,11 +243,11 @@ String exercisePositionNarrative(ShootingPosition pos) {
       );
 
   String get exerciseNarrativeIntro => _pick(
-fr: 'L\'exercice se déroule comme suit : ',
-en: 'The drill goes as follows: ',
-de: 'Die Übung läuft wie folgt ab: ',
-it: 'L\'esercizio si svolge come segue: ',
-es: 'El ejercicio se desarrolla así: ',
+fr: 'Déroulé de l\'exercice :\n',
+en: 'Exercise sequence:\n',
+de: 'Übungsablauf:\n',
+it: 'Svolgimento dell\'esercizio:\n',
+es: 'Secuencia del ejercicio:\n',
       );
 
   String get exerciseNarrativeThen => _pick(
@@ -274,11 +270,11 @@ es: 'El ejercicio se desarrolla así: ',
 
   /// e.g. "un déplacement " / "a movement "
   String get exerciseNarrativeMovementPrefix => _pick(
-fr: 'Il se déplace ',
-en: 'He moves ',
-de: 'Er bewegt sich ',
-it: 'Il tiratore si sposta ',
-es: 'El tirador se desplaza ',
+fr: 'Se déplacer ',
+en: 'Move ',
+de: 'Bewegen ',
+it: 'Spostarsi ',
+es: 'Desplazarse ',
       );
 
   /// e.g. "jusqu'à " / "up to "
@@ -292,11 +288,11 @@ es: 'hasta ',
 
   /// e.g. "une attente de " / "a wait of "
   String get exerciseNarrativeWaitPrefix => _pick(
-fr: 'Il attend ',
-en: 'He waits ',
-de: 'Er wartet ',
-it: 'Il tiratore attende ',
-es: 'El tirador espera ',
+fr: 'Attendre ',
+en: 'Wait ',
+de: 'Warten ',
+it: 'Attendere ',
+es: 'Esperar ',
       );
 
 String get exerciseNarrativeWaitUntil => _pick(
@@ -326,11 +322,11 @@ String get exerciseNarrativeTo => _pick(
 
   /// e.g. "le tireur engage " / "the shooter engages "
   String get exerciseNarrativeShooterEngages => _pick(
-fr: 'Il engage ',
-en: 'He fires ',
-de: 'Er feuert ',
-it: 'Il tiratore ingaggia ',
-es: 'El tirador realiza ',
+fr: 'Engager ',
+en: 'Fire ',
+de: 'Abfeuern ',
+it: 'Ingaggiare ',
+es: 'Disparar ',
       );
 
   /// e.g. "coups" / "shots"
@@ -353,21 +349,57 @@ es: 'El tirador realiza ',
 
   /// e.g. "avec une mise en joue" / "with an aim"
   String get exerciseNarrativeAimPrefix => _pick(
-fr: 'Il met en joue, ',
-en: 'He aims, ',
-de: 'Er nimmt Anschlag, ',
-it: 'Il tiratore punta, ',
-es: 'El tirador apunta, ',
+fr: 'Mettre en joue, ',
+en: 'Aim, ',
+de: 'Anschlag nehmen, ',
+it: 'Puntare, ',
+es: 'Apuntar, ',
       );
 
   /// e.g. "il effectue un rechargement " / "they perform a "
   String get exerciseNarrativeReloadPrefix => _pick(
-fr: 'Il effectue un rechargement ',
-en: 'He performs a ',
-de: 'Er führt ein Nachladen durch: ',
-it: 'Il tiratore esegue una ricarica ',
-es: 'El tirador realiza una recarga ',
+fr: 'Effectuer un rechargement ',
+en: 'Perform a reload ',
+de: 'Nachladen ',
+it: 'Eseguire una ricarica ',
+es: 'Realizar una recarga ',
       );
+
+String get exerciseNarrativePositionPrefix => _pick(
+        fr: 'en position ',
+        en: 'in position ',
+        de: 'in Stellung ',
+        it: 'in posizione ',
+        es: 'en posición ',
+      );
+
+  String get exerciseFieldMovementType => _pick(
+        fr: 'Type de déplacement',
+        en: 'Movement type',
+        de: 'Bewegungsart',
+        it: 'Tipo di spostamento',
+        es: 'Tipo de desplazamiento',
+      );
+
+String exerciseMovementTypeLabel(MovementType type) {
+  return switch (type) {
+    MovementType.marche  => _pick(fr: 'Marche', en: 'Walking', de: 'Gehen', it: 'Camminando', es: 'Caminando'),
+    MovementType.course  => _pick(fr: 'Course', en: 'Running', de: 'Laufen', it: 'Correndo', es: 'Corriendo'),
+    MovementType.lateral => _pick(fr: 'Latéral', en: 'Lateral', de: 'Seitwärts', it: 'Laterale', es: 'Lateral'),
+    MovementType.repli   => _pick(fr: 'Repli', en: 'Withdrawal', de: 'Rückzug', it: 'Ripiegamento', es: 'Repliegue'),
+    MovementType.autre   => _pick(fr: 'Autre', en: 'Other', de: 'Andere', it: 'Altro', es: 'Otro'),
+  };
+}
+
+String exerciseMovementTypeNarrative(MovementType type) {
+  return switch (type) {
+    MovementType.marche  => _pick(fr: 'en marchant ', en: 'walking ', de: 'gehend ', it: 'camminando ', es: 'caminando '),
+    MovementType.course  => _pick(fr: 'en courant ', en: 'running ', de: 'laufend ', it: 'correndo ', es: 'corriendo '),
+    MovementType.lateral => _pick(fr: 'latéralement ', en: 'laterally ', de: 'seitwärts ', it: 'lateralmente ', es: 'lateralmente '),
+    MovementType.repli   => _pick(fr: 'en se repliant ', en: 'withdrawing ', de: 'zurückweichend ', it: 'ripiegando ', es: 'replegándose '),
+    MovementType.autre   => _pick(fr: '', en: '', de: '', it: '', es: ''),
+  };
+}
 
 String exerciseReloadTypeNarrative(ReloadType type) {
   return switch (type) {
@@ -379,11 +411,11 @@ String exerciseReloadTypeNarrative(ReloadType type) {
 
   /// e.g. "une transition d’arme" / "a weapon transition"
   String get exerciseNarrativeTransitionPrefix => _pick(
-fr: 'Il effectue une transition d\'arme',
-en: 'He transitions',
-de: 'Er wechselt die Waffe',
-it: 'Il tiratore effettua una transizione d\'arma',
-es: 'El tirador realiza una transición de arma',
+fr: 'Effectuer une transition d\'arme',
+en: 'Transition weapon',
+de: 'Waffenwechsel',
+it: 'Effettuare una transizione d\'arma',
+es: 'Realizar una transición de arma',
       );
 
   /// e.g. " à " / " at "
@@ -397,11 +429,11 @@ es: 'El tirador realiza una transición de arma',
 
   /// Full sentence for safety phase
   String get exerciseNarrativeSafetySentence => _pick(
-        fr: 'Phase sécurité.',
-        en: 'Safety phase.',
-        de: 'Sicherheitsphase.',
-        it: 'Fase di sicurezza.',
-        es: 'Fase de seguridad.',
+fr: 'Phase sécurité.',
+en: 'Safety phase.',
+de: 'Sicherheitsphase.',
+it: 'Fase di sicurezza.',
+es: 'Fase de seguridad.',
       );
 
   /// Full sentence for generic action

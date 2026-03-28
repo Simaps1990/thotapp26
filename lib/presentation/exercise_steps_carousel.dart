@@ -6,9 +6,10 @@ import 'package:gap/gap.dart';
 import 'package:thot/l10n/app_strings.dart';
 
 class ExerciseStepsCarousel extends StatefulWidget {
-  final List<ExerciseStep> steps;
+final List<ExerciseStep> steps;
+  final bool useMetric;
 
-  const ExerciseStepsCarousel({super.key, required this.steps});
+  const ExerciseStepsCarousel({super.key, required this.steps, required this.useMetric});
 
   @override
   State<ExerciseStepsCarousel> createState() => _ExerciseStepsCarouselState();
@@ -57,8 +58,7 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
                     onPageChanged: (i) => setState(() => _index = i),
                     itemBuilder: (context, i) {
                       final step = widget.steps[i];
-                      final config = _StepUiConfig.fromStep(context, step, strings);
-
+final config = _StepUiConfig.fromStep(context, step, strings, widget.useMetric);
                       return Padding(
                         padding: AppSpacing.paddingMd,
                         child: Column(
@@ -320,8 +320,7 @@ class _StepUiConfig {
     required this.info3Value,
   });
 
-  static _StepUiConfig fromStep(BuildContext context, ExerciseStep step, AppStrings strings) {
-    final colors = Theme.of(context).colorScheme;
+static _StepUiConfig fromStep(BuildContext context, ExerciseStep step, AppStrings strings, bool useMetric) {    final colors = Theme.of(context).colorScheme;
 
     final positionText = step.position == null
         ? null
@@ -343,20 +342,20 @@ class _StepUiConfig {
           info1Label: strings.exerciseFieldShots,
           info1Value: step.shots?.toString() ?? '',
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '' : '${step.distanceM} m',
+          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: strings.exerciseFieldTarget,
           info3Value: targetText,
         );
-      case StepType.deplacement:
+case StepType.deplacement:
         return _StepUiConfig(
-          icon: '🚶',
+          icon: '🏃🏻‍♂️‍➡️',
           title: strings.exerciseStepTypeLabel(StepType.deplacement),
-          subtitle: positionText,
+          subtitle: step.movementType == null ? null : strings.exerciseMovementTypeLabel(step.movementType!),
           color: colors.primary,
-          info1Label: strings.exerciseFieldDistance,
-          info1Value: step.distanceM == null ? '' : '${step.distanceM} m',
-          info2Label: '',
-          info2Value: '',
+          info1Label: strings.exerciseFieldMovementType,
+          info1Value: step.movementType == null ? '' : strings.exerciseMovementTypeLabel(step.movementType!),
+          info2Label: strings.exerciseFieldDistance,
+          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: '',
           info3Value: '',
         );
@@ -397,7 +396,7 @@ class _StepUiConfig {
           info1Label: strings.exerciseFieldTarget,
           info1Value: targetText,
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '' : '${step.distanceM} m',
+          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: '',
           info3Value: '',
         );
@@ -411,7 +410,7 @@ class _StepUiConfig {
           info1Value:
               step.durationSeconds == null ? '' : '${step.durationSeconds} s',
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '' : '${step.distanceM} m',
+          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: strings.exerciseFieldTrigger,
           info3Value: triggerText,
         );

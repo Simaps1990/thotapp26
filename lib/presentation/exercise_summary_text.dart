@@ -5,9 +5,10 @@ import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
 
 class ExerciseSummaryText extends StatelessWidget {
-  final List<ExerciseStep> steps;
+final List<ExerciseStep> steps;
+  final bool useMetric;
 
-  const ExerciseSummaryText({super.key, required this.steps});
+  const ExerciseSummaryText({super.key, required this.steps, required this.useMetric});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,7 @@ class ExerciseSummaryText extends StatelessWidget {
 
     if (steps.isEmpty) return const SizedBox.shrink();
 
-    final spans = _buildNarrativeSpans(textStyles, steps, strings);
+final spans = _buildNarrativeSpans(textStyles, steps, strings, useMetric);
 
     final bg = Color.alphaBlend(
       colors.primary.withValues(alpha: 0.14),
@@ -46,8 +47,8 @@ class ExerciseSummaryText extends StatelessWidget {
     );
   }
 
-  List<TextSpan> _buildNarrativeSpans(TextTheme textStyles, List<ExerciseStep> steps, AppStrings strings) {
-    final spans = <TextSpan>[];
+List<TextSpan> _buildNarrativeSpans(TextTheme textStyles, List<ExerciseStep> steps, AppStrings strings, bool useMetric) {
+      final spans = <TextSpan>[];
 
     void add(String text) => spans.add(TextSpan(text: text));
     void addBold(String text) => spans.add(TextSpan(
@@ -72,25 +73,25 @@ class ExerciseSummaryText extends StatelessWidget {
       }
 
       switch (s.type) {
-        case StepType.deplacement:
+case StepType.deplacement:
           add(strings.exerciseNarrativeMovementPrefix);
+          if (s.movementType != null) {
+            add(strings.exerciseMovementTypeNarrative(s.movementType!));
+          }
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeMovementUntil);
-            addBold('${s.distanceM} m');
+            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
           } else {
             addBold('—');
           }
-          if (s.position != null) {
-            add(' ');
-add(strings.exercisePositionNarrative(s.position!));
-          }
           add('.');
           break;
-        case StepType.miseEnJoue:
+case StepType.miseEnJoue:
           add(strings.exerciseNarrativeAimPrefix);
           if (s.position != null) {
-            add(' ');
-add(strings.exercisePositionNarrative(s.position!));
+            add(strings.exerciseNarrativePositionPrefix);
+            add(strings.exercisePositionNarrative(s.position!));
+            add(', ');
           }
           if ((s.target ?? '').trim().isNotEmpty) {
             add(strings.exerciseNarrativeOnTarget);
@@ -98,20 +99,25 @@ add(strings.exercisePositionNarrative(s.position!));
           }
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeAtDistance);
-            addBold('${s.distanceM} m');
+            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
           }
           add('.');
           break;
-        case StepType.tir:
+case StepType.tir:
           add(strings.exerciseNarrativeShooterEngages);
           addBold('${s.shots ?? 0} ${strings.exerciseNarrativeShotsWord}');
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeAtDistance);
-            addBold('${s.distanceM} m');
+            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
           }
           if ((s.target ?? '').trim().isNotEmpty) {
             add(strings.exerciseNarrativeOnTarget);
             addBold(s.target!.trim());
+          }
+          if (s.position != null) {
+            add(', ');
+            add(strings.exerciseNarrativePositionPrefix);
+            add(strings.exercisePositionNarrative(s.position!));
           }
           add('.');
           break;
@@ -138,7 +144,7 @@ add(strings.exerciseNarrativeTo);
           addBold(s.durationSeconds == null ? '—' : '${s.durationSeconds} s');
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeAtDistance);
-            addBold('${s.distanceM} m');
+            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
           }
 if ((s.trigger ?? '').trim().isNotEmpty) {
   add(strings.exerciseNarrativeWaitUntil);
