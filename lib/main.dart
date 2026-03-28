@@ -37,10 +37,7 @@ Future<void> _configureRevenueCatSafely() async {
   if (kIsWeb) return;
 
   try {
-    const revenueCatApiKey = String.fromEnvironment(
-      'REVENUECAT_API_KEY',
-      defaultValue: 'goog_TvBeUWdyTVeOujmiQegUKEcFmQV',
-    );
+const revenueCatApiKey = String.fromEnvironment('REVENUECAT_API_KEY');
 
     if (revenueCatApiKey.trim().isEmpty) {
       debugPrint('⚠️ REVENUECAT_API_KEY not set. Skipping RevenueCat configuration.');
