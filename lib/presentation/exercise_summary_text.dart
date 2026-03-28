@@ -73,84 +73,84 @@ class ExerciseSummaryText extends StatelessWidget {
 
       switch (s.type) {
         case StepType.deplacement:
-          add('un déplacement ');
+          add(strings.exerciseNarrativeMovementPrefix);
           if (s.distanceM != null) {
-            add("jusqu'à ");
+            add(strings.exerciseNarrativeMovementUntil);
             addBold('${s.distanceM} m');
           } else {
             addBold('—');
           }
           if (s.position != null) {
             add(' ');
-            add(_posText(s.position!));
+add(strings.exercisePositionNarrative(s.position!));
           }
           add('.');
           break;
         case StepType.miseEnJoue:
-          add('avec une mise en joue');
+          add(strings.exerciseNarrativeAimPrefix);
           if (s.position != null) {
             add(' ');
-            add(_posText(s.position!));
+add(strings.exercisePositionNarrative(s.position!));
           }
           if ((s.target ?? '').trim().isNotEmpty) {
-            add(' sur la cible ');
+            add(strings.exerciseNarrativeOnTarget);
             addBold(s.target!.trim());
           }
           if (s.distanceM != null) {
-            add(' à ');
+            add(strings.exerciseNarrativeAtDistance);
             addBold('${s.distanceM} m');
           }
           add('.');
           break;
         case StepType.tir:
-          add('le tireur engage ');
-          addBold('${s.shots ?? 0} coups');
+          add(strings.exerciseNarrativeShooterEngages);
+          addBold('${s.shots ?? 0} ${strings.exerciseNarrativeShotsWord}');
           if (s.distanceM != null) {
-            add(' à ');
+            add(strings.exerciseNarrativeAtDistance);
             addBold('${s.distanceM} m');
           }
           if ((s.target ?? '').trim().isNotEmpty) {
-            add(' sur la cible ');
+            add(strings.exerciseNarrativeOnTarget);
             addBold(s.target!.trim());
           }
           add('.');
           break;
-        case StepType.rechargement:
-          add('il effectue un rechargement ');
-          addBold(_reloadText(s.reloadType));
-          add('.');
-          break;
+case StepType.rechargement:
+  add(strings.exerciseNarrativeReloadPrefix);
+addBold(s.reloadType == null ? '—' : strings.exerciseReloadTypeNarrative(s.reloadType!));
+  add('.');
+  break;
         case StepType.transition:
-          add('une transition d’arme');
+          add(strings.exerciseNarrativeTransitionPrefix);
           if ((s.weaponFrom ?? '').trim().isNotEmpty) {
-            add(' de ');
+add(strings.exerciseNarrativeFrom);
             addBold(s.weaponFrom!.trim());
           }
           if ((s.weaponTo ?? '').trim().isNotEmpty) {
-            add(' vers ');
+add(strings.exerciseNarrativeTo);
             addBold(s.weaponTo!.trim());
           }
           add('.');
           break;
+
         case StepType.attente:
-          add('une attente de ');
+          add(strings.exerciseNarrativeWaitPrefix);
           addBold(s.durationSeconds == null ? '—' : '${s.durationSeconds} s');
           if (s.distanceM != null) {
-            add(' à ');
+            add(strings.exerciseNarrativeAtDistance);
             addBold('${s.distanceM} m');
           }
-          if ((s.trigger ?? '').trim().isNotEmpty) {
-            add(' (');
-            addBold(s.trigger!.trim());
-            add(')');
-          }
+if ((s.trigger ?? '').trim().isNotEmpty) {
+  add(strings.exerciseNarrativeWaitUntil);
+  addBold(s.trigger!.trim());
+}
           add('.');
           break;
         case StepType.securite:
-          add('une phase sécurité.');
+          add(strings.exerciseNarrativeSafetySentence);
           break;
         case StepType.autre:
-          add("une action. ");
+          add(strings.exerciseNarrativeOtherSentence);
           break;
       }
     }
@@ -162,24 +162,5 @@ class ExerciseSummaryText extends StatelessWidget {
     return spans;
   }
 
-  String _posText(ShootingPosition pos) {
-    return switch (pos) {
-      ShootingPosition.debout => 'debout',
-      ShootingPosition.enMouvement => 'en mouvement',
-      ShootingPosition.genouDroit => 'genou droit',
-      ShootingPosition.genouGauche => 'genou gauche',
-      ShootingPosition.couche => 'couché',
-      ShootingPosition.assis => 'assis',
-      ShootingPosition.autre => 'autre',
-    };
-  }
 
-  String _reloadText(ReloadType? t) {
-    return switch (t) {
-      ReloadType.tactique => 'tactique',
-      ReloadType.urgence => 'd’urgence',
-      ReloadType.aVide => 'à vide',
-      _ => '—',
-    };
-  }
 }

@@ -18,7 +18,7 @@ extension AppStringsAchievements on AppStrings {
       case 'two_hundred_sessions':
         return _pick(fr: 'Pilier du carnet', en: 'Logbook pillar', de: 'Stütze des Schießbuchs', it: 'Pilastro del registro', es: 'Pilar del cuaderno');
       case 'thousand_sessions':
-        return _pick(fr: 'Légende du pas de tir', en: 'Range legend', de: 'Legende des Schießstands', it: 'Leggenda del poligono', es: 'Leyenda del campo');
+        return _pick(fr: 'Légende du pas de tir', en: 'Range legend', de: 'Schießstand-Legende', it: 'Leggenda del poligono', es: 'Leyenda del campo');
       case 'first_weapon':
         return _pick(fr: 'Première arme', en: 'First weapon', de: 'Erste Waffe', it: 'Prima arma', es: 'Primera arma');
       case 'three_weapons':
@@ -40,7 +40,7 @@ extension AppStringsAchievements on AppStrings {
       case 'ten_accessories':
         return _pick(fr: 'Configuration complète', en: 'Full setup', de: 'Komplettausstattung', it: 'Configurazione completa', es: 'Configuración completa');
       case 'first_precision_session':
-        return _pick(fr: 'Première précision mesurée', en: 'First measured precision', de: 'Erste gemessene Präzision', it: 'Prima precisione misurata', es: 'Primera precisión medida');
+        return _pick(fr: 'Première précision mesurée', en: 'First measured precision', de: 'Erste Präzisionsmessung', it: 'Prima precisione misurata', es: 'Primera precisión medida');
       case 'ten_precision_sessions':
         return _pick(fr: 'Œil affûté', en: 'Sharp eye', de: 'Scharfes Auge', it: 'Occhio allenato', es: 'Ojo afilado');
       case 'fifty_precision_sessions':
@@ -50,7 +50,7 @@ extension AppStringsAchievements on AppStrings {
       case 'three_perfect_sessions':
         return _pick(fr: 'Zéro défaut', en: 'Flawless', de: 'Fehlerfrei', it: 'Senza difetti', es: 'Sin fallos');
       case 'ten_perfect_sessions':
-        return _pick(fr: 'Maître de précision', en: 'Master of precision', de: 'Meister der Präzision', it: 'Maestro della precisione', es: 'Maestro de la precisión');
+        return _pick(fr: 'Maître de précision', en: 'Master of precision', de: 'Präzisionsmeister', it: 'Maestro di precisione', es: 'Maestro de precisión');
       case 'first_cleaning':
         return _pick(fr: 'Premier entretien', en: 'First cleaning', de: 'Erste Reinigung', it: 'Prima pulizia', es: 'Primer mantenimiento');
       case 'five_cleanings':
@@ -78,7 +78,7 @@ extension AppStringsAchievements on AppStrings {
       case 'history_extended':
         return _pick(fr: 'Historique riche', en: 'Rich history', de: 'Umfangreiche Historie', it: 'Storico ricco', es: 'Historial rico');
       case 'history_master':
-        return _pick(fr: 'Mémoire d’armurerie', en: 'Armory memory', de: 'Waffenkammer-Gedächtnis', it: 'Memoria d’armeria', es: 'Memoria de armería');
+        return _pick(fr: 'Mémoire d\'armurerie', en: 'Armory memory', de: 'Waffenkammer-Gedächtnis', it: 'Memoria d\'armeria', es: 'Memoria de armería');
       case 'session_editor':
         return _pick(fr: 'Perfectionniste', en: 'Perfectionist', de: 'Perfektionist', it: 'Perfezionista', es: 'Perfeccionista');
       case 'data_builder':
@@ -105,14 +105,14 @@ extension AppStringsAchievements on AppStrings {
       case 'hundred_sessions':
         return _pick(fr: 'Bienvenue dans le club des 100.', en: 'Welcome to the 100 club.', de: 'Willkommen im 100er-Club.', it: 'Benvenuto nel club dei 100.', es: 'Bienvenido al club de los 100.');
       case 'two_hundred_sessions':
-        return _pick(fr: '200 séances : discipline au top.', en: '200 sessions: next-level discipline.', de: '200 Sitzungen: Disziplin auf Top-Niveau.', it: '200 sessioni: disciplina al massimo.', es: '200 sesiones: disciplina al máximo.');
+        return _pick(fr: '200 séances : discipline au top.', en: '200 sessions: next-level discipline.', de: '200 Sitzungen: Spitzendisziplin.', it: '200 sessioni: disciplina al massimo.', es: '200 sesiones: disciplina al máximo.');
       case 'thousand_sessions':
         return _pick(fr: '1 000 séances. Légendaire.', en: '1,000 sessions. Legendary.', de: '1.000 Sitzungen. Legendär.', it: '1.000 sessioni. Leggendario.', es: '1.000 sesiones. Legendario.');
 
       case 'first_weapon':
         return _pick(fr: 'Ajoutez votre première arme au râtelier.', en: 'Add your first weapon to your rack.', de: 'Füge deine erste Waffe hinzu.', it: 'Aggiungi la tua prima arma.', es: 'Añade tu primera arma.');
       case 'three_weapons':
-        return _pick(fr: '3 armes, l’arsenal prend forme.', en: '3 weapons—your arsenal takes shape.', de: '3 Waffen—dein Arsenal nimmt Form an.', it: '3 armi—il tuo arsenale cresce.', es: '3 armas—tu arsenal toma forma.');
+        return _pick(fr: '3 armes, l\'arsenal prend forme.', en: '3 weapons—your arsenal takes shape.', de: '3 Waffen—dein Arsenal nimmt Form an.', it: '3 armi—il tuo arsenale cresce.', es: '3 armas—tu arsenal toma forma.');
       case 'five_weapons':
         return _pick(fr: 'Passez à 5 armes enregistrées.', en: 'Reach 5 registered weapons.', de: 'Erreiche 5 erfasste Waffen.', it: 'Raggiungi 5 armi registrate.', es: 'Alcanza 5 armas registradas.');
       case 'ten_weapons':
@@ -121,7 +121,7 @@ extension AppStringsAchievements on AppStrings {
       case 'first_ammo':
         return _pick(fr: 'Ajoutez votre première munition.', en: 'Add your first ammo reference.', de: 'Füge deine erste Munitionssorte hinzu.', it: 'Aggiungi la tua prima munizione.', es: 'Añade tu primera munición.');
       case 'three_ammos':
-        return _pick(fr: '3 références pour couvrir l’essentiel.', en: '3 ammo types—cover the basics.', de: '3 Munitionssorten—die Basis steht.', it: '3 tipi—hai le basi.', es: '3 tipos—lo esencial.');
+        return _pick(fr: '3 références pour couvrir l\'essentiel.', en: '3 ammo types—cover the basics.', de: '3 Munitionssorten—die Basis steht.', it: '3 tipi—hai le basi.', es: '3 tipos—lo esencial.');
       case 'ten_ammos':
         return _pick(fr: '10 références : stock sérieux.', en: '10 ammo types—serious stock.', de: '10 Sorten—ernsthafter Vorrat.', it: '10 tipi—scorta seria.', es: '10 tipos—reserva seria.');
 
@@ -137,7 +137,7 @@ extension AppStringsAchievements on AppStrings {
       case 'ten_precision_sessions':
         return _pick(fr: '10 séances analysées en précision.', en: '10 sessions measured for precision.', de: '10 Sitzungen mit Präzisionsmessung.', it: '10 sessioni con precisione.', es: '10 sesiones con precisión.');
       case 'fifty_precision_sessions':
-        return _pick(fr: '50 séances : stats qui parlent.', en: '50 sessions—stats that matter.', de: '50 Sitzungen—Aussagekräftige Stats.', it: '50 sessioni—stat che contano.', es: '50 sesiones—estadísticas reales.');
+        return _pick(fr: '50 séances : stats qui parlent.', en: '50 sessions—stats that matter.', de: '50 Sitzungen—Stats, die zählen.', it: '50 sessioni—stat che contano.', es: '50 sesiones—estadísticas reales.');
 
       case 'first_perfect_session':
         return _pick(fr: 'Atteignez 100% de précision sur une séance.', en: 'Hit 100% accuracy on a session.', de: 'Erreiche 100% Präzision in einer Sitzung.', it: 'Fai 100% di precisione in una sessione.', es: 'Logra 100% de precisión en una sesión.');
@@ -153,12 +153,12 @@ extension AppStringsAchievements on AppStrings {
       case 'ten_cleanings':
         return _pick(fr: '10 entretiens, matériel impeccable.', en: '10 cleanings—gear spotless.', de: '10 Reinigungen—Top Zustand.', it: '10 pulizie—attrezzatura perfetta.', es: '10 mantenimientos—equipo impecable.');
       case 'fifty_cleanings':
-        return _pick(fr: '50 entretiens. Machine de guerre.', en: '50 cleanings—war machine.', de: '50 Reinigungen—Kriegsmaschine.', it: '50 pulizie—macchina da guerra.', es: '50 mantenimientos—máquina.');
+        return _pick(fr: '50 entretiens. Machine de guerre.', en: '50 cleanings—war machine.', de: '50 Reinigungen—Kriegsmaschine.', it: '50 pulizie—macchina di guerra.', es: '50 mantenimientos—máquina.');
 
       case 'first_revision':
         return _pick(fr: 'Validez votre première révision.', en: 'Log your first revision.', de: 'Protokolliere deine erste Revision.', it: 'Registra la prima revisione.', es: 'Registra tu primera revisión.');
       case 'five_revisions':
-        return _pick(fr: '5 révisions : sécurité d’abord.', en: '5 revisions—safety first.', de: '5 Revisionen—Sicherheit zuerst.', it: '5 revisioni—sicurezza prima.', es: '5 revisiones—seguridad ante todo.');
+        return _pick(fr: '5 révisions : sécurité d\'abord.', en: '5 revisions—safety first.', de: '5 Revisionen—Sicherheit zuerst.', it: '5 revisioni—sicurezza prima.', es: '5 revisiones—seguridad ante todo.');
       case 'ten_revisions':
         return _pick(fr: '10 révisions : niveau armurier.', en: '10 revisions—gunsmith level.', de: '10 Revisionen—Büchsenmacher-Niveau.', it: '10 revisioni—livello armaiolo.', es: '10 revisiones—nivel armero.');
 
@@ -172,16 +172,16 @@ extension AppStringsAchievements on AppStrings {
         return _pick(fr: '10 000 coups : vétéran.', en: '10,000 rounds—veteran status.', de: '10.000 Schuss—Veteranenstatus.', it: '10.000 colpi—status veterano.', es: '10.000 disparos—veterano.');
 
       case 'history_started':
-        return _pick(fr: 'Ajoutez 10 événements d’historique.', en: 'Add 10 history entries.', de: 'Füge 10 Historie-Einträge hinzu.', it: 'Aggiungi 10 eventi di storico.', es: 'Añade 10 entradas de historial.');
+        return _pick(fr: 'Ajoutez 10 événements d\'historique.', en: 'Add 10 history entries.', de: 'Füge 10 Historie-Einträge hinzu.', it: 'Aggiungi 10 eventi di storico.', es: 'Añade 10 entradas de historial.');
       case 'history_extended':
-        return _pick(fr: 'Atteignez 50 événements d’historique.', en: 'Reach 50 history entries.', de: 'Erreiche 50 Historie-Einträge.', it: 'Raggiungi 50 eventi.', es: 'Alcanza 50 entradas.');
+        return _pick(fr: 'Atteignez 50 événements d\'historique.', en: 'Reach 50 history entries.', de: 'Erreiche 50 Historie-Einträge.', it: 'Raggiungi 50 eventi.', es: 'Alcanza 50 entradas.');
       case 'history_master':
         return _pick(fr: '100 événements : suivi exemplaire.', en: '100 entries—top-tier tracking.', de: '100 Einträge—vorbildliches Tracking.', it: '100 eventi—monitoraggio top.', es: '100 entradas—seguimiento top.');
 
       case 'session_editor':
         return _pick(fr: 'Créez/éditez 20 séances.', en: 'Create/edit 20 sessions.', de: 'Erstelle/bearbeite 20 Sitzungen.', it: 'Crea/modifica 20 sessioni.', es: 'Crea/edita 20 sesiones.');
       case 'data_builder':
-        return _pick(fr: 'Atteignez 20 éléments d’inventaire.', en: 'Reach 20 inventory items.', de: 'Erreiche 20 Inventar-Elemente.', it: 'Raggiungi 20 elementi.', es: 'Alcanza 20 elementos.');
+        return _pick(fr: 'Atteignez 20 éléments d\'inventaire.', en: 'Reach 20 inventory items.', de: 'Erreiche 20 Inventar-Elemente.', it: 'Raggiungi 20 elementi.', es: 'Alcanza 20 elementos.');
       case 'full_ecosystem':
         return _pick(fr: '40 matériels : écosystème complet.', en: '40 items—complete ecosystem.', de: '40 Teile—komplettes Ökosystem.', it: '40 elementi—ecosistema completo.', es: '40 items—ecosistema completo.');
       default:

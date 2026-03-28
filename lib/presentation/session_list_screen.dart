@@ -444,26 +444,25 @@ class _SessionStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         icon,
-        const Gap(8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: (textStyles.labelSmall ?? const TextStyle())
-                  .copyWith(color: colors.secondary),
-            ),
-            Text(
-              value,
-              style: (textStyles.bodySmall ?? const TextStyle()).copyWith(
-                color: colors.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        const Gap(4),
+        Text(
+          label,
+          style: (textStyles.labelSmall ?? const TextStyle())
+              .copyWith(color: colors.secondary),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          value,
+          style: (textStyles.bodySmall ?? const TextStyle()).copyWith(
+            color: colors.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
         ),
       ],
     );

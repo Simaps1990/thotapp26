@@ -80,14 +80,14 @@ extension AppStringsHome on AppStrings {
         fr: 'DIAGNOSTIQUE',
         en: 'DIAGNOSTIC TOOL',
         de: 'DIAGNOSEWERKZEUG',
-        it: 'STRUMENTO DI DIAGNOSTICA',
-        es: 'HERRAMIENTA DE DIAGNOSTICO',
+        it: 'DIAGNOSTICA',
+        es: 'DIAGNÓSTICO',
       );
 
   String get homeDiagnosticSubtitle => _pick(
         fr: 'Identifiez un incident de tir',
         en: 'Identify a firing issue',
-        de: 'Erkennen Sie eine Störung beim Schießen',
+        de: 'Schießstörung erkennen',
         it: 'Identifica un problema di tiro',
         es: 'Identifica una incidencia de tiro',
       );
@@ -351,9 +351,9 @@ extension AppStringsHome on AppStrings {
   String get homeTimerSubtitle => _pick(
         fr: 'Séquences de tir, bip, détection sonore',
         en: 'Shooting sequences, beep and sound detection',
-        de: 'Schussserien, lauter Signalton und Geräuscherkennung',
-        it: 'Sequenze di tiro, bip potente e rilevamento sonoro',
-        es: 'Secuencias de tiro, pitido fuerte y detección de sonido',
+        de: 'Schussserien, Signalton, Geräuscherkennung',
+        it: 'Sequenze di tiro, bip, rilevamento sonoro',
+        es: 'Secuencias de tiro, pitido, detección de sonido',
       );
 
   String get quickActionLabelSession => _pick(
@@ -416,7 +416,7 @@ es: 'NOTIFICACIONES',
   String get notifPanelEmpty => _pick(
 fr: 'Votre carnet de tir est à jour',
 en: 'Your shooting logbook is up to date',
-de: 'Ihr Schießbuch ist auf dem neuesten Stand',
+de: 'Ihr Schießbuch ist aktuell',
 it: 'Il tuo registro di tiro è aggiornato',
 es: 'Tu cuaderno de tiro está al día',
       );
@@ -581,7 +581,7 @@ es: 'Tu cuaderno de tiro está al día',
         fr: 'Me notifier avant expiration',
         en: 'Notify me before expiry',
         de: 'Vor Ablauf benachrichtigen',
-        it: 'Notificami prima della scadenza',
+        it: 'Avvisami prima della scadenza',
         es: 'Notificarme antes del vencimiento',
       );
 

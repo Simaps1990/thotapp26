@@ -608,7 +608,7 @@ es: 'Reiniciar',
         fr: 'Basculer Mode Nuit',
         en: 'Toggle dark mode',
         de: 'Dunkelmodus umschalten',
-        it: 'Attiva/disattiva modalità scura',
+        it: 'Attiva/disattiva tema scuro',
         es: 'Alternar modo oscuro',
       );
 
@@ -1532,9 +1532,9 @@ es: 'Ej.: club de tiro de la ciudad',
   String get shotsFiredLabel => _pick(
         fr: 'Coups tirés',
         en: 'Shots fired',
-        de: 'Abgegebene Schüsse',
+        de: 'Schüsse',
         it: 'Colpi sparati',
-        es: 'Disparos realizados',
+        es: 'Disparos',
       );
 
   String get shotsCountLabel => _pick(
@@ -3254,8 +3254,8 @@ String get weatherUsageExplanation => _pick(
         fr: 'OUTIL DE DIAGNOSTIQUE',
         en: 'DIAGNOSTIC TOOL',
         de: 'DIAGNOSEWERKZEUG',
-        it: 'STRUMENTO DI DIAGNOSTICA',
-        es: 'HERRAMIENTA DE DIAGNÓSTICO',
+        it: 'DIAGNOSTICA',
+        es: 'DIAGNÓSTICO',
       );
 
   String get diagnosticNew => _pick(
@@ -3694,7 +3694,7 @@ es: 'Documentos',
         fr: 'OPTIONS DE SUIVI',
         en: 'TRACKING OPTIONS',
         de: 'NACHVERFOLGUNGSOPTIONEN',
-        it: 'OPZIONI DI MONITORAGGIO',
+        it: 'OPZIONI DI TRACCIAMENTO',
         es: 'OPCIONES DE SEGUIMIENTO',
       );
 
@@ -3789,7 +3789,7 @@ es: 'Fecha del último reemplazo',
   String get accessoryWearTrackingLabel => _pick(
         fr: 'Suivi d\'usure de l\'accessoire',
         en: 'Accessory wear tracking',
-        de: 'Verschleißüberwachung des Zubehörs',
+        de: 'Zubehörverschleiß-Tracking',
         it: 'Monitoraggio usura accessorio',
         es: 'Seguimiento de desgaste del accesorio',
       );
@@ -3797,7 +3797,7 @@ es: 'Fecha del último reemplazo',
   String get weaponWearTrackingLabel => _pick(
 fr: 'Suivi de l’usure de l’arme',
 en: 'Weapon wear monitoring',
-de: 'Überwachung des Waffenverschleißes',
+de: 'Waffenverschleiß-Tracking',
 it: 'Monitoraggio usura arma',
 es: 'Monitoreo del desgaste del arma',
       );
@@ -3829,7 +3829,7 @@ es: 'Seguimiento de la suciedad del arma',
   String get weaponCleaningTrackingLabel => _pick(
 fr: 'Suivi de l’encrassement de l’arme',
 en: 'Weapon fouling monitoring',
-de: 'Überwachung der Waffenverschmutzung',
+de: 'Waffenverschmutzung-Tracking',
 it: 'Monitoraggio dello sporco dell\'arma',
 es: 'Monitoreo de la suciedad del arma',
       );
@@ -3845,7 +3845,7 @@ es: 'Suciedad y mantenimiento',
   String get weaponRoundCounterLabel => _pick(
 fr: 'Suivi du compteur de coups',
 en: 'Shot counter monitoring',
-de: 'Überwachung des Schusszählers',
+de: 'Schusszähler-Tracking',
 it: 'Monitoraggio contatore colpi',
 es: 'Monitoreo del contador de disparos',
       );

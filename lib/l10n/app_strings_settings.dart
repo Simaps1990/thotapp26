@@ -70,10 +70,10 @@ extension AppStringsSettings on AppStrings {
 
   String get darkModeSubtitle => _pick(
         fr: 'Adaptation visuelle automatique',
-        en: 'Automatic appearance adjustment',
+        en: 'Auto appearance',
         de: 'Automatische Anzeigeanpassung',
-        it: 'Adattamento automatico dell’aspetto',
-        es: 'Ajuste automático de la apariencia',
+        it: 'Adattamento visivo automatico',
+        es: 'Adaptación visual automática',
       );
 
   String get appLanguageLabel => _pick(
@@ -199,9 +199,9 @@ es: "Los datos se almacenan y se protegen únicamente en el dispositivo. La copi
   String get proYearlyOfferSubtitle => _pick(
         fr: 'Le plus avantageux',
         en: 'Best value',
-        de: 'Am vorteilhaftesten',
+        de: 'Bestes Angebot',
         it: 'Il più vantaggioso',
-        es: 'La opción más ventajosa',
+        es: 'La más ventajosa',
       );
 
   String get proMonthlyOfferTitle => _pick(
@@ -398,16 +398,16 @@ es: 'Ideal para imprimir tu cuaderno de tiro.',      );
   String get proBenefitUnlimitedDocumentsTitle => _pick(
 fr: 'Ajout de documents illimité',
 en: 'Unlimited document addition',
-de: 'Unbegrenztes Hinzufügen von Dokumenten',
-it: 'Aggiunta illimitata di documenti',
-es: 'Adición ilimitada de documentos',
+de: 'Unbegrenzte Dokumente',
+it: 'Documenti illimitati',
+es: 'Documentos ilimitados',
       );
 
   String get proBenefitUnlimitedSessionsSubtitle => _pick(
 fr: 'Création de séances et matériel sans restriction.',
 en: 'Unlimited sessions and equipment creation.',
-de: 'Unbegrenzte Erstellung von Sitzungen und Ausrüstung.',
-it: 'Creazione illimitata di sessioni e attrezzatura.',
+de: 'Sitzungen und Ausrüstung ohne Limit.',
+it: 'Sessioni e attrezzatura senza limiti.',
 es: 'Creación ilimitada de sesiones y equipo.',
       );
 
@@ -423,7 +423,7 @@ es: 'Desbloquea todos los modos de temporizador.',
   String get proBenefitDiagnosticSubtitle => _pick(
 fr: "Aide à l'identification d'incidents de tir.",
 en: 'Assistance in identifying shooting incidents.',
-de: 'Unterstützung bei der Identifizierung von Schießstörungen.',
+de: 'Schießstörungen erkennen und analysieren.',
 it: 'Aiuto nell’identificazione degli incidenti di tiro.',
 es: 'Ayuda para identificar incidentes de tiro.',
       );
@@ -542,7 +542,7 @@ es: 'Sin límites.',
         en: 'Email',
         de: 'E-Mail',
         it: 'Email',
-        es: 'Correo electrónico',
+        es: 'Email',
       );
 
   String get settingsProfileUpdatedSnack => _pick(
@@ -675,7 +675,7 @@ es: 'Sin límites.',
   String get settingsDocumentsEmptySubtitle => _pick(
         fr: 'Ajoutez vos documents officiels\n(permis, licences, etc.)',
         en: 'Add your official documents\n(licenses, permits, etc.)',
-        de: 'Fügen Sie Ihre offiziellen Dokumente hinzu\n(Lizenzen, Genehmigungen usw.)',
+        de: 'Offizielle Dokumente hinzufügen\n(Lizenzen, Genehmigungen usw.)',
         it: 'Aggiungi i tuoi documenti ufficiali\n(licenze, permessi, ecc.)',
         es: 'Añade tus documentos oficiales\n(licencias, permisos, etc.)',
       );
