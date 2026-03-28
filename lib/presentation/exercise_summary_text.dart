@@ -59,17 +59,27 @@ class ExerciseSummaryText extends StatelessWidget {
 
     for (int i = 0; i < steps.length; i++) {
       final s = steps[i];
-      final connector = i == 0
-          ? ''
-          : (i == steps.length - 1
-              ? strings.exerciseNarrativeFinally
-              : strings.exerciseNarrativeThen);
-      add(connector);
+
+      // New line and connector (Puis / Pour finir, ...) for steps after the first.
+      if (i == 0) {
+        // First step stays on the same line as the intro.
+      } else {
+        spans.add(const TextSpan(text: '\n'));
+        final connector = i == steps.length - 1
+            ? strings.exerciseNarrativeFinally
+            : strings.exerciseNarrativeThen;
+        add(connector);
+      }
 
       switch (s.type) {
         case StepType.deplacement:
-          add('par un déplacement de ');
-          addBold(s.distanceM == null ? '—' : '${s.distanceM} m');
+          add('un déplacement ');
+          if (s.distanceM != null) {
+            add("jusqu'à ");
+            addBold('${s.distanceM} m');
+          } else {
+            addBold('—');
+          }
           if (s.position != null) {
             add(' ');
             add(_posText(s.position!));
@@ -83,7 +93,7 @@ class ExerciseSummaryText extends StatelessWidget {
             add(_posText(s.position!));
           }
           if ((s.target ?? '').trim().isNotEmpty) {
-            add(' sur ');
+            add(' sur la cible ');
             addBold(s.target!.trim());
           }
           if (s.distanceM != null) {
@@ -93,20 +103,20 @@ class ExerciseSummaryText extends StatelessWidget {
           add('.');
           break;
         case StepType.tir:
-          add('le tireur engage avec ');
+          add('le tireur engage ');
           addBold('${s.shots ?? 0} coups');
           if (s.distanceM != null) {
             add(' à ');
             addBold('${s.distanceM} m');
           }
           if ((s.target ?? '').trim().isNotEmpty) {
-            add(' sur ');
+            add(' sur la cible ');
             addBold(s.target!.trim());
           }
           add('.');
           break;
         case StepType.rechargement:
-          add('un rechargement ');
+          add('il effectue un rechargement ');
           addBold(_reloadText(s.reloadType));
           add('.');
           break;
@@ -125,6 +135,10 @@ class ExerciseSummaryText extends StatelessWidget {
         case StepType.attente:
           add('une attente de ');
           addBold(s.durationSeconds == null ? '—' : '${s.durationSeconds} s');
+          if (s.distanceM != null) {
+            add(' à ');
+            addBold('${s.distanceM} m');
+          }
           if ((s.trigger ?? '').trim().isNotEmpty) {
             add(' (');
             addBold(s.trigger!.trim());

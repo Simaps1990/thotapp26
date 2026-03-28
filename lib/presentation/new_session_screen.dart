@@ -3083,7 +3083,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                         ),
                       ),
                       child: Text(
-                        'AUTO',
+                        strings.exerciseAutoBadge,
                         style: textStyles.labelSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: colors.onPrimary,
@@ -4556,6 +4556,12 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                       controller: _durationController,
                       keyboardType: TextInputType.number,
                       decoration: decoration('${strings.exerciseFieldDuration} (s)${strings.exerciseOptionalHint}'),
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _distanceController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration('${strings.exerciseFieldDistance} (m)${strings.exerciseOptionalHint}'),
                     ),
                     const Gap(10),
                     TextField(

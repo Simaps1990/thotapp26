@@ -102,19 +102,38 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
                               color: colors.outline,
                             ),
                             const Gap(10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Expanded(
-                                  child: _InfoCell(label: config.info1Label, value: config.info1Value),
-                                ),
-                                Expanded(
-                                  child: _InfoCell(label: config.info2Label, value: config.info2Value),
-                                ),
-                                Expanded(
-                                  child: _InfoCell(label: config.info3Label, value: config.info3Value),
-                                ),
-                              ],
+                            Builder(
+                              builder: (context) {
+                                final cells = <Widget>[];
+
+                                if (config.info1Value.trim().isNotEmpty) {
+                                  cells.add(_InfoCell(
+                                    label: config.info1Label,
+                                    value: config.info1Value,
+                                  ));
+                                }
+                                if (config.info2Value.trim().isNotEmpty) {
+                                  cells.add(_InfoCell(
+                                    label: config.info2Label,
+                                    value: config.info2Value,
+                                  ));
+                                }
+                                if (config.info3Value.trim().isNotEmpty) {
+                                  cells.add(_InfoCell(
+                                    label: config.info3Label,
+                                    value: config.info3Value,
+                                  ));
+                                }
+
+                                if (cells.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: cells,
+                                );
+                              },
                             ),
                             if ((step.comment ?? '').trim().isNotEmpty) ...[
                               const Gap(10),
@@ -163,29 +182,31 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
               ],
             ),
           ),
-          Positioned(
-            left: 4,
-            top: 0,
-            bottom: 0,
-            child: _ArrowButton(
-              enabled: _index > 0,
-              icon: Icons.chevron_left_rounded,
-              onPressed: () => _controller.previousPage(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: _ArrowButton(
+                enabled: _index > 0,
+                icon: Icons.chevron_left_rounded,
+                onPressed: () => _controller.previousPage(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOut,
+                ),
               ),
             ),
           ),
-          Positioned(
-            right: 4,
-            top: 0,
-            bottom: 0,
-            child: _ArrowButton(
-              enabled: _index < widget.steps.length - 1,
-              icon: Icons.chevron_right_rounded,
-              onPressed: () => _controller.nextPage(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _ArrowButton(
+                enabled: _index < widget.steps.length - 1,
+                icon: Icons.chevron_right_rounded,
+                onPressed: () => _controller.nextPage(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOut,
+                ),
               ),
             ),
           ),
@@ -320,11 +341,11 @@ class _StepUiConfig {
           subtitle: positionText,
           color: colors.error,
           info1Label: strings.exerciseFieldShots,
-          info1Value: (step.shots ?? 0).toString(),
+          info1Value: step.shots?.toString() ?? '',
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '—' : '${step.distanceM} m',
+          info2Value: step.distanceM == null ? '' : '${step.distanceM} m',
           info3Label: strings.exerciseFieldTarget,
-          info3Value: targetText.isEmpty ? '—' : targetText,
+          info3Value: targetText,
         );
       case StepType.deplacement:
         return _StepUiConfig(
@@ -333,9 +354,9 @@ class _StepUiConfig {
           subtitle: positionText,
           color: colors.primary,
           info1Label: strings.exerciseFieldDistance,
-          info1Value: step.distanceM == null ? '—' : '${step.distanceM} m',
+          info1Value: step.distanceM == null ? '' : '${step.distanceM} m',
           info2Label: '',
-          info2Value: '—',
+          info2Value: '',
           info3Label: '',
           info3Value: '',
         );
@@ -346,7 +367,9 @@ class _StepUiConfig {
           subtitle: positionText,
           color: LightColors.warning,
           info1Label: strings.exerciseFieldReloadType,
-          info1Value: step.reloadType == null ? '—' : strings.exerciseReloadTypeLabel(step.reloadType!),
+          info1Value: step.reloadType == null
+              ? ''
+              : strings.exerciseReloadTypeLabel(step.reloadType!),
           info2Label: '',
           info2Value: '',
           info3Label: '',
@@ -359,9 +382,9 @@ class _StepUiConfig {
           subtitle: positionText,
           color: LightColors.transitionViolet,
           info1Label: strings.exerciseFieldWeaponFrom,
-          info1Value: weaponFromText.isEmpty ? '—' : weaponFromText,
+          info1Value: weaponFromText,
           info2Label: strings.exerciseFieldWeaponTo,
-          info2Value: weaponToText.isEmpty ? '—' : weaponToText,
+          info2Value: weaponToText,
           info3Label: '',
           info3Value: '',
         );
@@ -372,9 +395,9 @@ class _StepUiConfig {
           subtitle: positionText,
           color: colors.primary,
           info1Label: strings.exerciseFieldTarget,
-          info1Value: targetText.isEmpty ? '—' : targetText,
+          info1Value: targetText,
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '—' : '${step.distanceM} m',
+          info2Value: step.distanceM == null ? '' : '${step.distanceM} m',
           info3Label: '',
           info3Value: '',
         );
@@ -385,11 +408,12 @@ class _StepUiConfig {
           subtitle: positionText,
           color: LightColors.waitTeal,
           info1Label: strings.exerciseFieldDuration,
-          info1Value: step.durationSeconds == null ? '—' : '${step.durationSeconds} s',
-          info2Label: strings.exerciseFieldTrigger,
-          info2Value: triggerText.isEmpty ? '—' : triggerText,
-          info3Label: '',
-          info3Value: '',
+          info1Value:
+              step.durationSeconds == null ? '' : '${step.durationSeconds} s',
+          info2Label: strings.exerciseFieldDistance,
+          info2Value: step.distanceM == null ? '' : '${step.distanceM} m',
+          info3Label: strings.exerciseFieldTrigger,
+          info3Value: triggerText,
         );
       case StepType.securite:
         return _StepUiConfig(

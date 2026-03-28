@@ -50,19 +50,19 @@ extension AppStringsExerciseSteps on AppStrings {
       );
 
   String get exerciseAutoBadge => _pick(
-        fr: 'AUTO',
-        en: 'AUTO',
-        de: 'AUTO',
-        it: 'AUTO',
-        es: 'AUTO',
+        fr: 'TOTAL',
+        en: 'TOTAL',
+        de: 'TOTAL',
+        it: 'TOTAL',
+        es: 'TOTAL',
       );
 
   String exerciseAutoTotals(int totalShots, int stepCount, int maxDistance, String distanceUnit) => _pick(
-        fr: 'Total : $totalShots coups · $stepCount étapes · $maxDistance $distanceUnit',
-        en: 'Total: $totalShots shots · $stepCount steps · $maxDistance $distanceUnit',
-        de: 'Gesamt: $totalShots Schuss · $stepCount Schritte · $maxDistance $distanceUnit',
-        it: 'Totale: $totalShots colpi · $stepCount fasi · $maxDistance $distanceUnit',
-        es: 'Total: $totalShots disparos · $stepCount pasos · $maxDistance $distanceUnit',
+        fr: '$totalShots coups · $stepCount étapes',
+        en: '$totalShots shots · $stepCount steps',
+        de: '$totalShots Schuss · $stepCount Schritte',
+        it: '$totalShots colpi · $stepCount fasi',
+        es: '$totalShots disparos · $stepCount pasos',
       );
 
   String get exerciseNewStepTitle => _pick(
@@ -235,26 +235,26 @@ extension AppStringsExerciseSteps on AppStrings {
       );
 
   String get exerciseNarrativeIntro => _pick(
-        fr: "L'exercice débute ",
-        en: 'The drill starts ',
-        de: 'Die Übung beginnt ',
-        it: "L'esercizio inizia ",
-        es: 'El ejercicio comienza ',
+        fr: "L'exercice débute par ",
+        en: 'The drill starts with ',
+        de: 'Die Übung beginnt mit ',
+        it: "L'esercizio inizia con ",
+        es: 'El ejercicio comienza con ',
       );
 
   String get exerciseNarrativeThen => _pick(
-        fr: ' puis ',
-        en: ' then ',
-        de: ' dann ',
-        it: ' poi ',
-        es: ' luego ',
+        fr: 'Puis ',
+        en: 'Then ',
+        de: 'Dann ',
+        it: 'Poi ',
+        es: 'Luego ',
       );
 
   String get exerciseNarrativeFinally => _pick(
-        fr: ' pour finir, ',
-        en: ' finally, ',
-        de: ' zum Schluss, ',
-        it: ' infine, ',
-        es: ' por último, ',
+        fr: 'Pour finir, ',
+        en: 'Finally, ',
+        de: 'Zum Schluss, ',
+        it: 'Infine, ',
+        es: 'Por último, ',
       );
 }
