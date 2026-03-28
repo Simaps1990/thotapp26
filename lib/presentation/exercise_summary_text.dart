@@ -11,7 +11,7 @@ final List<ExerciseStep> steps;
   const ExerciseSummaryText({super.key, required this.steps, required this.useMetric});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { 
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);

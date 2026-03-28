@@ -1012,6 +1012,7 @@ strings.exerciseAutoTotals(
             ),
           ),
 
+
           if (exercise.observations.trim().isNotEmpty) ...[
             const Gap(AppSpacing.md),
             Text(strings.observationsTitle, style: textStyles.labelSmall?.copyWith(color: colors.secondary, fontWeight: FontWeight.w700)),
