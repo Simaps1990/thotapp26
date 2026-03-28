@@ -40,7 +40,7 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
     if (widget.steps.isEmpty) return const SizedBox.shrink();
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 220),
+      constraints: const BoxConstraints(minHeight: 0),
       child: Stack(
         children: [
           Container(
