@@ -1,7 +1,7 @@
 name: thot
 description: "THOT est un carnet de tir numérique pour organiser vos séances, votre matériel et vos statistiques en toute simplicité."
 publish_to: "none"
-version: 1.0.4+5
+version: 1.0.7+7
 
 environment:
   sdk: ^3.6.0

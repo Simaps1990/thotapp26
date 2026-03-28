@@ -2,8 +2,9 @@
 <!-- Modify this file to customize your launch splash screen -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Fond sombre aligné sur le splash Flutter (0xFF05070B) -->
-    <item android:drawable="#FF05070B" />
-
+<item>
+    <color android:color="#FF05070B" />
+</item>
     <!-- You can insert your own image assets here -->
     <!-- <item>
         <bitmap
