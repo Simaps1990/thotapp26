@@ -1,0 +1,22 @@
+# Build output
+build/
+
+# Dart tool cache
+.dart_tool/
+
+# Flutter generated
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Flutter launcher icons (généré depuis ton pubspec)
+flutter_launcher_icons/
+
+# Fichiers de couverture de tests
+coverage/
+
+# IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
