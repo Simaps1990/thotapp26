@@ -814,12 +814,28 @@ es: 'Reiniciar',
         es: 'Función Pro',
       );
 
+  String get dataPrivacyLabel => _pick(
+        fr: 'Données & confidentialité',
+        en: 'Data & privacy',
+        de: 'Daten & Datenschutz',
+        it: 'Dati & privacy',
+        es: 'Datos y privacidad',
+      );
+
+  String get dataPrivacySubtitle => _pick(
+        fr: 'Chiffrement AES-256 · Zéro serveur · 100% local',
+        en: 'AES-256 encryption · Zero server · 100% local',
+        de: 'AES-256-Verschlüsselung · Kein Server · 100% lokal',
+        it: 'Crittografia AES-256 · Zero server · 100% locale',
+        es: 'Cifrado AES-256 · Sin servidor · 100% local',
+      );
+
   String get aboutLabel => _pick(
         fr: 'À propos & confidentialité',
         en: 'About & privacy',
         de: 'Über & Datenschutz',
-        it: 'Info & privacy',
-        es: 'Acerca de & privacidad',
+        it: 'Informazioni & privacy',
+        es: 'Acerca de y privacidad',
       );
 
   String get aboutSubtitle => _pick(

@@ -503,6 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
+  
 
   Widget _buildTemplateButton({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
     final strings = AppStrings.of(context);
