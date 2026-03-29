@@ -74,12 +74,12 @@ class AppStrings {
         es: '100% Sin conexión y seguro',
       );
 
-  String get onboardingDescription2 => _pick(
-        fr: 'Vos données vous appartiennent. Aucune information n\'est envoyée à l\'extérieur, tout est chiffré et stocké localement sur votre appareil.',
-        en: 'Your data belongs to you. Nothing is sent outside; everything is encrypted and stored locally on your device.',
-        de: 'Ihre Daten gehören Ihnen. Nichts wird nach außen gesendet; alles wird lokal auf Ihrem Gerät verschlüsselt gespeichert.',
-        it: 'I tuoi dati ti appartengono. Nessuna informazione viene inviata all\'esterno; tutto è crittografato e archiviato localmente sul tuo dispositivo.',
-        es: 'Tus datos te pertenecen. Nada se envía al exterior; todo se cifra y se almacena localmente en tu dispositivo.',
+String get onboardingDescription2 => _pick(
+        fr: 'Vos données ne quittent jamais votre appareil. Aucun serveur, aucun compte, aucune fuite possible — tout est chiffré localement avec AES-256 et protégé par votre code PIN ou votre biométrie.',
+        en: 'Your data never leaves your device. No server, no account, no possible leak — everything is encrypted locally with AES-256 and protected by your PIN or biometrics.',
+        de: 'Ihre Daten verlassen Ihr Gerät nie. Kein Server, kein Konto, kein möglicher Datenverlust — alles wird lokal mit AES-256 verschlüsselt und durch Ihre PIN oder Biometrie geschützt.',
+        it: 'I tuoi dati non lasciano mai il dispositivo. Nessun server, nessun account, nessuna fuga possibile — tutto è cifrato localmente con AES-256 e protetto dal tuo PIN o dalla tua biometria.',
+        es: 'Tus datos nunca salen de tu dispositivo. Sin servidor, sin cuenta, sin posible fuga — todo está cifrado localmente con AES-256 y protegido por tu PIN o biometría.',
       );
 
   String get onboardingTitle3 => _pick(

@@ -535,43 +535,43 @@ LocationSettings _buildLocationSettings() {
     required ThotProvider provider,
   }) {
     return [
-      // Exercises Section
+
+  // Exercises Section
+      _SectionHeader(
+        leading: SvgPicture.asset(
+          'assets/images/train.svg',
+          width: 18,
+          height: 18,
+          colorFilter: ColorFilter.mode(
+            colors.primary,
+            BlendMode.srcIn,
+          ),
+        ),
+        title: strings.exercisesSectionTitle,
+      ),
+      const Gap(AppSpacing.sm),
       Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _SectionHeader(
-            leading: SvgPicture.asset(
-              'assets/images/train.svg',
-              width: 18,
-              height: 18,
-              colorFilter: ColorFilter.mode(
-                colors.primary,
-                BlendMode.srcIn,
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: _addExercise,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(strings.createExerciseButton),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
             ),
-            title: strings.exercisesSectionTitle,
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FilledButton.icon(
-                onPressed: _addExercise,
-                icon: const Icon(Icons.add, size: 18),
-                label: Text(strings.createExerciseButton),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
+          const Gap(8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _importExerciseFromTemplate,
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: Text(strings.importExerciseButton),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              const Gap(8),
-              OutlinedButton.icon(
-                onPressed: _importExerciseFromTemplate,
-                icon: const Icon(Icons.download_rounded, size: 18),
-                label: Text(strings.importExerciseButton),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
