@@ -818,6 +818,148 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class _TemplateManagerScreen extends StatefulWidget {
+  const _TemplateManagerScreen();
+
+  @override
+  State<_TemplateManagerScreen> createState() => _TemplateManagerScreenState();
+}
+
+class _TemplateManagerScreenState extends State<_TemplateManagerScreen> {
+  String _search = '';
+  bool _sortByName = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<ThotProvider>(context);
+    final strings = AppStrings.of(context);
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    var templates = provider.exerciseTemplates.toList();
+    if (_search.isNotEmpty) {
+      templates = templates
+          .where((t) => t.name.toLowerCase().contains(_search.toLowerCase()))
+          .toList();
+    }
+    if (_sortByName) {
+      templates.sort((a, b) => a.name.compareTo(b.name));
+    } else {
+      templates.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 12),
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: colors.outline,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const Gap(AppSpacing.md),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.homeTemplateTitle,
+                  style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => setState(() => _sortByName = !_sortByName),
+                icon: Icon(
+                  _sortByName ? Icons.sort_by_alpha : Icons.access_time_rounded,
+                  size: 16,
+                ),
+                label: Text(
+                  _sortByName ? strings.achievementsSortOldest : strings.achievementsSortRecent,
+                  style: textStyles.labelSmall,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: strings.searchEllipsis,
+              prefixIcon: const Icon(Icons.search_rounded, size: 18),
+              isDense: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+            onChanged: (v) => setState(() => _search = v),
+          ),
+        ),
+        const Gap(AppSpacing.md),
+        Expanded(
+          child: templates.isEmpty
+              ? Center(
+                  child: Text(
+                    strings.noTemplatesAvailable,
+                    style: textStyles.bodyMedium?.copyWith(color: colors.outline),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  itemCount: templates.length,
+                  itemBuilder: (_, i) {
+                    final t = templates[i];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        title: Text(
+                          t.name,
+                          style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          t.detailedMode
+                              ? '${t.steps?.length ?? 0} étapes · ${t.createdAt.day}/${t.createdAt.month}/${t.createdAt.year}'
+                              : '${t.shotsFired} coups · ${t.distance} m · ${t.createdAt.day}/${t.createdAt.month}/${t.createdAt.year}',
+                          style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          color: colors.error,
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text(strings.templateDeleteConfirmTitle),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: Text(strings.cancel),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () {
+                                      provider.deleteExerciseTemplate(t.id);
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: Text(strings.actionDelete),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
 class _HomeStandardActionCard extends StatelessWidget {
   final Widget leading;
   final String title;
