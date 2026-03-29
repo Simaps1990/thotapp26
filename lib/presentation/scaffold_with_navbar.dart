@@ -1,4 +1,4 @@
-import 'dart:ui' show ImageFilter;
+﻿import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -41,7 +41,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
           ),
           surfaceTintColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           height: 74,
           labelPadding: const EdgeInsets.only(top: 1),
           iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
@@ -55,7 +55,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                     ? LightColors.iconActive
                     : LightColors.iconInactive;
               }
-              return IconThemeData(color: color, size: 24);
+              return IconThemeData(color: color, size: 28);
             },
           ),
           labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>(
@@ -187,3 +187,4 @@ class _NavSvgIcon extends StatelessWidget {
     );
   }
 }
+

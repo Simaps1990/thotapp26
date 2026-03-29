@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -80,7 +80,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
   }
 
   Duration _currentDisplayDuration() {
-    // Avant le démarrage du timer, on affiche toujours la valeur configurée.
+    // Avant le dÃ©marrage du timer, on affiche toujours la valeur configurÃ©e.
     if (!_running && !_finished && !_paused) {
       switch (_mode) {
         case _TimerMode.simple:
@@ -89,17 +89,17 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
         case _TimerMode.startAndShots:
           return _startDelay;
         case _TimerMode.parTime:
-          // L'utilisateur voit le délai avant départ.
+          // L'utilisateur voit le dÃ©lai avant dÃ©part.
           return _startDelay;
         case _TimerMode.repeat:
-          // Pour les répétitions, on affiche aussi le délai avant départ.
+          // Pour les rÃ©pÃ©titions, on affiche aussi le dÃ©lai avant dÃ©part.
           return _startDelay;
       }
     }
 
-    // Modes "réaction au bip" (startAndMic) et "chaque coup compte" (startAndShots) :
-    // - avant le bip: _remaining sert de compte à rebours descendant
-    // - après le bip (_actionStarted = true): le grand compteur affiche le temps
+    // Modes "rÃ©action au bip" (startAndMic) et "chaque coup compte" (startAndShots) :
+    // - avant le bip: _remaining sert de compte Ã  rebours descendant
+    // - aprÃ¨s le bip (_actionStarted = true): le grand compteur affiche le temps
     //   montant du Stopwatch.
     if ((_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) &&
         _actionStarted) {
@@ -109,18 +109,18 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
 
     if (_mode == _TimerMode.parTime) {
       // Pour le par time en cours de fonctionnement, on affiche :
-      // - le délai initial en décompte descendant
-      // - puis la fenêtre de tir en compteur montant.
+      // - le dÃ©lai initial en dÃ©compte descendant
+      // - puis la fenÃªtre de tir en compteur montant.
       final total = _startDelay + _parTime;
       final rawElapsed = total - _remaining;
       final elapsed = rawElapsed < Duration.zero
           ? Duration.zero
           : (rawElapsed > total ? total : rawElapsed);
       if (elapsed < _startDelay) {
-        // Toujours dans le délai initial : on montre le temps restant.
+        // Toujours dans le dÃ©lai initial : on montre le temps restant.
         return _startDelay - elapsed;
       } else {
-        // Dans la fenêtre de tir : temps écoulé depuis le début de la fenêtre.
+        // Dans la fenÃªtre de tir : temps Ã©coulÃ© depuis le dÃ©but de la fenÃªtre.
         final rawWindowElapsed = elapsed - _startDelay;
         final windowElapsed = rawWindowElapsed < Duration.zero
             ? Duration.zero
@@ -337,7 +337,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
           }
           if (next <= Duration.zero) {
             _remaining = Duration.zero;
-            // Fin d'un compte à rebours (délai initial ou cycle)
+            // Fin d'un compte Ã  rebours (dÃ©lai initial ou cycle)
             _fireEvent(
               playSound: !_zeroBeepFired,
               vibrate: true,
@@ -346,8 +346,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
             _zeroBeepFired = true;
 
             if (_repeatInInitialDelay) {
-              // On vient de finir le délai avant départ : entrer dans le
-              // cycle de répétitions.
+              // On vient de finir le dÃ©lai avant dÃ©part : entrer dans le
+              // cycle de rÃ©pÃ©titions.
               _repeatInInitialDelay = false;
               _currentRepetition = 0;
               _remaining = _cycleDuration;
@@ -356,7 +356,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
             }
             // On vient de terminer un cycle.
             if (_currentRepetition < _repetitions) {
-              // Il reste des répétitions à effectuer : on relance un cycle.
+              // Il reste des rÃ©pÃ©titions Ã  effectuer : on relance un cycle.
               _currentRepetition += 1;
               _remaining = _cycleDuration;
               _zeroBeepFired = false;
@@ -373,13 +373,13 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
         }
 
         // Random delay mode :
-        // 1) décompte de départ (_startDelay), à zéro : bip+vibration+flash
-        // 2) décompte aléatoire entre 50% et 100% de _randomBase, à zéro :
-        //    bip+vibration+flash puis arrêt complet.
+        // 1) dÃ©compte de dÃ©part (_startDelay), Ã  zÃ©ro : bip+vibration+flash
+        // 2) dÃ©compte alÃ©atoire entre 50% et 100% de _randomBase, Ã  zÃ©ro :
+        //    bip+vibration+flash puis arrÃªt complet.
         if (_mode == _TimerMode.randomDelay) {
           final next = _remaining - const Duration(milliseconds: 100);
           if (!_actionStarted) {
-            // Phase 1 : décompte avant départ
+            // Phase 1 : dÃ©compte avant dÃ©part
             if (!_zeroBeepFired && next <= _beepLead && next > Duration.zero) {
               _zeroBeepFired = true;
               _fireLeadBeepOnly();
@@ -388,7 +388,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
               _remaining = Duration.zero;
               _actionStarted = true;
 
-              // Arrivée à zéro : bip + vibration + flash
+              // ArrivÃ©e Ã  zÃ©ro : bip + vibration + flash
               _fireEvent(
                 playSound: !_zeroBeepFired,
                 vibrate: true,
@@ -396,7 +396,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
               );
               _zeroBeepFired = true;
 
-              // Phase 2 : démarrer le délai aléatoire entre 50% et 100% de _randomBase
+              // Phase 2 : dÃ©marrer le dÃ©lai alÃ©atoire entre 50% et 100% de _randomBase
               final baseMs = _randomBase.inMilliseconds;
               final minMs = (baseMs * 0.5).round();
               final maxMs = baseMs;
@@ -407,7 +407,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
               _remaining = next;
             }
           } else {
-            // Phase 2 : décompte aléatoire
+            // Phase 2 : dÃ©compte alÃ©atoire
             if (!_zeroBeepFired && next <= _beepLead && next > Duration.zero) {
               _zeroBeepFired = true;
               _fireLeadBeepOnly();
@@ -415,7 +415,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
             if (next <= Duration.zero) {
               _remaining = Duration.zero;
 
-              // Fin du délai aléatoire : bip + vibration + flash puis stop
+              // Fin du dÃ©lai alÃ©atoire : bip + vibration + flash puis stop
               _fireEvent(
                 playSound: !_zeroBeepFired,
                 vibrate: true,
@@ -469,12 +469,12 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
   }
 
   Future<void> _fireEvent({required bool playSound, required bool vibrate, required bool flash}) async {
-    // Feedback visuel immédiat.
+    // Feedback visuel immÃ©diat.
     if (flash) {
       _triggerFlashHighlight();
     }
 
-    // Son : bip court dédié au timer, basé sur Timercut.wav préchargé.
+    // Son : bip court dÃ©diÃ© au timer, basÃ© sur Timercut.wav prÃ©chargÃ©.
     if (playSound && _soundEnabled) {
       () async {
         try {
@@ -483,7 +483,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
       }();
     }
 
-    // Vibration en tâche de fond.
+    // Vibration en tÃ¢che de fond.
     if (vibrate && _vibrationEnabled) {
       () async {
         try {
@@ -538,7 +538,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
     setState(() {
       _running = false;
       _paused = true;
-      // On ne marque pas comme terminé : on fige l'état courant.
+      // On ne marque pas comme terminÃ© : on fige l'Ã©tat courant.
     });
     _shotStopwatch.stop();
   }
@@ -551,8 +551,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
       _paused = false;
     });
 
-    // Si on était en mode "réaction" et que l'action a démarré (après le bip),
-    // on relance le stopwatch + l'écoute micro, mais on ne touche pas à _remaining.
+    // Si on Ã©tait en mode "rÃ©action" et que l'action a dÃ©marrÃ© (aprÃ¨s le bip),
+    // on relance le stopwatch + l'Ã©coute micro, mais on ne touche pas Ã  _remaining.
     if ((_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) &&
         _actionStarted) {
       if (!_shotStopwatch.isRunning) {
@@ -562,7 +562,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
       return;
     }
 
-    // Sinon: modes à décompte -> on reprend la périodique depuis _remaining.
+    // Sinon: modes Ã  dÃ©compte -> on reprend la pÃ©riodique depuis _remaining.
     _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
       setState(() {
         if (_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) {
@@ -1383,13 +1383,12 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
               ),
             ),
           ),
-Padding(
+        Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Divider(color: colors.outline),
         ),
-
-          Expanded(
-            child: GestureDetector(
+        Expanded(
+          child: GestureDetector(
               behavior: HitTestBehavior.translucent,
               onHorizontalDragEnd: (details) {
                 if (!_showRunPanel) return;
@@ -1687,3 +1686,5 @@ Padding(
     );
   }
 }
+
+

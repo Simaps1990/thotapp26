@@ -162,7 +162,23 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.black.withValues(alpha: 0.16),
-                                Colors.black.withValues(alpha: 0.42),
+                                Colors.black.withValues(alpha: 0.55),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: AppSpacing.lg,
+                          bottom: 16,
+                          child: Text(
+                            strings.homeToolsSectionTitle.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                              shadows: [
+                                Shadow(color: Colors.black54, offset: Offset(1, 2), blurRadius: 4),
                               ],
                             ),
                           ),
@@ -170,34 +186,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       ],
                     ),
                   ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: panelTop,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: baseBackground,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(28),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg,
-                          18,
-                          AppSpacing.lg,
-                          14,
-                        ),
-                        child: Text(
-                          strings.homeToolsSectionTitle,
-                          style: textStyles.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: colors.onSurface,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  
                 ],
               ),
             ),
@@ -252,6 +241,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
     );
   }
 }
+
+
+
 
 
 
