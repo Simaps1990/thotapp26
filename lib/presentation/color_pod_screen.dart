@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:vibration/vibration.dart';
 
@@ -85,20 +86,24 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     if (_selected.isEmpty) return;
     _counts.clear();
     for (final c in _kColors) _counts[c.id] = 0;
-    setState(() { _phase = _Phase.countdown; _countdown = 3; });
+setState(() { _phase = _Phase.countdown; _countdown = 3; });
     _runCountdown();
   }
 
-  void _runCountdown() {
+void _runCountdown() {
     _timer?.cancel();
+    // Affiche 3 → 2 → 1 → GO (500ms) → lance
     _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
       if (_countdown <= 1) {
         t.cancel();
+        // Affiche GO pendant 500ms avec son
+        setState(() => _countdown = 0);
         try { await TimerSound.play(); } catch (_) {}
         try {
           final ok = await Vibration.hasVibrator() ?? false;
-          if (ok) Vibration.vibrate(duration: 600);
+          if (ok) Vibration.vibrate(duration: 300);
         } catch (_) {}
+        await Future.delayed(const Duration(milliseconds: 600));
         if (!mounted) return;
         setState(() {
           _phase = _Phase.running;
@@ -176,8 +181,10 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
 
   // ── Build ─────────────────────────────────────────────────────────────────────
 
-  @override
+@override
   Widget build(BuildContext context) {
+    final bool landscape =
+        _phase == _Phase.countdown || _phase == _Phase.running;
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     Color bgColor;
     if (_phase == _Phase.running) {
@@ -188,7 +195,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       bgColor = baseBackground;
     }
 
-    Widget body;
+Widget body;
     switch (_phase) {
       case _Phase.config:    body = _buildConfig();    break;
       case _Phase.countdown: body = _buildCountdown(); break;
@@ -196,22 +203,26 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       case _Phase.stats:     body = _buildStats();     break;
     }
 
+    final content = landscape
+        ? _LandscapeWrapper(color: bgColor, child: body)
+        : body;
+
     if (widget.embedded) {
       return AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        color: bgColor,
-        child: body,
+        duration: const Duration(milliseconds: 0),
+        color: landscape ? Colors.transparent : bgColor,
+        child: content,
       );
     }
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 0),
       height: MediaQuery.of(context).size.height * 0.92,
       decoration: BoxDecoration(
-        color: bgColor,
+        color: landscape ? Colors.transparent : bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: body,
+      child: content,
     );
   }
 
@@ -220,7 +231,6 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
   Widget _buildConfig() {
     final colors  = Theme.of(context).colorScheme;
     final texts   = Theme.of(context).textTheme;
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
     final strings = AppStrings.of(context);
 
     return Column(children: [
@@ -311,13 +321,6 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
           }).toList()),
           const Gap(4),
 
-          // Labels couleurs
-          Wrap(spacing: 8, runSpacing: 4, children: _kColors.map((c) =>
-            SizedBox(width: 64, child: Text(_label(strings, c.id),
-              textAlign: TextAlign.center,
-              style: texts.labelSmall?.copyWith(
-                color: colors.secondary)))).toList()),
-
           const Gap(AppSpacing.lg),
 
           _SliderField(
@@ -365,16 +368,20 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          _countdown > 0 ? '$_countdown' : 'GO',
-          style: const TextStyle(
-            fontSize: 120, fontWeight: FontWeight.w900,
-            color: Colors.white, letterSpacing: -4,
+          _countdown > 0 ? '$_countdown' : 'GO !',
+          style: TextStyle(
+            fontSize: _countdown > 0 ? 160 : 120,
+            fontWeight: FontWeight.w900,
+            color: _countdown > 0 ? Colors.white : Colors.greenAccent,
+            letterSpacing: -4,
           ),
         ),
-        const Gap(16),
-        Text(strings.colorPodPrepare,
-          style: const TextStyle(
-            fontSize: 18, color: Colors.white70, fontWeight: FontWeight.w600)),
+        if (_countdown > 0) ...[
+          const Gap(16),
+          Text(strings.colorPodPrepare,
+            style: const TextStyle(
+              fontSize: 18, color: Colors.white70, fontWeight: FontWeight.w600)),
+        ],
       ],
     ));
   }
@@ -499,26 +506,37 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
             ]),
           ),
           const Gap(AppSpacing.lg),
-          Row(children: [
-            Expanded(child: OutlinedButton(
-              onPressed: _reset,
-              child: Text(strings.colorPodConfig),
-            )),
+          Column(children: [
+            Row(children: [
+              Expanded(child: OutlinedButton(
+                onPressed: _reset,
+                child: Text(strings.colorPodConfig),
+              )),
+              const Gap(AppSpacing.md),
+              Expanded(child: FilledButton(
+                onPressed: () {
+                  _counts.clear();
+                  for (final c in _kColors) _counts[c.id] = 0;
+                  setState(() {
+                    _phase = _Phase.countdown;
+                    _countdown = 3;
+                    _remainingMs = (_totalDuration * 1000).round();
+                    _currentColor = null;
+                  });
+                  _runCountdown();
+                },
+                child: Text(strings.colorPodRestart),
+              )),
+            ]),
             const Gap(AppSpacing.md),
-            Expanded(child: FilledButton(
-              onPressed: () {
-                _counts.clear();
-                for (final c in _kColors) _counts[c.id] = 0;
-                setState(() {
-                  _phase = _Phase.countdown;
-                  _countdown = 3;
-                  _remainingMs = (_totalDuration * 1000).round();
-                  _currentColor = null;
-                });
-                _runCountdown();
-              },
-              child: Text(strings.colorPodRestart),
-            )),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.handyman_outlined),
+                label: Text(strings.navToolsLabel),
+              ),
+            ),
           ]),
         ]),
       )),
@@ -526,8 +544,41 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
   }
 }
 
-// ─── Slider avec label et valeur ──────────────────────────────────────────────
+// ─── Wrapper paysage ──────────────────────────────────────────────────────────
 
+class _LandscapeWrapper extends StatefulWidget {
+  final Color color;
+  final Widget child;
+  const _LandscapeWrapper({required this.color, required this.child});
+
+  @override
+  State<_LandscapeWrapper> createState() => _LandscapeWrapperState();
+}
+
+class _LandscapeWrapperState extends State<_LandscapeWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: widget.color,
+    child: widget.child,
+  );
+}
+
+// ─── Slider avec label et valeur ──────────────────────────────────────────────
 class _SliderField extends StatelessWidget {
   final String label;
   final double value;

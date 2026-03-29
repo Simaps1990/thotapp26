@@ -12,7 +12,7 @@ import 'package:thot/presentation/shooting_timer_screen.dart';
 import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/presentation/color_pod_screen.dart';
 
-const _toolsHeroAsset = 'assets/images/carnet.webp';
+const _toolsHeroAsset = 'assets/images/outils.webp';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -75,9 +75,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    const heroHeight = 208.0;
-    const panelTop = 120.0;
-    const panelHeight = 140.0;
+const heroHeight = 180.0;
 
     Widget toolButton({
       required IconData icon,
@@ -141,8 +139,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
         top: false,
         child: Column(
           children: [
-            SizedBox(
-              height: panelTop + panelHeight,
+SizedBox(
+              height: heroHeight,
               child: Stack(
                 children: [
                   SizedBox(
@@ -190,13 +188,18 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 ],
               ),
             ),
-            Expanded(
-              child: ColoredBox(
-                color: baseBackground,
+Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: baseBackground,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg,
-                    0,
+                    AppSpacing.lg,
                     AppSpacing.lg,
                     AppSpacing.lg,
                   ),
