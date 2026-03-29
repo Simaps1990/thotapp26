@@ -8,6 +8,7 @@ import 'presentation/session_list_screen.dart';
 import 'presentation/new_session_screen.dart';
 import 'presentation/session_exercises_screen.dart';
 import 'presentation/inventory_screen.dart';
+import 'presentation/tools_screen.dart';
 import 'package:thot/presentation/add_item_screen.dart' as add_item;
 import 'package:thot/presentation/item_detail_screen.dart' as item_detail;
 import 'presentation/settings_screen.dart';
@@ -201,6 +202,15 @@ class AppRouter {
                     },
                   ),
                 ],
+              ),
+            ],
+          ),
+          // Tools Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/tools',
+                builder: (context, state) => const ToolsScreen(),
               ),
             ],
           ),

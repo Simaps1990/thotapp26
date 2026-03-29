@@ -9,7 +9,9 @@ import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
 
 class DiagnosticScreen extends StatefulWidget {
-  const DiagnosticScreen({Key? key}) : super(key: key);
+  final bool embedded;
+
+  const DiagnosticScreen({Key? key, this.embedded = false}) : super(key: key);
 
   @override
   State<DiagnosticScreen> createState() => _DiagnosticScreenState();
@@ -37,15 +39,9 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     final strings = AppStrings.of(context);
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: BoxDecoration(
-        color: baseBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
+    final content = Column(
+      children: [
+        if (!widget.embedded) ...[
           // Handle bar
           Container(
             margin: const EdgeInsets.only(top: 12),
@@ -57,6 +53,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
             ),
           ),
           const Gap(AppSpacing.md),
+        ],
           
           // Header (sans bouton de fermeture explicite)
           Padding(
@@ -98,8 +95,24 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
                 ? DiagnosticTreeView(onComplete: _closeDiagnostic)
                 : DiagnosticHistoryView(onStartNew: _startNewDiagnostic),
           ),
-        ],
+      ],
+    );
+
+    if (widget.embedded) {
+      return Container(
+        color: baseBackground,
+        child: content,
+      );
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: baseBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      child: content,
     );
   }
 }

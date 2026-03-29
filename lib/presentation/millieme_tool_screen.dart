@@ -8,7 +8,9 @@ import 'package:thot/l10n/app_strings.dart';
 import '../data/thot_provider.dart';
 
 class MilliemeToolScreen extends StatefulWidget {
-  const MilliemeToolScreen({Key? key}) : super(key: key);
+  final bool embedded;
+
+  const MilliemeToolScreen({Key? key, this.embedded = false}) : super(key: key);
 
   @override
   State<MilliemeToolScreen> createState() => _MilliemeToolScreenState();
@@ -319,15 +321,9 @@ class _MilliemeToolScreenState extends State<MilliemeToolScreen> {
 
     final presets = _presets(context);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: BoxDecoration(
-        color: baseBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
+    final content = Column(
+      children: [
+        if (!widget.embedded) ...[
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
@@ -338,228 +334,245 @@ class _MilliemeToolScreenState extends State<MilliemeToolScreen> {
             ),
           ),
           const Gap(AppSpacing.md),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    strings.milliemeToolTitle,
-                    style: textStyles.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.onSurface,
-                    ),
+        ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.milliemeToolTitle,
+                  style: textStyles.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              strings.milliemeToolSubtitle,
+              style: textStyles.bodySmall?.copyWith(
+                color: colors.secondary,
+              ),
+            ),
+          ),
+        ),
+        if (!provider.useMetric)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg).copyWith(top: AppSpacing.xs),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                strings.milliemeImperialWarning,
+                style: textStyles.bodySmall?.copyWith(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Divider(color: colors.outline),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: AppSpacing.paddingLg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  strings.milliemeFrontLabel,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
+                ),
+                const Gap(AppSpacing.xs),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _frontController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: false,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: strings.milliemeFrontField,
+                          suffixText: 'm',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(AppSpacing.sm),
+                // En-tête déployable / repliable pour les presets
+                InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  onTap: () => setState(() {
+                    _presetsExpanded = !_presetsExpanded;
+                  }),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        strings.milliemePresetsTitle,
+                        style: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.secondary,
+                        ),
+                      ),
+                      Icon(
+                        _presetsExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        color: colors.secondary,
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(AppSpacing.xs),
+                if (_presetsExpanded)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final preset in presets)
+                        SizedBox(
+                          width: (MediaQuery.of(context).size.width -
+                                  (AppSpacing.lg * 2) -
+                                  18) /
+                              4,
+                          child: _MilliemePresetButton(
+                            preset: preset,
+                            selected: preset.id == _selectedPresetId,
+                            onTap: () => _applyPreset(preset),
+                          ),
+                        ),
+                    ],
+                  ),
+                const Gap(AppSpacing.lg),
+                Text(
+                  strings.milliemeMilliemeLabel,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
+                ),
+                const Gap(AppSpacing.xs),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _milliemeController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: false,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: strings.milliemeMilliemeField,
+                          suffixText: 'mil',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(AppSpacing.lg),
+                Text(
+                  strings.milliemeDistanceLabel,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
+                ),
+                const Gap(AppSpacing.xs),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _distanceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: false,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: strings.milliemeDistanceField,
+                          suffixText: 'm',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(AppSpacing.lg),
+                Text(
+                  strings.milliemeHelpFormula,
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
+                ),
+                const Gap(AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.tonal(
+                        onPressed: _resetAll,
+                        style: FilledButton.styleFrom(
+                          backgroundColor:
+                              colors.secondary.withValues(alpha: 0.85),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                        ),
+                        child: Text(strings.milliemeResetAll),
+                      ),
+                    ),
+                    const Gap(AppSpacing.sm),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _calculate,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                        ),
+                        child: Text(strings.milliemeCalculate),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                strings.milliemeToolSubtitle,
-                style: textStyles.bodySmall?.copyWith(
-                  color: colors.secondary,
-                ),
-              ),
-            ),
-          ),
-          if (!provider.useMetric)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg).copyWith(top: AppSpacing.xs),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  strings.milliemeImperialWarning,
-                  style: textStyles.bodySmall?.copyWith(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Divider(color: colors.outline),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: AppSpacing.paddingLg,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    strings.milliemeFrontLabel,
-                    style: textStyles.labelLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.secondary,
-                    ),
-                  ),
-                  const Gap(AppSpacing.xs),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _frontController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                            signed: false,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: strings.milliemeFrontField,
-                            suffixText: 'm',
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.sm),
-                  // En-tête déployable / repliable pour les presets
-                  InkWell(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    onTap: () => setState(() {
-                      _presetsExpanded = !_presetsExpanded;
-                    }),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          strings.milliemePresetsTitle,
-                          style: textStyles.labelLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colors.secondary,
-                          ),
-                        ),
-                        Icon(
-                          _presetsExpanded
-                              ? Icons.expand_less_rounded
-                              : Icons.expand_more_rounded,
-                          color: colors.secondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Gap(AppSpacing.xs),
-                  if (_presetsExpanded)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        for (final preset in presets)
-                          SizedBox(
-                            width: (MediaQuery.of(context).size.width -
-                                    (AppSpacing.lg * 2) -
-                                    18) /
-                                4,
-                            child: _MilliemePresetButton(
-                              preset: preset,
-                              selected: preset.id == _selectedPresetId,
-                              onTap: () => _applyPreset(preset),
-                            ),
-                          ),
-                      ],
-                    ),
-                  const Gap(AppSpacing.lg),
-                  Text(
-                    strings.milliemeMilliemeLabel,
-                    style: textStyles.labelLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.secondary,
-                    ),
-                  ),
-                  const Gap(AppSpacing.xs),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _milliemeController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                            signed: false,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: strings.milliemeMilliemeField,
-                            suffixText: 'mil',
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.lg),
-                  Text(
-                    strings.milliemeDistanceLabel,
-                    style: textStyles.labelLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.secondary,
-                    ),
-                  ),
-                  const Gap(AppSpacing.xs),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _distanceController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                            signed: false,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: strings.milliemeDistanceField,
-                            suffixText: 'm',
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.lg),
-                  Text(
-                    strings.milliemeHelpFormula,
-                    style: textStyles.bodySmall?.copyWith(
-                      color: colors.secondary,
-                    ),
-                  ),
-                  const Gap(AppSpacing.lg),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.tonal(
-                          onPressed: _resetAll,
-                          style: FilledButton.styleFrom(
-                            backgroundColor:
-                                colors.secondary.withValues(alpha: 0.85),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.md,
-                            ),
-                          ),
-                          child: Text(strings.milliemeResetAll),
-                        ),
-                      ),
-                      const Gap(AppSpacing.sm),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: _calculate,
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.md,
-                            ),
-                          ),
-                          child: Text(strings.milliemeCalculate),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
+      ],
+    );
+
+    if (widget.embedded) {
+      return Container(
+        color: baseBackground,
+        child: content,
+      );
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: baseBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      child: content,
     );
   }
 }

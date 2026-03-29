@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:thot/l10n/app_strings.dart';
 import '../theme.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {
@@ -26,6 +27,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final strings = AppStrings.of(context);
     final currentIndex = navigationShell.currentIndex;
 
     return Scaffold(
@@ -129,27 +131,31 @@ class ScaffoldWithNavBar extends StatelessWidget {
                       selectedIndex: currentIndex,
                       onDestinationSelected: _goBranch,
                       height: 68,
-                      destinations: const [
+                      destinations: [
                         NavigationDestination(
-                          icon: Icon(Icons.home_outlined),
-                          selectedIcon: Icon(Icons.home_rounded),
-                          label: 'Accueil',
+                          icon: const Icon(Icons.home_outlined),
+                          selectedIcon: const Icon(Icons.home_rounded),
+                          label: strings.navHomeLabel,
                         ),
                         NavigationDestination(
-                          icon: _NavSvgIcon('assets/images/seance.svg'),
-                          selectedIcon: _NavSvgIcon('assets/images/seance.svg'),
-                          label: 'Séance',
+                          icon: const _NavSvgIcon('assets/images/seance.svg'),
+                          selectedIcon: const _NavSvgIcon('assets/images/seance.svg'),
+                          label: strings.navSessionsLabel,
                         ),
                         NavigationDestination(
-                          icon: _NavSvgIcon('assets/images/material.svg'),
-                          selectedIcon:
-                              _NavSvgIcon('assets/images/material.svg'),
-                          label: 'Matériel',
+                          icon: const _NavSvgIcon('assets/images/material.svg'),
+                          selectedIcon: const _NavSvgIcon('assets/images/material.svg'),
+                          label: strings.navInventoryLabel,
                         ),
                         NavigationDestination(
-                          icon: Icon(Icons.settings_outlined),
-                          selectedIcon: Icon(Icons.settings_rounded),
-                          label: 'Paramètres',
+                          icon: const Icon(Icons.handyman_outlined),
+                          selectedIcon: const Icon(Icons.handyman_rounded),
+                          label: strings.navToolsLabel,
+                        ),
+                        NavigationDestination(
+                          icon: const Icon(Icons.settings_outlined),
+                          selectedIcon: const Icon(Icons.settings_rounded),
+                          label: strings.navSettingsLabel,
                         ),
                       ],
                     ),

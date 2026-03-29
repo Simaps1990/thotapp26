@@ -16,7 +16,9 @@ import 'package:vibration/vibration.dart';
 
 /// Simple shooting timer panel displayed as a bottom sheet, similar to DiagnosticScreen.
 class ShootingTimerScreen extends StatefulWidget {
-  const ShootingTimerScreen({Key? key}) : super(key: key);
+  final bool embedded;
+
+  const ShootingTimerScreen({Key? key, this.embedded = false}) : super(key: key);
 
   @override
   State<ShootingTimerScreen> createState() => _ShootingTimerScreenState();
@@ -1339,61 +1341,52 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
       ],
     );
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      // Ouvre la fenêtre plus haut dans l'écran en mode déployé
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: BoxDecoration(
-        color: baseBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
+    final content = Column(
+      children: [
+        if (!widget.embedded) ...[
+          const Gap(10),
           Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
+            width: 42,
+            height: 5,
             decoration: BoxDecoration(
-              color: colors.outline,
-              borderRadius: BorderRadius.circular(2),
+              color: colors.outline.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(999),
             ),
           ),
-          const Gap(AppSpacing.md),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    strings.timerToolTitle,
-                    style: textStyles.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.onSurface,
-                    ),
+          const Gap(12),
+        ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.timerToolTitle,
+                  style: textStyles.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                strings.timerToolSubtitle,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              strings.timerToolSubtitle,
                 style: textStyles.bodySmall?.copyWith(
                   color: colors.secondary,
                 ),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Divider(color: colors.outline),
-          ),
+Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Divider(color: colors.outline),
+        ),
 
           Expanded(
             child: GestureDetector(
@@ -1444,8 +1437,24 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
               ),
             ),
           ),
-        ],
+      ],
+    );
+
+    if (widget.embedded) {
+      return Container(
+        color: baseBackground,
+        child: content,
+      );
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      height: MediaQuery.of(context).size.height * 0.86,
+      decoration: BoxDecoration(
+        color: baseBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      child: content,
     );
   }
 
