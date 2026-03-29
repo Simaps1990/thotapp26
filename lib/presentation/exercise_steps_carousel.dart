@@ -376,7 +376,7 @@ case StepType.deplacement:
         );
       case StepType.transition:
         return _StepUiConfig(
-          icon: '🔀',
+          icon: '🔃',
           title: strings.exerciseStepTypeLabel(StepType.transition),
           subtitle: positionText,
           color: LightColors.transitionViolet,
@@ -389,7 +389,7 @@ case StepType.deplacement:
         );
       case StepType.miseEnJoue:
         return _StepUiConfig(
-          icon: '🎯',
+          icon: '⏺️',
           title: strings.exerciseStepTypeLabel(StepType.miseEnJoue),
           subtitle: positionText,
           color: colors.primary,
@@ -402,7 +402,7 @@ case StepType.deplacement:
         );
       case StepType.attente:
         return _StepUiConfig(
-          icon: '⏱',
+          icon: '⏸️',
           title: strings.exerciseStepTypeLabel(StepType.attente),
           subtitle: positionText,
           color: LightColors.waitTeal,
@@ -416,7 +416,7 @@ case StepType.deplacement:
         );
       case StepType.securite:
         return _StepUiConfig(
-          icon: '🔒',
+          icon: '🛡️',
           title: strings.exerciseStepTypeLabel(StepType.securite),
           subtitle: positionText,
           color: LightColors.securityGold,

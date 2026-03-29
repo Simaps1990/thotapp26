@@ -2099,10 +2099,10 @@ String _stepTitle(StepType type) {
       StepType.tir => '💥',
       StepType.deplacement => '🏃🏻‍♂️‍➡️',
       StepType.rechargement => '🔄',
-      StepType.transition => '🔀',
-      StepType.miseEnJoue => '🎯',
-      StepType.attente => '⏱',
-      StepType.securite => '🔒',
+      StepType.transition => '🔃',
+      StepType.miseEnJoue => '⏺️',
+      StepType.attente => '⏸️',
+      StepType.securite => '🛡️',
       StepType.autre => '⚙️',
     };
   }

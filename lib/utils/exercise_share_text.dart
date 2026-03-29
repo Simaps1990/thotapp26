@@ -41,12 +41,12 @@ String generateExerciseShareText({
     final idx = (i + 1).toString().padLeft(2, '0');
     final icon = switch (st.type) {
       StepType.tir => '💥',
-      StepType.deplacement => '🚶',
+      StepType.deplacement => '🏃🏻‍♂️‍➡️',
       StepType.rechargement => '🔄',
-      StepType.transition => '🔀',
-      StepType.miseEnJoue => '🎯',
-      StepType.attente => '⏱',
-      StepType.securite => '🔒',
+      StepType.transition => '🔃',
+      StepType.miseEnJoue => '⏺️',
+      StepType.attente => '⏸️',
+      StepType.securite => '🛡️',
       StepType.autre => '⚙️',
     };
 
