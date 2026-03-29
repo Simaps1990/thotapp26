@@ -77,7 +77,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
     const heroHeight = 208.0;
     const panelTop = 120.0;
-    const panelHeight = 140.0;
 
     Widget toolButton({
       required IconData icon,
@@ -139,137 +138,111 @@ class _ToolsScreenState extends State<ToolsScreen> {
       backgroundColor: baseBackground,
       body: SafeArea(
         top: false,
-        child: Column(
-          children: [
-            SizedBox(
-              height: panelTop + panelHeight,
-              child: Stack(
-                children: [
-                  SizedBox(
-                    height: heroHeight,
-                    width: double.infinity,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.asset(
-                          _toolsHeroAsset,
-                          fit: BoxFit.cover,
-                        ),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.16),
-                                Colors.black.withValues(alpha: 0.42),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+        child: SingleChildScrollView(
+          child: Stack(
+            children: [
+              // 1. L'image de fond en haut (Hero)
+              SizedBox(
+                height: heroHeight,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      _toolsHeroAsset,
+                      fit: BoxFit.cover,
                     ),
-                  ),
-                  Positioned(
-                    left: AppSpacing.lg,
-                    top: panelTop - 44,
-                    child: Text(
-                      strings.toolsSubtitle,
-                      style: textStyles.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black54,
-                            offset: Offset(1, 2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: panelTop,
-                    child: Container(
+                    DecoratedBox(
                       decoration: BoxDecoration(
-                        color: baseBackground,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(28),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            toolButton(
-                              icon: Icons.straighten_rounded,
-                              title: strings.milliemeToolTitle,
-                              subtitle: strings.milliemeToolSubtitle,
-                              onTap: () => _openMillieme(provider),
-                            ),
-                            const Gap(AppSpacing.md),
-                            toolButton(
-                              icon: Icons.timer_rounded,
-                              title: strings.homeTimerTitle,
-                              subtitle: strings.homeTimerSubtitle,
-                              onTap: _openTimer,
-                            ),
-                            const Gap(AppSpacing.md),
-                            toolButton(
-                              icon: Icons.medical_services_outlined,
-                              title: strings.homeDiagnosticTitle,
-                              subtitle: strings.homeDiagnosticSubtitle,
-                              onTap: () => _openDiagnostic(provider),
-                            ),
-                            const Gap(AppSpacing.md),
-                            toolButton(
-                              icon: Icons.color_lens_outlined,
-                              title: strings.colorPodTitle,
-                              subtitle: strings.colorPodSubtitle,
-                              onTap: _openColorPod,
-                            ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.16),
+                            Colors.black.withValues(alpha: 0.42),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ColoredBox(
-                color: baseBackground,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    0,
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                  ),
-                  child: const SizedBox.shrink(),
+                  ],
                 ),
               ),
-            ),
-          ],
+              // 2. Le titre "OUTILS"
+              Positioned(
+                left: AppSpacing.lg,
+                top: panelTop - 44,
+                child: Text(
+                  strings.toolsSubtitle,
+                  style: textStyles.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black54,
+                        offset: Offset(1, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // 3. Le conteneur blanc avec les boutons qui scrolle avec la page
+              Container(
+                margin: const EdgeInsets.only(top: panelTop),
+                decoration: BoxDecoration(
+                  color: baseBackground,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      toolButton(
+                        icon: Icons.straighten_rounded,
+                        title: strings.milliemeToolTitle,
+                        subtitle: strings.milliemeToolSubtitle,
+                        onTap: () => _openMillieme(provider),
+                      ),
+                      const Gap(AppSpacing.md),
+                      toolButton(
+                        icon: Icons.timer_rounded,
+                        title: strings.homeTimerTitle,
+                        subtitle: strings.homeTimerSubtitle,
+                        onTap: _openTimer,
+                      ),
+                      const Gap(AppSpacing.md),
+                      toolButton(
+                        icon: Icons.medical_services_outlined,
+                        title: strings.homeDiagnosticTitle,
+                        subtitle: strings.homeDiagnosticSubtitle,
+                        onTap: () => _openDiagnostic(provider),
+                      ),
+                      const Gap(AppSpacing.md),
+                      toolButton(
+                        icon: Icons.color_lens_outlined,
+                        title: strings.colorPodToolTitle,
+                        subtitle: strings.colorPodToolSubtitle,
+                        onTap: _openColorPod,
+                      ),
+                      // Ajoute un espace en bas pour que le dernier bouton ne colle pas à l'écran
+                      const Gap(40), 
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-
-
-
-
-
-
-
