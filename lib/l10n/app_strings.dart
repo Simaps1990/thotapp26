@@ -5576,13 +5576,13 @@ String get navHomeLabel => _pick(
   String get colorPodDeactivateAll => _pick(fr: 'Tout désactiver', en: 'Disable all', de: 'Alle deaktivieren', it: 'Disattiva tutto', es: 'Desactivar todo');
   String get colorPodColorDuration => _pick(fr: 'Durée affichage couleur', en: 'Color display duration', de: 'Farbanzeige-Dauer', it: 'Durata visualizzazione colore', es: 'Duración visualización color');
   String get colorPodDelay => _pick(fr: 'Délai entre couleurs (noir)', en: 'Delay between colors (black)', de: 'Pause zwischen Farben (schwarz)', it: 'Pausa tra i colori (nero)', es: 'Pausa entre colores (negro)');
-  String get colorPodTotalDuration => _pick(fr: 'Durée totale de l\\'exercice', en: 'Total exercise duration', de: 'Gesamtdauer der Übung', it: 'Durata totale dell\\'esercizio', es: 'Duración total del ejercicio');
+String get colorPodTotalDuration => _pick(fr: "Durée totale de l'exercice", en: 'Total exercise duration', de: 'Gesamtdauer der Übung', it: "Durata totale dell'esercizio", es: 'Duración total del ejercicio');
   String get colorPodLaunch => _pick(fr: 'LANCER', en: 'START', de: 'STARTEN', it: 'AVVIA', es: 'INICIAR');
   String get colorPodPrepare => _pick(fr: 'Préparez-vous', en: 'Get ready', de: 'Mach dich bereit', it: 'Preparati', es: 'Prepárate');
   String get colorPodSecondsLeft => _pick(fr: 'secondes restantes', en: 'seconds left', de: 'Sekunden übrig', it: 'secondi rimanenti', es: 'segundos restantes');
   String get colorPodStop => _pick(fr: 'STOP', en: 'STOP', de: 'STOP', it: 'STOP', es: 'STOP');
   String get colorPodResults => _pick(fr: 'RÉSULTATS', en: 'RESULTS', de: 'ERGEBNISSE', it: 'RISULTATI', es: 'RESULTADOS');
-  String colorPodTotal(int n) => _pick(fr: '\ apparitions au total', en: '\ total appearances', de: '\ Erscheinungen insgesamt', it: '\ apparizioni totali', es: '\ apariciones en total');
+String colorPodTotal(int n) => _pick(fr: '$n apparitions au total', en: '$n total appearances', de: '$n Erscheinungen insgesamt', it: '$n apparizioni totali', es: '$n apariciones en total');
   String get colorPodConfig => _pick(fr: 'CONFIG', en: 'CONFIG', de: 'CONFIG', it: 'CONFIG', es: 'CONFIG');
   String get colorPodRestart => _pick(fr: 'RECOMMENCER', en: 'RESTART', de: 'NEUSTART', it: 'RICOMINCIA', es: 'REINICIAR');
   String get colorPodRed => _pick(fr: 'Rouge', en: 'Red', de: 'Rot', it: 'Rosso', es: 'Rojo');
@@ -5627,3 +5627,5 @@ class _AppStringsDelegate extends LocalizationsDelegate<AppStrings> {
   @override
   bool shouldReload(covariant LocalizationsDelegate<AppStrings> old) => false;
 }
+
+
