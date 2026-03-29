@@ -5521,8 +5521,48 @@ es: 'Milirradianes (₥)',
         es: 'Casa',
       );
 
+String get navHomeLabel => _pick(
+        fr: 'Accueil',
+        en: 'Home',
+        de: 'Startseite',
+        it: 'Home',
+        es: 'Inicio',
+      );
+
+  String get navSessionsLabel => _pick(
+        fr: 'Séances',
+        en: 'Sessions',
+        de: 'Sitzungen',
+        it: 'Sessioni',
+        es: 'Sesiones',
+      );
+
+  String get navInventoryLabel => _pick(
+        fr: 'Matériel',
+        en: 'Equipment',
+        de: 'Ausrüstung',
+        it: 'Materiale',
+        es: 'Material',
+      );
+
+  String get navToolsLabel => _pick(
+        fr: 'Outils',
+        en: 'Tools',
+        de: 'Werkzeuge',
+        it: 'Strumenti',
+        es: 'Herramientas',
+      );
+
+  String get navSettingsLabel => _pick(
+        fr: 'Réglages',
+        en: 'Settings',
+        de: 'Einstellungen',
+        it: 'Impostazioni',
+        es: 'Ajustes',
+      );
+
   String get confirm => _pick(
-        fr: 'CONFIRMER',
+            fr: 'CONFIRMER',
         en: 'CONFIRM',
         de: 'BESTÄTIGEN',
         it: 'CONFERMA',
