@@ -1438,7 +1438,7 @@ onTap: () => _addOrEditStep(initial: s),
                     minLines: 4,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      labelText: strings.observationsLabel,
+labelText: strings.observationsTitle,
                       alignLabelWithHint: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppRadius.md),
