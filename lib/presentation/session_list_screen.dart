@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:thot/data/models.dart';
 import 'package:thot/data/thot_provider.dart';
+import 'package:thot/data/exercise_step.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/utils/exercise_display.dart';
@@ -17,7 +18,6 @@ import 'package:thot/utils/unit_converter.dart';
 import 'package:thot/utils/web_text_exporter.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
-import 'package:thot/presentation/home_screen.dart'; // Import pour accéder à TemplateManagerScreen
 
 const _sessionsHeroAsset = 'assets/images/carnet.webp';
 
@@ -285,10 +285,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       ),
                     ),
                   ),
-                  // --- BOUTON MODÈLES ---
+                  // --- BOUTON MODÈLES EN HAUT À DROITE ---
                   Positioned(
                     right: AppSpacing.lg,
-                    top: panelTop - 54, // Ajusté pour s'aligner avec le texte "SÉANCES"
+                    top: MediaQuery.of(context).padding.top + 12, 
                     child: TextButton.icon(
                       onPressed: () => _showTemplateModal(context),
                       icon: const Icon(Icons.bookmark_rounded, color: Colors.white, size: 18),
@@ -308,7 +308,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       ),
                     ),
                   ),
-                  // ------------------------------
+                  // ----------------------------------------
                   Positioned(
                     left: 0,
                     right: 0,
@@ -872,122 +872,6 @@ class _SessionCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Gap(AppSpacing.sm),
-                Container(
-                  padding: AppSpacing.paddingMd,
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: colors.outline,
-                      width: 1.2,
-                    ),
-                  ),
-                  child: DefaultTextStyle.merge(
-                    style: TextStyle(color: colors.onSurface),
-                    child: IconTheme.merge(
-                      data: IconThemeData(color: colors.primary),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        SvgPicture.asset(
-                                          'assets/images/gun.svg',
-                                          width: 16,
-                                          height: 16,
-                                          colorFilter: ColorFilter.mode(
-                                            colors.primary,
-                                            BlendMode.srcIn,
-                                          ),
-                                        ),
-                                        const Gap(8),
-                                        Text(
-                                          strings.quickActionLabelWeapon,
-                                          style: (textStyles.labelSmall ??
-                                                  const TextStyle())
-                                              .copyWith(
-                                            color: colors.secondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const Gap(4),
-                                    Text(
-                                      weaponName,
-                                      style: (textStyles.bodySmall ??
-                                              const TextStyle())
-                                          .copyWith(
-                                        color: colors.onSurface,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Gap(AppSpacing.xs),
-                              Container(
-                                width: 1,
-                                height: 32,
-                                color: colors.outline,
-                              ),
-                              const Gap(AppSpacing.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        SvgPicture.asset(
-                                          'assets/images/bullet.svg',
-                                          width: 16,
-                                          height: 16,
-                                          colorFilter: ColorFilter.mode(
-                                            colors.primary,
-                                            BlendMode.srcIn,
-                                          ),
-                                        ),
-                                        const Gap(8),
-                                        Text(
-                                          strings.quickActionLabelAmmo,
-                                          style: (textStyles.labelSmall ??
-                                                  const TextStyle())
-                                              .copyWith(
-                                            color: colors.secondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const Gap(4),
-                                    Text(
-                                      ammoName,
-                                      style: (textStyles.bodySmall ??
-                                              const TextStyle())
-                                          .copyWith(
-                                        color: colors.onSurface,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -1219,6 +1103,1113 @@ class SessionShareSheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class TemplateManagerScreen extends StatefulWidget {
+  const TemplateManagerScreen({super.key});
+
+  @override
+  State<TemplateManagerScreen> createState() => TemplateManagerScreenState();
+}
+
+class TemplateManagerScreenState extends State<TemplateManagerScreen> {
+final PageController _pageController = PageController();
+  final TextEditingController _searchController = TextEditingController();
+
+  String _searchQuery = '';
+  bool _sortByDate = true;
+  bool _dateDescending = true;
+  bool _sortByName = false;
+  int _modeFilterIndex = 0; // 0 = tous, 1 = simples, 2 = détaillés
+
+  ExerciseTemplate? _editingTemplate;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _shotsController = TextEditingController();
+  final TextEditingController _distanceController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
+  bool _detailedMode = false;
+  final List<ExerciseStep> _steps = [];
+
+@override
+  void dispose() {
+    _searchController.dispose();
+    _pageController.dispose();
+    _nameController.dispose();
+    _shotsController.dispose();
+    _distanceController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  void _goToPage(int index) {
+    setState(() {});
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _openEditor({ExerciseTemplate? template}) {
+    setState(() {
+      _editingTemplate = template;
+      if (template == null) {
+        _nameController.text = '';
+        _shotsController.text = '';
+        _distanceController.text = '';
+        _notesController.text = '';
+        _detailedMode = false;
+        _steps
+          ..clear();
+      } else {
+        _nameController.text = template.name;
+        _shotsController.text = template.shotsFired.toString();
+        _distanceController.text = template.distance.toString();
+        _notesController.text = template.observations;
+        _detailedMode = template.detailedMode;
+        _steps
+          ..clear()
+          ..addAll(template.steps ?? const []);
+      }
+    });
+    _goToPage(1);
+  }
+
+  int _computedTotalShots() {
+    return _steps
+        .where((s) => s.type == StepType.tir && s.shots != null)
+        .fold<int>(0, (sum, s) => sum + (s.shots ?? 0));
+  }
+
+  int _computedMaxDistance() {
+    final distances = _steps.map((s) => s.distanceM).whereType<int>();
+    if (distances.isEmpty) return 0;
+    return distances.reduce((a, b) => a > b ? a : b);
+  }
+
+  Future<void> _addOrEditStep({ExerciseStep? initial}) async {
+    final step = await showModalBottomSheet<ExerciseStep>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _TemplateStepSheet(initialStep: initial),
+    );
+    if (!mounted || step == null) return;
+    setState(() {
+      final idx = _steps.indexWhere((s) => s.id == step.id);
+      if (idx >= 0) {
+        _steps[idx] = step;
+      } else {
+        _steps.add(step);
+      }
+    });
+  }
+
+  void _deleteStep(String id) {
+    setState(() {
+      _steps.removeWhere((s) => s.id == id);
+    });
+  }
+
+  void _moveStepUp(int index) {
+    if (index <= 0) return;
+    setState(() {
+      final step = _steps.removeAt(index);
+      _steps.insert(index - 1, step);
+    });
+  }
+
+  void _moveStepDown(int index) {
+    if (index >= _steps.length - 1) return;
+    setState(() {
+      final step = _steps.removeAt(index);
+      _steps.insert(index + 1, step);
+    });
+  }
+
+  void _toggleDateSort() {
+    setState(() {
+      _sortByDate = true;
+      _sortByName = false;
+      _dateDescending = !_dateDescending;
+    });
+  }
+
+  void _activateNameSort() {
+    setState(() {
+      _sortByDate = false;
+      _sortByName = true;
+    });
+  }
+
+  void _cycleModeFilter() {
+    setState(() {
+      _modeFilterIndex = (_modeFilterIndex + 1) % 3;
+    });
+  }
+
+  String _modeFilterLabel() {
+    switch (_modeFilterIndex) {
+      case 1:
+        return 'Simples';
+      case 2:
+        return 'Détaillés';
+      default:
+        return 'Tous les modes';
+    }
+  }
+
+  List<ExerciseTemplate> _filteredTemplates(ThotProvider provider) {
+    var list = provider.exerciseTemplates.toList();
+
+    if (_searchQuery.trim().isNotEmpty) {
+      final q = _searchQuery.trim().toLowerCase();
+      list = list
+          .where((t) =>
+              t.name.toLowerCase().contains(q) ||
+              t.observations.toLowerCase().contains(q))
+          .toList();
+    }
+
+    if (_modeFilterIndex == 1) {
+      list = list.where((t) => !t.detailedMode).toList();
+    } else if (_modeFilterIndex == 2) {
+      list = list.where((t) => t.detailedMode).toList();
+    }
+
+    list.sort((a, b) {
+      if (_sortByName) {
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      }
+      final cmp = a.createdAt.compareTo(b.createdAt);
+      return _dateDescending ? -cmp : cmp;
+    });
+
+    return list;
+  }
+
+  Future<void> _saveTemplate(ThotProvider provider) async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+
+    final shots = _detailedMode
+        ? _computedTotalShots()
+        : (int.tryParse(_shotsController.text.trim()) ?? 0);
+    final distance = _detailedMode
+        ? _computedMaxDistance()
+        : (int.tryParse(_distanceController.text.trim()) ?? 0);
+    final notes = _notesController.text.trim();
+
+    final now = DateTime.now();
+    final existing = _editingTemplate;
+    final template = ExerciseTemplate(
+      id: existing?.id ?? now.microsecondsSinceEpoch.toString(),
+      name: name,
+      createdAt: existing?.createdAt ?? now,
+      shotsFired: shots,
+      distance: distance,
+      detailedMode: _detailedMode,
+      steps: _detailedMode ? List<ExerciseStep>.from(_steps) : null,
+      observations: notes,
+    );
+
+    provider.saveExerciseTemplate(template);
+    _goToPage(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context);
+    final templates = _filteredTemplates(provider);
+    
+    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+    final subtleBorderColor = colors.outline.withValues(alpha: 0.45);
+    final searchFillColor = Color.alphaBlend(
+      colors.outline.withValues(alpha: 0.8),
+      baseBackground,
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.transparent, 
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openEditor(template: null),
+        icon: const Icon(Icons.add),
+        label: Text(strings.saveAsTemplateButton),
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
+      ),
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          // --- PAGE 1: LISTE DES MODÈLES ---
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 10),
+                child: Text(
+                  strings.homeTemplateTitle,
+                  style: textStyles.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colors.onSurface,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: Text(_sortByDate
+                          ? (_dateDescending ? 'Date (récentes)' : 'Date (anciennes)')
+                          : 'Date'),
+                      selected: _sortByDate,
+                      onSelected: (_) => _toggleDateSort(),
+                    ),
+                    ChoiceChip(
+                      label: const Text('Nom'),
+                      selected: _sortByName,
+                      onSelected: (_) => _activateNameSort(),
+                    ),
+                    ChoiceChip(
+                      label: Text(_modeFilterLabel()),
+                      selected: _modeFilterIndex != 0,
+                      onSelected: (_) => _cycleModeFilter(),
+                    ),
+                  ],
+                ),
+              ),
+              const Gap(AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: TextField(
+                  controller: _searchController,
+                  style: textStyles.bodyMedium?.copyWith(
+                    fontSize: 14,
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                  decoration: InputDecoration(
+                    hintText: strings.searchEllipsis,
+                    hintStyle: textStyles.bodyMedium?.copyWith(
+                      fontSize: 14,
+                      color: colors.secondary,
+                    ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            splashRadius: 18,
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    suffixIconConstraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                    filled: true,
+                    fillColor: searchFillColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: subtleBorderColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: subtleBorderColor),
+                    ),
+                  ),
+                ),
+              ),
+              const Gap(AppSpacing.md),
+              Expanded(
+                child: templates.isEmpty
+                    ? Center(
+                        child: Text(
+                          strings.noTemplatesAvailable,
+                          style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, 80),
+                        itemCount: templates.length,
+                        separatorBuilder: (_, __) => const Gap(AppSpacing.sm),
+                        itemBuilder: (context, index) {
+                          final t = templates[index];
+                          final subtitle = t.detailedMode
+                              ? '${t.steps?.length ?? 0} étapes · ${AppDateFormats.formatDateShort(context, t.createdAt)}'
+                              : '${t.shotsFired} coups · ${t.distance} m · ${AppDateFormats.formatDateShort(context, t.createdAt)}';
+
+                          return ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            tileColor: colors.surface,
+                            title: Text(
+                              t.name,
+                              style: textStyles.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.onSurface,
+                              ),
+                            ),
+                            subtitle: Text(
+                              subtitle,
+                              style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                            ),
+                            onTap: () => _openEditor(template: t),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete_rounded, color: colors.error),
+                              onPressed: () {
+                                showDialog<void>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text(strings.confirmDeleteTitle),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(ctx).pop(),
+                                        child: Text(strings.actionCancel),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () {
+                                          provider.deleteExerciseTemplate(t.id);
+                                          Navigator.of(ctx).pop();
+                                        },
+                                        child: Text(strings.actionDelete),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+          
+          // --- PAGE 2: ÉDITEUR DE MODÈLE ---
+          Padding(
+            padding: AppSpacing.paddingLg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                      onPressed: () => _goToPage(0),
+                      color: colors.onSurface,
+                    ),
+                    const Gap(AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        _editingTemplate != null 
+                          ? strings.templateNameDialogTitle 
+                          : strings.saveAsTemplateButton,
+                        style: textStyles.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(AppSpacing.md),
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: strings.templateNameDialogTitle,
+                    hintText: strings.templateNameHint,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                if (!_detailedMode)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _shotsController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: strings.shotsFiredLabel,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: _distanceController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: strings.shootingDistanceLabel,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(color: colors.outline),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${strings.shotsFiredLabel}: ${_computedTotalShots()}',
+                            style: textStyles.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '${strings.shootingDistanceLabel}: ${_computedMaxDistance()} ${provider.useMetric ? 'm' : 'yd'}',
+                            textAlign: TextAlign.end,
+                            style: textStyles.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const Gap(AppSpacing.md),
+                SwitchListTile.adaptive(
+                  value: _detailedMode,
+                  onChanged: (v) {
+                    setState(() {
+                      _detailedMode = v;
+                    });
+                  },
+                  title: Text(
+                    'Mode détaillé',
+                    style: (textStyles.bodyMedium ?? const TextStyle()).copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_detailedMode) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Étapes',
+                                style: textStyles.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                              FilledButton.icon(
+                                onPressed: () => _addOrEditStep(),
+                                icon: const Icon(Icons.add, size: 18),
+                                label: Text(strings.exerciseActionAdd),
+                              ),
+                            ],
+                          ),
+                          const Gap(AppSpacing.sm),
+                          if (_steps.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                border: Border.all(color: colors.outline),
+                              ),
+                              child: Text(
+                                'Aucune étape',
+                                style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          else
+                            ...List.generate(_steps.length, (index) {
+                              final s = _steps[index];
+                              final title = strings.exerciseStepTypeLabel(s.type);
+                              final parts = <String>[];
+                              if (s.type == StepType.tir && s.shots != null) {
+                                parts.add('${s.shots} ${strings.exerciseNarrativeShotsWord}');
+                              }
+                              if (s.distanceM != null) parts.add('${s.distanceM} ${provider.useMetric ? 'm' : 'yd'}');
+                              if ((s.target ?? '').trim().isNotEmpty) parts.add(s.target!.trim());
+                              final subtitle = parts.isEmpty ? '—' : parts.join(' · ');
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: colors.surface,
+                                  borderRadius: BorderRadius.circular(AppRadius.md),
+                                  border: Border.all(color: colors.outline),
+                                ),
+                                child: ListTile(
+                                  leading: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          iconSize: 18,
+                                          onPressed: index > 0 ? () => _moveStepUp(index) : null,
+                                          icon: Icon(
+                                            Icons.arrow_upward_rounded,
+                                            color: index > 0 ? colors.primary : colors.outline,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          iconSize: 18,
+                                          onPressed: index < _steps.length - 1 ? () => _moveStepDown(index) : null,
+                                          icon: Icon(
+                                            Icons.arrow_downward_rounded,
+                                            color: index < _steps.length - 1 ? colors.primary : colors.outline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  title: Text(
+                                    title,
+                                    style: textStyles.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    subtitle,
+                                    style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                                  ),
+                                  onTap: () => _addOrEditStep(initial: s),
+                                  trailing: IconButton(
+                                    onPressed: () => _deleteStep(s.id),
+                                    icon: Icon(Icons.delete_rounded, color: colors.error),
+                                  ),
+                                ),
+                              );
+                            }),
+                          const Gap(AppSpacing.md),
+                        ],
+                        TextField(
+                          controller: _notesController,
+                          minLines: 4,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            labelText: strings.observationsTitle,
+                            alignLabelWithHint: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                SizedBox(
+                  height: 48,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _goToPage(0),
+                          child: Text(strings.actionCancel),
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => _saveTemplate(provider),
+                          child: Text(strings.saveAsTemplateButton),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TemplateStepSheet extends StatefulWidget {
+  final ExerciseStep? initialStep;
+
+  const _TemplateStepSheet({this.initialStep});
+
+  @override
+  State<_TemplateStepSheet> createState() => _TemplateStepSheetState();
+}
+
+class _TemplateStepSheetState extends State<_TemplateStepSheet> {
+  StepType _type = StepType.tir;
+  ShootingPosition? _position;
+
+  final _distanceController = TextEditingController();
+  final _shotsController = TextEditingController();
+  final _targetController = TextEditingController();
+  final _weaponFromController = TextEditingController();
+  final _weaponToController = TextEditingController();
+  ReloadType? _reloadType;
+  MovementType? _movementType;
+  final _durationController = TextEditingController();
+  final _triggerController = TextEditingController();
+  final _commentController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialStep;
+    if (initial == null) return;
+
+    _type = initial.type;
+    _position = initial.position;
+    _reloadType = initial.reloadType;
+    _movementType = initial.movementType;
+
+    _distanceController.text = initial.distanceM?.toString() ?? '';
+    _shotsController.text = initial.shots?.toString() ?? '';
+    _targetController.text = initial.target ?? '';
+    _weaponFromController.text = initial.weaponFrom ?? '';
+    _weaponToController.text = initial.weaponTo ?? '';
+    _durationController.text = initial.durationSeconds?.toString() ?? '';
+    _triggerController.text = initial.trigger ?? '';
+    _commentController.text = initial.comment ?? '';
+  }
+
+  @override
+  void dispose() {
+    _distanceController.dispose();
+    _shotsController.dispose();
+    _targetController.dispose();
+    _weaponFromController.dispose();
+    _weaponToController.dispose();
+    _durationController.dispose();
+    _triggerController.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final distUnit = provider.useMetric ? 'm' : 'yd';
+    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+
+    InputDecoration decoration(String label) => InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: colors.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide(color: colors.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide(color: colors.outline),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide(color: colors.primary, width: 1.6),
+          ),
+        );
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      height: MediaQuery.of(context).size.height * 0.86,
+      decoration: BoxDecoration(
+        color: baseBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const Gap(10),
+          Container(
+            width: 42,
+            height: 5,
+            decoration: BoxDecoration(
+              color: colors.outline.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          const Gap(12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.initialStep == null
+                        ? strings.exerciseNewStepTitle
+                        : strings.exerciseEditStepTitle,
+                    style: textStyles.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          const Gap(8),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: AppSpacing.lg,
+                right: AppSpacing.lg,
+                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    strings.exerciseStepTypeTitle,
+                    style: textStyles.labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const Gap(8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: StepType.values.map((t) {
+                      final selected = _type == t;
+                      return ChoiceChip(
+                        label: Text(strings.exerciseStepTypeLabel(t)),
+                        selected: selected,
+                        onSelected: (_) => setState(() => _type = t),
+                        selectedColor: colors.primary.withValues(alpha: 0.2),
+                        backgroundColor: colors.surface,
+                        shape: StadiumBorder(
+                          side: BorderSide(
+                            color: selected ? colors.primary : colors.outline,
+                          ),
+                        ),
+                        labelStyle: textStyles.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      );
+                    }).toList(),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Text(
+                    strings.exerciseStepPositionTitle,
+                    style: textStyles.labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const Gap(8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('·'),
+                        selected: _position == null,
+                        onSelected: (_) => setState(() => _position = null),
+                        selectedColor: colors.primary.withValues(alpha: 0.2),
+                        backgroundColor: colors.surface,
+                        shape: StadiumBorder(
+                          side: BorderSide(
+                            color: _position == null
+                                ? colors.primary
+                                : colors.outline,
+                          ),
+                        ),
+                      ),
+                      ...ShootingPosition.values.map((p) {
+                        final selected = _position == p;
+                        return ChoiceChip(
+                          label: Text(strings.exercisePositionLabel(p)),
+                          selected: selected,
+                          onSelected: (_) => setState(() => _position = p),
+                          selectedColor: colors.primary.withValues(alpha: 0.2),
+                          backgroundColor: colors.surface,
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color:
+                                  selected ? colors.primary : colors.outline,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                  const Gap(AppSpacing.md),
+                  if (_type == StepType.tir) ...[
+                    TextField(
+                      controller: _shotsController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration(
+                          '${strings.exerciseFieldShots}${strings.exerciseOptionalHint}'),
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _distanceController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration(
+                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _targetController,
+                      decoration: decoration(
+                          '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}'),
+                    ),
+                  ] else if (_type == StepType.deplacement) ...[
+                    Text(
+                      strings.exerciseFieldMovementType,
+                      style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const Gap(8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('·'),
+                          selected: _movementType == null,
+                          onSelected: (_) => setState(() => _movementType = null),
+                          selectedColor: colors.primary.withValues(alpha: 0.2),
+                          backgroundColor: colors.surface,
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color: _movementType == null
+                                  ? colors.primary
+                                  : colors.outline,
+                            ),
+                          ),
+                        ),
+                        ...MovementType.values.map((t) {
+                          final selected = _movementType == t;
+                          return ChoiceChip(
+                            label: Text(strings.exerciseMovementTypeLabel(t)),
+                            selected: selected,
+                            onSelected: (_) => setState(() => _movementType = t),
+                            selectedColor: colors.primary.withValues(alpha: 0.2),
+                            backgroundColor: colors.surface,
+                            shape: StadiumBorder(
+                              side: BorderSide(
+                                color: selected ? colors.primary : colors.outline,
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _distanceController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration(
+                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                    ),
+                  ] else if (_type == StepType.rechargement) ...[
+                    Text(
+                      strings.exerciseFieldReloadType,
+                      style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const Gap(8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ReloadType.values.map((t) {
+                        final selected = _reloadType == t;
+                        return ChoiceChip(
+                          label: Text(strings.exerciseReloadTypeLabel(t)),
+                          selected: selected,
+                          onSelected: (_) => setState(() => _reloadType = t),
+                          selectedColor: colors.primary.withValues(alpha: 0.2),
+                          backgroundColor: colors.surface,
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color: selected ? colors.primary : colors.outline,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ] else if (_type == StepType.transition) ...[
+                    TextField(
+                      controller: _weaponFromController,
+                      decoration: decoration(
+                          '${strings.exerciseFieldWeaponFrom}${strings.exerciseOptionalHint}'),
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _weaponToController,
+                      decoration: decoration(
+                          '${strings.exerciseFieldWeaponTo}${strings.exerciseOptionalHint}'),
+                    ),
+                  ] else if (_type == StepType.miseEnJoue) ...[
+                    TextField(
+                      controller: _targetController,
+                      decoration: decoration(
+                          '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}'),
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _distanceController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration(
+                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                    ),
+                  ] else if (_type == StepType.attente) ...[
+                    TextField(
+                      controller: _durationController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration(
+                          '${strings.exerciseFieldDuration} (s)${strings.exerciseOptionalHint}'),
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _distanceController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration(
+                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                    ),
+                    const Gap(10),
+                    TextField(
+                      controller: _triggerController,
+                      decoration: decoration(
+                          '${strings.exerciseFieldTrigger}${strings.exerciseOptionalHint}'),
+                    ),
+                  ] else ...[
+                    TextField(
+                      controller: _distanceController,
+                      keyboardType: TextInputType.number,
+                      decoration: decoration(
+                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                    ),
+                  ],
+                  const Gap(AppSpacing.md),
+                  TextField(
+                    controller: _commentController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: decoration(strings.exerciseStepCommentLabel),
+                  ),
+                  const Gap(AppSpacing.lg),
+                  SizedBox(
+                    height: 50,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        boxShadow: AppShadows.cardPremium,
+                      ),
+                      child: FilledButton(
+                        onPressed: () {
+                          final distanceM =
+                              int.tryParse(_distanceController.text.trim());
+                          final shots =
+                              int.tryParse(_shotsController.text.trim());
+                          final durationSeconds =
+                              int.tryParse(_durationController.text.trim());
+
+                          final step = ExerciseStep(
+                            id: widget.initialStep?.id ??
+                                DateTime.now()
+                                    .microsecondsSinceEpoch
+                                    .toString(),
+                            type: _type,
+                            position: _position,
+                            distanceM: distanceM,
+                            shots: shots,
+                            target: _targetController.text.trim().isEmpty
+                                ? null
+                                : _targetController.text.trim(),
+                            weaponFrom:
+                                _weaponFromController.text.trim().isEmpty
+                                    ? null
+                                    : _weaponFromController.text.trim(),
+                            weaponTo: _weaponToController.text.trim().isEmpty
+                                ? null
+                                : _weaponToController.text.trim(),
+                            reloadType: _reloadType,
+                            movementType: _movementType,
+                            durationSeconds: durationSeconds,
+                            trigger: _triggerController.text.trim().isEmpty
+                                ? null
+                                : _triggerController.text.trim(),
+                            comment: _commentController.text.trim().isEmpty
+                                ? null
+                                : _commentController.text.trim(),
+                          );
+
+                          Navigator.of(context).pop(step);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.primary,
+                          foregroundColor: colors.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                        ),
+                        child: Text(
+                          widget.initialStep == null
+                              ? strings.exerciseActionAdd
+                              : strings.exerciseActionSave,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
