@@ -1423,8 +1423,33 @@ class _TemplateManagerScreenState extends State<_TemplateManagerScreen> {
                               style: textStyles.bodySmall
                                   ?.copyWith(color: colors.secondary),
                             ),
-                            onTap: () => _addOrEditStep(initial: s),
+onTap: () => _addOrEditStep(initial: s),
                             trailing: IconButton(
+                              onPressed: () => _deleteStep(s.id),
+                              icon: Icon(Icons.delete_rounded, color: colors.error),
+                            ),
+                          ),
+                        );
+                      }),
+                    const Gap(AppSpacing.md),
+                  ],
+                  TextField(
+                    controller: _notesController,
+                    minLines: 4,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: strings.observationsLabel,
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Gap(AppSpacing.md),
           SizedBox(
             height: 48,
             child: Row(
