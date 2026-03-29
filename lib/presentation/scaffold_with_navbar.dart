@@ -124,7 +124,6 @@ class ScaffoldWithNavBar extends StatelessWidget {
                       6,
                     ),
                     child: NavigationBar(
-                      key: ValueKey('bottom_nav_$currentIndex'),
                       backgroundColor: Colors.transparent,
                       surfaceTintColor: Colors.transparent,
                       shadowColor: Colors.transparent,

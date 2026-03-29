@@ -131,7 +131,7 @@ void _showAchievementsModal(BuildContext context) {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: colors.outline,
+                color: Colors.black,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -167,7 +167,7 @@ void _showStatisticsModal(BuildContext context) {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: colors.outline,
+                color: Colors.black,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1043,7 +1043,7 @@ class _TemplateManagerScreenState extends State<_TemplateManagerScreen> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: colors.outline,
+              color: Colors.black,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -2532,7 +2532,7 @@ class _LastSessionCard extends StatelessWidget {
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: colors.outline,
+                    color: Colors.black,
                     width: 1.2,
                   ),
                 ),
@@ -2587,7 +2587,7 @@ class _LastSessionCard extends StatelessWidget {
                         Container(
                           width: 1,
                           height: 32,
-                          color: colors.outline,
+                          color: Colors.black,
                         ),
                         const Gap(AppSpacing.md),
                         Expanded(
@@ -2658,7 +2658,7 @@ class _LastSessionCard extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 32,
-                    color: colors.outline,
+                    color: Colors.black,
                   ),
                   _SessionStat(
                     icon: SvgPicture.asset(
@@ -2678,7 +2678,7 @@ class _LastSessionCard extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 32,
-                    color: colors.outline,
+                    color: Colors.black,
                   ),
                   _SessionStat(
                     icon: Icon(
@@ -2821,16 +2821,17 @@ class _ProCornerButton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: colors.outline.withValues(alpha: 0.18),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.full),
+              border: Border.all(color: Colors.black, width: 1.5),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.wifi_off_rounded, size: 13, color: colors.outline),
+              const Icon(Icons.wifi_off_rounded, size: 13, color: Colors.black),
               const Gap(5),
               Text(
                 strings.offlineBadgeLabel,
                 style: textStyles.labelSmall?.copyWith(
-                  color: colors.outline,
+                  color: Colors.black,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
@@ -3193,3 +3194,6 @@ class _AlertTile extends StatelessWidget {
     );
   }
 }
+
+
+

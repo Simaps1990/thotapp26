@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +10,7 @@ import 'package:thot/presentation/diagnostic_screen.dart';
 import 'package:thot/presentation/millieme_tool_screen.dart';
 import 'package:thot/presentation/shooting_timer_screen.dart';
 import 'package:thot/presentation/pro_screen.dart';
+import 'package:thot/presentation/color_pod_screen.dart';
 
 const _toolsHeroAsset = 'assets/images/carnet.webp';
 
@@ -40,6 +41,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const ShootingTimerScreen(),
+    );
+  }
+
+  void _openColorPod() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const ColorPodScreen(),
     );
   }
 
@@ -224,6 +234,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         subtitle: strings.homeDiagnosticSubtitle,
                         onTap: () => _openDiagnostic(provider),
                       ),
+                      const Gap(AppSpacing.md),
+                      toolButton(
+                        icon: Icons.color_lens_rounded,
+                        title: strings.colorPodToolTitle,
+                        subtitle: strings.colorPodToolSubtitle,
+                        onTap: _openColorPod,
+                      ),
                     ],
                   ),
                 ),
@@ -235,3 +252,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
     );
   }
 }
+
+
+
+
+
