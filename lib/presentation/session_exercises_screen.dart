@@ -803,7 +803,12 @@ class _ExerciseCard extends StatelessWidget {
           ),
           const Gap(AppSpacing.md),
 
-          // Card 1: weapon & equipment details
+// Card 1: weapon & equipment details
+          Text(
+            strings.sessionWeaponAndEquipmentDetailsTitle,
+            style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const Gap(AppSpacing.sm),
           Container(
             padding: AppSpacing.paddingMd,
             decoration: BoxDecoration(
@@ -811,73 +816,55 @@ class _ExerciseCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: colors.outline),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  strings.sessionWeaponAndEquipmentDetailsTitle,
-                  style: textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const Gap(AppSpacing.md),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Left column: weapon & ammo
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _InfoRow(label: strings.sessionLabelWeapon, value: weaponName),
-                          _InfoRow(label: strings.sessionLabelAmmo, value: ammoName),
-                        ],
-                      ),
+child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Left column: weapon
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _InfoRow(label: strings.sessionLabelWeapon, value: weaponName),
+                      ],
                     ),
-                    Container(
-                      width: 1,
-                      height: 56,
-                      color: colors.outline,
+                  ),
+                  Container(
+                    width: 1,
+                    color: colors.outline,
+                  ),
+                  const Gap(AppSpacing.md),
+                  // Right column: ammo & equipment
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _InfoRow(label: strings.sessionLabelAmmo, value: ammoName),
+                        if (accessories.isNotEmpty)
+                          _InfoRow(
+                            label: strings.equipmentsTitle,
+                            value: accessories.map((a) => a.name).join(', '),
+                          ),
+                      ],
                     ),
-                    const Gap(AppSpacing.md),
-                    // Right column: equipment & target
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (accessories.isNotEmpty)
-                            _InfoRow(
-                              label: strings.equipmentsTitle,
-                              value:
-                                  accessories.map((a) => a.name).join(', '),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
+            
 
           const Gap(AppSpacing.md),
 
-          // Card 2: shooting results (target photo + shots & distance)
-          Container(
-            padding: AppSpacing.paddingMd,
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(color: colors.outline),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  strings.sessionShootingResultsTitle,
-                  style: textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const Gap(AppSpacing.md),
+// Card 2: shooting results (target photo + shots & distance)
+          Text(
+            strings.sessionShootingResultsTitle,
+            style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const Gap(AppSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                 if (exercise.steps != null && exercise.steps!.isNotEmpty) ...[
 SizedBox(
   height: 320,
@@ -1013,7 +1000,7 @@ strings.exerciseAutoTotals(
                   ),
               ],
             ),
-          ),
+          
 
 
           if (exercise.observations.trim().isNotEmpty) ...[

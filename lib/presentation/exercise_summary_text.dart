@@ -161,10 +161,6 @@ if ((s.trigger ?? '').trim().isNotEmpty) {
       }
     }
 
-    if (spans.isNotEmpty) {
-      spans.add(const TextSpan(text: '\n'));
-    }
-
     return spans;
   }
 
