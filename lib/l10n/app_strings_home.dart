@@ -600,4 +600,20 @@ es: 'Tu cuaderno de tiro está al día',
         it: 'Rimuovi data',
         es: 'Eliminar fecha',
       );
+
+  String get homeTemplateTitle => _pick(
+    fr: 'Mes modèles d\'exercice',
+    en: 'My exercise templates',
+    de: 'Meine Übungsvorlagen',
+    it: 'I miei modelli di esercizio',
+    es: 'Mis plantillas de ejercicio',
+  );
+
+  String get homeTemplateSubtitle => _pick(
+    fr: 'Créer, modifier et réutiliser vos exercices types',
+    en: 'Create, edit and reuse your exercise templates',
+    de: 'Übungsvorlagen erstellen, bearbeiten und wiederverwenden',
+    it: 'Crea, modifica e riutilizza i tuoi modelli di esercizio',
+    es: 'Crear, editar y reutilizar tus plantillas de ejercicio',
+  );
 }

@@ -783,3 +783,50 @@ class UserDocument {
     );
   }
 }
+
+class ExerciseTemplate {
+  final String id;
+  final String name;
+  final DateTime createdAt;
+  final int shotsFired;
+  final int distance;
+  final bool detailedMode;
+  final List<ExerciseStep>? steps;
+  final String observations;
+
+  ExerciseTemplate({
+    required this.id,
+    required this.name,
+    required this.createdAt,
+    required this.shotsFired,
+    required this.distance,
+    required this.detailedMode,
+    this.steps,
+    this.observations = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'createdAt': createdAt.toIso8601String(),
+        'shotsFired': shotsFired,
+        'distance': distance,
+        'detailedMode': detailedMode,
+        'steps': steps?.map((s) => s.toJson()).toList(),
+        'observations': observations,
+      };
+
+  static ExerciseTemplate fromJson(Map<String, dynamic> json) {
+    final rawSteps = json['steps'] as List<dynamic>?;
+    return ExerciseTemplate(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      shotsFired: (json['shotsFired'] as num).toInt(),
+      distance: (json['distance'] as num).toInt(),
+      detailedMode: json['detailedMode'] as bool? ?? false,
+      steps: rawSteps?.map((e) => ExerciseStep.fromJson(e as Map<String, dynamic>)).toList(),
+      observations: (json['observations'] as String?) ?? '',
+    );
+  }
+}

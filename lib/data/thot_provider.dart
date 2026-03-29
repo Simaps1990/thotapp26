@@ -112,6 +112,40 @@ bool get cloudBackupEnabled => false;
     ));
   }
 
+  void saveExerciseTemplate(ExerciseTemplate template) {
+    final baseName = template.name.trim();
+    String finalName = baseName;
+    int suffix = 2;
+    while (_exerciseTemplates.any((t) => t.name == finalName && t.id != template.id)) {
+      finalName = '$baseName ($suffix)';
+      suffix++;
+    }
+    final existing = _exerciseTemplates.indexWhere((t) => t.id == template.id);
+    final saved = ExerciseTemplate(
+      id: template.id,
+      name: finalName,
+      createdAt: template.createdAt,
+      shotsFired: template.shotsFired,
+      distance: template.distance,
+      detailedMode: template.detailedMode,
+      steps: template.steps,
+      observations: template.observations,
+    );
+    if (existing >= 0) {
+      _exerciseTemplates[existing] = saved;
+    } else {
+      _exerciseTemplates.add(saved);
+    }
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void deleteExerciseTemplate(String id) {
+    _exerciseTemplates.removeWhere((t) => t.id == id);
+    _scheduleSave();
+    notifyListeners();
+  }
+
   void recordWeaponPartChange({
     required String weaponId,
     required String partName,
@@ -403,6 +437,9 @@ Future<void> toggleCloudBackup(bool enabled) async {
   }
 
   // Sessions
+  List<ExerciseTemplate> _exerciseTemplates = [];
+  List<ExerciseTemplate> get exerciseTemplates => List.unmodifiable(_exerciseTemplates);
+
   List<Session> _sessions = [];
   List<Session> get sessions => _sessions;
 
@@ -1073,6 +1110,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
 Map<String, dynamic> _buildDomainDataMap() {
   return {
     'schemaVersion': 1,
+    'exerciseTemplates': _exerciseTemplates.map((t) => t.toJson()).toList(),
     'userDocuments': _userDocuments.map((d) => {
       'id': d.id,
       'name': d.name,
@@ -1195,6 +1233,12 @@ Map<String, dynamic> _buildDomainDataMap() {
 }
 
 void _loadDomainDataFromMap(Map<String, dynamic> data) {
+  final templatesList = (data['exerciseTemplates'] as List?) ?? const [];
+  _exerciseTemplates = templatesList
+      .whereType<Map>()
+      .map((t) => ExerciseTemplate.fromJson(t.cast<String, dynamic>()))
+      .toList();
+
   final userDocsList = (data['userDocuments'] as List?) ?? const [];
   _userDocuments = userDocsList
       .whereType<Map>()

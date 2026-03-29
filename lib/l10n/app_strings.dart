@@ -2982,6 +2982,110 @@ String get weatherUsageExplanation => _pick(
         es: 'Precisión: $value',
       );
 
+  String get saveAsTemplateButton => _pick(
+    fr: 'Enregistrer comme modèle',
+    en: 'Save as template',
+    de: 'Als Vorlage speichern',
+    it: 'Salva come modello',
+    es: 'Guardar como plantilla',
+  );
+
+  String get templateNameDialogTitle => _pick(
+    fr: 'Nom du modèle',
+    en: 'Template name',
+    de: 'Vorlagenname',
+    it: 'Nome modello',
+    es: 'Nombre de la plantilla',
+  );
+
+  String get templateNameHint => _pick(
+    fr: 'Ex : Tir de précision 25m',
+    en: 'E.g. Precision drill 25m',
+    de: 'Z.B. Präzisionsübung 25m',
+    it: 'Es: Tiro di precisione 25m',
+    es: 'Ej: Tiro de precisión 25m',
+  );
+
+  String get templateSavedSnack => _pick(
+    fr: 'Modèle enregistré',
+    en: 'Template saved',
+    de: 'Vorlage gespeichert',
+    it: 'Modello salvato',
+    es: 'Plantilla guardada',
+  );
+
+  String get createExerciseButton => _pick(
+    fr: '+ Créer',
+    en: '+ Create',
+    de: '+ Erstellen',
+    it: '+ Crea',
+    es: '+ Crear',
+  );
+
+  String get importExerciseButton => _pick(
+    fr: '+ Importer',
+    en: '+ Import',
+    de: '+ Importieren',
+    it: '+ Importa',
+    es: '+ Importar',
+  );
+
+  String get importTemplateTitle => _pick(
+    fr: 'Importer un modèle',
+    en: 'Import a template',
+    de: 'Vorlage importieren',
+    it: 'Importa un modello',
+    es: 'Importar una plantilla',
+  );
+
+  String get noTemplatesAvailable => _pick(
+    fr: 'Aucun modèle enregistré',
+    en: 'No templates saved yet',
+    de: 'Keine Vorlagen gespeichert',
+    it: 'Nessun modello salvato',
+    es: 'Sin plantillas guardadas',
+  );
+
+  String get templateImportButton => _pick(
+    fr: 'Importer',
+    en: 'Import',
+    de: 'Importieren',
+    it: 'Importa',
+    es: 'Importar',
+  );
+
+  String get templateDeleteConfirmTitle => _pick(
+    fr: 'Supprimer ce modèle ?',
+    en: 'Delete this template?',
+    de: 'Diese Vorlage löschen?',
+    it: 'Eliminare questo modello?',
+    es: '¿Eliminar esta plantilla?',
+  );
+
+  String get offlineWeatherUnavailable => _pick(
+    fr: 'Hors ligne — météo indisponible.',
+    en: 'Offline — weather unavailable.',
+    de: 'Offline — Wetter nicht verfügbar.',
+    it: 'Offline — meteo non disponibile.',
+    es: 'Sin conexión — clima no disponible.',
+  );
+
+  String get offlineLocationUnavailable => _pick(
+    fr: 'Hors ligne — géolocalisation indisponible.',
+    en: 'Offline — geolocation unavailable.',
+    de: 'Offline — Geolokalisierung nicht verfügbar.',
+    it: 'Offline — geolocalizzazione non disponibile.',
+    es: 'Sin conexión — geolocalización no disponible.',
+  );
+
+  String get offlineBadgeLabel => _pick(
+    fr: 'HORS LIGNE',
+    en: 'OFFLINE',
+    de: 'OFFLINE',
+    it: 'OFFLINE',
+    es: 'SIN CONEXIÓN',
+  );
+
   String get saveExerciseButton => _pick(
         fr: "ENREGISTRER L'EXERCICE",
         en: 'SAVE EXERCISE',

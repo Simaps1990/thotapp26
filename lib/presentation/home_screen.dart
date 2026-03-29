@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +34,7 @@ void _showDiagnosticModal(BuildContext context) {
     builder: (context) => const DiagnosticScreen(),
   );
 }
+
 // ── Modèle d'alerte ──────────────────────────────────────────────────────────
 
 enum _AlertType { wear, fouling, stock, document }
@@ -86,6 +88,7 @@ class _MaintenanceAlert {
       );
 }
 
+// ── Écran d'accueil ──────────────────────────────────────────────────────────
 
 void _showMilliemeModal(BuildContext context) {
   final provider = Provider.of<ThotProvider>(context, listen: false);
@@ -238,18 +241,29 @@ class _HomeScreenState extends State<HomeScreen> {
   List<_MaintenanceAlert> _alerts = [];
   static const _prefKey = 'maintenance_alerts_v1';
 
+  bool _isOnline = true;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncAlerts());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncAlerts();
+      _checkConnectivity();
+    });
   }
 
-  @override
-  void dispose() {
-    _closePanel();
-    super.dispose();
+  Future<void> _checkConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('dns.google')
+          .timeout(const Duration(seconds: 3));
+      final online = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      if (mounted && online != _isOnline) setState(() => _isOnline = online);
+    } catch (_) {
+      if (mounted && _isOnline) setState(() => _isOnline = false);
+    }
   }
-Future<void> _syncAlerts() async {
+
+  Future<void> _syncAlerts() async {
     final provider = Provider.of<ThotProvider>(context, listen: false);
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_prefKey);
@@ -381,8 +395,6 @@ Future<void> _syncAlerts() async {
     await _saveAlerts();
   }
 
-
-
   Future<void> _saveAlerts() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, jsonEncode(_alerts.map((a) => a.toJson()).toList()));
@@ -418,7 +430,7 @@ Future<void> _syncAlerts() async {
     if (_overlayEntry != null) { _closePanel(); } else { _openPanel(); }
   }
 
-void _openPanel() {
+  void _openPanel() {
     final overlay = Overlay.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final renderBox = _bellKey.currentContext?.findRenderObject() as RenderBox?;
@@ -471,6 +483,39 @@ void _openPanel() {
     return _HomeStandardActionCard(leading: Icon(Icons.timer_rounded, color: colors.primary, size: 24), title: strings.homeTimerTitle, subtitle: strings.homeTimerSubtitle, onTap: () => _showTimerModal(context), colors: colors, textStyles: textStyles);
   }
 
+  void _showTemplateModal(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final height = MediaQuery.of(ctx).size.height * 0.85;
+        return Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: baseBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: const _TemplateManagerScreen(),
+        );
+      },
+    );
+  }
+
+  Widget _buildTemplateButton({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    return _HomeStandardActionCard(
+      leading: Icon(Icons.bookmark_rounded, color: colors.primary, size: 24),
+      title: strings.homeTemplateTitle,
+      subtitle: strings.homeTemplateSubtitle,
+      onTap: () => _showTemplateModal(context),
+      colors: colors,
+      textStyles: textStyles,
+    );
+  }
+
   Widget _buildMilliemeButton({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
     final strings = AppStrings.of(context);
     final provider = Provider.of<ThotProvider>(context);
@@ -495,6 +540,7 @@ void _openPanel() {
           _ProCornerButton(
             key: _bellKey,
             isPremium: provider.isPremium,
+            isOnline: _isOnline,
             unreadCount: _unreadCount,
             onTap: () => showProModal(context),
             onBellTap: _togglePanel,
@@ -755,17 +801,22 @@ void _openPanel() {
             const Gap(AppSpacing.lg),
             _buildSectionTitle(title: strings.homeToolsSectionTitle, textStyles: textStyles, colors: colors),
             const Gap(AppSpacing.md),
-            _buildTimerButton(context: context, colors: colors, textStyles: textStyles),
-            const Gap(AppSpacing.md),
-            _buildDiagnosticButton(context: context, colors: colors, textStyles: textStyles),
-            const Gap(AppSpacing.md),
-            _buildMilliemeButton(context: context, colors: colors, textStyles: textStyles),
+            Row(children: [
+              _buildTimerButton(context: context, colors: colors, textStyles: textStyles),
+              const Gap(AppSpacing.md),
+              _buildDiagnosticButton(context: context, colors: colors, textStyles: textStyles),
+              const Gap(AppSpacing.md),
+              _buildMilliemeButton(context: context, colors: colors, textStyles: textStyles),
+              const Gap(AppSpacing.md),
+              _buildTemplateButton(context: context, colors: colors, textStyles: textStyles),
+            ]),
           ]),
         ),
       ),
     );
   }
 }
+
 class _HomeStandardActionCard extends StatelessWidget {
   final Widget leading;
   final String title;
@@ -1620,8 +1671,10 @@ String _bestSessionPrecision(ThotProvider provider) {
       sessions.map((s) => s.averagePrecision).reduce((a, b) => a > b ? a : b);
   return "${best.toStringAsFixed(0)}%";
 }
-class _ProCornerButton extends StatefulWidget {
+
+class _ProCornerButton extends StatelessWidget {
   final bool isPremium;
+  final bool isOnline;
   final int unreadCount;
   final VoidCallback onTap;
   final VoidCallback onBellTap;
@@ -1629,17 +1682,11 @@ class _ProCornerButton extends StatefulWidget {
   const _ProCornerButton({
     super.key,
     required this.isPremium,
+    required this.isOnline,
     required this.unreadCount,
     required this.onTap,
     required this.onBellTap,
   });
-
-  @override
-  State<_ProCornerButton> createState() => _ProCornerButtonState();
-}
-
-class _ProCornerButtonState extends State<_ProCornerButton> {
-  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1647,13 +1694,13 @@ class _ProCornerButtonState extends State<_ProCornerButton> {
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
 
-    Widget bell = GestureDetector(
-      onTap: widget.onBellTap,
+    final bell = GestureDetector(
+      onTap: onBellTap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Icon(Icons.notifications_outlined, size: 26, color: colors.onSurface),
-          if (widget.unreadCount > 0)
+          if (unreadCount > 0)
             Positioned(
               top: -4,
               right: -4,
@@ -1665,7 +1712,7 @@ class _ProCornerButtonState extends State<_ProCornerButton> {
                 ),
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 child: Text(
-                  widget.unreadCount > 99 ? '99+' : '${widget.unreadCount}',
+                  unreadCount > 99 ? '99+' : '$unreadCount',
                   style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
                   textAlign: TextAlign.center,
                 ),
@@ -1675,35 +1722,32 @@ class _ProCornerButtonState extends State<_ProCornerButton> {
       ),
     );
 
-    if (!widget.isPremium) return bell;
-
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOut,
-      scale: _pressed ? 0.98 : 1.0,
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        GestureDetector(
-          onTap: widget.onTap,
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!isOnline)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: colors.primary,
+              color: colors.outline.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(AppRadius.full),
-              boxShadow: AppShadows.cardPremium,
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.workspace_premium_rounded, size: 16, color: colors.onPrimary),
-              const Gap(6),
-              Text(strings.homeVersionProLabel, style: textStyles.labelMedium?.copyWith(color: colors.onPrimary, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+              Icon(Icons.wifi_off_rounded, size: 13, color: colors.outline),
+              const Gap(5),
+              Text(
+                strings.offlineBadgeLabel,
+                style: textStyles.labelSmall?.copyWith(
+                  color: colors.outline,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ]),
           ),
-        ),
-        const Gap(12),
+        if (!isOnline) const Gap(10),
         bell,
-      ]),
+      ],
     );
   }
 }

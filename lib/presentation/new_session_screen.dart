@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:thot/data/exercise_step.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/data/thot_provider.dart';
@@ -550,13 +551,27 @@ LocationSettings _buildLocationSettings() {
             ),
             title: strings.exercisesSectionTitle,
           ),
-          FilledButton.icon(
-            onPressed: _addExercise,
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(strings.addButton),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilledButton.icon(
+                onPressed: _addExercise,
+                icon: const Icon(Icons.add, size: 18),
+                label: Text(strings.createExerciseButton),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+              const Gap(8),
+              OutlinedButton.icon(
+                onPressed: _importExerciseFromTemplate,
+                icon: const Icon(Icons.download_rounded, size: 18),
+                label: Text(strings.importExerciseButton),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -619,6 +634,18 @@ LocationSettings _buildLocationSettings() {
                       _exercises.removeAt(index);
                       _exercisesError = _exercises.isEmpty;
                     }),
+                    onMoveUp: index > 0
+                        ? () => setState(() {
+                              final e = _exercises.removeAt(index);
+                              _exercises.insert(index - 1, e);
+                            })
+                        : null,
+                    onMoveDown: index < _exercises.length - 1
+                        ? () => setState(() {
+                              final e = _exercises.removeAt(index);
+                              _exercises.insert(index + 1, e);
+                            })
+                        : null,
                   );
                 }).toList(),
               ),
@@ -858,6 +885,113 @@ LocationSettings _buildLocationSettings() {
         });
       }
     }
+  }
+
+  void _importExerciseFromTemplate() {
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final templates = provider.exerciseTemplates;
+    final strings = AppStrings.of(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (_, controller) {
+            final colors = Theme.of(ctx).colorScheme;
+            final textStyles = Theme.of(ctx).textTheme;
+            final baseBackground = Theme.of(ctx).scaffoldBackgroundColor;
+            return Container(
+              decoration: BoxDecoration(
+                color: baseBackground,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colors.outline,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Padding(
+                    padding: AppSpacing.paddingLg,
+                    child: Text(
+                      strings.importTemplateTitle,
+                      style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    child: templates.isEmpty
+                        ? Center(
+                            child: Text(
+                              strings.noTemplatesAvailable,
+                              style: textStyles.bodyMedium?.copyWith(color: colors.outline),
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: controller,
+                            padding: AppSpacing.paddingLg,
+                            itemCount: templates.length,
+                            itemBuilder: (_, i) {
+                              final t = templates[i];
+                              return ListTile(
+                                title: Text(
+                                  t.name,
+                                  style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Text(
+                                  t.detailedMode
+                                      ? '${t.steps?.length ?? 0} étapes'
+                                      : '${t.shotsFired} coups · ${t.distance} m',
+                                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                                ),
+                                trailing: FilledButton(
+                                  onPressed: () {
+                                    final exercise = Exercise(
+                                      id: DateTime.now().microsecondsSinceEpoch.toString(),
+                                      name: t.name,
+                                      weaponId: _exercises.isNotEmpty ? _exercises.last.weaponId : '',
+                                      ammoId: _exercises.isNotEmpty ? _exercises.last.ammoId : '',
+                                      shotsFired: t.shotsFired,
+                                      distance: t.distance,
+                                      observations: t.observations,
+                                      steps: t.steps != null ? List<ExerciseStep>.from(t.steps!) : null,
+                                      weaponLabel: null,
+                                      ammoLabel: null,
+                                      equipmentIds: const [],
+                                      targetName: null,
+                                      targetPhotos: const [],
+                                      precision: null,
+                                      precisionEnabled: true,
+                                    );
+                                    setState(() {
+                                      _exercises.add(exercise);
+                                      _exercisesError = false;
+                                    });
+                                    Navigator.of(ctx).pop();
+                                  },
+                                  child: Text(strings.templateImportButton),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _addExercise() {
@@ -1159,11 +1293,31 @@ LocationSettings _buildLocationSettings() {
       }
       return null;
     }
-  }
 
   Future<void> _resolveLocationAndWeather({
     required bool updateLocationField,
   }) async {
+    // Check offline first
+    try {
+      final result = await InternetAddress.lookup('dns.google')
+          .timeout(const Duration(seconds: 3));
+      if (result.isEmpty || result[0].rawAddress.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(strings.offlineLocationUnavailable)),
+          );
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.offlineLocationUnavailable)),
+        );
+      }
+      return;
+    }
+
     final position = await _requestCurrentPosition(
       permissionDeniedMessage: strings.locationPermissionDenied,
       permissionDeniedForeverMessage: strings.locationPermissionDeniedForever,
@@ -1197,6 +1351,28 @@ LocationSettings _buildLocationSettings() {
     required double lon,
   }) async {
     if (_isWeatherLoading) return;
+
+    // Check offline first
+    try {
+      final result = await InternetAddress.lookup('dns.google')
+          .timeout(const Duration(seconds: 3));
+      if (result.isEmpty || result[0].rawAddress.isNotEmpty == false) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(strings.offlineWeatherUnavailable)),
+          );
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.offlineWeatherUnavailable)),
+        );
+      }
+      return;
+    }
+
     setState(() => _isWeatherLoading = true);
 
     try {
@@ -1481,6 +1657,8 @@ class _ExerciseCard extends StatelessWidget {
   final ThotProvider provider;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
 
   const _ExerciseCard({
     required this.exercise,
@@ -1488,6 +1666,8 @@ class _ExerciseCard extends StatelessWidget {
     required this.provider,
     required this.onEdit,
     required this.onDelete,
+    this.onMoveUp,
+    this.onMoveDown,
   });
 
   @override
@@ -1611,6 +1791,23 @@ class _ExerciseCard extends StatelessWidget {
               ),
               Row(
                 children: [
+                  if (onMoveUp != null)
+                    IconButton(
+                      onPressed: onMoveUp,
+                      icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 20),
+                      color: colors.secondary,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  if (onMoveDown != null)
+                    IconButton(
+                      onPressed: onMoveDown,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                      color: colors.secondary,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  const Gap(8),
                   IconButton(
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit_rounded, size: 20),
@@ -1618,7 +1815,7 @@ class _ExerciseCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
-                  const Gap(16),
+                  const Gap(8),
                   IconButton(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline_rounded, size: 20),
@@ -3604,30 +3801,101 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
             ),
             const Gap(AppSpacing.lg),
 
-            // Save Button
-            SizedBox(
-              height: 50,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  boxShadow: AppShadows.cardPremium,
-                ),
-                child: FilledButton(
-                  onPressed: _save,
-                  child: Text(strings.saveExerciseButton),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
+            // Save buttons row
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        boxShadow: AppShadows.cardPremium,
+                      ),
+                      child: FilledButton(
+                        onPressed: _save,
+                        child: Text(strings.saveExerciseButton),
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                const Gap(10),
+                SizedBox(
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: _saveAsTemplate,
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      side: BorderSide(color: colors.primary, width: 1.6),
+                    ),
+                    child: Icon(Icons.bookmark_add_outlined, size: 22, color: colors.primary),
+                  ),
+                ),
+              ],
             ),
             const Gap(AppSpacing.lg),
           ],
         ),
       ),
     ),
+        ],
+      ),
+    );
+  }
+
+  void _saveAsTemplate() {
+    final strings = AppStrings.of(context);
+    final nameController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(strings.templateNameDialogTitle),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: InputDecoration(hintText: strings.templateNameHint),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(strings.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = nameController.text.trim();
+              if (name.isEmpty) return;
+              final shots = _detailedMode
+                  ? _computedTotalShots()
+                  : (int.tryParse(_shotsFiredController.text.trim()) ?? 0);
+              final distance = _detailedMode
+                  ? _computedMaxDistance()
+                  : (int.tryParse(_distanceController.text.trim()) ?? 0);
+              final template = ExerciseTemplate(
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
+                name: name,
+                createdAt: DateTime.now(),
+                shotsFired: shots,
+                distance: distance,
+                detailedMode: _detailedMode,
+                steps: _detailedMode ? List<ExerciseStep>.from(_steps) : null,
+                observations: _observationsController.text.trim(),
+              );
+              Provider.of<ThotProvider>(context, listen: false)
+                  .saveExerciseTemplate(template);
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(strings.templateSavedSnack)),
+              );
+            },
+            child: Text(strings.validate),
+          ),
         ],
       ),
     );

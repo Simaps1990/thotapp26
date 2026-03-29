@@ -739,6 +739,17 @@ class SettingsScreen extends StatelessWidget {
         ),
         const Divider(indent: 48, height: 1),
         _SettingsItem(
+          icon: Icons.lock_outline_rounded,
+          label: strings.dataPrivacyLabel,
+          subtitle: strings.dataPrivacySubtitle,
+          onTap: () => context.push('/legal'),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: colors.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
           icon: Icons.info_outline_rounded,
           label: strings.aboutLabel,
           subtitle: strings.aboutSubtitle,
