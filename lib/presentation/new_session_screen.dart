@@ -2604,48 +2604,66 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
                   ),
                   const Gap(AppSpacing.md),
 
-                  // Arme
-                  Row(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/images/gun.svg',
-                        width: 18,
-                        height: 18,
-                        colorFilter:
-                            ColorFilter.mode(colors.primary, BlendMode.srcIn),
-                      ),
-                      const Gap(8),
-                      Text(
-                        strings.weaponTitle,
-                        style: textStyles.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                  // Weapon & Ammo Card (grouped)
+                  Text(
+                    strings.sessionWeaponAndEquipmentDetailsTitle,
+                    style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const Gap(AppSpacing.sm),
-                  _SourceToggleRow(
-                    leftLabel: strings.myInventory,
-                    rightLabel: strings.borrowed,
-                    value: _weaponSource,
-                    onChanged: (v) => setState(() {
-                      _weaponSource = v;
-                      if (_weaponSource == 'borrowed') _selectedWeaponId = null;
-                      if (_weaponSource != 'borrowed') {
-                        _borrowedWeaponController.text = '';
-                      }
-                    }),
-                  ),
-                  const Gap(10),
-
-                      Container(
-                        key: _weaponFieldKey,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(
-                            color: _weaponError ? colors.error : Colors.transparent,
-                            width: 1.4,
-                          ),
-                        ),
+                  Container(
+                    padding: AppSpacing.paddingMd,
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      border: Border.all(color: colors.outline),
+                    ),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Left column: weapon
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/images/gun.svg',
+                                      width: 18,
+                                      height: 18,
+                                      colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                                    ),
+                                    const Gap(8),
+                                    Text(
+                                      strings.weaponTitle,
+                                      style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                                const Gap(AppSpacing.sm),
+                                _SourceToggleRow(
+                                  leftLabel: strings.myInventory,
+                                  rightLabel: strings.borrowed,
+                                  value: _weaponSource,
+                                  onChanged: (v) => setState(() {
+                                    _weaponSource = v;
+                                    if (_weaponSource == 'borrowed') _selectedWeaponId = null;
+                                    if (_weaponSource != 'borrowed') {
+                                      _borrowedWeaponController.text = '';
+                                    }
+                                  }),
+                                ),
+                                const Gap(10),
+                                Container(
+                                  key: _weaponFieldKey,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                                    border: Border.all(
+                                      color: _weaponError ? colors.error : Colors.transparent,
+                                      width: 1.4,
+                                    ),
+                                  ),
                         child: _weaponSource == 'inventory'
                             ? (provider.weapons.isEmpty
                                 ? Padding(
@@ -2814,48 +2832,56 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
                                   ),
                                 ),
                               ),
-                      ),
-                      const Gap(AppSpacing.md),
-
-            // Munition
-            Row(
-              children: [
-                SvgPicture.asset(
-                  'assets/images/bullet.svg',
-                  width: 18,
-                  height: 18,
-                  colorFilter:
-                      ColorFilter.mode(colors.primary, BlendMode.srcIn),
-                ),
-                const Gap(8),
-                Text(
-                  strings.ammoTitle,
-                  style: textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const Gap(AppSpacing.sm),
-            _SourceToggleRow(
-              leftLabel: strings.myInventory,
-              rightLabel: strings.borrowed,
-              value: _ammoSource,
-              onChanged: (v) => setState(() {
-                _ammoSource = v;
-                if (_ammoSource == 'borrowed') _selectedAmmoId = null;
-                if (_ammoSource != 'borrowed') _borrowedAmmoController.text = '';
-              }),
-            ),
-            const Gap(10),
-            Container(
-              key: _ammoFieldKey,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(
-                  color: _ammoError ? colors.error : Colors.transparent,
-                  width: 1.4,
-                ),
-              ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            color: colors.outline,
+                          ),
+                          const Gap(AppSpacing.md),
+                          // Right column: ammo
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/images/bullet.svg',
+                                      width: 18,
+                                      height: 18,
+                                      colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                                    ),
+                                    const Gap(8),
+                                    Text(
+                                      strings.ammoTitle,
+                                      style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                                const Gap(AppSpacing.sm),
+                                _SourceToggleRow(
+                                  leftLabel: strings.myInventory,
+                                  rightLabel: strings.borrowed,
+                                  value: _ammoSource,
+                                  onChanged: (v) => setState(() {
+                                    _ammoSource = v;
+                                    if (_ammoSource == 'borrowed') _selectedAmmoId = null;
+                                    if (_ammoSource != 'borrowed') _borrowedAmmoController.text = '';
+                                  }),
+                                ),
+                                const Gap(10),
+                                Container(
+                                  key: _ammoFieldKey,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                                    border: Border.all(
+                                      color: _ammoError ? colors.error : Colors.transparent,
+                                      width: 1.4,
+                                    ),
+                                  ),
               child: _ammoSource == 'inventory'
                   ? (provider.ammos.isEmpty
                       ? Padding(
@@ -2986,10 +3012,17 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
                         ),
                       ),
                     ),
-            ),
-            const Gap(AppSpacing.md),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
 
-            // Équipement utilisé
+                  // Équipement utilisé (outside the card)
             Row(
               children: [
                 Icon(
@@ -3015,6 +3048,12 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
             ),
             const Gap(AppSpacing.md),
 
+            // Shooting Results section
+            Text(
+              strings.sessionShootingResultsTitle,
+              style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const Gap(AppSpacing.sm),
             Row(
               children: [
                 Icon(
