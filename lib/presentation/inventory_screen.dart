@@ -203,6 +203,25 @@ class _InventoryScreenState extends State<InventoryScreen>
                   ),
                 ),
                 Positioned(
+                  left: AppSpacing.lg,
+                  top: panelTop - 44,
+                  child: Text(
+                    strings.inventorySubtitle,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                      shadows: const [
+                        Shadow(
+                          color: Colors.black54,
+                          offset: Offset(1, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
                   left: 0,
                   right: 0,
                   top: panelTop,

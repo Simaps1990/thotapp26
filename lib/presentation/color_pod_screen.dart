@@ -53,6 +53,8 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
   int _countdown = 3;
   Timer? _timer;
   Timer? _delayTimer;
+  Stopwatch? _stopwatch;
+  int _runToken = 0;
   Color? _currentColor;
   String? _currentColorId;
   int _remainingMs = 0;
@@ -92,10 +94,14 @@ setState(() { _phase = _Phase.countdown; _countdown = 3; });
 
 void _runCountdown() {
     _timer?.cancel();
+    _delayTimer?.cancel();
+    _stopwatch?.stop();
+    _stopwatch = null;
     // Affiche 3 → 2 → 1 → GO (500ms) → lance
     _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
       if (_countdown <= 1) {
         t.cancel();
+
         // Affiche GO pendant 500ms avec son
         setState(() => _countdown = 0);
         try { await TimerSound.play(); } catch (_) {}
@@ -111,46 +117,83 @@ void _runCountdown() {
           _currentColor = null;
           _currentColorId = null;
         });
-        _showNextColor();
+        _startRun();
       } else {
         setState(() => _countdown--);
       }
     });
   }
 
-  void _showNextColor() {
-    if (_remainingMs <= 0) { _finish(); return; }
-    final list = _available;
-    final picked = list[Random().nextInt(list.length)];
-    setState(() {
-      _currentColor = picked.color;
-      _currentColorId = picked.id;
-      _counts[picked.id] = (_counts[picked.id] ?? 0) + 1;
-    });
-
-    final displayMs = (_colorDuration * 1000).round();
-    final delayMs   = (_colorDelay   * 1000).round();
-    const tickMs    = 50;
-    int elapsed = 0;
-
+  void _startRun() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: tickMs), (t) {
-      elapsed += tickMs;
-      setState(() => _remainingMs = (_remainingMs - tickMs).clamp(0, 999999));
-      if (_remainingMs <= 0) { t.cancel(); _finish(); return; }
-      if (elapsed >= displayMs) {
+    _delayTimer?.cancel();
+
+    final totalMs = (_totalDuration * 1000).round();
+    _stopwatch = Stopwatch()..start();
+
+    // UI ticker: keeps remaining time progressing continuously (even on black screen)
+    _timer = Timer.periodic(const Duration(milliseconds: 50), (t) {
+      if (!mounted) {
         t.cancel();
-        setState(() { _currentColor = null; _currentColorId = null; });
-        _delayTimer = Timer(Duration(milliseconds: delayMs), () {
-          if (_phase == _Phase.running && mounted) _showNextColor();
-        });
+        return;
+      }
+      if (_phase != _Phase.running) {
+        t.cancel();
+        return;
+      }
+
+      final elapsed = _stopwatch?.elapsedMilliseconds ?? 0;
+      final remaining = (totalMs - elapsed).clamp(0, totalMs);
+      if (remaining != _remainingMs) {
+        setState(() => _remainingMs = remaining);
+      }
+      if (remaining <= 0) {
+        t.cancel();
+        _finish();
       }
     });
+
+    final token = ++_runToken;
+    _runColorLoop(token);
+  }
+
+  Future<void> _runColorLoop(int token) async {
+    while (mounted && _phase == _Phase.running && token == _runToken) {
+      if (_remainingMs <= 0) return;
+
+      final list = _available;
+      if (list.isEmpty) {
+        _finish();
+        return;
+      }
+
+      final picked = list[Random().nextInt(list.length)];
+      setState(() {
+        _currentColor = picked.color;
+        _currentColorId = picked.id;
+        _counts[picked.id] = (_counts[picked.id] ?? 0) + 1;
+      });
+
+      final displayMs = (_colorDuration * 1000).round();
+      final delayMs = (_colorDelay * 1000).round();
+
+      await Future.delayed(Duration(milliseconds: displayMs));
+      if (!mounted || _phase != _Phase.running || token != _runToken) return;
+      if (_remainingMs <= 0) return;
+
+      setState(() {
+        _currentColor = null;
+        _currentColorId = null;
+      });
+
+      await Future.delayed(Duration(milliseconds: delayMs));
+    }
   }
 
   void _finish() async {
     _timer?.cancel();
     _delayTimer?.cancel();
+    _stopwatch?.stop();
     try { await TimerSound.play(); } catch (_) {}
     try {
       final ok = await Vibration.hasVibrator() ?? false;
@@ -163,6 +206,9 @@ void _runCountdown() {
   void _reset() {
     _timer?.cancel();
     _delayTimer?.cancel();
+    _stopwatch?.stop();
+    _stopwatch = null;
+    _runToken++;
     setState(() {
       _phase = _Phase.config;
       _currentColor = null;
@@ -176,6 +222,7 @@ void _runCountdown() {
   void dispose() {
     _timer?.cancel();
     _delayTimer?.cancel();
+    _stopwatch?.stop();
     super.dispose();
   }
 

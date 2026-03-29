@@ -75,7 +75,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-const heroHeight = 180.0;
+    const heroHeight = 208.0;
+    const panelTop = 120.0;
+    const panelHeight = 140.0;
 
     Widget toolButton({
       required IconData icon,
@@ -139,8 +141,8 @@ const heroHeight = 180.0;
         top: false,
         child: Column(
           children: [
-SizedBox(
-              height: heroHeight,
+            SizedBox(
+              height: panelTop + panelHeight,
               child: Stack(
                 children: [
                   SizedBox(
@@ -160,23 +162,7 @@ SizedBox(
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.black.withValues(alpha: 0.16),
-                                Colors.black.withValues(alpha: 0.55),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: AppSpacing.lg,
-                          bottom: 16,
-                          child: Text(
-                            strings.homeToolsSectionTitle.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.2,
-                              shadows: [
-                                Shadow(color: Colors.black54, offset: Offset(1, 2), blurRadius: 4),
+                                Colors.black.withValues(alpha: 0.42),
                               ],
                             ),
                           ),
@@ -184,57 +170,92 @@ SizedBox(
                       ],
                     ),
                   ),
-                  
+                  Positioned(
+                    left: AppSpacing.lg,
+                    top: panelTop - 44,
+                    child: Text(
+                      strings.toolsSubtitle,
+                      style: textStyles.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black54,
+                            offset: Offset(1, 2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: panelTop,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: baseBackground,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(28),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            toolButton(
+                              icon: Icons.straighten_rounded,
+                              title: strings.milliemeToolTitle,
+                              subtitle: strings.milliemeToolSubtitle,
+                              onTap: () => _openMillieme(provider),
+                            ),
+                            const Gap(AppSpacing.md),
+                            toolButton(
+                              icon: Icons.timer_rounded,
+                              title: strings.homeTimerTitle,
+                              subtitle: strings.homeTimerSubtitle,
+                              onTap: _openTimer,
+                            ),
+                            const Gap(AppSpacing.md),
+                            toolButton(
+                              icon: Icons.medical_services_outlined,
+                              title: strings.homeDiagnosticTitle,
+                              subtitle: strings.homeDiagnosticSubtitle,
+                              onTap: () => _openDiagnostic(provider),
+                            ),
+                            const Gap(AppSpacing.md),
+                            toolButton(
+                              icon: Icons.color_lens_outlined,
+                              title: strings.colorPodTitle,
+                              subtitle: strings.colorPodSubtitle,
+                              onTap: _openColorPod,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: baseBackground,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                ),
+            Expanded(
+              child: ColoredBox(
+                color: baseBackground,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg,
-                    AppSpacing.lg,
+                    0,
                     AppSpacing.lg,
                     AppSpacing.lg,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      toolButton(
-                        icon: Icons.straighten_rounded,
-                        title: strings.milliemeToolTitle,
-                        subtitle: strings.milliemeToolSubtitle,
-                        onTap: () => _openMillieme(provider),
-                      ),
-                      const Gap(AppSpacing.md),
-                      toolButton(
-                        icon: Icons.timer_rounded,
-                        title: strings.homeTimerTitle,
-                        subtitle: strings.homeTimerSubtitle,
-                        onTap: _openTimer,
-                      ),
-                      const Gap(AppSpacing.md),
-                      toolButton(
-                        icon: Icons.medical_services_outlined,
-                        title: strings.homeDiagnosticTitle,
-                        subtitle: strings.homeDiagnosticSubtitle,
-                        onTap: () => _openDiagnostic(provider),
-                      ),
-                      const Gap(AppSpacing.md),
-                      toolButton(
-                        icon: Icons.color_lens_rounded,
-                        title: strings.colorPodToolTitle,
-                        subtitle: strings.colorPodToolSubtitle,
-                        onTap: _openColorPod,
-                      ),
-                    ],
-                  ),
+                  child: const SizedBox.shrink(),
                 ),
               ),
             ),

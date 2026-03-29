@@ -247,6 +247,25 @@ class _SessionListScreenState extends State<SessionListScreen> {
                     ),
                   ),
                   Positioned(
+                    left: AppSpacing.lg,
+                    top: panelTop - 44,
+                    child: Text(
+                      strings.sessionsSubtitle,
+                      style: textStyles.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black54,
+                            offset: Offset(1, 2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
                     left: 0,
                     right: 0,
                     top: panelTop,
