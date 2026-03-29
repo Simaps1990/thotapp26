@@ -1293,6 +1293,7 @@ LocationSettings _buildLocationSettings() {
       }
       return null;
     }
+  }
 
   Future<void> _resolveLocationAndWeather({
     required bool updateLocationField,
