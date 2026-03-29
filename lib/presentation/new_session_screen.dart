@@ -977,7 +977,7 @@ LocationSettings _buildLocationSettings() {
                                       _exercises.add(exercise);
                                       _exercisesError = false;
                                     });
-                                    Navigator.of(ctx).pop();
+if (ctx.mounted) Navigator.of(ctx).pop();
                                   },
                                   child: Text(strings.templateImportButton),
                                 ),
