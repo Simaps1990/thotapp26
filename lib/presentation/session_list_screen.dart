@@ -17,6 +17,7 @@ import 'package:thot/utils/unit_converter.dart';
 import 'package:thot/utils/web_text_exporter.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
+import 'package:thot/presentation/home_screen.dart'; // Import pour accéder à TemplateManagerScreen
 
 const _sessionsHeroAsset = 'assets/images/carnet.webp';
 
@@ -48,6 +49,26 @@ class _SessionListScreenState extends State<SessionListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showTemplateModal(BuildContext context) {
+    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final height = MediaQuery.of(ctx).size.height * 0.85;
+        return Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: baseBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: const TemplateManagerScreen(),
+        );
+      },
+    );
   }
 
   // Fonction pour retirer les accents et passer en minuscules
@@ -142,7 +163,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
     const panelTop = 120.0;
     const panelHeight = 140.0;
     final subtleBorderColor = colors.outline.withValues(alpha: 0.45);
-    // Fond global (même que la home) pour la page et le bandeau.
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     final canAddSession = provider.canAddSession();
     final searchFillColor = Color.alphaBlend(
@@ -265,13 +285,36 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       ),
                     ),
                   ),
+                  // --- BOUTON MODÈLES ---
+                  Positioned(
+                    right: AppSpacing.lg,
+                    top: panelTop - 54, // Ajusté pour s'aligner avec le texte "SÉANCES"
+                    child: TextButton.icon(
+                      onPressed: () => _showTemplateModal(context),
+                      icon: const Icon(Icons.bookmark_rounded, color: Colors.white, size: 18),
+                      label: Text(
+                        "Modèles",
+                        style: textStyles.labelLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.black.withValues(alpha: 0.35),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // ------------------------------
                   Positioned(
                     left: 0,
                     right: 0,
                     top: panelTop,
                     child: Container(
                       decoration: BoxDecoration(
-                        // Même couleur que le fond global pour le bandeau haut.
                         color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(28),
@@ -502,7 +545,6 @@ class _SlidingSegmentedSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final textStyles = Theme.of(context).textTheme;
     final subtleBorderColor = colors.outline.withValues(alpha: 0.45);
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
@@ -941,63 +983,6 @@ class _SessionCard extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const Gap(AppSpacing.sm),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _SessionStat(
-                                icon: SvgPicture.asset(
-                                  'assets/images/train.svg',
-                                  width: 18,
-                                  height: 18,
-                                  colorFilter: ColorFilter.mode(
-                                    colors.primary,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                                label: strings.exercisesLabel,
-                                value: "${session.exercises.length}",
-                                colors: colors,
-                                textStyles: textStyles,
-                              ),
-                              Container(
-                                width: 1,
-                                height: 32,
-                                color: colors.outline,
-                              ),
-                              _SessionStat(
-                                icon: SvgPicture.asset(
-                                  'assets/images/hit.svg',
-                                  width: 18,
-                                  height: 18,
-                                  colorFilter: ColorFilter.mode(
-                                    colors.primary,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                                label: strings.shotsFiredLabel,
-                                value: "${session.totalRounds}",
-                                colors: colors,
-                                textStyles: textStyles,
-                              ),
-                              Container(
-                                width: 1,
-                                height: 32,
-                                color: colors.outline,
-                              ),
-                              _SessionStat(
-                                icon: Icon(
-                                  Icons.place_rounded,
-                                  size: 18,
-                                  color: colors.primary,
-                                ),
-                                label: strings.locationLabel,
-                                value: session.location.split(' ').take(2).join(' '),
-                                colors: colors,
-                                textStyles: textStyles,
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
@@ -1046,8 +1031,6 @@ class _SessionCard extends StatelessWidget {
     final summary = SessionTextExporter.buildSummary(
         session: session, provider: provider, converter: converter);
 
-    // On web, the native share sheet is often unavailable (depends on HTTPS +
-    // browser support). So we show a dedicated export sheet (copy + download).
     if (kIsWeb) {
       await showModalBottomSheet(
         context: context,

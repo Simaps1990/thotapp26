@@ -499,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: baseBackground,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: const _TemplateManagerScreen(),
+          child: const TemplateManagerScreen(),
         );
       },
     );
@@ -816,14 +816,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _TemplateManagerScreen extends StatefulWidget {
-  const _TemplateManagerScreen({super.key});
+class TemplateManagerScreen extends StatefulWidget {
+  const TemplateManagerScreen({super.key});
 
   @override
-  State<_TemplateManagerScreen> createState() => _TemplateManagerScreenState();
+  State<TemplateManagerScreen> createState() => TemplateManagerScreenState();
 }
 
-class _TemplateManagerScreenState extends State<_TemplateManagerScreen> {
+class TemplateManagerScreenState extends State<TemplateManagerScreen> {
   final PageController _pageController = PageController();
 
   String _searchQuery = '';
@@ -2425,6 +2425,9 @@ class _LastSessionCard extends StatelessWidget {
       ammoName = ammoDisplayName(provider, firstEx);
     }
 
+    // On utilise la couleur primaire (icônes) avec un peu de transparence pour une bordure élégante
+    final borderColor = colors.primary.withValues(alpha: 0.4);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -2532,7 +2535,7 @@ class _LastSessionCard extends StatelessWidget {
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.black,
+                    color: borderColor, // <-- BORDURE DE LA MÊME COULEUR QUE L'ICÔNE
                     width: 1.2,
                   ),
                 ),
@@ -2587,7 +2590,7 @@ class _LastSessionCard extends StatelessWidget {
                         Container(
                           width: 1,
                           height: 32,
-                          color: Colors.black,
+                          color: borderColor, // <-- SÉPARATEUR VERTICAL MÊME COULEUR
                         ),
                         const Gap(AppSpacing.md),
                         Expanded(
@@ -2658,7 +2661,7 @@ class _LastSessionCard extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 32,
-                    color: Colors.black,
+                    color: borderColor, // <-- SÉPARATEUR VERTICAL MÊME COULEUR
                   ),
                   _SessionStat(
                     icon: SvgPicture.asset(
@@ -2678,7 +2681,7 @@ class _LastSessionCard extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 32,
-                    color: Colors.black,
+                    color: borderColor, // <-- SÉPARATEUR VERTICAL MÊME COULEUR
                   ),
                   _SessionStat(
                     icon: Icon(
