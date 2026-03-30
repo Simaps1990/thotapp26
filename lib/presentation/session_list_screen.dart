@@ -56,10 +56,17 @@ class _SessionListScreenState extends State<SessionListScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => ChangeNotifierProvider<ThotProvider>.value(
-        value: provider,
-        child: const TemplateManagerScreen(),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, __) => ChangeNotifierProvider<ThotProvider>.value(
+          value: provider,
+          child: const TemplateManagerScreen(),
+        ),
       ),
     );
   }
@@ -324,22 +331,25 @@ class _SessionListScreenState extends State<SessionListScreen> {
                               AppSpacing.lg,
                               10,
                             ),
-                            child: _SlidingSegmentedSelector(
-                              selectedIndex: _selectedIndex,
-                              labels: [
-                                strings.sessionsFilterAll,
-                                strings.sessionsFilterMonth,
-                                strings.sessionsFilter7Days,
-                              ],
-                              onSelected: (index) {
-                                setState(() {
-                                  _selectedFilter = switch (index) {
-                                    1 => 'month',
-                                    2 => '7days',
-                                    _ => 'all',
-                                  };
-                                });
-                              },
+                            child: SizedBox(
+                              height: 44,
+                              child: _SlidingSegmentedSelector(
+                                selectedIndex: _selectedIndex,
+                                labels: [
+                                  strings.sessionsFilterAll,
+                                  strings.sessionsFilterMonth,
+                                  strings.sessionsFilter7Days,
+                                ],
+                                onSelected: (index) {
+                                  setState(() {
+                                    _selectedFilter = switch (index) {
+                                      1 => 'month',
+                                      2 => '7days',
+                                      _ => 'all',
+                                    };
+                                  });
+                                },
+                              ),
                             ),
                           ),
                           Padding(
@@ -1109,7 +1119,6 @@ class TemplateManagerScreen extends StatefulWidget {
 }
 
 class TemplateManagerScreenState extends State<TemplateManagerScreen> {
-final PageController _pageController = PageController();
   final TextEditingController _searchController = TextEditingController();
   int _pageIndex = 0;
 
@@ -1130,7 +1139,6 @@ final PageController _pageController = PageController();
 @override
   void dispose() {
     _searchController.dispose();
-    _pageController.dispose();
     _nameController.dispose();
     _shotsController.dispose();
     _distanceController.dispose();
@@ -1142,11 +1150,6 @@ final PageController _pageController = PageController();
     setState(() {
       _pageIndex = index;
     });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-    );
   }
 
   void _openEditor({ExerciseTemplate? template}) {
@@ -1333,35 +1336,25 @@ final PageController _pageController = PageController();
       baseBackground,
     );
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: Container(
         color: baseBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent, 
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: _pageIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => _openEditor(template: null),
-              icon: const Icon(Icons.add),
-              label: Text(strings.createTemplateButton),
-              backgroundColor: colors.primary,
-              foregroundColor: colors.onPrimary,
-            )
-          : null,
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: (index) {
-          if (_pageIndex != index) {
-            setState(() {
-              _pageIndex = index;
-            });
-          }
-        },
-        children: [
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          floatingActionButton: _pageIndex == 0
+              ? FloatingActionButton.extended(
+                  onPressed: () => _openEditor(template: null),
+                  icon: const Icon(Icons.add),
+                  label: Text(strings.createTemplateButton),
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
+                )
+              : null,
+          body: IndexedStack(
+            index: _pageIndex,
+            children: [
           // --- PAGE 1: LISTE DES MODÈLES ---
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1579,17 +1572,20 @@ final PageController _pageController = PageController();
                   ],
                 ),
                 const Gap(10),
-                _SlidingSegmentedSelector(
-                  selectedIndex: _detailedMode ? 1 : 0,
-                  labels: [
-                    strings.exerciseModeSimple,
-                    strings.exerciseModeDetailed,
-                  ],
-                  onSelected: (index) {
-                    setState(() {
-                      _detailedMode = index == 1;
-                    });
-                  },
+                SizedBox(
+                  height: 44,
+                  child: _SlidingSegmentedSelector(
+                    selectedIndex: _detailedMode ? 1 : 0,
+                    labels: [
+                      strings.exerciseModeSimple,
+                      strings.exerciseModeDetailed,
+                    ],
+                    onSelected: (index) {
+                      setState(() {
+                        _detailedMode = index == 1;
+                      });
+                    },
+                  ),
                 ),
                 const Gap(AppSpacing.md),
                 Expanded(
@@ -1872,7 +1868,8 @@ final PageController _pageController = PageController();
           ),
         ],
       ),
-    ),
+      ),
+      ),
     );
   }
 }

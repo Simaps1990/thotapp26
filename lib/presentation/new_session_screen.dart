@@ -4105,13 +4105,16 @@ class _SourceToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SlidingSegmentedSelector(
-      selectedIndex: value == 'borrowed' ? 1 : 0,
-      labels: [leftLabel, rightLabel],
-      onSelected: (index) {
-        onChanged(index == 1 ? 'borrowed' : 'inventory');
-      },
-    );
+return SizedBox(
+  height: 44,
+  child: _SlidingSegmentedSelector(
+    selectedIndex: value == 'borrowed' ? 1 : 0,
+    labels: [leftLabel, rightLabel],
+    onSelected: (index) {
+      onChanged(index == 1 ? 'borrowed' : 'inventory');
+    },
+  ),
+);
   }
 }
 
