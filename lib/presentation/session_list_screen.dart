@@ -52,22 +52,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
   }
 
   void _showTemplateModal(BuildContext context) {
-    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+    final provider = Provider.of<ThotProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final height = MediaQuery.of(ctx).size.height * 0.85;
-        return Container(
-          height: height,
-          decoration: BoxDecoration(
-            color: baseBackground,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: const TemplateManagerScreen(),
-        );
-      },
+      builder: (ctx) => ChangeNotifierProvider<ThotProvider>.value(
+        value: provider,
+        child: const TemplateManagerScreen(),
+      ),
     );
   }
 
@@ -1118,6 +1111,7 @@ class TemplateManagerScreen extends StatefulWidget {
 class TemplateManagerScreenState extends State<TemplateManagerScreen> {
 final PageController _pageController = PageController();
   final TextEditingController _searchController = TextEditingController();
+  int _pageIndex = 0;
 
   String _searchQuery = '';
   bool _sortByDate = true;
@@ -1145,7 +1139,9 @@ final PageController _pageController = PageController();
   }
 
   void _goToPage(int index) {
-    setState(() {});
+    setState(() {
+      _pageIndex = index;
+    });
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 250),
@@ -1295,12 +1291,14 @@ final PageController _pageController = PageController();
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
+    final typedShots = int.tryParse(_shotsController.text.trim());
+    final typedDistance = int.tryParse(_distanceController.text.trim());
     final shots = _detailedMode
-        ? _computedTotalShots()
-        : (int.tryParse(_shotsController.text.trim()) ?? 0);
+        ? (typedShots ?? _computedTotalShots())
+        : (typedShots ?? 0);
     final distance = _detailedMode
-        ? _computedMaxDistance()
-        : (int.tryParse(_distanceController.text.trim()) ?? 0);
+        ? (typedDistance ?? _computedMaxDistance())
+        : (typedDistance ?? 0);
     final notes = _notesController.text.trim();
 
     final now = DateTime.now();
@@ -1335,19 +1333,34 @@ final PageController _pageController = PageController();
       baseBackground,
     );
 
-    return Scaffold(
-      backgroundColor: Colors.transparent, 
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openEditor(template: null),
-        icon: const Icon(Icons.add),
-        label: Text(strings.saveAsTemplateButton),
-        backgroundColor: colors.primary,
-        foregroundColor: colors.onPrimary,
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: BoxDecoration(
+        color: baseBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent, 
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: _pageIndex == 0
+          ? FloatingActionButton.extended(
+              onPressed: () => _openEditor(template: null),
+              icon: const Icon(Icons.add),
+              label: Text(strings.createTemplateButton),
+              backgroundColor: colors.primary,
+              foregroundColor: colors.onPrimary,
+            )
+          : null,
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (index) {
+          if (_pageIndex != index) {
+            setState(() {
+              _pageIndex = index;
+            });
+          }
+        },
         children: [
           // --- PAGE 1: LISTE DES MODÈLES ---
           Column(
@@ -1527,7 +1540,7 @@ final PageController _pageController = PageController();
                       child: Text(
                         _editingTemplate != null 
                           ? strings.templateNameDialogTitle 
-                          : strings.saveAsTemplateButton,
+                          : strings.createExerciseTemplateTitle,
                         style: textStyles.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: colors.onSurface,
@@ -1548,83 +1561,35 @@ final PageController _pageController = PageController();
                   ),
                 ),
                 const Gap(AppSpacing.md),
-                if (!_detailedMode)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _shotsController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: strings.shotsFiredLabel,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Gap(AppSpacing.md),
-                      Expanded(
-                        child: TextField(
-                          controller: _distanceController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: strings.shootingDistanceLabel,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: colors.outline),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.tune_rounded,
+                      size: 18,
+                      color: colors.primary,
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${strings.shotsFiredLabel}: ${_computedTotalShots()}',
-                            style: textStyles.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '${strings.shootingDistanceLabel}: ${_computedMaxDistance()} ${provider.useMetric ? 'm' : 'yd'}',
-                            textAlign: TextAlign.end,
-                            style: textStyles.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ),
-                      ],
+                    const Gap(8),
+                    Text(
+                      strings.exerciseModeLabel,
+                      style: textStyles.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colors.onSurface,
+                      ),
                     ),
-                  ),
-                const Gap(AppSpacing.md),
-                SwitchListTile.adaptive(
-                  value: _detailedMode,
-                  onChanged: (v) {
+                  ],
+                ),
+                const Gap(10),
+                _SlidingSegmentedSelector(
+                  selectedIndex: _detailedMode ? 1 : 0,
+                  labels: [
+                    strings.exerciseModeSimple,
+                    strings.exerciseModeDetailed,
+                  ],
+                  onSelected: (index) {
                     setState(() {
-                      _detailedMode = v;
+                      _detailedMode = index == 1;
                     });
                   },
-                  title: Text(
-                    'Mode détaillé',
-                    style: (textStyles.bodyMedium ?? const TextStyle()).copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.onSurface,
-                    ),
-                  ),
                 ),
                 const Gap(AppSpacing.md),
                 Expanded(
@@ -1633,6 +1598,114 @@ final PageController _pageController = PageController();
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (!_detailedMode) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        SvgPicture.asset(
+                                          'assets/images/hit.svg',
+                                          width: 18,
+                                          height: 18,
+                                          colorFilter: ColorFilter.mode(
+                                            colors.primary,
+                                            BlendMode.srcIn,
+                                          ),
+                                        ),
+                                        const Gap(8),
+                                        Text(
+                                          strings.shotsCountLabel,
+                                          style: textStyles.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Gap(AppSpacing.sm),
+                                    TextField(
+                                      controller: _shotsController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        hintText: '0',
+                                        filled: true,
+                                        fillColor: colors.surface,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                                          borderSide: BorderSide(color: colors.outline),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                                          borderSide: BorderSide(color: colors.outline),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                                          borderSide: BorderSide(
+                                            color: colors.primary,
+                                            width: 1.6,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Gap(AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.straighten_rounded,
+                                          size: 18,
+                                          color: colors.primary,
+                                        ),
+                                        const Gap(8),
+                                        Text(
+                                          strings.distanceLabel,
+                                          style: textStyles.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Gap(AppSpacing.sm),
+                                    TextField(
+                                      controller: _distanceController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        hintText: '0',
+                                        filled: true,
+                                        fillColor: colors.surface,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                                          borderSide: BorderSide(color: colors.outline),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                                          borderSide: BorderSide(color: colors.outline),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                                          borderSide: BorderSide(
+                                            color: colors.primary,
+                                            width: 1.6,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Gap(AppSpacing.md),
+                        ],
                         if (_detailedMode) ...[
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1754,20 +1827,41 @@ final PageController _pageController = PageController();
                 ),
                 const Gap(AppSpacing.md),
                 SizedBox(
-                  height: 48,
+                  height: 52,
                   child: Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
+                        child: FilledButton.tonal(
                           onPressed: () => _goToPage(0),
-                          child: Text(strings.actionCancel),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: colors.primary.withValues(alpha: 0.72),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: Text(
+                            strings.actionCancel.toUpperCase(),
+                            style: textStyles.labelLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
                         ),
                       ),
                       const Gap(AppSpacing.md),
                       Expanded(
                         child: FilledButton(
                           onPressed: () => _saveTemplate(provider),
-                          child: Text(strings.saveAsTemplateButton),
+                          style: FilledButton.styleFrom(
+                            foregroundColor: Colors.white,
+                          ),
+                          child: Text(
+                            'ENREGISTRER',
+                            style: textStyles.labelLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -1778,6 +1872,7 @@ final PageController _pageController = PageController();
           ),
         ],
       ),
+    ),
     );
   }
 }

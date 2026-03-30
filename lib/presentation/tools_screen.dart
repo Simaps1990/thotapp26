@@ -22,50 +22,40 @@ class ToolsScreen extends StatefulWidget {
 }
 
 class _ToolsScreenState extends State<ToolsScreen> {
+  static const double _toolSheetInitialSize = 0.9;
+  static const double _toolSheetMinSize = 0.5;
+  static const double _toolSheetMaxSize = 0.95;
+
+  void _openToolSheet(Widget child) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: _toolSheetInitialSize,
+        minChildSize: _toolSheetMinSize,
+        maxChildSize: _toolSheetMaxSize,
+        expand: false,
+        builder: (_, __) => child,
+      ),
+    );
+  }
+
   void _openMillieme(ThotProvider provider) {
     if (!provider.isPremium) {
       showProModal(context);
       return;
     }
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, __) => const MilliemeToolScreen(),
-      ),
-    );
+    _openToolSheet(const MilliemeToolScreen());
   }
 
   void _openTimer() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, __) => const ShootingTimerScreen(),
-      ),
-    );
+    _openToolSheet(const ShootingTimerScreen());
   }
 
   void _openColorPod() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const ColorPodScreen(),
-    );
+    _openToolSheet(const ColorPodScreen());
   }
 
   void _openDiagnostic(ThotProvider provider) {
@@ -73,19 +63,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       showProModal(context);
       return;
     }
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, __) => const DiagnosticScreen(),
-      ),
-    );
+    _openToolSheet(const DiagnosticScreen());
   }
 
   @override
@@ -226,10 +204,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       toolButton(
-                        icon: Icons.straighten_rounded,
-                        title: strings.milliemeToolTitle,
-                        subtitle: strings.milliemeToolSubtitle,
-                        onTap: () => _openMillieme(provider),
+                        icon: Icons.color_lens_outlined,
+                        title: strings.colorPodToolTitle,
+                        subtitle: strings.colorPodToolSubtitle,
+                        onTap: _openColorPod,
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
@@ -247,10 +225,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
-                        icon: Icons.color_lens_outlined,
-                        title: strings.colorPodToolTitle,
-                        subtitle: strings.colorPodToolSubtitle,
-                        onTap: _openColorPod,
+                        icon: Icons.straighten_rounded,
+                        title: strings.milliemeToolTitle,
+                        subtitle: strings.milliemeToolSubtitle,
+                        onTap: () => _openMillieme(provider),
                       ),
                       const Gap(40),
                     ],

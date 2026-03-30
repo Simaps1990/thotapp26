@@ -3014,6 +3014,22 @@ String get weatherUsageExplanation => _pick(
     es: 'Guardar como plantilla',
   );
 
+  String get createTemplateButton => _pick(
+    fr: 'Créer un modèle',
+    en: 'Create a template',
+    de: 'Vorlage erstellen',
+    it: 'Crea un modello',
+    es: 'Crear una plantilla',
+  );
+
+  String get createExerciseTemplateTitle => _pick(
+    fr: "Créer un modèle d'exercice",
+    en: 'Create an exercise template',
+    de: 'Übungsvorlage erstellen',
+    it: 'Crea un modello di esercizio',
+    es: 'Crear una plantilla de ejercicio',
+  );
+
   String get templateNameDialogTitle => _pick(
     fr: 'Nom du modèle',
     en: 'Template name',
@@ -3039,19 +3055,19 @@ String get weatherUsageExplanation => _pick(
   );
 
   String get createExerciseButton => _pick(
-    fr: '+ Créer',
-    en: '+ Create',
-    de: '+ Erstellen',
-    it: '+ Crea',
-    es: '+ Crear',
+    fr: 'Créer',
+    en: 'Create',
+    de: 'Erstellen',
+    it: 'Crea',
+    es: 'Crear',
   );
 
   String get importExerciseButton => _pick(
-    fr: '+ Importer',
-    en: '+ Import',
-    de: '+ Importieren',
-    it: '+ Importa',
-    es: '+ Importar',
+    fr: 'Importer',
+    en: 'Import',
+    de: 'Importieren',
+    it: 'Importa',
+    es: 'Importar',
   );
 
   String get importTemplateTitle => _pick(
@@ -5576,8 +5592,8 @@ String get diagnosticNoSpecificWeapon => _pick(
         es: 'CONFIRMAR',
       );
 
-  String get colorPodToolTitle => _pick(fr: 'Pod de couleur', en: 'Color Pod', de: 'Farb-Pod', it: 'Color Pod', es: 'Pod de color');
-  String get colorPodToolSubtitle => _pick(fr: 'Exercice de réactivité chromatique', en: 'Chromatic reaction exercise', de: 'Chromatische Reaktionsübung', it: 'Esercizio di reattività cromatica', es: 'Ejercicio de reactividad cromática');
+  String get colorPodToolTitle => _pick(fr: 'AIDES PÉDAGOGIQUES', en: 'PEDAGOGICAL AIDS', de: 'PÄDAGOGISCHE HILFEN', it: 'AIUTI PEDAGOGICI', es: 'AYUDAS PEDAGÓGICAS');
+  String get colorPodToolSubtitle => _pick(fr: 'Exercices de stimulation visuelle', en: 'Visual stimulation exercises', de: 'Visuelle Stimulationsübungen', it: 'Esercizi di stimolazione visiva', es: 'Ejercicios de estimulación visual');
   String get colorPodColors => _pick(fr: 'COULEURS', en: 'COLORS', de: 'FARBEN', it: 'COLORI', es: 'COLORES');
   String get colorPodActivateAll => _pick(fr: 'Tout activer', en: 'Enable all', de: 'Alle aktivieren', it: 'Attiva tutto', es: 'Activar todo');
   String get colorPodDeactivateAll => _pick(fr: 'Tout désactiver', en: 'Disable all', de: 'Alle deaktivieren', it: 'Disattiva tutto', es: 'Desactivar todo');
@@ -5590,14 +5606,17 @@ String get diagnosticNoSpecificWeapon => _pick(
   String get colorPodStop => _pick(fr: 'STOP', en: 'STOP', de: 'STOP', it: 'STOP', es: 'STOP');
   String get colorPodResults => _pick(fr: 'RÉSULTATS', en: 'RESULTS', de: 'ERGEBNISSE', it: 'RISULTATI', es: 'RESULTADOS');
   String colorPodTotal(int n) => _pick(fr: '$n apparitions au total', en: '$n total appearances', de: '$n Erscheinungen insgesamt', it: '$n apparizioni totali', es: '$n apariciones en total');
-  String get colorPodConfig => _pick(fr: 'CONFIG', en: 'CONFIG', de: 'CONFIG', it: 'CONFIG', es: 'CONFIG');
-  String get colorPodRestart => _pick(fr: 'RECOMMENCER', en: 'RESTART', de: 'NEUSTART', it: 'RICOMINCIA', es: 'REINICIAR');
+  String get colorPodMenu => _pick(fr: 'MENU', en: 'MENU', de: 'MENÜ', it: 'MENU', es: 'MENÚ');
+  String get colorPodConfig => _pick(fr: 'MODIFIER', en: 'EDIT', de: 'BEARBEITEN', it: 'MODIFICA', es: 'EDITAR');
+  String get colorPodRestart => _pick(fr: 'RELANCER', en: 'RETRY', de: 'NOCHMAL', it: 'RIFAI', es: 'REINTENTAR');
   String get colorPodRed => _pick(fr: 'Rouge', en: 'Red', de: 'Rot', it: 'Rosso', es: 'Rojo');
   String get colorPodBlue => _pick(fr: 'Bleu', en: 'Blue', de: 'Blau', it: 'Blu', es: 'Azul');
   String get colorPodGreen => _pick(fr: 'Vert', en: 'Green', de: 'Grün', it: 'Verde', es: 'Verde');
   String get colorPodYellow => _pick(fr: 'Jaune', en: 'Yellow', de: 'Gelb', it: 'Giallo', es: 'Amarillo');
   String get colorPodOrange => _pick(fr: 'Orange', en: 'Orange', de: 'Orange', it: 'Arancione', es: 'Naranja');
   String get colorPodPurple => _pick(fr: 'Violet', en: 'Purple', de: 'Lila', it: 'Viola', es: 'Morado');
+  String get colorPodPink => _pick(fr: 'Rose', en: 'Pink', de: 'Rosa', it: 'Rosa', es: 'Rosa');
+  String get colorPodMediumGray => _pick(fr: 'Gris médian', en: 'Medium gray', de: 'Mittelgrau', it: 'Grigio medio', es: 'Gris medio');
   String get colorPodWhite => _pick(fr: 'Blanc', en: 'White', de: 'Weiß', it: 'Bianco', es: 'Blanco');
 String get colorPodBlack => _pick(fr: 'Noir', en: 'Black', de: 'Schwarz', it: 'Nero', es: 'Negro');
 String get colorPodShapes => _pick(fr: 'FORMES', en: 'SHAPES', de: 'FORMEN', it: 'FORME', es: 'FORMAS');
@@ -5605,6 +5624,7 @@ String get colorPodLetters => _pick(fr: 'LETTRES', en: 'LETTERS', de: 'BUCHSTABE
 String get colorPodDigits => _pick(fr: 'CHIFFRES', en: 'DIGITS', de: 'ZIFFERN', it: 'CIFRE', es: 'DÍGITOS');
 String get colorPodShapeCircle => _pick(fr: 'Cercle', en: 'Circle', de: 'Kreis', it: 'Cerchio', es: 'Círculo');
 String get colorPodShapeSquare => _pick(fr: 'Carré', en: 'Square', de: 'Quadrat', it: 'Quadrato', es: 'Cuadrado');
+String get colorPodShapeHeart => _pick(fr: 'Cœur', en: 'Heart', de: 'Herz', it: 'Cuore', es: 'Corazón');
 String get colorPodShapeTriangle => _pick(fr: 'Triangle', en: 'Triangle', de: 'Dreieck', it: 'Triangolo', es: 'Triángulo');
 String get colorPodShapeStar => _pick(fr: 'Étoile', en: 'Star', de: 'Stern', it: 'Stella', es: 'Estrella');
 String get colorPodShapeDiamond => _pick(fr: 'Diamant', en: 'Diamond', de: 'Diamant', it: 'Diamante', es: 'Diamante');

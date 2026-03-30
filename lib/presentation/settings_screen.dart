@@ -116,39 +116,8 @@ class SettingsScreen extends StatelessWidget {
     required ColorScheme colors,
     required TextTheme textStyles,
   }) {
-    final brightness = Theme.of(context).brightness;
-    final strings = AppStrings.of(context);
     return [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            'assets/images/LOGO.svg',
-            height: 34,
-            colorFilter: ColorFilter.mode(
-              brightness == Brightness.dark ? Colors.white : Colors.black,
-              BlendMode.srcIn,
-            ),
-          ),
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: colors.primary,
-            child: Text(
-              _getInitials(
-                provider.userName.trim().isEmpty
-                    ? strings.settingsAnonymousUserUpper
-                    : provider.userName,
-              ),
-              style: textStyles.titleMedium?.copyWith(
-                color: colors.onPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-      const Gap(AppSpacing.xl),
+      const Gap(AppSpacing.lg),
     ];
   }
 
@@ -820,6 +789,10 @@ class SettingsScreen extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+
+    const heroHeight = 208.0;
+    const panelTop = 120.0;
 
     final displayName = provider.userName.trim().isEmpty
         ? strings.settingsAnonymousUser
@@ -830,57 +803,127 @@ class SettingsScreen extends StatelessWidget {
         : strings.settingsLicenseNumber(license);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: baseBackground,
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: Stack(
             children: [
-              ..._buildHeaderSection(
-                context: context,
-                provider: provider,
-                colors: colors,
-                textStyles: textStyles,
+              SizedBox(
+                height: heroHeight,
+                width: double.infinity,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colors.primary.withValues(alpha: 0.90),
+                        colors.primary.withValues(alpha: 0.55),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              _buildProfileGroup(
-                context: context,
-                provider: provider,
-                colors: colors,
-                displayName: displayName,
-                licenseSubtitle: licenseSubtitle,
+              Positioned(
+                left: AppSpacing.lg,
+                top: panelTop - 44,
+                child: Text(
+                  strings.settingsTitle,
+                  style: textStyles.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black54,
+                        offset: Offset(1, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const Gap(AppSpacing.lg),
-              _buildPreferencesGroup(
-                context: context,
-                provider: provider,
-                colors: colors,
-                textStyles: textStyles,
+              Positioned(
+                right: AppSpacing.lg,
+                top: MediaQuery.of(context).padding.top + 12,
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: colors.primary,
+                  child: Text(
+                    _getInitials(
+                      provider.userName.trim().isEmpty
+                          ? strings.settingsAnonymousUserUpper
+                          : provider.userName,
+                    ),
+                    style: textStyles.titleMedium?.copyWith(
+                      color: colors.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
-              const Gap(AppSpacing.lg),
-              _buildPremiumSection(
-                context: context,
-                provider: provider,
-                colors: colors,
-                textStyles: textStyles,
+              Container(
+                margin: const EdgeInsets.only(top: panelTop),
+                decoration: BoxDecoration(
+                  color: baseBackground,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                child: Padding(
+                  padding: AppSpacing.paddingLg,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ..._buildHeaderSection(
+                        context: context,
+                        provider: provider,
+                        colors: colors,
+                        textStyles: textStyles,
+                      ),
+                      _buildProfileGroup(
+                        context: context,
+                        provider: provider,
+                        colors: colors,
+                        displayName: displayName,
+                        licenseSubtitle: licenseSubtitle,
+                      ),
+                      const Gap(AppSpacing.lg),
+                      _buildPreferencesGroup(
+                        context: context,
+                        provider: provider,
+                        colors: colors,
+                        textStyles: textStyles,
+                      ),
+                      const Gap(AppSpacing.lg),
+                      _buildPremiumSection(
+                        context: context,
+                        provider: provider,
+                        colors: colors,
+                        textStyles: textStyles,
+                      ),
+                      _buildShortcutsGroup(
+                        context: context,
+                        provider: provider,
+                      ),
+                      const Gap(AppSpacing.lg),
+                      _buildSecurityGroup(
+                        context: context,
+                        provider: provider,
+                        colors: colors,
+                      ),
+                      const Gap(AppSpacing.lg),
+                      _buildSupportGroup(
+                        context: context,
+                        provider: provider,
+                        colors: colors,
+                      ),
+                      const Gap(AppSpacing.xl),
+                    ],
+                  ),
+                ),
               ),
-              _buildShortcutsGroup(
-                context: context,
-                provider: provider,
-              ),
-              const Gap(AppSpacing.lg),
-              _buildSecurityGroup(
-                context: context,
-                provider: provider,
-                colors: colors,
-              ),
-              const Gap(AppSpacing.lg),
-              _buildSupportGroup(
-                context: context,
-                provider: provider,
-                colors: colors,
-              ),
-              const Gap(AppSpacing.xl),
             ],
           ),
         ),

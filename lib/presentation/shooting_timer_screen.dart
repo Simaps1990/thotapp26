@@ -1405,6 +1405,15 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
                 duration: const Duration(milliseconds: 240),
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeOut,
+                layoutBuilder: (currentChild, previousChildren) {
+                  return Stack(
+                    alignment: Alignment.topCenter,
+                    children: [
+                      ...previousChildren,
+                      if (currentChild != null) currentChild,
+                    ],
+                  );
+                },
                 transitionBuilder: (child, animation) {
                   final isRunPanel = (child.key as ValueKey?)?.value == true;
                   final offsetAnimation = Tween<Offset>(
@@ -1418,19 +1427,12 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
                 },
                 child: SingleChildScrollView(
                   key: ValueKey(_showRunPanel),
-                  padding: _showRunPanel
-                      ? const EdgeInsets.fromLTRB(
-                          AppSpacing.lg,
-                          0,
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                        )
-                      : const EdgeInsets.fromLTRB(
-                          AppSpacing.lg,
-                          AppSpacing.sm,
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                        ),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
                   child: _showRunPanel ? runPanel : configPanel,
                 ),
               ),
@@ -1467,9 +1469,67 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
     final selected = _mode == mode;
     final showMic = mode == _TimerMode.startAndMic || mode == _TimerMode.startAndShots;
     final micColor = selected ? colors.onPrimary : colors.primary;
-    return ChoiceChip(
-      label: isLocked
-          ? Row(
+    final labelColor = selected
+        ? colors.onPrimary
+        : (isLocked ? colors.secondary : colors.onSurface);
+    final labelUpper = label.toUpperCase();
+
+    Future<void> onTap() async {
+      if (isLocked) {
+        context.push('/pro');
+        return;
+      }
+      if ((mode == _TimerMode.startAndMic || mode == _TimerMode.startAndShots) && _mode != mode) {
+        final status = await Permission.microphone.request();
+        if (!status.isGranted) {
+          if (mounted) {
+            final strings = AppStrings.of(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(strings.timerMicPermissionDenied)),
+            );
+          }
+          return;
+        }
+      }
+
+      if (!mounted) return;
+      _timer?.cancel();
+      _stopNoiseListening();
+      _shotTimes.clear();
+      _lastShotAt = null;
+      _shotStopwatch
+        ..stop()
+        ..reset();
+      setState(() {
+        _mode = mode;
+        _running = false;
+        _finished = false;
+        _actionStarted = false;
+        _remaining = Duration.zero;
+        _currentRepetition = 0;
+      });
+    }
+
+    return SizedBox(
+      height: 52,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            decoration: BoxDecoration(
+              color: selected ? colors.primary : colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(
+                color: selected ? colors.primary : colors.outline,
+                width: 1.2,
+              ),
+            ),
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (showMic) ...[
@@ -1480,108 +1540,45 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> {
                   ),
                   const Gap(6),
                 ],
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  labelUpper,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyles.labelLarge?.copyWith(
+                    color: labelColor,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
                   ),
                 ),
-                const Gap(8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.primary,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: LightColors.surfaceHighlight,
-                      width: 1.35,
+                if (isLocked) ...[
+                  const Gap(8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.primary,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: LightColors.surfaceHighlight,
+                        width: 1.35,
+                      ),
+                    ),
+                    child: Text(
+                      AppStrings.of(context).proBadge,
+                      style: textStyles.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: colors.onPrimary,
+                        height: 1,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    AppStrings.of(context).proBadge,
-                    style: textStyles.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: colors.onPrimary,
-                      height: 1,
-                    ),
-                  ),
-                ),
+                ],
               ],
-            )
-          : (showMic
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.mic_rounded,
-                      size: 16,
-                      color: micColor,
-                    ),
-                    const Gap(6),
-                    Text(label),
-                  ],
-                )
-              : Text(label)),
-      selected: selected,
-      showCheckmark: false,
-      onSelected: (_) async {
-        if (isLocked) {
-          context.push('/pro');
-          return;
-        }
-        if ((mode == _TimerMode.startAndMic || mode == _TimerMode.startAndShots) && _mode != mode) {
-          final status = await Permission.microphone.request();
-          if (!status.isGranted) {
-            if (mounted) {
-              final strings = AppStrings.of(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.timerMicPermissionDenied)),
-              );
-            }
-            return;
-          }
-        }
-
-        if (!mounted) return;
-        _timer?.cancel();
-        _stopNoiseListening();
-        _shotTimes.clear();
-        _lastShotAt = null;
-        _shotStopwatch
-          ..stop()
-          ..reset();
-        setState(() {
-          _mode = mode;
-          _running = false;
-          _finished = false;
-          _actionStarted = false;
-          _remaining = Duration.zero;
-          _currentRepetition = 0;
-        });
-      },
-      selectedColor: colors.primary,
-      backgroundColor: colors.surface,
-      labelStyle: textStyles.bodySmall?.copyWith(
-        color: selected
-            ? colors.onPrimary
-            : (isLocked ? colors.secondary : colors.onSurface),
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.full),
-        side: BorderSide(
-          color: selected ? colors.primary : colors.outline,
-          width: 1.2,
+            ),
+          ),
         ),
-      ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
       ),
     );
   }

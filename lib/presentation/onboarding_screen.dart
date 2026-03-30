@@ -15,7 +15,24 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
+  static const List<String> _backgroundAssets = [
+    'assets/images/fondstand.webp',
+    'assets/images/fondsable.webp',
+    'assets/images/fondforet.webp',
+  ];
+  bool _didPrecacheBackgrounds = false;
   int _currentPage = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didPrecacheBackgrounds) return;
+
+    for (final asset in _backgroundAssets) {
+      precacheImage(AssetImage(asset), context);
+    }
+    _didPrecacheBackgrounds = true;
+  }
 
   @override
   void dispose() {
@@ -60,11 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final nextButtonBackground = isPhotoPage ? Colors.white : colors.primary;
     final nextButtonForeground = isPhotoPage ? Colors.black : colors.onPrimary;
 
-    final backgroundAsset = _currentPage == 0
-        ? 'assets/images/fondstand.webp'
-        : _currentPage == 1
-            ? 'assets/images/fondsable.webp'
-            : 'assets/images/fondforet.webp';
+    final backgroundAsset = _backgroundAssets[_currentPage];
 
     final pages = [
       _buildPage(
@@ -204,6 +217,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -211,6 +225,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Image.asset(
               backgroundAsset,
               fit: BoxFit.cover,
+              gaplessPlayback: true,
             ),
             Container(
               decoration: BoxDecoration(

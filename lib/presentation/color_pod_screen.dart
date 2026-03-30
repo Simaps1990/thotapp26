@@ -25,6 +25,8 @@ const _kColors = <_PodColor>[
   _PodColor(id: 'yellow', color: Color(0xFFFDD835)),
   _PodColor(id: 'orange', color: Color(0xFFFB8C00)),
   _PodColor(id: 'purple', color: Color(0xFF8E24AA)),
+  _PodColor(id: 'pink',   color: Color(0xFFEC407A)),
+  _PodColor(id: 'mediumGray', color: Color(0xFF9E9E9E)),
   _PodColor(id: 'white',  color: Color(0xFFF5F5F5)),
 ];
 
@@ -37,11 +39,11 @@ class _PodShape {
 }
 
 const _kShapes = <_PodShape>[
-  _PodShape(id: 'circle',   icon: Icons.circle),
   _PodShape(id: 'square',   icon: Icons.square),
-  _PodShape(id: 'triangle', icon: Icons.change_history),
+  _PodShape(id: 'heart',    icon: Icons.favorite),
+  _PodShape(id: 'circle',   icon: Icons.circle),
+  _PodShape(id: 'triangle', icon: Icons.play_arrow_rounded),
   _PodShape(id: 'star',     icon: Icons.star),
-  _PodShape(id: 'diamond',  icon: Icons.diamond),
 ];
 
 // ─── Lettres et chiffres ──────────────────────────────────────────────────────
@@ -68,7 +70,7 @@ class ColorPodScreen extends StatefulWidget {
 class _ColorPodScreenState extends State<ColorPodScreen> {
 
   // ── Config ───────────────────────────────────────────────────────────────────
-  final Set<String> _selected = {'red', 'blue', 'green', 'yellow'};
+  final Set<String> _selected = {};
   final Set<String> _selectedShapes = {};
   final Set<String> _selectedLetters = {};
   final Set<String> _selectedDigits = {};
@@ -88,8 +90,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
   String? _currentShape;
   String? _currentLetter;
   String? _currentDigit;
-  int _digitCorner = 0;
-  int _letterCorner = 1;
+  Offset? _shapeAnchor;
+  Offset? _letterAnchor;
+  Offset? _digitAnchor;
   int _remainingMs = 0;
   final Map<String, int> _counts = {};
   final Map<String, int> _shapeCounts = {};
@@ -112,6 +115,8 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       case 'yellow': return s.colorPodYellow;
       case 'orange': return s.colorPodOrange;
       case 'purple': return s.colorPodPurple;
+      case 'pink': return s.colorPodPink;
+      case 'mediumGray': return s.colorPodMediumGray;
       case 'white':  return s.colorPodWhite;
       case 'black':  return s.colorPodBlack;
       default:       return id;
@@ -122,9 +127,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     switch (id) {
       case 'circle':   return s.colorPodShapeCircle;
       case 'square':   return s.colorPodShapeSquare;
+      case 'heart':    return s.colorPodShapeHeart;
       case 'triangle': return s.colorPodShapeTriangle;
       case 'star':     return s.colorPodShapeStar;
-      case 'diamond':  return s.colorPodShapeDiamond;
       default:         return id;
     }
   }
@@ -133,11 +138,29 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     switch (id) {
       case 'circle':   return Icons.circle;
       case 'square':   return Icons.square;
-      case 'triangle': return Icons.change_history;
+      case 'heart':    return Icons.favorite;
+      case 'triangle': return Icons.play_arrow_rounded;
       case 'star':     return Icons.star;
-      case 'diamond':  return Icons.diamond;
       default:         return Icons.circle;
     }
+  }
+
+  Widget _shapeGlyph({
+    required String id,
+    required Color color,
+    required double size,
+  }) {
+    final isTriangle = id == 'triangle';
+    final icon = Icon(
+      _shapeIcon(id),
+      color: color,
+      size: isTriangle ? size * 1.35 : size,
+    );
+    if (!isTriangle) return icon;
+    return Transform.rotate(
+      angle: -pi / 2,
+      child: icon,
+    );
   }
 
   // ── Logique ──────────────────────────────────────────────────────────────────
@@ -240,7 +263,43 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
         digit = digitList[rng.nextInt(digitList.length)];
       }
 
-      final corners = [0, 1, 2, 3]..shuffle(rng);
+      final hasShape = shape != null;
+      final hasLetter = letter != null;
+      final hasDigit = digit != null;
+      final shapeAnchor = hasShape
+          ? _pickRandomAnchor(
+              rng,
+              minX: 0.24,
+              maxX: 0.76,
+              minY: 0.24,
+              maxY: 0.70,
+            )
+          : null;
+      final letterAnchor = hasLetter
+          ? _pickRandomAnchor(
+              rng,
+              minX: 0.12,
+              maxX: 0.88,
+              minY: 0.18,
+              maxY: 0.78,
+              occupied: [if (shapeAnchor != null) shapeAnchor],
+              minDistance: 0.28,
+            )
+          : null;
+      final digitAnchor = hasDigit
+          ? _pickRandomAnchor(
+              rng,
+              minX: 0.12,
+              maxX: 0.88,
+              minY: 0.18,
+              maxY: 0.78,
+              occupied: [
+                if (shapeAnchor != null) shapeAnchor,
+                if (letterAnchor != null) letterAnchor,
+              ],
+              minDistance: 0.22,
+            )
+          : null;
 
       setState(() {
         _currentColor = picked.color;
@@ -248,8 +307,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
         _currentShape = shape;
         _currentLetter = letter;
         _currentDigit = digit;
-        _digitCorner = corners[0];
-        _letterCorner = corners[1];
+        _shapeAnchor = shapeAnchor;
+        _letterAnchor = letterAnchor;
+        _digitAnchor = digitAnchor;
         _counts[picked.id] = (_counts[picked.id] ?? 0) + 1;
         if (shape != null) _shapeCounts[shape] = (_shapeCounts[shape] ?? 0) + 1;
         if (letter != null) _letterCounts[letter] = (_letterCounts[letter] ?? 0) + 1;
@@ -269,6 +329,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
         _currentShape = null;
         _currentLetter = null;
         _currentDigit = null;
+        _shapeAnchor = null;
+        _letterAnchor = null;
+        _digitAnchor = null;
       });
 
       await Future.delayed(Duration(milliseconds: delayMs));
@@ -291,6 +354,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       _currentShape = null;
       _currentLetter = null;
       _currentDigit = null;
+      _shapeAnchor = null;
+      _letterAnchor = null;
+      _digitAnchor = null;
     });
   }
 
@@ -307,9 +373,40 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       _currentShape = null;
       _currentLetter = null;
       _currentDigit = null;
+      _shapeAnchor = null;
+      _letterAnchor = null;
+      _digitAnchor = null;
       _countdown = 3;
       _remainingMs = 0;
     });
+  }
+
+  Offset _pickRandomAnchor(
+    Random rng, {
+    required double minX,
+    required double maxX,
+    required double minY,
+    required double maxY,
+    List<Offset> occupied = const [],
+    double minDistance = 0.20,
+  }) {
+    bool inForbidden(Offset p) {
+      final inStopZone = p.dx > 0.72 && p.dy < 0.22;
+      final inBottomZone = p.dy > 0.84;
+      return inStopZone || inBottomZone;
+    }
+
+    for (var i = 0; i < 80; i++) {
+      final candidate = Offset(
+        minX + rng.nextDouble() * (maxX - minX),
+        minY + rng.nextDouble() * (maxY - minY),
+      );
+      if (inForbidden(candidate)) continue;
+      final collides = occupied.any((o) => (candidate - o).distance < minDistance);
+      if (!collides) return candidate;
+    }
+
+    return Offset((minX + maxX) / 2, (minY + maxY) / 2);
   }
 
   @override
@@ -356,6 +453,13 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       );
     }
 
+    if (landscape) {
+      return ColoredBox(
+        color: bgColor,
+        child: SizedBox.expand(child: content),
+      );
+    }
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       height: MediaQuery.of(context).size.height * 0.9,
@@ -373,12 +477,44 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     final colors  = Theme.of(context).colorScheme;
     final texts   = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    const selectorTileSize = 52.0;
+    const selectorTileRadius = 10.0;
+    const sectionBottomGap = AppSpacing.sm;
 
     Widget sectionLabel(String title) => Text(
       title,
       style: texts.labelLarge?.copyWith(
         fontWeight: FontWeight.w800, color: colors.secondary),
     );
+
+    Widget sectionHeader({
+      required String title,
+      required VoidCallback onActivateAll,
+      required VoidCallback onDeactivateAll,
+    }) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          sectionLabel(title),
+          Row(children: [
+            TextButton(
+              onPressed: onActivateAll,
+              child: Text(
+                strings.colorPodActivateAll,
+                style: texts.labelSmall?.copyWith(color: colors.primary),
+              ),
+            ),
+            TextButton(
+              onPressed: onDeactivateAll,
+              child: Text(
+                strings.colorPodDeactivateAll,
+                style: texts.labelSmall?.copyWith(color: colors.secondary),
+              ),
+            ),
+          ]),
+        ],
+      );
+    }
 
     Widget toggleGrid({required List<Widget> children}) =>
         Wrap(spacing: 6, runSpacing: 6, children: children);
@@ -416,22 +552,15 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
 
           // ── COULEURS ─────────────────────────────────────────────────────────
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            sectionLabel(strings.colorPodColors),
-            Row(children: [
-              TextButton(
-                onPressed: () => setState(
-                  () => _selected.addAll(_kColors.map((c) => c.id))),
-                child: Text(strings.colorPodActivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.primary))),
-              TextButton(
-                onPressed: () => setState(() => _selected.clear()),
-                child: Text(strings.colorPodDeactivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.secondary))),
-            ]),
-          ]),
-          const Gap(AppSpacing.sm),
-          Wrap(spacing: 8, runSpacing: 8, children: _kColors.map((c) {
+          sectionHeader(
+            title: strings.colorPodColors,
+            onActivateAll: () => setState(
+              () => _selected.addAll(_kColors.map((c) => c.id)),
+            ),
+            onDeactivateAll: () => setState(() => _selected.clear()),
+          ),
+          const Gap(sectionBottomGap),
+          toggleGrid(children: _kColors.map((c) {
             final sel = _selected.contains(c.id);
             final isWhite = c.id == 'white';
             return GestureDetector(
@@ -440,21 +569,17 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                width: 56, height: 56,
+                width: selectorTileSize,
+                height: selectorTileSize,
                 decoration: BoxDecoration(
                   color: c.color,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(selectorTileRadius),
                   border: Border.all(
                     color: sel
                         ? colors.primary
                         : (isWhite ? colors.outline : Colors.transparent),
-                    width: sel ? 3 : 1,
+                    width: sel ? 2 : 1,
                   ),
-                  boxShadow: sel
-                      ? [BoxShadow(
-                          color: colors.primary.withValues(alpha: 0.4),
-                          blurRadius: 8)]
-                      : null,
                 ),
                 child: sel
                     ? Icon(Icons.check_rounded,
@@ -469,8 +594,14 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
           const Gap(AppSpacing.lg),
 
           // ── FORMES ───────────────────────────────────────────────────────────
-          sectionLabel(strings.colorPodShapes),
-          const Gap(AppSpacing.sm),
+          sectionHeader(
+            title: strings.colorPodShapes,
+            onActivateAll: () => setState(
+              () => _selectedShapes.addAll(_kShapes.map((s) => s.id)),
+            ),
+            onDeactivateAll: () => setState(() => _selectedShapes.clear()),
+          ),
+          const Gap(sectionBottomGap),
           toggleGrid(children: _kShapes.map((s) {
             final sel = _selectedShapes.contains(s.id);
             return GestureDetector(
@@ -480,41 +611,35 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                width: 56, height: 56,
+                width: selectorTileSize,
+                height: selectorTileSize,
                 decoration: BoxDecoration(
                   color: sel
                       ? colors.primary.withValues(alpha: 0.12)
                       : colors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(selectorTileRadius),
                   border: Border.all(
                     color: sel ? colors.primary : colors.outline,
                     width: sel ? 2 : 1,
                   ),
                 ),
-                child: Icon(s.icon,
+                child: _shapeGlyph(
+                  id: s.id,
                   color: sel ? colors.primary : colors.secondary,
-                  size: 28),
+                  size: 28,
+                ),
               ),
             );
           }).toList()),
           const Gap(AppSpacing.lg),
 
           // ── LETTRES ──────────────────────────────────────────────────────────
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            sectionLabel(strings.colorPodLetters),
-            Row(children: [
-              TextButton(
-                onPressed: () => setState(
-                  () => _selectedLetters.addAll(_kLetters)),
-                child: Text(strings.colorPodActivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.primary))),
-              TextButton(
-                onPressed: () => setState(() => _selectedLetters.clear()),
-                child: Text(strings.colorPodDeactivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.secondary))),
-            ]),
-          ]),
-          const Gap(AppSpacing.sm),
+          sectionHeader(
+            title: strings.colorPodLetters,
+            onActivateAll: () => setState(() => _selectedLetters.addAll(_kLetters)),
+            onDeactivateAll: () => setState(() => _selectedLetters.clear()),
+          ),
+          const Gap(sectionBottomGap),
           toggleGrid(children: _kLetters.map((l) {
             final sel = _selectedLetters.contains(l);
             return GestureDetector(
@@ -524,12 +649,13 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 120),
-                width: 40, height: 40,
+                width: selectorTileSize,
+                height: selectorTileSize,
                 decoration: BoxDecoration(
                   color: sel
                       ? colors.primary.withValues(alpha: 0.12)
                       : colors.surface,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(selectorTileRadius),
                   border: Border.all(
                     color: sel ? colors.primary : colors.outline,
                     width: sel ? 2 : 1,
@@ -538,6 +664,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
                 child: Center(
                   child: Text(l,
                     style: texts.labelLarge?.copyWith(
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: sel ? colors.primary : colors.secondary)),
                 ),
@@ -547,21 +674,12 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
           const Gap(AppSpacing.lg),
 
           // ── CHIFFRES ─────────────────────────────────────────────────────────
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            sectionLabel(strings.colorPodDigits),
-            Row(children: [
-              TextButton(
-                onPressed: () => setState(
-                  () => _selectedDigits.addAll(_kDigits)),
-                child: Text(strings.colorPodActivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.primary))),
-              TextButton(
-                onPressed: () => setState(() => _selectedDigits.clear()),
-                child: Text(strings.colorPodDeactivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.secondary))),
-            ]),
-          ]),
-          const Gap(AppSpacing.sm),
+          sectionHeader(
+            title: strings.colorPodDigits,
+            onActivateAll: () => setState(() => _selectedDigits.addAll(_kDigits)),
+            onDeactivateAll: () => setState(() => _selectedDigits.clear()),
+          ),
+          const Gap(sectionBottomGap),
           toggleGrid(children: _kDigits.map((d) {
             final sel = _selectedDigits.contains(d);
             return GestureDetector(
@@ -571,12 +689,13 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 120),
-                width: 40, height: 40,
+                width: selectorTileSize,
+                height: selectorTileSize,
                 decoration: BoxDecoration(
                   color: sel
                       ? colors.primary.withValues(alpha: 0.12)
                       : colors.surface,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(selectorTileRadius),
                   border: Border.all(
                     color: sel ? colors.primary : colors.outline,
                     width: sel ? 2 : 1,
@@ -585,6 +704,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
                 child: Center(
                   child: Text(d,
                     style: texts.labelLarge?.copyWith(
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: sel ? colors.primary : colors.secondary)),
                 ),
@@ -667,74 +787,112 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     final remainSec = (_remainingMs / 1000).ceil();
     final isBlack  = _currentColor == null;
     final textColor = isBlack ? Colors.white : _contrastColor(_currentColor!);
+    final shapeColor = _currentColorId == 'white' ? Colors.black : Colors.white;
 
-    return Stack(children: [
-      // Large shape in center
-      if (_currentShape != null)
-        Center(
-          child: Icon(
-            _shapeIcon(_currentShape!),
-            size: 220,
-            color: textColor.withValues(alpha: 0.70),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const shapeBox = 220.0;
+        const textBox = 92.0;
+
+        Widget anchored({
+          required Offset anchor,
+          required double box,
+          required Widget child,
+        }) {
+          final maxLeft = (constraints.maxWidth - box).clamp(0.0, double.infinity);
+          final maxTop = (constraints.maxHeight - box).clamp(0.0, double.infinity);
+          final left = (anchor.dx * constraints.maxWidth - box / 2).clamp(0.0, maxLeft);
+          final top = (anchor.dy * constraints.maxHeight - box / 2).clamp(0.0, maxTop);
+          return Positioned(left: left, top: top, child: SizedBox(width: box, height: box, child: Center(child: child)));
+        }
+
+        return Stack(children: [
+          if (_currentShape != null && _shapeAnchor != null)
+            anchored(
+              anchor: _shapeAnchor!,
+              box: shapeBox,
+              child: _shapeGlyph(
+                id: _currentShape!,
+                size: 200,
+                color: shapeColor.withValues(alpha: 0.82),
+              ),
+            ),
+
+          if (_currentDigit != null && _digitAnchor != null)
+            anchored(
+              anchor: _digitAnchor!,
+              box: textBox,
+              child: Text(
+                _currentDigit!,
+                style: TextStyle(
+                  fontSize: 86,
+                  fontWeight: FontWeight.w900,
+                  color: textColor.withValues(alpha: 0.95),
+                ),
+              ),
+            ),
+
+          if (_currentLetter != null && _letterAnchor != null)
+            anchored(
+              anchor: _letterAnchor!,
+              box: textBox,
+              child: Text(
+                _currentLetter!,
+                style: TextStyle(
+                  fontSize: 86,
+                  fontWeight: FontWeight.w900,
+                  color: textColor.withValues(alpha: 0.95),
+                ),
+              ),
+            ),
+
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              color: isBlack ? Colors.white : textColor,
+            ),
           ),
-        ),
 
-      // Timer display
-      Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text('$remainSec',
-          style: TextStyle(
-            fontSize: 80, fontWeight: FontWeight.w900,
-            color: textColor.withValues(alpha: 0.90))),
-        Text(strings.colorPodSecondsLeft,
-          style: TextStyle(
-            fontSize: 14, color: textColor.withValues(alpha: 0.60),
-            fontWeight: FontWeight.w600)),
-      ])),
+          Positioned(
+            right: 14,
+            bottom: 6,
+            child: SafeArea(
+              minimum: const EdgeInsets.only(bottom: 0),
+              child: Text(
+                '$remainSec',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: textColor.withValues(alpha: 0.9),
+                ),
+              ),
+            ),
+          ),
 
-      // Digit in corner
-      if (_currentDigit != null)
-        _cornerWidget(_digitCorner,
-          Text(_currentDigit!,
-            style: TextStyle(
-              fontSize: 64, fontWeight: FontWeight.w900,
-              color: textColor.withValues(alpha: 0.95)))),
-
-      // Letter in another corner
-      if (_currentLetter != null)
-        _cornerWidget(_letterCorner,
-          Text(_currentLetter!,
-            style: TextStyle(
-              fontSize: 64, fontWeight: FontWeight.w900,
-              color: textColor.withValues(alpha: 0.95)))),
-
-      // Progress bar
-      Positioned(left: 0, right: 0, bottom: 0,
-        child: LinearProgressIndicator(
-          value: progress, minHeight: 6,
-          backgroundColor: Colors.white.withValues(alpha: 0.2),
-          color: isBlack ? Colors.white : textColor,
-        )),
-
-      // Stop button
-      Positioned(top: 48, right: 20,
-        child: SafeArea(child: TextButton(
-          onPressed: _finish,
-          child: Text(strings.colorPodStop,
-            style: TextStyle(
-              color: textColor.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w900, fontSize: 14)),
-        ))),
-    ]);
-  }
-
-  Widget _cornerWidget(int corner, Widget child) {
-    const double offset = 36.0;
-    return Positioned(
-      top:    (corner == 0 || corner == 1) ? offset : null,
-      bottom: (corner == 2 || corner == 3) ? offset : null,
-      left:   (corner == 0 || corner == 2) ? offset : null,
-      right:  (corner == 1 || corner == 3) ? offset : null,
-      child: child,
+          Positioned(
+            top: 48,
+            right: 20,
+            child: SafeArea(
+              child: TextButton(
+                onPressed: _finish,
+                child: Text(
+                  strings.colorPodStop,
+                  style: TextStyle(
+                    color: textColor.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ]);
+      },
     );
   }
 
@@ -843,7 +1001,11 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(children: [
-                      Icon(s.icon, size: 20, color: colors.primary),
+                      _shapeGlyph(
+                        id: s.id,
+                        size: 20,
+                        color: colors.primary,
+                      ),
                       const Gap(8),
                       Text(_shapeLabel(strings, s.id),
                         style: texts.bodyMedium?.copyWith(
@@ -906,44 +1068,50 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
 
           const Gap(AppSpacing.md),
           Row(children: [
-            Expanded(child: OutlinedButton(
-              onPressed: _reset,
-              child: Text(strings.colorPodConfig),
-            )),
-            const Gap(AppSpacing.md),
-            Expanded(child: FilledButton(
-              onPressed: () {
-                _counts.clear();
-                _shapeCounts.clear();
-                _letterCounts.clear();
-                _digitCounts.clear();
-                for (final c in _kColors) _counts[c.id] = 0;
-                for (final s in _kShapes) _shapeCounts[s.id] = 0;
-                for (final l in _kLetters) _letterCounts[l] = 0;
-                for (final d in _kDigits) _digitCounts[d] = 0;
-                setState(() {
-                  _phase = _Phase.countdown;
-                  _countdown = 3;
-                  _remainingMs = (_totalDuration * 1000).round();
-                  _currentColor = null;
-                  _currentShape = null;
-                  _currentLetter = null;
-                  _currentDigit = null;
-                });
-                _runCountdown();
-              },
-              child: Text(strings.colorPodRestart),
-            )),
-          ]),
-          const Gap(AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.handyman_outlined),
-              label: Text(strings.navToolsLabel),
+            SizedBox(
+              width: 56,
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.arrow_back_rounded),
+              ),
             ),
-          ),
+            const Gap(AppSpacing.sm),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _reset,
+                child: Text(strings.colorPodConfig),
+              ),
+            ),
+            const Gap(AppSpacing.sm),
+            Expanded(
+              child: FilledButton(
+                onPressed: () {
+                  _counts.clear();
+                  _shapeCounts.clear();
+                  _letterCounts.clear();
+                  _digitCounts.clear();
+                  for (final c in _kColors) _counts[c.id] = 0;
+                  for (final s in _kShapes) _shapeCounts[s.id] = 0;
+                  for (final l in _kLetters) _letterCounts[l] = 0;
+                  for (final d in _kDigits) _digitCounts[d] = 0;
+                  setState(() {
+                    _phase = _Phase.countdown;
+                    _countdown = 3;
+                    _remainingMs = (_totalDuration * 1000).round();
+                    _currentColor = null;
+                    _currentShape = null;
+                    _currentLetter = null;
+                    _currentDigit = null;
+                    _shapeAnchor = null;
+                    _letterAnchor = null;
+                    _digitAnchor = null;
+                  });
+                  _runCountdown();
+                },
+                child: Text(strings.colorPodRestart),
+              ),
+            ),
+          ]),
         ]),
       )),
     ]);

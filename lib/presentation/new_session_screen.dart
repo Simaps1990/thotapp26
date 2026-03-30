@@ -207,9 +207,10 @@ LocationSettings _buildLocationSettings() {
   Widget _buildHeader({
     required ColorScheme colors,
     required TextTheme textStyles,
+    required double topInset,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.fromLTRB(20, topInset + 12, 20, 12),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.outline)),
@@ -813,9 +814,14 @@ LocationSettings _buildLocationSettings() {
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
+          top: false,
           child: Column(
             children: [
-              _buildHeader(colors: colors, textStyles: textStyles),
+              _buildHeader(
+                colors: colors,
+                textStyles: textStyles,
+                topInset: MediaQuery.of(context).padding.top,
+              ),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -932,9 +938,27 @@ LocationSettings _buildLocationSettings() {
                   Expanded(
                     child: templates.isEmpty
                         ? Center(
-                            child: Text(
-                              strings.noTemplatesAvailable,
-                              style: textStyles.bodyMedium?.copyWith(color: colors.outline),
+                            child: Padding(
+                              padding: AppSpacing.paddingLg,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.inventory_2_outlined,
+                                    size: 30,
+                                    color: colors.secondary,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  Text(
+                                    strings.noTemplatesAvailable,
+                                    textAlign: TextAlign.center,
+                                    style: textStyles.bodyMedium?.copyWith(
+                                      color: colors.onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                         : ListView.builder(
@@ -1020,23 +1044,30 @@ if (ctx.mounted) Navigator.of(ctx).pop();
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (ctx, scrollController) => _ExerciseForm(
-          exercise: template,
-          scrollController: scrollController,
-          onSave: (exercise) {
-            setState(() {
-              _exercises.add(exercise);
-              _exercisesError = false;
-            });
-            Navigator.of(ctx).pop();
-          },
-        ),
-      ),
+      builder: (ctx) {
+        final baseBackground = Theme.of(ctx).scaffoldBackgroundColor;
+        final sheetHeight = MediaQuery.of(ctx).size.height * 0.92;
+        return SizedBox(
+          height: sheetHeight,
+          child: Container(
+            decoration: BoxDecoration(
+              color: baseBackground,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: _ExerciseForm(
+              exercise: template,
+              scrollController: null,
+              onSave: (exercise) {
+                setState(() {
+                  _exercises.add(exercise);
+                  _exercisesError = false;
+                });
+                Navigator.of(ctx).pop();
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1045,23 +1076,30 @@ if (ctx.mounted) Navigator.of(ctx).pop();
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (ctx, scrollController) => _ExerciseForm(
-          exercise: _exercises[index],
-          scrollController: scrollController,
-          onSave: (exercise) {
-            setState(() {
-              _exercises[index] = exercise;
-              _exercisesError = false;
-            });
-            Navigator.of(ctx).pop();
-          },
-        ),
-      ),
+      builder: (ctx) {
+        final baseBackground = Theme.of(ctx).scaffoldBackgroundColor;
+        final sheetHeight = MediaQuery.of(ctx).size.height * 0.92;
+        return SizedBox(
+          height: sheetHeight,
+          child: Container(
+            decoration: BoxDecoration(
+              color: baseBackground,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: _ExerciseForm(
+              exercise: _exercises[index],
+              scrollController: null,
+              onSave: (exercise) {
+                setState(() {
+                  _exercises[index] = exercise;
+                  _exercisesError = false;
+                });
+                Navigator.of(ctx).pop();
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 

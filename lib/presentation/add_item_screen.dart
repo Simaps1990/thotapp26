@@ -382,10 +382,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
       child: Scaffold(
         backgroundColor: baseBackground,
         body: SafeArea(
+          top: false,
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  MediaQuery.of(context).padding.top + 12,
+                  20,
+                  12,
+                ),
                 decoration: BoxDecoration(
                   color: colors.surface,
                   border: Border(bottom: BorderSide(color: colors.outline)),
