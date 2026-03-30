@@ -30,8 +30,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const MilliemeToolScreen(),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, __) => const MilliemeToolScreen(),
+      ),
     );
   }
 
@@ -39,8 +46,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const ShootingTimerScreen(),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, __) => const ShootingTimerScreen(),
+      ),
     );
   }
 
@@ -48,6 +62,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const ColorPodScreen(),
     );
@@ -61,8 +76,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const DiagnosticScreen(),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, __) => const DiagnosticScreen(),
+      ),
     );
   }
 
@@ -141,7 +163,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
         child: SingleChildScrollView(
           child: Stack(
             children: [
-              // 1. L'image de fond en haut (Hero)
               SizedBox(
                 height: heroHeight,
                 width: double.infinity,
@@ -167,7 +188,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   ],
                 ),
               ),
-              // 2. Le titre "OUTILS"
               Positioned(
                 left: AppSpacing.lg,
                 top: panelTop - 44,
@@ -187,7 +207,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   ),
                 ),
               ),
-              // 3. Le conteneur blanc avec les boutons qui scrolle avec la page
               Container(
                 margin: const EdgeInsets.only(top: panelTop),
                 decoration: BoxDecoration(
@@ -233,8 +252,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         subtitle: strings.colorPodToolSubtitle,
                         onTap: _openColorPod,
                       ),
-                      // Ajoute un espace en bas pour que le dernier bouton ne colle pas à l'écran
-                      const Gap(40), 
+                      const Gap(40),
                     ],
                   ),
                 ),

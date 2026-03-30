@@ -5599,9 +5599,17 @@ String get diagnosticNoSpecificWeapon => _pick(
   String get colorPodOrange => _pick(fr: 'Orange', en: 'Orange', de: 'Orange', it: 'Arancione', es: 'Naranja');
   String get colorPodPurple => _pick(fr: 'Violet', en: 'Purple', de: 'Lila', it: 'Viola', es: 'Morado');
   String get colorPodWhite => _pick(fr: 'Blanc', en: 'White', de: 'Weiß', it: 'Bianco', es: 'Blanco');
-  String get colorPodBlack => _pick(fr: 'Noir', en: 'Black', de: 'Schwarz', it: 'Nero', es: 'Negro');
+String get colorPodBlack => _pick(fr: 'Noir', en: 'Black', de: 'Schwarz', it: 'Nero', es: 'Negro');
+String get colorPodShapes => _pick(fr: 'FORMES', en: 'SHAPES', de: 'FORMEN', it: 'FORME', es: 'FORMAS');
+String get colorPodLetters => _pick(fr: 'LETTRES', en: 'LETTERS', de: 'BUCHSTABEN', it: 'LETTERE', es: 'LETRAS');
+String get colorPodDigits => _pick(fr: 'CHIFFRES', en: 'DIGITS', de: 'ZIFFERN', it: 'CIFRE', es: 'DÍGITOS');
+String get colorPodShapeCircle => _pick(fr: 'Cercle', en: 'Circle', de: 'Kreis', it: 'Cerchio', es: 'Círculo');
+String get colorPodShapeSquare => _pick(fr: 'Carré', en: 'Square', de: 'Quadrat', it: 'Quadrato', es: 'Cuadrado');
+String get colorPodShapeTriangle => _pick(fr: 'Triangle', en: 'Triangle', de: 'Dreieck', it: 'Triangolo', es: 'Triángulo');
+String get colorPodShapeStar => _pick(fr: 'Étoile', en: 'Star', de: 'Stern', it: 'Stella', es: 'Estrella');
+String get colorPodShapeDiamond => _pick(fr: 'Diamant', en: 'Diamond', de: 'Diamant', it: 'Diamante', es: 'Diamante');
 
-  String _pick({
+String _pick({ 
     required String fr,
     required String en,
     required String de,

@@ -1020,15 +1020,22 @@ if (ctx.mounted) Navigator.of(ctx).pop();
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _ExerciseForm(
-        exercise: template,
-        onSave: (exercise) {
-          setState(() {
-            _exercises.add(exercise);
-            _exercisesError = false;
-          });
-          context.pop();
-        },
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scrollController) => _ExerciseForm(
+          exercise: template,
+          scrollController: scrollController,
+          onSave: (exercise) {
+            setState(() {
+              _exercises.add(exercise);
+              _exercisesError = false;
+            });
+            Navigator.of(ctx).pop();
+          },
+        ),
       ),
     );
   }
@@ -1038,18 +1045,26 @@ if (ctx.mounted) Navigator.of(ctx).pop();
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _ExerciseForm(
-        exercise: _exercises[index],
-        onSave: (exercise) {
-          setState(() {
-            _exercises[index] = exercise;
-            _exercisesError = false;
-          });
-          context.pop();
-        },
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scrollController) => _ExerciseForm(
+          exercise: _exercises[index],
+          scrollController: scrollController,
+          onSave: (exercise) {
+            setState(() {
+              _exercises[index] = exercise;
+              _exercisesError = false;
+            });
+            Navigator.of(ctx).pop();
+          },
+        ),
       ),
     );
   }
+
 
   void _saveSession() async {
     setState(() {
@@ -2184,8 +2199,9 @@ class _SessionSummary extends StatelessWidget {
 class _ExerciseForm extends StatefulWidget {
   final Exercise? exercise;
   final Function(Exercise) onSave;
+  final ScrollController? scrollController;
 
-  const _ExerciseForm({this.exercise, required this.onSave});
+  const _ExerciseForm({this.exercise, required this.onSave, this.scrollController});
 
   @override
   State<_ExerciseForm> createState() => _ExerciseFormState();
@@ -2486,13 +2502,11 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     final strings = AppStrings.of(context);
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: BoxDecoration(
-        color: baseBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+return Container(
+  decoration: BoxDecoration(
+    color: baseBackground,
+    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+  ),
       child: Column(
         children: [
           // Handle bar
@@ -2514,9 +2528,10 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
+icon: const Icon(Icons.arrow_back_rounded),
                   color: colors.onSurface,
-                  onPressed: () => context.pop(),
+                  onPressed: () => Navigator.of(context).pop(),
+
                 ),
                 Expanded(
                   child: Center(
@@ -2553,7 +2568,7 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
 
           Expanded(
             child: SingleChildScrollView(
-              controller: _exerciseScrollController,
+controller: widget.scrollController ?? _exerciseScrollController,
               padding: EdgeInsets.only(
                 left: AppSpacing.lg,
                 right: AppSpacing.lg,

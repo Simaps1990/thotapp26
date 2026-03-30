@@ -28,6 +28,31 @@ const _kColors = <_PodColor>[
   _PodColor(id: 'white',  color: Color(0xFFF5F5F5)),
 ];
 
+// ─── Formes disponibles ───────────────────────────────────────────────────────
+
+class _PodShape {
+  final String id;
+  final IconData icon;
+  const _PodShape({required this.id, required this.icon});
+}
+
+const _kShapes = <_PodShape>[
+  _PodShape(id: 'circle',   icon: Icons.circle),
+  _PodShape(id: 'square',   icon: Icons.square),
+  _PodShape(id: 'triangle', icon: Icons.change_history),
+  _PodShape(id: 'star',     icon: Icons.star),
+  _PodShape(id: 'diamond',  icon: Icons.diamond),
+];
+
+// ─── Lettres et chiffres ──────────────────────────────────────────────────────
+
+const _kLetters = [
+  'A','B','C','D','E','F','G','H','I','J','K','L','M',
+  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+];
+
+const _kDigits = ['0','1','2','3','4','5','6','7','8','9'];
+
 enum _Phase { config, countdown, running, stats }
 
 // ─── Écran principal ──────────────────────────────────────────────────────────
@@ -44,6 +69,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
 
   // ── Config ───────────────────────────────────────────────────────────────────
   final Set<String> _selected = {'red', 'blue', 'green', 'yellow'};
+  final Set<String> _selectedShapes = {};
+  final Set<String> _selectedLetters = {};
+  final Set<String> _selectedDigits = {};
   double _colorDuration = 2.0;
   double _colorDelay    = 1.0;
   double _totalDuration = 30.0;
@@ -57,15 +85,26 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
   int _runToken = 0;
   Color? _currentColor;
   String? _currentColorId;
+  String? _currentShape;
+  String? _currentLetter;
+  String? _currentDigit;
+  int _digitCorner = 0;
+  int _letterCorner = 1;
   int _remainingMs = 0;
   final Map<String, int> _counts = {};
+  final Map<String, int> _shapeCounts = {};
+  final Map<String, int> _letterCounts = {};
+  final Map<String, int> _digitCounts = {};
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   List<_PodColor> get _available =>
       _kColors.where((c) => _selected.contains(c.id)).toList();
 
-  String _label(AppStrings s, String id) {
+  Color _contrastColor(Color bg) =>
+      bg.computeLuminance() > 0.4 ? Colors.black : Colors.white;
+
+  String _colorLabel(AppStrings s, String id) {
     switch (id) {
       case 'red':    return s.colorPodRed;
       case 'blue':   return s.colorPodBlue;
@@ -79,30 +118,52 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     }
   }
 
-  Color _contrastColor(Color bg) =>
-      bg.computeLuminance() > 0.4 ? Colors.black : Colors.white;
+  String _shapeLabel(AppStrings s, String id) {
+    switch (id) {
+      case 'circle':   return s.colorPodShapeCircle;
+      case 'square':   return s.colorPodShapeSquare;
+      case 'triangle': return s.colorPodShapeTriangle;
+      case 'star':     return s.colorPodShapeStar;
+      case 'diamond':  return s.colorPodShapeDiamond;
+      default:         return id;
+    }
+  }
+
+  IconData _shapeIcon(String id) {
+    switch (id) {
+      case 'circle':   return Icons.circle;
+      case 'square':   return Icons.square;
+      case 'triangle': return Icons.change_history;
+      case 'star':     return Icons.star;
+      case 'diamond':  return Icons.diamond;
+      default:         return Icons.circle;
+    }
+  }
 
   // ── Logique ──────────────────────────────────────────────────────────────────
 
   void _start() {
     if (_selected.isEmpty) return;
     _counts.clear();
+    _shapeCounts.clear();
+    _letterCounts.clear();
+    _digitCounts.clear();
     for (final c in _kColors) _counts[c.id] = 0;
-setState(() { _phase = _Phase.countdown; _countdown = 3; });
+    for (final s in _kShapes) _shapeCounts[s.id] = 0;
+    for (final l in _kLetters) _letterCounts[l] = 0;
+    for (final d in _kDigits) _digitCounts[d] = 0;
+    setState(() { _phase = _Phase.countdown; _countdown = 3; });
     _runCountdown();
   }
 
-void _runCountdown() {
+  void _runCountdown() {
     _timer?.cancel();
     _delayTimer?.cancel();
     _stopwatch?.stop();
     _stopwatch = null;
-    // Affiche 3 → 2 → 1 → GO (500ms) → lance
     _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
       if (_countdown <= 1) {
         t.cancel();
-
-        // Affiche GO pendant 500ms avec son
         setState(() => _countdown = 0);
         try { await TimerSound.play(); } catch (_) {}
         try {
@@ -116,6 +177,9 @@ void _runCountdown() {
           _remainingMs = (_totalDuration * 1000).round();
           _currentColor = null;
           _currentColorId = null;
+          _currentShape = null;
+          _currentLetter = null;
+          _currentDigit = null;
         });
         _startRun();
       } else {
@@ -127,21 +191,12 @@ void _runCountdown() {
   void _startRun() {
     _timer?.cancel();
     _delayTimer?.cancel();
-
     final totalMs = (_totalDuration * 1000).round();
     _stopwatch = Stopwatch()..start();
 
-    // UI ticker: keeps remaining time progressing continuously (even on black screen)
     _timer = Timer.periodic(const Duration(milliseconds: 50), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      if (_phase != _Phase.running) {
-        t.cancel();
-        return;
-      }
-
+      if (!mounted) { t.cancel(); return; }
+      if (_phase != _Phase.running) { t.cancel(); return; }
       final elapsed = _stopwatch?.elapsedMilliseconds ?? 0;
       final remaining = (totalMs - elapsed).clamp(0, totalMs);
       if (remaining != _remainingMs) {
@@ -158,20 +213,47 @@ void _runCountdown() {
   }
 
   Future<void> _runColorLoop(int token) async {
+    final rng = Random();
     while (mounted && _phase == _Phase.running && token == _runToken) {
       if (_remainingMs <= 0) return;
 
       final list = _available;
-      if (list.isEmpty) {
-        _finish();
-        return;
+      if (list.isEmpty) { _finish(); return; }
+
+      final picked = list[rng.nextInt(list.length)];
+
+      String? shape;
+      if (_selectedShapes.isNotEmpty) {
+        final shapeList = _selectedShapes.toList();
+        shape = shapeList[rng.nextInt(shapeList.length)];
       }
 
-      final picked = list[Random().nextInt(list.length)];
+      String? letter;
+      if (_selectedLetters.isNotEmpty) {
+        final letterList = _selectedLetters.toList();
+        letter = letterList[rng.nextInt(letterList.length)];
+      }
+
+      String? digit;
+      if (_selectedDigits.isNotEmpty) {
+        final digitList = _selectedDigits.toList();
+        digit = digitList[rng.nextInt(digitList.length)];
+      }
+
+      final corners = [0, 1, 2, 3]..shuffle(rng);
+
       setState(() {
         _currentColor = picked.color;
         _currentColorId = picked.id;
+        _currentShape = shape;
+        _currentLetter = letter;
+        _currentDigit = digit;
+        _digitCorner = corners[0];
+        _letterCorner = corners[1];
         _counts[picked.id] = (_counts[picked.id] ?? 0) + 1;
+        if (shape != null) _shapeCounts[shape] = (_shapeCounts[shape] ?? 0) + 1;
+        if (letter != null) _letterCounts[letter] = (_letterCounts[letter] ?? 0) + 1;
+        if (digit != null) _digitCounts[digit] = (_digitCounts[digit] ?? 0) + 1;
       });
 
       final displayMs = (_colorDuration * 1000).round();
@@ -184,6 +266,9 @@ void _runCountdown() {
       setState(() {
         _currentColor = null;
         _currentColorId = null;
+        _currentShape = null;
+        _currentLetter = null;
+        _currentDigit = null;
       });
 
       await Future.delayed(Duration(milliseconds: delayMs));
@@ -200,7 +285,13 @@ void _runCountdown() {
       if (ok) Vibration.vibrate(duration: 800);
     } catch (_) {}
     if (!mounted) return;
-    setState(() { _phase = _Phase.stats; _currentColor = null; });
+    setState(() {
+      _phase = _Phase.stats;
+      _currentColor = null;
+      _currentShape = null;
+      _currentLetter = null;
+      _currentDigit = null;
+    });
   }
 
   void _reset() {
@@ -213,6 +304,9 @@ void _runCountdown() {
       _phase = _Phase.config;
       _currentColor = null;
       _currentColorId = null;
+      _currentShape = null;
+      _currentLetter = null;
+      _currentDigit = null;
       _countdown = 3;
       _remainingMs = 0;
     });
@@ -228,7 +322,7 @@ void _runCountdown() {
 
   // ── Build ─────────────────────────────────────────────────────────────────────
 
-@override
+  @override
   Widget build(BuildContext context) {
     final bool landscape =
         _phase == _Phase.countdown || _phase == _Phase.running;
@@ -242,7 +336,7 @@ void _runCountdown() {
       bgColor = baseBackground;
     }
 
-Widget body;
+    Widget body;
     switch (_phase) {
       case _Phase.config:    body = _buildConfig();    break;
       case _Phase.countdown: body = _buildCountdown(); break;
@@ -263,8 +357,8 @@ Widget body;
     }
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 0),
-      height: MediaQuery.of(context).size.height * 0.92,
+      duration: const Duration(milliseconds: 300),
+      height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
         color: landscape ? Colors.transparent : bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -279,6 +373,15 @@ Widget body;
     final colors  = Theme.of(context).colorScheme;
     final texts   = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+
+    Widget sectionLabel(String title) => Text(
+      title,
+      style: texts.labelLarge?.copyWith(
+        fontWeight: FontWeight.w800, color: colors.secondary),
+    );
+
+    Widget toggleGrid({required List<Widget> children}) =>
+        Wrap(spacing: 6, runSpacing: 6, children: children);
 
     return Column(children: [
       const Gap(10),
@@ -312,10 +415,9 @@ Widget body;
           AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.lg),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
 
-          // Sélection couleurs
+          // ── COULEURS ─────────────────────────────────────────────────────────
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(strings.colorPodColors, style: texts.labelLarge?.copyWith(
-              fontWeight: FontWeight.w800, color: colors.secondary)),
+            sectionLabel(strings.colorPodColors),
             Row(children: [
               TextButton(
                 onPressed: () => setState(
@@ -329,8 +431,6 @@ Widget body;
             ]),
           ]),
           const Gap(AppSpacing.sm),
-
-          // Grille couleurs
           Wrap(spacing: 8, runSpacing: 8, children: _kColors.map((c) {
             final sel = _selected.contains(c.id);
             final isWhite = c.id == 'white';
@@ -340,7 +440,7 @@ Widget body;
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                width: 64, height: 64,
+                width: 56, height: 56,
                 decoration: BoxDecoration(
                   color: c.color,
                   borderRadius: BorderRadius.circular(12),
@@ -361,15 +461,139 @@ Widget body;
                         color: (c.id == 'white' || c.id == 'yellow')
                             ? Colors.black
                             : Colors.white,
-                        size: 28)
+                        size: 24)
                     : null,
               ),
             );
           }).toList()),
-          const Gap(4),
-
           const Gap(AppSpacing.lg),
 
+          // ── FORMES ───────────────────────────────────────────────────────────
+          sectionLabel(strings.colorPodShapes),
+          const Gap(AppSpacing.sm),
+          toggleGrid(children: _kShapes.map((s) {
+            final sel = _selectedShapes.contains(s.id);
+            return GestureDetector(
+              onTap: () => setState(() {
+                if (sel) _selectedShapes.remove(s.id);
+                else _selectedShapes.add(s.id);
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 56, height: 56,
+                decoration: BoxDecoration(
+                  color: sel
+                      ? colors.primary.withValues(alpha: 0.12)
+                      : colors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: sel ? colors.primary : colors.outline,
+                    width: sel ? 2 : 1,
+                  ),
+                ),
+                child: Icon(s.icon,
+                  color: sel ? colors.primary : colors.secondary,
+                  size: 28),
+              ),
+            );
+          }).toList()),
+          const Gap(AppSpacing.lg),
+
+          // ── LETTRES ──────────────────────────────────────────────────────────
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            sectionLabel(strings.colorPodLetters),
+            Row(children: [
+              TextButton(
+                onPressed: () => setState(
+                  () => _selectedLetters.addAll(_kLetters)),
+                child: Text(strings.colorPodActivateAll,
+                  style: texts.labelSmall?.copyWith(color: colors.primary))),
+              TextButton(
+                onPressed: () => setState(() => _selectedLetters.clear()),
+                child: Text(strings.colorPodDeactivateAll,
+                  style: texts.labelSmall?.copyWith(color: colors.secondary))),
+            ]),
+          ]),
+          const Gap(AppSpacing.sm),
+          toggleGrid(children: _kLetters.map((l) {
+            final sel = _selectedLetters.contains(l);
+            return GestureDetector(
+              onTap: () => setState(() {
+                if (sel) _selectedLetters.remove(l);
+                else _selectedLetters.add(l);
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: sel
+                      ? colors.primary.withValues(alpha: 0.12)
+                      : colors.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: sel ? colors.primary : colors.outline,
+                    width: sel ? 2 : 1,
+                  ),
+                ),
+                child: Center(
+                  child: Text(l,
+                    style: texts.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: sel ? colors.primary : colors.secondary)),
+                ),
+              ),
+            );
+          }).toList()),
+          const Gap(AppSpacing.lg),
+
+          // ── CHIFFRES ─────────────────────────────────────────────────────────
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            sectionLabel(strings.colorPodDigits),
+            Row(children: [
+              TextButton(
+                onPressed: () => setState(
+                  () => _selectedDigits.addAll(_kDigits)),
+                child: Text(strings.colorPodActivateAll,
+                  style: texts.labelSmall?.copyWith(color: colors.primary))),
+              TextButton(
+                onPressed: () => setState(() => _selectedDigits.clear()),
+                child: Text(strings.colorPodDeactivateAll,
+                  style: texts.labelSmall?.copyWith(color: colors.secondary))),
+            ]),
+          ]),
+          const Gap(AppSpacing.sm),
+          toggleGrid(children: _kDigits.map((d) {
+            final sel = _selectedDigits.contains(d);
+            return GestureDetector(
+              onTap: () => setState(() {
+                if (sel) _selectedDigits.remove(d);
+                else _selectedDigits.add(d);
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: sel
+                      ? colors.primary.withValues(alpha: 0.12)
+                      : colors.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: sel ? colors.primary : colors.outline,
+                    width: sel ? 2 : 1,
+                  ),
+                ),
+                child: Center(
+                  child: Text(d,
+                    style: texts.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: sel ? colors.primary : colors.secondary)),
+                ),
+              ),
+            );
+          }).toList()),
+          const Gap(AppSpacing.lg),
+
+          // ── Sliders ──────────────────────────────────────────────────────────
           _SliderField(
             label: strings.colorPodColorDuration,
             value: _colorDuration,
@@ -445,22 +669,53 @@ Widget body;
     final textColor = isBlack ? Colors.white : _contrastColor(_currentColor!);
 
     return Stack(children: [
+      // Large shape in center
+      if (_currentShape != null)
+        Center(
+          child: Icon(
+            _shapeIcon(_currentShape!),
+            size: 220,
+            color: textColor.withValues(alpha: 0.70),
+          ),
+        ),
+
+      // Timer display
       Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Text('$remainSec',
           style: TextStyle(
-            fontSize: 100, fontWeight: FontWeight.w900,
-            color: textColor.withValues(alpha: 0.85))),
+            fontSize: 80, fontWeight: FontWeight.w900,
+            color: textColor.withValues(alpha: 0.90))),
         Text(strings.colorPodSecondsLeft,
           style: TextStyle(
-            fontSize: 16, color: textColor.withValues(alpha: 0.6),
+            fontSize: 14, color: textColor.withValues(alpha: 0.60),
             fontWeight: FontWeight.w600)),
       ])),
+
+      // Digit in corner
+      if (_currentDigit != null)
+        _cornerWidget(_digitCorner,
+          Text(_currentDigit!,
+            style: TextStyle(
+              fontSize: 64, fontWeight: FontWeight.w900,
+              color: textColor.withValues(alpha: 0.95)))),
+
+      // Letter in another corner
+      if (_currentLetter != null)
+        _cornerWidget(_letterCorner,
+          Text(_currentLetter!,
+            style: TextStyle(
+              fontSize: 64, fontWeight: FontWeight.w900,
+              color: textColor.withValues(alpha: 0.95)))),
+
+      // Progress bar
       Positioned(left: 0, right: 0, bottom: 0,
         child: LinearProgressIndicator(
           value: progress, minHeight: 6,
           backgroundColor: Colors.white.withValues(alpha: 0.2),
           color: isBlack ? Colors.white : textColor,
         )),
+
+      // Stop button
       Positioned(top: 48, right: 20,
         child: SafeArea(child: TextButton(
           onPressed: _finish,
@@ -472,14 +727,50 @@ Widget body;
     ]);
   }
 
+  Widget _cornerWidget(int corner, Widget child) {
+    const double offset = 36.0;
+    return Positioned(
+      top:    (corner == 0 || corner == 1) ? offset : null,
+      bottom: (corner == 2 || corner == 3) ? offset : null,
+      left:   (corner == 0 || corner == 2) ? offset : null,
+      right:  (corner == 1 || corner == 3) ? offset : null,
+      child: child,
+    );
+  }
+
   // ── Stats ─────────────────────────────────────────────────────────────────────
 
   Widget _buildStats() {
     final colors  = Theme.of(context).colorScheme;
     final texts   = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    final total   = _counts.values.fold(0, (a, b) => a + b);
-    final appeared = _kColors.where((c) => (_counts[c.id] ?? 0) > 0).toList();
+
+    final totalColors    = _counts.values.fold(0, (a, b) => a + b);
+    final appearedColors  = _kColors.where((c) => (_counts[c.id] ?? 0) > 0).toList();
+    final appearedShapes  = _kShapes.where((s) => (_shapeCounts[s.id] ?? 0) > 0).toList();
+    final appearedLetters = _kLetters.where((l) => (_letterCounts[l] ?? 0) > 0).toList();
+    final appearedDigits  = _kDigits.where((d) => (_digitCounts[d] ?? 0) > 0).toList();
+
+    Widget statCard(String title, List<Widget> rows) {
+      if (rows.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: Container(
+          padding: AppSpacing.paddingLg,
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.outline),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(title, style: texts.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800, color: colors.secondary)),
+            const Gap(AppSpacing.md),
+            ...rows,
+          ]),
+        ),
+      );
+    }
 
     return Column(children: [
       const Gap(10),
@@ -500,91 +791,159 @@ Widget body;
       Expanded(child: SingleChildScrollView(
         padding: AppSpacing.paddingLg,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Container(
-            padding: AppSpacing.paddingLg,
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.outline),
-            ),
-            child: Column(children: [
-              Text(strings.colorPodTotal(total),
-                style: texts.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-              const Gap(AppSpacing.lg),
-              ...appeared.map((c) {
-                final count = _counts[c.id] ?? 0;
-                final pct = total == 0 ? 0.0 : count / total;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: Row(children: [
-                    Container(
-                      width: 32, height: 32,
-                      decoration: BoxDecoration(
-                        color: c.color,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: colors.outline),
-                      ),
-                    ),
-                    const Gap(AppSpacing.md),
-                    Expanded(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+
+          // Colors card
+          statCard(strings.colorPodColors, appearedColors.map((c) {
+            final count = _counts[c.id] ?? 0;
+            final pct = totalColors == 0 ? 0.0 : count / totalColors;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Row(children: [
+                Container(
+                  width: 28, height: 28,
+                  decoration: BoxDecoration(
+                    color: c.color,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: colors.outline),
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(_label(strings, c.id),
-                              style: texts.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700)),
-                            Text('$count × (${(pct * 100).toStringAsFixed(0)}%)',
-                              style: texts.bodySmall?.copyWith(
-                                color: colors.secondary)),
-                          ]),
-                        const Gap(4),
-                        LinearProgressIndicator(
-                          value: pct,
-                          backgroundColor: colors.outline.withValues(alpha: 0.2),
-                          color: c.id == 'white' ? colors.secondary : c.color,
-                          minHeight: 6,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ])),
-                  ]),
-                );
-              }),
+                        Text(_colorLabel(strings, c.id),
+                          style: texts.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700)),
+                        Text('$count × (${(pct * 100).toStringAsFixed(0)}%)',
+                          style: texts.bodySmall?.copyWith(
+                            color: colors.secondary)),
+                      ]),
+                    const Gap(4),
+                    LinearProgressIndicator(
+                      value: pct,
+                      backgroundColor: colors.outline.withValues(alpha: 0.2),
+                      color: c.id == 'white' ? colors.secondary : c.color,
+                      minHeight: 6,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ])),
+              ]),
+            );
+          }).toList()),
+
+          // Shapes card
+          if (appearedShapes.isNotEmpty)
+            statCard(strings.colorPodShapes, appearedShapes.map((s) {
+              final count = _shapeCounts[s.id] ?? 0;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(children: [
+                      Icon(s.icon, size: 20, color: colors.primary),
+                      const Gap(8),
+                      Text(_shapeLabel(strings, s.id),
+                        style: texts.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600)),
+                    ]),
+                    Text('$count ×',
+                      style: texts.bodySmall?.copyWith(color: colors.secondary)),
+                  ],
+                ),
+              );
+            }).toList()),
+
+          // Letters card
+          if (appearedLetters.isNotEmpty)
+            statCard(strings.colorPodLetters, [
+              Wrap(spacing: 8, runSpacing: 8,
+                children: appearedLetters.map((l) {
+                  final count = _letterCounts[l] ?? 0;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colors.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(children: [
+                      Text(l, style: texts.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w900, color: colors.primary)),
+                      Text('×$count',
+                        style: texts.labelSmall?.copyWith(color: colors.secondary)),
+                    ]),
+                  );
+                }).toList()),
             ]),
-          ),
-          const Gap(AppSpacing.lg),
-          Column(children: [
-            Row(children: [
-              Expanded(child: OutlinedButton(
-                onPressed: _reset,
-                child: Text(strings.colorPodConfig),
-              )),
-              const Gap(AppSpacing.md),
-              Expanded(child: FilledButton(
-                onPressed: () {
-                  _counts.clear();
-                  for (final c in _kColors) _counts[c.id] = 0;
-                  setState(() {
-                    _phase = _Phase.countdown;
-                    _countdown = 3;
-                    _remainingMs = (_totalDuration * 1000).round();
-                    _currentColor = null;
-                  });
-                  _runCountdown();
-                },
-                child: Text(strings.colorPodRestart),
-              )),
+
+          // Digits card
+          if (appearedDigits.isNotEmpty)
+            statCard(strings.colorPodDigits, [
+              Wrap(spacing: 8, runSpacing: 8,
+                children: appearedDigits.map((d) {
+                  final count = _digitCounts[d] ?? 0;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colors.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(children: [
+                      Text(d, style: texts.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w900, color: colors.primary)),
+                      Text('×$count',
+                        style: texts.labelSmall?.copyWith(color: colors.secondary)),
+                    ]),
+                  );
+                }).toList()),
             ]),
+
+          const Gap(AppSpacing.md),
+          Row(children: [
+            Expanded(child: OutlinedButton(
+              onPressed: _reset,
+              child: Text(strings.colorPodConfig),
+            )),
             const Gap(AppSpacing.md),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.handyman_outlined),
-                label: Text(strings.navToolsLabel),
-              ),
-            ),
+            Expanded(child: FilledButton(
+              onPressed: () {
+                _counts.clear();
+                _shapeCounts.clear();
+                _letterCounts.clear();
+                _digitCounts.clear();
+                for (final c in _kColors) _counts[c.id] = 0;
+                for (final s in _kShapes) _shapeCounts[s.id] = 0;
+                for (final l in _kLetters) _letterCounts[l] = 0;
+                for (final d in _kDigits) _digitCounts[d] = 0;
+                setState(() {
+                  _phase = _Phase.countdown;
+                  _countdown = 3;
+                  _remainingMs = (_totalDuration * 1000).round();
+                  _currentColor = null;
+                  _currentShape = null;
+                  _currentLetter = null;
+                  _currentDigit = null;
+                });
+                _runCountdown();
+              },
+              child: Text(strings.colorPodRestart),
+            )),
           ]),
+          const Gap(AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.handyman_outlined),
+              label: Text(strings.navToolsLabel),
+            ),
+          ),
         ]),
       )),
     ]);
@@ -626,6 +985,7 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
 }
 
 // ─── Slider avec label et valeur ──────────────────────────────────────────────
+
 class _SliderField extends StatelessWidget {
   final String label;
   final double value;
