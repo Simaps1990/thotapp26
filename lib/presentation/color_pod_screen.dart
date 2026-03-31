@@ -454,9 +454,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     }
 
     if (landscape) {
-      return ColoredBox(
-        color: bgColor,
-        child: SizedBox.expand(child: content),
+      return Scaffold(
+        backgroundColor: bgColor,
+        body: content,
       );
     }
 
@@ -1175,11 +1175,9 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox.expand(
-    child: ColoredBox(
-      color: widget.color,
-      child: widget.child,
-    ),
+  Widget build(BuildContext context) => ColoredBox(
+    color: widget.color,
+    child: widget.child,
   );
 }
 

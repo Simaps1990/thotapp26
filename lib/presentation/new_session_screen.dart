@@ -2758,9 +2758,9 @@ controller: widget.scrollController ?? _exerciseScrollController,
                   ),
                   const Gap(AppSpacing.md),
 
-                  // Weapon & Ammo Card (grouped)
+                  // Weapon Card (separate)
                   Text(
-                    strings.sessionWeaponAndEquipmentDetailsTitle,
+                    strings.weaponTitle,
                     style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const Gap(AppSpacing.sm),
@@ -2771,405 +2771,415 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       borderRadius: BorderRadius.circular(AppRadius.sm),
                       border: Border.all(color: colors.outline),
                     ),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Left column: weapon
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    SvgPicture.asset(
-                                      'assets/images/gun.svg',
-                                      width: 18,
-                                      height: 18,
-                                      colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-                                    ),
-                                    const Gap(8),
-                                    Text(
-                                      strings.weaponTitle,
-                                      style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                                const Gap(AppSpacing.sm),
-                                _SourceToggleRow(
-                                  leftLabel: strings.myInventory,
-                                  rightLabel: strings.borrowed,
-                                  value: _weaponSource,
-                                  onChanged: (v) => setState(() {
-                                    _weaponSource = v;
-                                    if (_weaponSource == 'borrowed') _selectedWeaponId = null;
-                                    if (_weaponSource != 'borrowed') {
-                                      _borrowedWeaponController.text = '';
-                                    }
-                                  }),
-                                ),
-                                const Gap(10),
-                                Container(
-                                  key: _weaponFieldKey,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    border: Border.all(
-                                      color: _weaponError ? colors.error : Colors.transparent,
-                                      width: 1.4,
-                                    ),
-                                  ),
-                        child: _weaponSource == 'inventory'
-                            ? (provider.weapons.isEmpty
-                                ? Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.warning_amber_rounded,
-                                          size: 18,
-                                          color: colors.secondary,
-                                        ),
-                                        const Gap(8),
-                                        Expanded(
-                                          child: Text(
-                                            strings.noWeaponInStock,
-                                            style: textStyles.bodySmall?.copyWith(
-                                              color: colors.secondary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/images/gun.svg',
+                              width: 18,
+                              height: 18,
+                              colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.weaponTitle,
+                              style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.sm),
+                        _SourceToggleRow(
+                          leftLabel: strings.myInventory,
+                          rightLabel: strings.borrowed,
+                          value: _weaponSource,
+                          onChanged: (v) => setState(() {
+                            _weaponSource = v;
+                            if (_weaponSource == 'borrowed') _selectedWeaponId = null;
+                            if (_weaponSource != 'borrowed') {
+                              _borrowedWeaponController.text = '';
+                            }
+                          }),
+                        ),
+                        const Gap(10),
+                        Container(
+                          key: _weaponFieldKey,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color: _weaponError ? colors.error : Colors.transparent,
+                              width: 1.4,
+                            ),
+                          ),
+                          child: _weaponSource == 'inventory'
+                              ? (provider.weapons.isEmpty
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.warning_amber_rounded,
+                                            size: 18,
+                                            color: colors.secondary,
+                                          ),
+                                          const Gap(8),
+                                          Expanded(
+                                            child: Text(
+                                              strings.noWeaponInStock,
+                                              style: textStyles.bodySmall?.copyWith(
+                                                color: colors.secondary,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : _SelectedSingleItemField(
-                                    leading: _selectedWeaponId == null
-                                        ? SvgPicture.asset(
-                                            'assets/images/gun.svg',
-                                            width: 18,
-                                            height: 18,
-                                            colorFilter: ColorFilter.mode(
-                                                colors.primary, BlendMode.srcIn),
-                                          )
-                                        : Icon(
-                                            Icons.radio_button_checked_rounded,
-                                            size: 18,
-                                            color: colors.primary,
-                                          ),
-                                    titleWhenEmpty:
-                                        strings.chooseWeaponFromInventory,
-                                    titleWhenSet: (_selectedWeaponId == null
-                                            ? null
-                                            : provider.getWeaponById(
-                                                _selectedWeaponId!))
-                                        ?.name ??
-                                        strings.chooseWeaponFromInventory,
-                                    subtitle: (_selectedWeaponId == null
-                                                ? null
-                                                : provider.getWeaponById(
-                                                    _selectedWeaponId!)) ==
-                                            null
-                                        ? null
-                                        : strings.tapToChange,
-                                    onTap: () async {
-                                      if (provider.weapons.isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                                strings.noWeaponInStockSwitchBorrowed),
+                                        ],
+                                      ),
+                                    )
+                                  : _SelectedSingleItemField(
+                                      leading: _selectedWeaponId == null
+                                          ? SvgPicture.asset(
+                                              'assets/images/gun.svg',
+                                              width: 18,
+                                              height: 18,
+                                              colorFilter: ColorFilter.mode(
+                                                  colors.primary, BlendMode.srcIn),
+                                            )
+                                          : Icon(
+                                              Icons.radio_button_checked_rounded,
+                                              size: 18,
+                                              color: colors.primary,
+                                            ),
+                                      titleWhenEmpty:
+                                          strings.chooseWeaponFromInventory,
+                                      titleWhenSet: (_selectedWeaponId == null
+                                              ? null
+                                              : provider.getWeaponById(
+                                                  _selectedWeaponId!))
+                                          ?.name ??
+                                          strings.chooseWeaponFromInventory,
+                                      subtitle: (_selectedWeaponId == null
+                                                  ? null
+                                                  : provider.getWeaponById(
+                                                      _selectedWeaponId!)) ==
+                                              null
+                                          ? null
+                                          : strings.tapToChange,
+                                      onTap: () async {
+                                        if (provider.weapons.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  strings.noWeaponInStockSwitchBorrowed),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        final selected =
+                                            await showModalBottomSheet<String>(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) =>
+                                              _SingleSelectSheet<Weapon>(
+                                            title: strings.weaponsTab,
+                                            items: provider.weapons,
+                                            initialId: _selectedWeaponId,
+                                            isLockedItem: (w) {
+                                              final idx = provider.weapons.indexOf(w);
+                                              return idx >= 0
+                                                  ? provider.isWeaponLockedForFree(
+                                                      w, idx)
+                                                  : false;
+                                            },
+                                            iconBuilder: (selected, colors) =>
+                                                SvgPicture.asset(
+                                              'assets/images/gun.svg',
+                                              width: 20,
+                                              height: 20,
+                                              colorFilter: ColorFilter.mode(
+                                                selected
+                                                    ? colors.primary
+                                                    : colors.outline,
+                                                BlendMode.srcIn,
+                                              ),
+                                            ),
+                                            primaryText: (w) => w.name,
+                                            secondaryText: (w) =>
+                                                [
+                                                  strings.itemWeaponTypeLabel(
+                                                      w.type),
+                                                  if (w.model.trim().isNotEmpty)
+                                                    w.model,
+                                                  if (w.caliber.trim().isNotEmpty)
+                                                    w.caliber,
+                                                ].join(' • '),
+                                            matchesQuery: (w, q) {
+                                              final qq = q.toLowerCase();
+                                              return w.name
+                                                      .toLowerCase()
+                                                      .contains(qq) ||
+                                                  w.type
+                                                      .toLowerCase()
+                                                      .contains(qq) ||
+                                                  w.model
+                                                      .toLowerCase()
+                                                      .contains(qq) ||
+                                                  w.caliber
+                                                      .toLowerCase()
+                                                      .contains(qq) ||
+                                                  w.serialNumber
+                                                      .toLowerCase()
+                                                      .contains(qq);
+                                            },
+                                            getId: (w) => w.id,
                                           ),
                                         );
-                                        return;
-                                      }
-                                      final selected =
-                                          await showModalBottomSheet<String>(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) =>
-                                            _SingleSelectSheet<Weapon>(
-                                          title: strings.weaponsTab,
-                                          items: provider.weapons,
-                                          initialId: _selectedWeaponId,
-                                          isLockedItem: (w) {
-                                            final idx = provider.weapons.indexOf(w);
-                                            return idx >= 0
-                                                ? provider.isWeaponLockedForFree(
-                                                    w, idx)
-                                                : false;
-                                          },
-                                          iconBuilder: (selected, colors) =>
-                                              SvgPicture.asset(
-                                            'assets/images/gun.svg',
-                                            width: 20,
-                                            height: 20,
-                                            colorFilter: ColorFilter.mode(
-                                              selected
-                                                  ? colors.primary
-                                                  : colors.outline,
-                                              BlendMode.srcIn,
-                                            ),
-                                          ),
-                                          primaryText: (w) => w.name,
-                                          secondaryText: (w) =>
-                                              [
-                                                strings.itemWeaponTypeLabel(
-                                                    w.type),
-                                                if (w.model.trim().isNotEmpty)
-                                                  w.model,
-                                                if (w.caliber.trim().isNotEmpty)
-                                                  w.caliber,
-                                              ].join(' • '),
-                                          matchesQuery: (w, q) {
-                                            final qq = q.toLowerCase();
-                                            return w.name
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.type
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.model
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.caliber
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.serialNumber
-                                                    .toLowerCase()
-                                                    .contains(qq);
-                                          },
-                                          getId: (w) => w.id,
-                                        ),
-                                      );
-                                      if (!mounted || selected == null) return;
-                                      setState(() {
-                                        _selectedWeaponId = selected;
-                                        _weaponError = false;
-                                      });
-                                    },
-                                  ))
-                            : TextField(
-                                controller: _borrowedWeaponController,
-                                textInputAction: TextInputAction.next,
-                                decoration: InputDecoration(
-                                  labelText: strings.borrowedWeaponOptional,
-                                  hintText: strings.borrowedWeaponHint,
-                                  prefixIcon: const Padding(
-                                    padding: EdgeInsets.all(12),
-                                    child: Icon(
-                                      Icons.radio_button_checked_rounded,
-                                      size: 18,
+                                        if (!mounted || selected == null) return;
+                                        setState(() {
+                                          _selectedWeaponId = selected;
+                                          _weaponError = false;
+                                        });
+                                      },
+                                    ))
+                              : TextField(
+                                  controller: _borrowedWeaponController,
+                                  textInputAction: TextInputAction.next,
+                                  decoration: InputDecoration(
+                                    labelText: strings.borrowedWeaponOptional,
+                                    hintText: strings.borrowedWeaponHint,
+                                    prefixIcon: const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: Icon(
+                                        Icons.radio_button_checked_rounded,
+                                        size: 18,
+                                      ),
                                     ),
-                                  ),
-                                  prefixIconConstraints: const BoxConstraints(
-                                    minWidth: 44,
-                                    minHeight: 44,
-                                  ),
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(color: colors.outline),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(color: colors.outline),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.primary,
-                                      width: 1.6,
+                                    prefixIconConstraints: const BoxConstraints(
+                                      minWidth: 44,
+                                      minHeight: 44,
+                                    ),
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.primary,
+                                        width: 1.6,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            color: colors.outline,
-                          ),
-                          const Gap(AppSpacing.md),
-                          // Right column: ammo
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    SvgPicture.asset(
-                                      'assets/images/bullet.svg',
-                                      width: 18,
-                                      height: 18,
-                                      colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-                                    ),
-                                    const Gap(8),
-                                    Text(
-                                      strings.ammoTitle,
-                                      style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                                const Gap(AppSpacing.sm),
-                                _SourceToggleRow(
-                                  leftLabel: strings.myInventory,
-                                  rightLabel: strings.borrowed,
-                                  value: _ammoSource,
-                                  onChanged: (v) => setState(() {
-                                    _ammoSource = v;
-                                    if (_ammoSource == 'borrowed') _selectedAmmoId = null;
-                                    if (_ammoSource != 'borrowed') _borrowedAmmoController.text = '';
-                                  }),
-                                ),
-                                const Gap(10),
-                                Container(
-                                  key: _ammoFieldKey,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    border: Border.all(
-                                      color: _ammoError ? colors.error : Colors.transparent,
-                                      width: 1.4,
-                                    ),
-                                  ),
-              child: _ammoSource == 'inventory'
-                  ? (provider.ammos.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                size: 18,
-                                color: colors.secondary,
-                              ),
-                              const Gap(8),
-                              Expanded(
-                                child: Text(
-                                  strings.noAmmoInStock,
-                                  style: textStyles.bodySmall?.copyWith(
-                                    color: colors.secondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _SelectedSingleItemField(
-                          leading: Icon(
-                            Icons.radio_button_checked_rounded,
-                            size: 18,
-                            color: colors.primary,
-                          ),
-                          titleWhenEmpty: strings.chooseAmmoFromInventory,
-                          titleWhenSet: (_selectedAmmoId == null
-                                  ? null
-                                  : provider.getAmmoById(_selectedAmmoId!))
-                              ?.name ??
-                              strings.chooseAmmoFromInventory,
-                          subtitle: (_selectedAmmoId == null
-                                      ? null
-                                      : provider.getAmmoById(
-                                          _selectedAmmoId!)) ==
-                                  null
-                              ? null
-                              : strings.tapToChange,
-                          onTap: () async {
-                            if (provider.ammos.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    strings.noAmmoInStockSwitchBorrowed,
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final selected =
-                                await showModalBottomSheet<String>(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => _SingleSelectSheet<Ammo>(
-                                title: strings.ammosTab,
-                                items: provider.ammos,
-                                initialId: _selectedAmmoId,
-                                isLockedItem: (a) {
-                                  final idx = provider.ammos.indexOf(a);
-                                  return idx >= 0
-                                      ? provider.isAmmoLockedForFree(a, idx)
-                                      : false;
-                                },
-                                icon: Icons.trip_origin_rounded,
-                                primaryText: (a) => a.name,
-                                secondaryText: (a) =>
-                                    [
-                                      a.caliber,
-                                      if (a.brand.trim().isNotEmpty) a.brand,
-                                      if (a.projectileType.trim().isNotEmpty)
-                                        strings.itemProjectileTypeLabel(
-                                          a.projectileType,
-                                        ),
-                                    ].join(' • '),
-                                matchesQuery: (a, q) {
-                                  final qq = q.toLowerCase();
-                                  return a.name.toLowerCase().contains(qq) ||
-                                      a.caliber.toLowerCase().contains(qq) ||
-                                      a.brand.toLowerCase().contains(qq) ||
-                                      a.projectileType
-                                          .toLowerCase()
-                                          .contains(qq);
-                                },
-                                getId: (a) => a.id,
-                              ),
-                            );
-
-                            if (!mounted || selected == null) return;
-                            setState(() {
-                              _selectedAmmoId = selected;
-                              _ammoError = false;
-                            });
-                          },
-                        ))
-                  : TextField(
-                      controller: _borrowedAmmoController,
-                      textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        labelText: strings.borrowedAmmoOptional,
-                        hintText: strings.borrowedAmmoHint,
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.radio_button_checked_rounded,
-                            size: 18,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: colors.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide(color: colors.outline),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide(color: colors.outline),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide:
-                              BorderSide(color: colors.primary, width: 1.6),
-                        ),
+                        ],
                       ),
                     ),
-                                ),
-                              ],
+                  ),
+                  const Gap(AppSpacing.md),
+
+                  // Ammo Card (separate)
+                  Text(
+                    strings.ammoTitle,
+                    style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const Gap(AppSpacing.sm),
+                  Container(
+                    padding: AppSpacing.paddingMd,
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      border: Border.all(color: colors.outline),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/images/bullet.svg',
+                              width: 18,
+                              height: 18,
+                              colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.ammoTitle,
+                              style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.sm),
+                        _SourceToggleRow(
+                          leftLabel: strings.myInventory,
+                          rightLabel: strings.borrowed,
+                          value: _ammoSource,
+                          onChanged: (v) => setState(() {
+                            _ammoSource = v;
+                            if (_ammoSource == 'borrowed') _selectedAmmoId = null;
+                            if (_ammoSource != 'borrowed') _borrowedAmmoController.text = '';
+                          }),
+                        ),
+                        const Gap(10),
+                        Container(
+                          key: _ammoFieldKey,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color: _ammoError ? colors.error : Colors.transparent,
+                              width: 1.4,
                             ),
                           ),
+                          child: _ammoSource == 'inventory'
+                              ? (provider.ammos.isEmpty
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.warning_amber_rounded,
+                                            size: 18,
+                                            color: colors.secondary,
+                                          ),
+                                          const Gap(8),
+                                          Expanded(
+                                            child: Text(
+                                              strings.noAmmoInStock,
+                                              style: textStyles.bodySmall?.copyWith(
+                                                color: colors.secondary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : _SelectedSingleItemField(
+                                      leading: _selectedAmmoId == null
+                                          ? SvgPicture.asset(
+                                              'assets/images/bullet.svg',
+                                              width: 18,
+                                              height: 18,
+                                              colorFilter: ColorFilter.mode(
+                                                  colors.primary, BlendMode.srcIn),
+                                            )
+                                          : Icon(
+                                              Icons.radio_button_checked_rounded,
+                                              size: 18,
+                                              color: colors.primary,
+                                            ),
+                                      titleWhenEmpty:
+                                          strings.chooseAmmoFromInventory,
+                                      titleWhenSet: (_selectedAmmoId == null
+                                              ? null
+                                              : provider.getAmmoById(_selectedAmmoId!))
+                                          ?.name ??
+                                          strings.chooseAmmoFromInventory,
+                                      subtitle: (_selectedAmmoId == null
+                                                  ? null
+                                                  : provider.getAmmoById(
+                                                      _selectedAmmoId!)) ==
+                                              null
+                                          ? null
+                                          : strings.tapToChange,
+                                      onTap: () async {
+                                        if (provider.ammos.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  strings.noAmmoInStockSwitchBorrowed),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        final selected =
+                                            await showModalBottomSheet<String>(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) =>
+                                              _SingleSelectSheet<Ammo>(
+                                            title: strings.ammosTab,
+                                            items: provider.ammos,
+                                            initialId: _selectedAmmoId,
+                                            iconBuilder: (selected, colors) =>
+                                                SvgPicture.asset(
+                                              'assets/images/bullet.svg',
+                                              width: 20,
+                                              height: 20,
+                                              colorFilter: ColorFilter.mode(
+                                                selected
+                                                    ? colors.primary
+                                                    : colors.outline,
+                                                BlendMode.srcIn,
+                                              ),
+                                            ),
+                                            primaryText: (a) => a.name,
+                                            secondaryText: (a) =>
+                                                [
+                                                  if (a.caliber.trim().isNotEmpty)
+                                                    a.caliber,
+                                                  if (a.brand.trim().isNotEmpty)
+                                                    a.brand,
+                                                  a.projectileType,
+                                                ].join(' • '),
+                                            matchesQuery: (a, q) {
+                                              final qq = q.toLowerCase();
+                                              return a.name.toLowerCase().contains(qq) ||
+                                                  a.caliber.toLowerCase().contains(qq) ||
+                                                  a.brand.toLowerCase().contains(qq) ||
+                                                  a.projectileType
+                                                      .toLowerCase()
+                                                      .contains(qq);
+                                            },
+                                            getId: (a) => a.id,
+                                          ),
+                                        );
+
+                                        if (!mounted || selected == null) return;
+                                        setState(() {
+                                          _selectedAmmoId = selected;
+                                          _ammoError = false;
+                                        });
+                                      },
+                                    ))
+                              : TextField(
+                                  controller: _borrowedAmmoController,
+                                  textInputAction: TextInputAction.next,
+                                  decoration: InputDecoration(
+                                    labelText: strings.borrowedAmmoOptional,
+                                    hintText: strings.borrowedAmmoHint,
+                                    prefixIcon: const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: Icon(
+                                        Icons.radio_button_checked_rounded,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.primary, width: 1.6),
+                                    ),
+                                  ),
+                                ),
                         ],
                       ),
                     ),
