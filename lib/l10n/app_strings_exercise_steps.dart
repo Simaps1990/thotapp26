@@ -186,31 +186,35 @@ String exercisePositionNarrative(ShootingPosition pos) {
         es: 'Activador',
       );
 
-  String get exerciseFieldWeaponFrom => _pick(
+String get exerciseFieldWeaponFrom => _pick(
         fr: 'Arme de',
         en: 'Weapon from',
         de: 'Waffe von',
+        it: 'Arma da',
         es: 'Arma de',
       );
 
-  String get exerciseFieldWeaponTo => _pick(
+String get exerciseFieldWeaponTo => _pick(
         fr: 'Arme vers',
         en: 'Weapon to',
         de: 'Waffe zu',
+        it: 'Arma verso',
         es: 'Arma a',
       );
 
-  String get exerciseWriteWeaponOption => _pick(
+String get exerciseWriteWeaponOption => _pick(
         fr: 'Écrire une arme...',
         en: 'Write a weapon...',
         de: 'Eine Waffe schreiben...',
+        it: 'Scrivi un\'arma...',
         es: 'Escribir un arma...',
       );
 
-  String get exerciseWeaponSelectionHint => _pick(
+String get exerciseWeaponSelectionHint => _pick(
         fr: 'Sélectionnez une arme de votre stock pour imputer les coups',
         en: 'Select a weapon from your inventory to assign shots',
         de: 'Wählen Sie eine Waffe aus Ihrem Bestand, um Schüsse zuzuordnen',
+        it: 'Seleziona un\'arma dal tuo inventario per assegnare i colpi',
         es: 'Seleccione un arma de su inventario para asignar los disparos',
       );
 
