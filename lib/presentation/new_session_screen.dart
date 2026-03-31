@@ -2984,9 +2984,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       ),
                     ),
                   ),
-                  ],  // ← ferme children: [ de la Column du weapon card
-                ),    // ← ferme Column
-                ),    // ← ferme Container (weapon card)
+ // ← ferme Container (weapon card)
                   const Gap(AppSpacing.md),
 
                   // Ammo Card (separate)
