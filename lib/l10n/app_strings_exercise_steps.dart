@@ -1,4 +1,4 @@
-part of 'package:thot/l10n/app_strings.dart';
+part of 'app_strings.dart';
 
 extension AppStringsExerciseSteps on AppStrings {
   String get exerciseModeLabel => _pick(
