@@ -898,8 +898,8 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
           ),
 
           Positioned(
-            top: 48,
-            right: 20,
+            top: 20, // Réduit de 48 à 20 pour monter plus haut
+            right: 12, // Réduit de 20 à 12 pour être plus à droite
             child: SafeArea(
               child: TextButton(
                 onPressed: _finish,
@@ -1095,7 +1095,13 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               width: 56,
               child: OutlinedButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.arrow_back_rounded),
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.zero, // S'assure qu'il n'y a pas de padding supplémentaire
+                  minimumSize: const Size(56, 48), // Taille minimum pour le centrage
+                ),
+                child: const Center(
+                  child: Icon(Icons.arrow_back_rounded),
+                ),
               ),
             ),
             const Gap(AppSpacing.sm),
@@ -1169,9 +1175,11 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
   }
 
   @override
-  Widget build(BuildContext context) => ColoredBox(
-    color: widget.color,
-    child: widget.child,
+  Widget build(BuildContext context) => SizedBox.expand(
+    child: ColoredBox(
+      color: widget.color,
+      child: widget.child,
+    ),
   );
 }
 

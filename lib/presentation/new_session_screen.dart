@@ -5163,11 +5163,31 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                       controller: _weaponFromController,
                       decoration: decoration('${strings.exerciseFieldWeaponFrom}${strings.exerciseOptionalHint}'),
                     ),
+                    if (_weaponFromController.text.isNotEmpty && widget.defaultWeaponId == null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        strings.exerciseWeaponSelectionHint,
+                        style: textStyles.bodySmall?.copyWith(
+                          color: colors.primary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                     const Gap(10),
                     TextField(
                       controller: _weaponToController,
                       decoration: decoration('${strings.exerciseFieldWeaponTo}${strings.exerciseOptionalHint}'),
                     ),
+                    if (_weaponToController.text.isNotEmpty && widget.defaultWeaponId == null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        strings.exerciseWeaponSelectionHint,
+                        style: textStyles.bodySmall?.copyWith(
+                          color: colors.primary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ] else if (_type == StepType.miseEnJoue) ...[
                     TextField(
                       controller: _targetController,

@@ -190,7 +190,6 @@ String exercisePositionNarrative(ShootingPosition pos) {
         fr: 'Arme de',
         en: 'Weapon from',
         de: 'Waffe von',
-        it: 'Arma da',
         es: 'Arma de',
       );
 
@@ -198,8 +197,21 @@ String exercisePositionNarrative(ShootingPosition pos) {
         fr: 'Arme vers',
         en: 'Weapon to',
         de: 'Waffe zu',
-        it: 'Arma a',
         es: 'Arma a',
+      );
+
+  String get exerciseWriteWeaponOption => _pick(
+        fr: 'Écrire une arme...',
+        en: 'Write a weapon...',
+        de: 'Eine Waffe schreiben...',
+        es: 'Escribir un arma...',
+      );
+
+  String get exerciseWeaponSelectionHint => _pick(
+        fr: 'Sélectionnez une arme de votre stock pour imputer les coups',
+        en: 'Select a weapon from your inventory to assign shots',
+        de: 'Wählen Sie eine Waffe aus Ihrem Bestand, um Schüsse zuzuordnen',
+        es: 'Seleccione un arma de su inventario para asignar los disparos',
       );
 
   String get stepUsedWeaponLabel => _pick(

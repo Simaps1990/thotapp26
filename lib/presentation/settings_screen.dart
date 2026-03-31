@@ -117,34 +117,6 @@ class SettingsScreen extends StatelessWidget {
     required TextTheme textStyles,
   }) {
     return [
-      // Header image from session page
-      Container(
-        height: 200,
-        width: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/images/carnet.webp', // Same image as session page
-              fit: BoxFit.cover,
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    colors.surface.withValues(alpha: 0.8),
-                    colors.surface,
-                  ],
-                  stops: const [0.4, 0.8, 1.0],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
       const Gap(AppSpacing.lg),
     ];
   }
@@ -840,17 +812,26 @@ class SettingsScreen extends StatelessWidget {
               SizedBox(
                 height: heroHeight,
                 width: double.infinity,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        colors.primary.withValues(alpha: 0.90),
-                        colors.primary.withValues(alpha: 0.55),
-                      ],
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      'assets/images/seance.webp', // Same image as session page
+                      fit: BoxFit.cover,
                     ),
-                  ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.16),
+                            Colors.black.withValues(alpha: 0.42),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Positioned(
@@ -875,18 +856,29 @@ class SettingsScreen extends StatelessWidget {
               Positioned(
                 right: AppSpacing.lg,
                 top: MediaQuery.of(context).padding.top + 12,
-                child: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: colors.primary,
-                  child: Text(
+                child: TextButton.icon(
+                  onPressed: () => _showEditProfileDialog(context, provider),
+                  icon: Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  label: Text(
                     _getInitials(
                       provider.userName.trim().isEmpty
                           ? strings.settingsAnonymousUserUpper
                           : provider.userName,
                     ),
-                    style: textStyles.titleMedium?.copyWith(
-                      color: colors.onPrimary,
+                    style: textStyles.labelLarge?.copyWith(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.35),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
                     ),
                   ),
                 ),

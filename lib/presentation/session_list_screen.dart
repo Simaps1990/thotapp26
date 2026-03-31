@@ -601,16 +601,66 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                           child: Center(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text(
-                                labels[i],
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: textStyles.labelMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: i == selectedIndex
-                                      ? colors.onPrimary
-                                      : colors.secondary,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Icône animée pour Date
+                                  if (i == 0) ...[
+                                    AnimatedRotation(
+                                      turns: selectedIndex == 0 ? 0.25 : 0,
+                                      duration: const Duration(milliseconds: 250),
+                                      child: Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        size: 16,
+                                        color: i == selectedIndex
+                                            ? colors.onPrimary
+                                            : colors.secondary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
+                                  // Icône animée pour Nom
+                                  if (i == 1) ...[
+                                    AnimatedRotation(
+                                      turns: selectedIndex == 1 ? 0.25 : 0,
+                                      duration: const Duration(milliseconds: 250),
+                                      child: Icon(
+                                        Icons.sort_rounded,
+                                        size: 16,
+                                        color: i == selectedIndex
+                                            ? colors.onPrimary
+                                            : colors.secondary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
+                                  // Icône animée pour Mode
+                                  if (i == 2) ...[
+                                    AnimatedRotation(
+                                      turns: selectedIndex == 2 ? 0.25 : 0,
+                                      duration: const Duration(milliseconds: 250),
+                                      child: Icon(
+                                        Icons.refresh_rounded,
+                                        size: 16,
+                                        color: i == selectedIndex
+                                            ? colors.onPrimary
+                                            : colors.secondary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
+                                  Text(
+                                    labels[i],
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: textStyles.labelMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: i == selectedIndex
+                                          ? colors.onPrimary
+                                          : colors.secondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -1213,22 +1263,6 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
     });
   }
 
-  void _moveStepUp(int index) {
-    if (index <= 0) return;
-    setState(() {
-      final step = _steps.removeAt(index);
-      _steps.insert(index - 1, step);
-    });
-  }
-
-  void _moveStepDown(int index) {
-    if (index >= _steps.length - 1) return;
-    setState(() {
-      final step = _steps.removeAt(index);
-      _steps.insert(index + 1, step);
-    });
-  }
-
   void _toggleDateSort() {
     setState(() {
       _sortByDate = true;
@@ -1365,6 +1399,56 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Header avec titre, sous-titre et flèche descendante
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        strings.homeTemplateTitle,
+                        style: textStyles.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                    ),
+                    // Icône en forme de V pour fermer
+                    GestureDetector(
+                      onTap: () {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 28,
+                          color: colors.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    strings.homeTemplateSubtitle,
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.secondary,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Divider(color: colors.outline),
+              ),
+              const Gap(AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg,
@@ -1396,6 +1480,8 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                             _modeFilterIndex = 0;
                             break;
                           case 2:
+                            _sortByName = false;
+                            _sortByDate = false;
                             _cycleModeFilter();
                             break;
                         }
@@ -1793,37 +1879,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                   border: Border.all(color: colors.outline),
                                 ),
                                 child: ListTile(
-                                  leading: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: IconButton(
-                                          padding: EdgeInsets.zero,
-                                          iconSize: 18,
-                                          onPressed: index > 0 ? () => _moveStepUp(index) : null,
-                                          icon: Icon(
-                                            Icons.arrow_upward_rounded,
-                                            color: index > 0 ? colors.primary : colors.outline,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: IconButton(
-                                          padding: EdgeInsets.zero,
-                                          iconSize: 18,
-                                          onPressed: index < _steps.length - 1 ? () => _moveStepDown(index) : null,
-                                          icon: Icon(
-                                            Icons.arrow_downward_rounded,
-                                            color: index < _steps.length - 1 ? colors.primary : colors.outline,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  leading: null, // Supprime les flèches de déplacement
                                   title: Text(
                                     title,
                                     style: textStyles.titleSmall?.copyWith(
@@ -1835,9 +1891,27 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                     style: textStyles.bodySmall?.copyWith(color: colors.secondary),
                                   ),
                                   onTap: () => _addOrEditStep(initial: s),
-                                  trailing: IconButton(
-                                    onPressed: () => _deleteStep(s.id),
-                                    icon: Icon(Icons.delete_rounded, color: colors.error),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Symbole de drag and drop avec 6 points en colonne double
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        child: Text(
+                                          '⋮⋮',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            color: colors.onSurface.withValues(alpha: 0.6),
+                                            letterSpacing: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      const Gap(8),
+                                      IconButton(
+                                        onPressed: () => _deleteStep(s.id),
+                                        icon: Icon(Icons.delete_rounded, color: colors.error),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
@@ -2221,16 +2295,44 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       }).toList(),
                     ),
                   ] else if (_type == StepType.transition) ...[
-                    TextField(
-                      controller: _weaponFromController,
+                    DropdownButtonFormField<String>(
+                      value: _weaponFromController.text.isEmpty ? null : _weaponFromController.text,
                       decoration: decoration(
                           '${strings.exerciseFieldWeaponFrom}${strings.exerciseOptionalHint}'),
+                      items: [
+                        DropdownMenuItem(value: null, child: Text(strings.exerciseWriteWeaponOption)),
+                        ...provider.weapons.map((weapon) => DropdownMenuItem(
+                          value: weapon.name,
+                          child: Text(weapon.name),
+                        )),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) {
+                          _weaponFromController.clear();
+                        } else {
+                          _weaponFromController.text = value;
+                        }
+                      },
                     ),
                     const Gap(10),
-                    TextField(
-                      controller: _weaponToController,
+                    DropdownButtonFormField<String>(
+                      value: _weaponToController.text.isEmpty ? null : _weaponToController.text,
                       decoration: decoration(
                           '${strings.exerciseFieldWeaponTo}${strings.exerciseOptionalHint}'),
+                      items: [
+                        DropdownMenuItem(value: null, child: Text(strings.exerciseWriteWeaponOption)),
+                        ...provider.weapons.map((weapon) => DropdownMenuItem(
+                          value: weapon.name,
+                          child: Text(weapon.name),
+                        )),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) {
+                          _weaponToController.clear();
+                        } else {
+                          _weaponToController.text = value;
+                        }
+                      },
                     ),
                   ] else if (_type == StepType.miseEnJoue) ...[
                     TextField(
