@@ -816,7 +816,7 @@ class SettingsScreen extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Image.asset(
-                      'assets/images/carnet.webp', // Use carnet.webp
+                      'assets/images/seance.webp', // Same image as session page
                       fit: BoxFit.cover,
                     ),
                     DecoratedBox(
@@ -856,9 +856,14 @@ class SettingsScreen extends StatelessWidget {
               Positioned(
                 right: AppSpacing.lg,
                 top: MediaQuery.of(context).padding.top + 12,
-                child: TextButton(
+                child: TextButton.icon(
                   onPressed: () => _showEditProfileDialog(context, provider),
-                  child: Text(
+                  icon: Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  label: Text(
                     _getInitials(
                       provider.userName.trim().isEmpty
                           ? strings.settingsAnonymousUserUpper
