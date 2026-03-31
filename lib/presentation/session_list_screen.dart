@@ -19,7 +19,7 @@ import 'package:thot/utils/web_text_exporter.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
 
-const _sessionsHeroAsset = 'assets/images/carnet.webp';
+const _sessionsHeroAsset = 'assets/images/seance.webp';
 
 class SessionListScreen extends StatefulWidget {
   const SessionListScreen({Key? key}) : super(key: key);
@@ -1250,6 +1250,12 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
     });
   }
 
+  int _getSortIndex() {
+    if (_sortByName) return 1;
+    if (_modeFilterIndex != 0) return 2;
+    return 0;
+  }
+
   String _modeFilterLabel() {
     switch (_modeFilterIndex) {
       case 1:
@@ -1360,62 +1366,73 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 10),
-                child: Text(
-                  strings.homeTemplateTitle,
-                  style: textStyles.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: colors.onSurface,
-                  ),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  10,
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ChoiceChip(
-                      label: Text(_sortByDate
-                          ? (_dateDescending ? 'Date (récentes)' : 'Date (anciennes)')
-                          : 'Date'),
-                      selected: _sortByDate,
-                      onSelected: (_) => _toggleDateSort(),
-                    ),
-                    ChoiceChip(
-                      label: const Text('Nom'),
-                      selected: _sortByName,
-                      onSelected: (_) => _activateNameSort(),
-                    ),
-                    ChoiceChip(
-                      label: Text(_modeFilterLabel()),
-                      selected: _modeFilterIndex != 0,
-                      onSelected: (_) => _cycleModeFilter(),
-                    ),
-                  ],
+                child: SizedBox(
+                  height: 44,
+                  child: _SlidingSegmentedSelector(
+                    selectedIndex: _getSortIndex(),
+                    labels: [
+                      'Date (récentes)',
+                      'Nom',
+                      _modeFilterLabel(),
+                    ],
+                    onSelected: (index) {
+                      setState(() {
+                        switch (index) {
+                          case 0:
+                            _sortByDate = true;
+                            _dateDescending = true;
+                            _sortByName = false;
+                            _modeFilterIndex = 0;
+                            break;
+                          case 1:
+                            _sortByDate = false;
+                            _sortByName = true;
+                            _modeFilterIndex = 0;
+                            break;
+                          case 2:
+                            _cycleModeFilter();
+                            break;
+                        }
+                      });
+                    },
+                  ),
                 ),
               ),
               const Gap(AppSpacing.sm),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  8,
+                ),
                 child: TextField(
                   controller: _searchController,
-                  style: textStyles.bodyMedium?.copyWith(
-                    fontSize: 14,
-                  ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 14,
+                      ),
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value);
+                  },
                   decoration: InputDecoration(
                     hintText: strings.searchEllipsis,
-                    hintStyle: textStyles.bodyMedium?.copyWith(
-                      fontSize: 14,
-                      color: colors.secondary,
-                    ),
+                    hintStyle: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(
+                          fontSize: 14,
+                          color: colors.secondary,
+                        ),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 10,
                     ),
-                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    prefixIcon: const Icon(Icons.search, size: 20),
                     prefixIconConstraints: const BoxConstraints(
                       minWidth: 40,
                       minHeight: 40,
@@ -1443,6 +1460,10 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide(color: subtleBorderColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: colors.primary, width: 1.6),
                     ),
                   ),
                 ),
@@ -1530,14 +1551,32 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                     ),
                     const Gap(AppSpacing.sm),
                     Expanded(
-                      child: Text(
-                        _editingTemplate != null 
-                          ? strings.templateNameDialogTitle 
-                          : strings.createExerciseTemplateTitle,
-                        style: textStyles.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colors.onSurface,
-                        ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _editingTemplate != null 
+                                ? strings.templateNameDialogTitle 
+                                : strings.createExerciseTemplateTitle,
+                              style: textStyles.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ),
+                          // Icône en forme de V pour fermer
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                size: 28,
+                                color: colors.onSurface.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1991,9 +2030,17 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                         ?.copyWith(fontWeight: FontWeight.w900),
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded),
+                // Icône en forme de V pour fermer
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 28,
+                      color: textStyles.titleMedium?.color?.withValues(alpha: 0.7) ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -1030,6 +1030,12 @@ if (ctx.mounted) Navigator.of(ctx).pop();
         ammoId: lastExercise.ammoId,
         ammoLabel: lastExercise.ammoLabel,
         equipmentIds: List<String>.from(lastExercise.equipmentIds),
+        weaponAssignments: List<ExerciseWeaponAssignment>.from(
+          lastExercise.weaponAssignments,
+        ),
+        shotAllocations: List<ExerciseShotAllocation>.from(
+          lastExercise.shotAllocations,
+        ),
         targetName: null,
         targetPhotos: const [],
         shotsFired: 0,
@@ -1151,6 +1157,12 @@ if (ctx.mounted) Navigator.of(ctx).pop();
       windEnabled: _windEnabled,
       humidityEnabled: _humidityEnabled,
       pressureEnabled: _pressureEnabled,
+      weaponIds: {
+        for (final ex in _exercises)
+          ...ex.weaponShotImpact.keys.where(
+            (wid) => wid.trim().isNotEmpty && wid != 'none' && wid != 'borrowed',
+          ),
+      }.toList(growable: false),
     );
 
     assert(
@@ -1162,21 +1174,27 @@ if (ctx.mounted) Navigator.of(ctx).pop();
 
     if (!provider.isPremium) {
       for (final ex in _exercises) {
-        if (ex.weaponId != 'none' && ex.weaponId != 'borrowed' && !provider.canUseWeaponId(ex.weaponId)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.freeVersionWeaponLimit)),
-          );
-          showProModal(context);
-          return;
+        for (final weaponId in ex.weaponShotImpact.keys) {
+          if (!provider.canUseWeaponId(weaponId)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(strings.freeVersionWeaponLimit)),
+            );
+            showProModal(context);
+            return;
+          }
         }
-        if (ex.ammoId != 'none' && ex.ammoId != 'borrowed' && !provider.canUseAmmoId(ex.ammoId)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.freeVersionAmmoLimit)),
-          );
-          showProModal(context);
-          return;
+
+        for (final ammoId in ex.ammoShotImpact.keys) {
+          if (!provider.canUseAmmoId(ammoId)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(strings.freeVersionAmmoLimit)),
+            );
+            showProModal(context);
+            return;
+          }
         }
-        for (final accId in ex.equipmentIds) {
+
+        for (final accId in ex.equipmentShotImpact.keys) {
           if (!provider.canUseAccessoryId(accId)) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(strings.freeVersionAccessoryLimit)),
@@ -1883,80 +1901,111 @@ class _ExerciseCard extends StatelessWidget {
           ),
           const Gap(AppSpacing.md),
 
-          // Card 1: weapon & equipment details
-          Container(
-            padding: AppSpacing.paddingMd,
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colors.outline),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  strings.exerciseDetailsTitle,
-                  style: textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const Gap(AppSpacing.md),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Left column: weapon & ammo
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+          // Weapons and Ammo blocks - horizontal layout
+          Row(
+            children: [
+              // Weapon block
+              Expanded(
+                child: Container(
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.outline),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          _InfoRow(
-                            label: strings.weaponTitle,
-                            value: exercise.weaponId == 'borrowed'
-                                ? ((exercise.weaponLabel?.trim().isNotEmpty ??
-                                        false)
-                                    ? exercise.weaponLabel!.trim()
-                                    : strings.borrowedWeaponFallback)
-                                : (weapon?.name ?? '—'),
-                          ),
-                          _InfoRow(
-                            label: strings.ammoTitle,
-                            value: exercise.ammoId == 'borrowed'
-                                ? ((exercise.ammoLabel?.trim().isNotEmpty ??
-                                        false)
-                                    ? exercise.ammoLabel!.trim()
-                                    : strings.borrowedAmmoFallback)
-                                : (ammo?.name ?? '—'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 56,
-                      color: colors.outline,
-                    ),
-                    const Gap(AppSpacing.md),
-                    // Right column: equipment & target
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (equipmentNames.isNotEmpty)
-                            _InfoRow(
-                              label: strings.equipmentTitle,
-                              value: equipmentNames.join(', '),
+                          SvgPicture.asset(
+                            'assets/images/gun.svg',
+                            width: 20,
+                            height: 20,
+                            colorFilter: ColorFilter.mode(
+                              colors.onSurface,
+                              BlendMode.srcIn,
                             ),
+                          ),
+                          const Gap(8),
+                          Text(
+                            'Arme',
+                            style: textStyles.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
+                      const Gap(AppSpacing.md),
+                      _InfoRow(
+                        label: strings.weaponTitle,
+                        value: exercise.weaponId == 'borrowed'
+                            ? ((exercise.weaponLabel?.trim().isNotEmpty ?? false)
+                                ? exercise.weaponLabel!.trim()
+                                : strings.borrowedWeaponFallback)
+                            : (weapon?.name ?? '—'),
+                      ),
+                      if (equipmentNames.isNotEmpty)
+                        _InfoRow(
+                          label: strings.equipmentTitle,
+                          value: equipmentNames.join(', '),
+                        ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              
+              const Gap(AppSpacing.md),
+              
+              // Ammo block
+              Expanded(
+                child: Container(
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.outline),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          SvgPicture.asset(
+                            'assets/images/bullet.svg',
+                            width: 20,
+                            height: 20,
+                            colorFilter: ColorFilter.mode(
+                              colors.onSurface,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const Gap(8),
+                          Text(
+                            'Munition',
+                            style: textStyles.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                      const Gap(AppSpacing.md),
+                      _InfoRow(
+                        label: strings.ammoTitle,
+                        value: exercise.ammoId == 'borrowed'
+                            ? ((exercise.ammoLabel?.trim().isNotEmpty ?? false)
+                                ? exercise.ammoLabel!.trim()
+                                : strings.borrowedAmmoFallback)
+                            : (ammo?.name ?? '—'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
 
           const Gap(AppSpacing.md),
 
-          // Card 2: shooting results (main target photo + shots & distance)
+          // Card 3: shooting results (main target photo + shots & distance)
           Container(
             padding: AppSpacing.paddingMd,
             decoration: BoxDecoration(
@@ -2120,25 +2169,30 @@ class _SessionSummary extends StatelessWidget {
     // Impact on ammo (inventory only)
     final Map<String, int> ammoImpact = {};
     for (final ex in exercises) {
-      final ammo = provider.getAmmoById(ex.ammoId);
-      if (ammo == null) continue; // none / borrowed / deleted
-      ammoImpact[ammo.id] = (ammoImpact[ammo.id] ?? 0) + ex.shotsFired;
+      ex.ammoShotImpact.forEach((ammoId, shots) {
+        final ammo = provider.getAmmoById(ammoId);
+        if (ammo == null) return;
+        ammoImpact[ammo.id] = (ammoImpact[ammo.id] ?? 0) + shots;
+      });
     }
 
     // Impact on weapons (inventory only)
     final Map<String, int> weaponImpact = {};
     for (final ex in exercises) {
-      final weapon = provider.getWeaponById(ex.weaponId);
-      if (weapon == null) continue; // none / borrowed / deleted
-      weaponImpact[weapon.id] = (weaponImpact[weapon.id] ?? 0) + ex.shotsFired;
+      ex.weaponShotImpact.forEach((weaponId, shots) {
+        final weapon = provider.getWeaponById(weaponId);
+        if (weapon == null) return;
+        weaponImpact[weapon.id] = (weaponImpact[weapon.id] ?? 0) + shots;
+      });
     }
 
     // Impact on equipment
     final Map<String, int> equipmentImpact = {};
     for (final ex in exercises) {
-      for (final id in ex.equipmentIds) {
-        equipmentImpact[id] = (equipmentImpact[id] ?? 0) + ex.shotsFired;
-      }
+      ex.equipmentShotImpact.forEach((equipmentId, shots) {
+        equipmentImpact[equipmentId] =
+            (equipmentImpact[equipmentId] ?? 0) + shots;
+      });
     }
 
     return Container(
@@ -2155,12 +2209,34 @@ class _SessionSummary extends StatelessWidget {
             strings.sessionSummaryTotalShots(totalShots),
             style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
-          if (ammoImpact.isNotEmpty) ...[
-            const Gap(AppSpacing.md),
+          const Gap(AppSpacing.md),
+
+          // Weapons impact
+          if (weaponImpact.isNotEmpty) ...[
             Text(
-              strings.sessionSummaryAmmoImpactTitle,
-              style: textStyles.labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              'Armes utilisées',
+              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const Gap(4),
+            ...weaponImpact.entries.map((e) {
+              final weapon = provider.getWeaponById(e.key);
+              if (weapon == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  '• ${weapon.name}: ${e.value} coups',
+                  style: textStyles.bodySmall,
+                ),
+              );
+            }),
+            const Gap(AppSpacing.md),
+          ],
+
+          // Ammo impact
+          if (ammoImpact.isNotEmpty) ...[
+            Text(
+              'Munitions utilisées',
+              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Gap(4),
             ...ammoImpact.entries.map((e) {
@@ -2170,45 +2246,19 @@ class _SessionSummary extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                  strings.sessionSummaryAmmoImpactLine(
-                    ammo.name,
-                    e.value,
-                    remaining,
-                  ),
+                  '• ${ammo.name}: ${e.value} cartouches (restantes: $remaining)',
                   style: textStyles.bodySmall,
                 ),
               );
             }),
-          ],
-          if (weaponImpact.isNotEmpty) ...[
             const Gap(AppSpacing.md),
-            Text(
-              strings.sessionSummaryWeaponsImpactTitle,
-              style: textStyles.labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const Gap(4),
-            ...weaponImpact.entries.map((e) {
-              final weapon = provider.getWeaponById(e.key);
-              if (weapon == null) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  strings.sessionSummaryWeaponImpactLine(
-                    weapon.name,
-                    e.value,
-                  ),
-                  style: textStyles.bodySmall,
-                ),
-              );
-            }),
           ],
+
+          // Equipment impact
           if (equipmentImpact.isNotEmpty) ...[
-            const Gap(AppSpacing.md),
             Text(
               strings.sessionSummaryAccessoriesImpactTitle,
-              style: textStyles.labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Gap(4),
             ...equipmentImpact.entries.map((e) {
@@ -2342,6 +2392,24 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     return distances.reduce((a, b) => a > b ? a : b);
   }
 
+  List<Weapon> _availableWeaponsForStep(ThotProvider provider) {
+    if (_weaponSource != 'inventory' || _selectedWeaponId == null) {
+      return const [];
+    }
+    final selected = provider.getWeaponById(_selectedWeaponId!);
+    if (selected == null) return const [];
+    return [selected];
+  }
+
+  List<Ammo> _availableAmmosForStep(ThotProvider provider) {
+    if (_ammoSource != 'inventory' || _selectedAmmoId == null) {
+      return const [];
+    }
+    final selected = provider.getAmmoById(_selectedAmmoId!);
+    if (selected == null) return const [];
+    return [selected];
+  }
+
 String _stepTitle(StepType type) {
     return AppStrings.of(context).exerciseStepTypeLabel(type);
   }
@@ -2367,8 +2435,23 @@ String _positionShort(ShootingPosition? pos) {
 
 String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     final parts = <String>[];
+    final provider = Provider.of<ThotProvider>(context, listen: false);
     if (s.type == StepType.tir && s.shots != null) {
       parts.add('${s.shots} ${strings.exerciseNarrativeShotsWord}');
+      final usedWeaponId = (s.usedWeaponId ?? '').trim();
+      if (usedWeaponId.isNotEmpty) {
+        final weaponName = provider.getWeaponById(usedWeaponId)?.name;
+        if (weaponName != null && weaponName.trim().isNotEmpty) {
+          parts.add(weaponName);
+        }
+      }
+      final usedAmmoId = (s.usedAmmoId ?? '').trim();
+      if (usedAmmoId.isNotEmpty) {
+        final ammoName = provider.getAmmoById(usedAmmoId)?.name;
+        if (ammoName != null && ammoName.trim().isNotEmpty) {
+          parts.add(ammoName);
+        }
+      }
     }
     if (s.distanceM != null) {
       final dist = useMetric
@@ -2572,16 +2655,34 @@ icon: const Icon(Icons.arrow_back_rounded),
 
                 ),
                 Expanded(
-                  child: Center(
-                    child: Text(
-                      strings.addExerciseTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textStyles.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colors.onSurface,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            strings.addExerciseTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textStyles.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      // Icône en forme de V pour fermer
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 28,
+                            color: colors.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 IconButton(
@@ -3406,11 +3507,20 @@ controller: widget.scrollController ?? _exerciseScrollController,
                   ),
                   FilledButton.icon(
                     onPressed: () async {
+                      final availableWeapons = _availableWeaponsForStep(provider);
+                      final availableAmmos = _availableAmmosForStep(provider);
                       final step = await showModalBottomSheet<ExerciseStep>(
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (_) => const _AddExerciseStepSheet(),
+                        builder: (_) => _AddExerciseStepSheet(
+                          availableWeapons: availableWeapons,
+                          availableAmmos: availableAmmos,
+                          defaultWeaponId:
+                              _weaponSource == 'inventory' ? _selectedWeaponId : null,
+                          defaultAmmoId:
+                              _ammoSource == 'inventory' ? _selectedAmmoId : null,
+                        ),
                       );
                       if (!mounted || step == null) return;
                       setState(() => _steps.add(step));
@@ -3512,11 +3622,24 @@ controller: widget.scrollController ?? _exerciseScrollController,
                             ),
                             onSelected: (value) async {
                               if (value == 'edit') {
+                                final availableWeapons =
+                                    _availableWeaponsForStep(provider);
+                                final availableAmmos =
+                                    _availableAmmosForStep(provider);
                                 final updated = await showModalBottomSheet<ExerciseStep>(
                                   context: context,
                                   isScrollControlled: true,
                                   backgroundColor: Colors.transparent,
-                                  builder: (_) => _AddExerciseStepSheet(initialStep: s),
+                                  builder: (_) => _AddExerciseStepSheet(
+                                    initialStep: s,
+                                    availableWeapons: availableWeapons,
+                                    availableAmmos: availableAmmos,
+                                    defaultWeaponId: _weaponSource == 'inventory'
+                                        ? _selectedWeaponId
+                                        : null,
+                                    defaultAmmoId:
+                                        _ammoSource == 'inventory' ? _selectedAmmoId : null,
+                                  ),
                                 );
                                 if (!mounted || updated == null) return;
                                 setState(() {
@@ -3535,6 +3658,8 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                     target: s.target,
                                     weaponFrom: s.weaponFrom,
                                     weaponTo: s.weaponTo,
+                                    usedWeaponId: s.usedWeaponId,
+                                    usedAmmoId: s.usedAmmoId,
                                     reloadType: s.reloadType,
                                     durationSeconds: s.durationSeconds,
                                     trigger: s.trigger,
@@ -4003,6 +4128,12 @@ controller: widget.scrollController ?? _exerciseScrollController,
         _detailedMode ? _computedMaxDistance() : (distance ?? 0);
     final hasTirStep = _detailedMode &&
         _steps.any((s) => s.type == StepType.tir && (s.shots ?? 0) > 0);
+    final hasUnattributedTirStep = _detailedMode &&
+        _steps.any((s) =>
+            s.type == StepType.tir &&
+            (s.shots ?? 0) > 0 &&
+            ((s.usedWeaponId ?? '').trim().isEmpty ||
+                (s.usedAmmoId ?? '').trim().isEmpty));
 
     setState(() {
       _weaponError = _weaponSource == 'inventory' && _selectedWeaponId == null;
@@ -4055,6 +4186,13 @@ controller: widget.scrollController ?? _exerciseScrollController,
       return;
     }
 
+    if (hasUnattributedTirStep) {
+      ScaffoldMessenger.of(context).showSnackBar(
+SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
+      );
+      return;
+    }
+
     final effectiveWeaponId =
         _weaponSource == 'borrowed' ? 'borrowed' : _selectedWeaponId!;
 
@@ -4063,6 +4201,78 @@ controller: widget.scrollController ?? _exerciseScrollController,
 
     final effectiveSteps =
         _detailedMode ? List<ExerciseStep>.from(_steps) : null;
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+
+    final effectiveWeaponAssignments = <ExerciseWeaponAssignment>[];
+    final effectiveShotAllocations = <ExerciseShotAllocation>[];
+
+    if (effectiveWeaponId != 'borrowed' &&
+        effectiveWeaponId != 'none' &&
+        effectiveWeaponId.trim().isNotEmpty) {
+      final linkedAccessoryIds = provider
+          .linkedAccessoriesForWeapon(effectiveWeaponId)
+          .map((a) => a.id)
+          .toSet();
+      final effectiveAccessoryIds = {
+        ...linkedAccessoryIds,
+        ..._selectedEquipmentIds,
+      }.toList(growable: false);
+      effectiveWeaponAssignments.add(
+        ExerciseWeaponAssignment(
+          weaponId: effectiveWeaponId,
+          weaponLabel: _weaponSource == 'borrowed'
+              ? _borrowedWeaponController.text.trim()
+              : null,
+          ammoIds: [
+            if (effectiveAmmoId.trim().isNotEmpty &&
+                effectiveAmmoId != 'none' &&
+                effectiveAmmoId != 'borrowed')
+              effectiveAmmoId,
+          ],
+          accessoryIds: effectiveAccessoryIds,
+        ),
+      );
+    }
+
+    if (effectiveSteps != null) {
+      for (final step in effectiveSteps) {
+        if (step.type != StepType.tir) continue;
+        final stepShots = step.shots ?? 0;
+        if (stepShots <= 0) continue;
+        final usedWeaponId =
+            (step.usedWeaponId ?? effectiveWeaponId).trim();
+        final usedAmmoId = (step.usedAmmoId ?? effectiveAmmoId).trim();
+        if (usedWeaponId.isEmpty ||
+            usedWeaponId == 'none' ||
+            usedWeaponId == 'borrowed') {
+          continue;
+        }
+        if (usedAmmoId.isEmpty ||
+            usedAmmoId == 'none' ||
+            usedAmmoId == 'borrowed') {
+          continue;
+        }
+        effectiveShotAllocations.add(
+          ExerciseShotAllocation(
+            weaponId: usedWeaponId,
+            ammoId: usedAmmoId,
+            shots: stepShots,
+          ),
+        );
+      }
+    } else if (computedShots > 0 &&
+        effectiveWeaponId != 'borrowed' &&
+        effectiveWeaponId != 'none' &&
+        effectiveAmmoId != 'borrowed' &&
+        effectiveAmmoId != 'none') {
+      effectiveShotAllocations.add(
+        ExerciseShotAllocation(
+          weaponId: effectiveWeaponId,
+          ammoId: effectiveAmmoId,
+          shots: computedShots,
+        ),
+      );
+    }
 
     final exercise = Exercise(
       id: widget.exercise?.id ??
@@ -4084,6 +4294,8 @@ controller: widget.scrollController ?? _exerciseScrollController,
       precisionEnabled: _measurePrecision ? _precisionEnabled : true,
       observations: _observationsController.text,
       steps: effectiveSteps,
+      weaponAssignments: effectiveWeaponAssignments,
+      shotAllocations: effectiveShotAllocations,
     );
 
     widget.onSave(exercise);
@@ -4640,8 +4852,18 @@ class _SelectedEquipmentField extends StatelessWidget {
 
 class _AddExerciseStepSheet extends StatefulWidget {
   final ExerciseStep? initialStep;
+  final List<Weapon> availableWeapons;
+  final List<Ammo> availableAmmos;
+  final String? defaultWeaponId;
+  final String? defaultAmmoId;
 
-  const _AddExerciseStepSheet({this.initialStep});
+  const _AddExerciseStepSheet({
+    this.initialStep,
+    this.availableWeapons = const [],
+    this.availableAmmos = const [],
+    this.defaultWeaponId,
+    this.defaultAmmoId,
+  });
 
   @override
   State<_AddExerciseStepSheet> createState() => _AddExerciseStepSheetState();
@@ -4656,6 +4878,8 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
   final _targetController = TextEditingController();
   final _weaponFromController = TextEditingController();
   final _weaponToController = TextEditingController();
+  String? _usedWeaponId;
+  String? _usedAmmoId;
   ReloadType? _reloadType;
   final _durationController = TextEditingController();
   final _triggerController = TextEditingController();
@@ -4665,7 +4889,11 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
   void initState() {
     super.initState();
     final initial = widget.initialStep;
-    if (initial == null) return;
+    if (initial == null) {
+      _usedWeaponId = widget.defaultWeaponId;
+      _usedAmmoId = widget.defaultAmmoId;
+      return;
+    }
 
     _type = initial.type;
     _position = initial.position;
@@ -4676,6 +4904,8 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     _targetController.text = initial.target ?? '';
     _weaponFromController.text = initial.weaponFrom ?? '';
     _weaponToController.text = initial.weaponTo ?? '';
+    _usedWeaponId = initial.usedWeaponId ?? widget.defaultWeaponId;
+    _usedAmmoId = initial.usedAmmoId ?? widget.defaultAmmoId;
     _durationController.text = initial.durationSeconds?.toString() ?? '';
     _triggerController.text = initial.trigger ?? '';
     _commentController.text = initial.comment ?? '';
@@ -4702,6 +4932,13 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     final provider = Provider.of<ThotProvider>(context, listen: false);
 final distUnit = provider.useMetric ? 'm' : 'yd';
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+    final availableWeaponIds =
+        widget.availableWeapons.map((w) => w.id).toSet();
+    final availableAmmoIds = widget.availableAmmos.map((a) => a.id).toSet();
+    final selectedWeaponValue =
+        availableWeaponIds.contains(_usedWeaponId) ? _usedWeaponId : null;
+    final selectedAmmoValue =
+        availableAmmoIds.contains(_usedAmmoId) ? _usedAmmoId : null;
 
     InputDecoration decoration(String label) => InputDecoration(
           labelText: label,
@@ -4844,6 +5081,34 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                   const Gap(AppSpacing.md),
 
                   if (_type == StepType.tir) ...[
+                    DropdownButtonFormField<String>(
+                      value: selectedWeaponValue,
+                      decoration: decoration(strings.stepUsedWeaponLabel),
+                      items: widget.availableWeapons
+                          .map(
+                            (w) => DropdownMenuItem<String>(
+                              value: w.id,
+                              child: Text(w.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _usedWeaponId = v),
+                    ),
+                    const Gap(10),
+                    DropdownButtonFormField<String>(
+                      value: selectedAmmoValue,
+                      decoration: decoration(strings.stepUsedAmmoLabel),
+                      items: widget.availableAmmos
+                          .map(
+                            (a) => DropdownMenuItem<String>(
+                              value: a.id,
+                              child: Text(a.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _usedAmmoId = v),
+                    ),
+                    const Gap(10),
                     TextField(
                       controller: _shotsController,
                       keyboardType: TextInputType.number,
@@ -4958,6 +5223,18 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                           final durationSeconds =
                               int.tryParse(_durationController.text.trim());
 
+                          if (_type == StepType.tir &&
+                              ((shots ?? 0) > 0) &&
+                              ((_usedWeaponId ?? '').trim().isEmpty ||
+                                  (_usedAmmoId ?? '').trim().isEmpty)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(strings.stepWeaponAmmoRequired),
+                              ),
+                            );
+                            return;
+                          }
+
                           final step = ExerciseStep(
                             id: widget.initialStep?.id ??
                                 DateTime.now()
@@ -4977,6 +5254,12 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                             weaponTo: _weaponToController.text.trim().isEmpty
                                 ? null
                                 : _weaponToController.text.trim(),
+                            usedWeaponId: (_usedWeaponId ?? '').trim().isEmpty
+                                ? null
+                                : _usedWeaponId!.trim(),
+                            usedAmmoId: (_usedAmmoId ?? '').trim().isEmpty
+                                ? null
+                                : _usedAmmoId!.trim(),
                             reloadType: _reloadType,
                             durationSeconds: durationSeconds,
                             trigger: _triggerController.text.trim().isEmpty

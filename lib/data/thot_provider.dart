@@ -109,6 +109,7 @@ bool get cloudBackupEnabled => false;
       windEnabled: session.windEnabled,
       humidityEnabled: session.humidityEnabled,
       pressureEnabled: session.pressureEnabled,
+      weaponIds: session.weaponIds,
     ));
   }
 
@@ -611,6 +612,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
       windEnabled: session.windEnabled,
       humidityEnabled: session.humidityEnabled,
       pressureEnabled: session.pressureEnabled,
+      weaponIds: session.weaponIds,
     );
 
     _scheduleSave();
@@ -618,40 +620,41 @@ Future<void> toggleCloudBackup(bool enabled) async {
   }
   
   void _applyMaterialFromSession(Session session) {
-    // Update weapon + ammo counters based on exercises.
+    // Update weapon + ammo counters based on attributed impacts.
     for (final exercise in session.exercises) {
-      final weaponIndex = _weapons.indexWhere((w) => w.id == exercise.weaponId);
-      if (weaponIndex != -1) {
+      for (final entry in exercise.weaponShotImpact.entries) {
+        final weaponIndex = _weapons.indexWhere((w) => w.id == entry.key);
+        if (weaponIndex == -1) continue;
         final current = _weapons[weaponIndex];
         _weapons[weaponIndex] = current.copyWith(
-          totalRounds: current.totalRounds + exercise.shotsFired,
+          totalRounds: current.totalRounds + entry.value,
           lastUsed: session.date,
           history: [
             ...current.history,
             WeaponHistoryEntry(
-              id: '${session.id}-${exercise.id}-tir',
+              id: '${session.id}-${exercise.id}-tir-${entry.key}',
               date: session.date,
               type: 'tir',
               label: 'Séance : ${session.name}',
-              details: '${exercise.shotsFired} coups',
+              details: '${entry.value} coups',
             ),
           ],
         );
       }
 
-      final ammoIndex = _ammos.indexWhere((a) => a.id == exercise.ammoId);
-      if (ammoIndex != -1) {
-        _ammos[ammoIndex].quantity -= exercise.shotsFired;
+      for (final entry in exercise.ammoShotImpact.entries) {
+        final ammoIndex = _ammos.indexWhere((a) => a.id == entry.key);
+        if (ammoIndex == -1) continue;
+        _ammos[ammoIndex].quantity -= entry.value;
         if (_ammos[ammoIndex].quantity < 0) _ammos[ammoIndex].quantity = 0;
         _ammos[ammoIndex].lastUsed = session.date;
       }
 
-      for (final equipmentId in exercise.equipmentIds) {
-        final accIndex = _accessories.indexWhere((a) => a.id == equipmentId);
-        if (accIndex != -1) {
-          _accessories[accIndex].lastUsed = session.date;
-          _accessories[accIndex].totalRounds += exercise.shotsFired;
-        }
+      for (final entry in exercise.equipmentShotImpact.entries) {
+        final accIndex = _accessories.indexWhere((a) => a.id == entry.key);
+        if (accIndex == -1) continue;
+        _accessories[accIndex].lastUsed = session.date;
+        _accessories[accIndex].totalRounds += entry.value;
       }
     }
   }
@@ -734,6 +737,68 @@ Future<void> toggleCloudBackup(bool enabled) async {
       _scheduleSave();
       notifyListeners();
     }
+  }
+
+  List<Accessory> linkedAccessoriesForWeapon(String weaponId) {
+    final weapon = getWeaponById(weaponId);
+    if (weapon == null) return const [];
+    final ids = weapon.linkedAccessoryIds.toSet();
+    return accessories.where((a) => ids.contains(a.id)).toList(growable: false);
+  }
+
+  List<Weapon> linkedWeaponsForAccessory(String accessoryId) {
+    final accessory = getAccessoryById(accessoryId);
+    if (accessory == null) return const [];
+    final ids = accessory.linkedWeaponIds.toSet();
+    return weapons.where((w) => ids.contains(w.id)).toList(growable: false);
+  }
+
+  void linkWeaponToAccessory({
+    required String weaponId,
+    required String accessoryId,
+  }) {
+    final wIndex = _weapons.indexWhere((w) => w.id == weaponId);
+    final aIndex = _accessories.indexWhere((a) => a.id == accessoryId);
+    if (wIndex == -1 || aIndex == -1) return;
+
+    final weapon = _weapons[wIndex];
+    final accessory = _accessories[aIndex];
+
+    final weaponLinks = weapon.linkedAccessoryIds.toSet()..add(accessoryId);
+    final accessoryLinks = accessory.linkedWeaponIds.toSet()..add(weaponId);
+
+    _weapons[wIndex] = weapon.copyWith(
+      linkedAccessoryIds: weaponLinks.toList(growable: false),
+    );
+    _accessories[aIndex] = accessory.copyWith(
+      linkedWeaponIds: accessoryLinks.toList(growable: false),
+    );
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void unlinkWeaponFromAccessory({
+    required String weaponId,
+    required String accessoryId,
+  }) {
+    final wIndex = _weapons.indexWhere((w) => w.id == weaponId);
+    final aIndex = _accessories.indexWhere((a) => a.id == accessoryId);
+    if (wIndex == -1 || aIndex == -1) return;
+
+    final weapon = _weapons[wIndex];
+    final accessory = _accessories[aIndex];
+
+    final weaponLinks = weapon.linkedAccessoryIds.toSet()..remove(accessoryId);
+    final accessoryLinks = accessory.linkedWeaponIds.toSet()..remove(weaponId);
+
+    _weapons[wIndex] = weapon.copyWith(
+      linkedAccessoryIds: weaponLinks.toList(growable: false),
+    );
+    _accessories[aIndex] = accessory.copyWith(
+      linkedWeaponIds: accessoryLinks.toList(growable: false),
+    );
+    _scheduleSave();
+    notifyListeners();
   }
   
   void deleteWeapon(String id) {
@@ -1037,6 +1102,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
       windEnabled: session.windEnabled,
       humidityEnabled: session.humidityEnabled,
       pressureEnabled: session.pressureEnabled,
+      weaponIds: List<String>.from(session.weaponIds),
     );
     _sessions.insert(0, newSession);
 
@@ -1073,6 +1139,14 @@ Future<void> toggleCloudBackup(bool enabled) async {
   Ammo? getAmmoById(String id) {
     try {
       return _ammos.firstWhere((a) => a.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Accessory? getAccessoryById(String id) {
+    try {
+      return _accessories.firstWhere((a) => a.id == id);
     } catch (e) {
       return null;
     }
@@ -1143,6 +1217,7 @@ Map<String, dynamic> _buildDomainDataMap() {
       'pdfPaths': w.documents.map((d) => d.path).toList(),
       'photoPath': w.photoPath,
       'isHidden': w.isHidden,
+      'linkedAccessoryIds': w.linkedAccessoryIds,
     }).toList(),
     'ammos': _ammos.map((a) => {
       'id': a.id,
@@ -1184,6 +1259,7 @@ Map<String, dynamic> _buildDomainDataMap() {
       'documents': ac.documents.map((d) => d.toJson()).toList(),
       'photoPath': ac.photoPath,
       'isHidden': ac.isHidden,
+      'linkedWeaponIds': ac.linkedWeaponIds,
     }).toList(),
     'sessions': _sessions.map((s) => {
       'id': s.id,
@@ -1201,6 +1277,7 @@ Map<String, dynamic> _buildDomainDataMap() {
       'windEnabled': s.windEnabled,
       'humidityEnabled': s.humidityEnabled,
       'pressureEnabled': s.pressureEnabled,
+      'weaponIds': s.weaponIds,
       'exercises': s.exercises.map((e) => {
         'id': e.id,
         'name': e.name,
@@ -1217,6 +1294,17 @@ Map<String, dynamic> _buildDomainDataMap() {
         'precision': e.precision,
         'precisionEnabled': e.precisionEnabled,
         'observations': e.observations,
+        'weaponAssignments': e.weaponAssignments.map((a) => {
+          'weaponId': a.weaponId,
+          'weaponLabel': a.weaponLabel,
+          'ammoIds': a.ammoIds,
+          'accessoryIds': a.accessoryIds,
+        }).toList(),
+        'shotAllocations': e.shotAllocations.map((a) => {
+          'weaponId': a.weaponId,
+          'ammoId': a.ammoId,
+          'shots': a.shots,
+        }).toList(),
         if (e.steps != null)
           'steps': e.steps!.map((st) => st.toJson()).toList(),
       }).toList(),
@@ -1274,6 +1362,9 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
         .toList(),
     photoPath: w['photoPath'],
     isHidden: w['isHidden'] ?? false,
+    linkedAccessoryIds: ((w['linkedAccessoryIds'] as List?) ?? const [])
+        .whereType<String>()
+        .toList(),
   )).toList();
 
   final ammosList = (data['ammos'] as List?) ?? const [];
@@ -1341,6 +1432,9 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
       documents: _decodeItemDocuments(ac['documents'] ?? const []),
       photoPath: ac['photoPath'] as String?,
       isHidden: (ac['isHidden'] ?? false) as bool,
+      linkedWeaponIds: ((ac['linkedWeaponIds'] as List?) ?? const [])
+          .whereType<String>()
+          .toList(),
     );
   }).toList();
 
@@ -1350,6 +1444,8 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
     final exercises = exercisesList.map((raw) {
       final e = raw as Map;
       final stepsRaw = (e['steps'] as List?) ?? const [];
+      final assignmentsRaw = (e['weaponAssignments'] as List?) ?? const [];
+      final shotAllocationsRaw = (e['shotAllocations'] as List?) ?? const [];
 
       return Exercise(
         id: e['id'],
@@ -1368,6 +1464,34 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
         precision: e['precision'] != null ? (e['precision'] as num).toDouble() : null,
         precisionEnabled: (e['precisionEnabled'] ?? true) as bool,
         observations: e['observations'] ?? '',
+        weaponAssignments: assignmentsRaw
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .map((m) => ExerciseWeaponAssignment(
+                  weaponId: (m['weaponId'] ?? '') as String,
+                  weaponLabel: m['weaponLabel'] as String?,
+                  ammoIds: ((m['ammoIds'] as List?) ?? const [])
+                      .whereType<String>()
+                      .toList(),
+                  accessoryIds: ((m['accessoryIds'] as List?) ?? const [])
+                      .whereType<String>()
+                      .toList(),
+                ))
+            .where((a) => a.weaponId.trim().isNotEmpty)
+            .toList(),
+        shotAllocations: shotAllocationsRaw
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .map((m) => ExerciseShotAllocation(
+                  weaponId: (m['weaponId'] ?? '') as String,
+                  ammoId: (m['ammoId'] ?? '') as String,
+                  shots: (m['shots'] as num?)?.toInt() ?? 0,
+                ))
+            .where((a) =>
+                a.weaponId.trim().isNotEmpty &&
+                a.ammoId.trim().isNotEmpty &&
+                a.shots > 0)
+            .toList(),
         steps: stepsRaw
             .whereType<Map>()
             .map((m) => ExerciseStep.fromJson(Map<String, dynamic>.from(m)))
@@ -1391,6 +1515,9 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
       windEnabled: s['windEnabled'] ?? true,
       humidityEnabled: s['humidityEnabled'] ?? true,
       pressureEnabled: s['pressureEnabled'] ?? true,
+      weaponIds: ((s['weaponIds'] as List?) ?? const [])
+          .whereType<String>()
+          .toList(),
       exercises: exercises,
     );
   }).toList();

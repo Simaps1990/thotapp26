@@ -69,6 +69,22 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
                     ),
                   ),
                 ),
+                // Icône en forme de V pour fermer
+                GestureDetector(
+                  onTap: () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 28,
+                      color: colors.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

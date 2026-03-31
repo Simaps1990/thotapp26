@@ -148,6 +148,7 @@ class Weapon {
   final List<WeaponHistoryEntry> history;
   final String? photoPath; // Path to item photo
   final bool isHidden;
+  final List<String> linkedAccessoryIds;
 
   // Tracking options
   final bool trackWear;
@@ -191,6 +192,7 @@ class Weapon {
     this.history = const [],
     this.photoPath,
     this.isHidden = false,
+    this.linkedAccessoryIds = const [],
   })  : lastRevised = lastRevised ?? lastCleaned,
         roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
         roundsAtLastRevision = roundsAtLastRevision ?? totalRounds;
@@ -239,6 +241,7 @@ class Weapon {
     int? roundsAtLastCleaning,
     int? roundsAtLastRevision,
     bool? isHidden,
+    List<String>? linkedAccessoryIds,
   }) {
     return Weapon(
       id: id ?? this.id,
@@ -266,6 +269,7 @@ class Weapon {
       roundsAtLastCleaning: roundsAtLastCleaning ?? this.roundsAtLastCleaning,
       roundsAtLastRevision: roundsAtLastRevision ?? this.roundsAtLastRevision,
       isHidden: isHidden ?? this.isHidden,
+      linkedAccessoryIds: linkedAccessoryIds ?? this.linkedAccessoryIds,
     );
   }
 }
@@ -395,6 +399,7 @@ class Accessory {
   
   // Tracking options
   final bool trackBattery;
+  final List<String> linkedWeaponIds;
 
   Accessory({
     required this.id,
@@ -419,6 +424,7 @@ class Accessory {
     this.documents = const [],
     this.photoPath,
     this.isHidden = false,
+    this.linkedWeaponIds = const [],
   })  : lastCleaned = lastCleaned ?? lastUsed,
         lastRevised = lastRevised ?? (lastCleaned ?? lastUsed),
         roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
@@ -465,6 +471,7 @@ class Accessory {
     List<ItemDocument>? documents,
     String? photoPath,
     bool? isHidden,
+    List<String>? linkedWeaponIds,
   }) {
     return Accessory(
       id: id ?? this.id,
@@ -490,6 +497,7 @@ class Accessory {
       documents: documents ?? this.documents,
       photoPath: photoPath ?? this.photoPath,
       isHidden: isHidden ?? this.isHidden,
+      linkedWeaponIds: linkedWeaponIds ?? this.linkedWeaponIds,
     );
   }
 }
@@ -532,6 +540,32 @@ class ExercisePhoto {
   }
 }
 
+class ExerciseWeaponAssignment {
+  final String weaponId;
+  final String? weaponLabel;
+  final List<String> ammoIds;
+  final List<String> accessoryIds;
+
+  const ExerciseWeaponAssignment({
+    required this.weaponId,
+    this.weaponLabel,
+    this.ammoIds = const [],
+    this.accessoryIds = const [],
+  });
+}
+
+class ExerciseShotAllocation {
+  final String weaponId;
+  final String ammoId;
+  final int shots;
+
+  const ExerciseShotAllocation({
+    required this.weaponId,
+    required this.ammoId,
+    required this.shots,
+  });
+}
+
 class Exercise {
   final String id;
   final String name;
@@ -549,6 +583,8 @@ class Exercise {
   final String observations;
   // null = mode simple (comportement actuel), non-null = mode détaillé par étapes.
   final List<ExerciseStep>? steps;
+  final List<ExerciseWeaponAssignment> weaponAssignments;
+  final List<ExerciseShotAllocation> shotAllocations;
 
   Exercise({
     required this.id,
@@ -566,6 +602,8 @@ class Exercise {
     this.precisionEnabled = true,
     this.observations = '',
     this.steps,
+    this.weaponAssignments = const [],
+    this.shotAllocations = const [],
   });
 
   bool get isPrecisionCounted => precision != null && precisionEnabled;
@@ -588,6 +626,89 @@ class Exercise {
     return distances.reduce((a, b) => a > b ? a : b);
   }
 
+  Map<String, int> get weaponShotImpact {
+    final impact = <String, int>{};
+
+    if (steps != null && steps!.isNotEmpty) {
+      for (final step in steps!) {
+        if (step.type != StepType.tir) continue;
+        final shots = step.shots ?? 0;
+        if (shots <= 0) continue;
+        final wid = (step.usedWeaponId ?? '').trim();
+        if (wid.isEmpty || wid == 'none' || wid == 'borrowed') continue;
+        impact[wid] = (impact[wid] ?? 0) + shots;
+      }
+      if (impact.isNotEmpty) return impact;
+    }
+
+    if (shotAllocations.isNotEmpty) {
+      for (final alloc in shotAllocations) {
+        final wid = alloc.weaponId.trim();
+        if (wid.isEmpty || wid == 'none' || wid == 'borrowed') continue;
+        if (alloc.shots <= 0) continue;
+        impact[wid] = (impact[wid] ?? 0) + alloc.shots;
+      }
+      if (impact.isNotEmpty) return impact;
+    }
+
+    if (weaponId != 'none' && weaponId != 'borrowed') {
+      impact[weaponId] = shotsFired;
+    }
+    return impact;
+  }
+
+  Map<String, int> get ammoShotImpact {
+    final impact = <String, int>{};
+
+    if (steps != null && steps!.isNotEmpty) {
+      for (final step in steps!) {
+        if (step.type != StepType.tir) continue;
+        final shots = step.shots ?? 0;
+        if (shots <= 0) continue;
+        final aid = (step.usedAmmoId ?? '').trim();
+        if (aid.isEmpty || aid == 'none' || aid == 'borrowed') continue;
+        impact[aid] = (impact[aid] ?? 0) + shots;
+      }
+      if (impact.isNotEmpty) return impact;
+    }
+
+    if (shotAllocations.isNotEmpty) {
+      for (final alloc in shotAllocations) {
+        final aid = alloc.ammoId.trim();
+        if (aid.isEmpty || aid == 'none' || aid == 'borrowed') continue;
+        if (alloc.shots <= 0) continue;
+        impact[aid] = (impact[aid] ?? 0) + alloc.shots;
+      }
+      if (impact.isNotEmpty) return impact;
+    }
+
+    if (ammoId != 'none' && ammoId != 'borrowed') {
+      impact[ammoId] = shotsFired;
+    }
+    return impact;
+  }
+
+  Map<String, int> get equipmentShotImpact {
+    final impact = <String, int>{};
+    final weaponImpact = weaponShotImpact;
+
+    if (weaponAssignments.isNotEmpty && weaponImpact.isNotEmpty) {
+      for (final assignment in weaponAssignments) {
+        final weaponShots = weaponImpact[assignment.weaponId] ?? 0;
+        if (weaponShots <= 0) continue;
+        for (final accessoryId in assignment.accessoryIds) {
+          impact[accessoryId] = (impact[accessoryId] ?? 0) + weaponShots;
+        }
+      }
+      if (impact.isNotEmpty) return impact;
+    }
+
+    for (final id in equipmentIds) {
+      impact[id] = (impact[id] ?? 0) + shotsFired;
+    }
+    return impact;
+  }
+
   Exercise copyWith({
     String? id,
     String? name,
@@ -604,6 +725,8 @@ class Exercise {
     bool? precisionEnabled,
     String? observations,
     List<ExerciseStep>? steps,
+    List<ExerciseWeaponAssignment>? weaponAssignments,
+    List<ExerciseShotAllocation>? shotAllocations,
   }) {
     return Exercise(
       id: id ?? this.id,
@@ -621,6 +744,8 @@ class Exercise {
       precisionEnabled: precisionEnabled ?? this.precisionEnabled,
       observations: observations ?? this.observations,
       steps: steps ?? this.steps,
+      weaponAssignments: weaponAssignments ?? this.weaponAssignments,
+      shotAllocations: shotAllocations ?? this.shotAllocations,
     );
   }
 }
@@ -648,6 +773,7 @@ class Session {
   final bool windEnabled;
   final bool humidityEnabled;
   final bool pressureEnabled;
+  final List<String> weaponIds;
 
   Session({
     required this.id,
@@ -666,6 +792,7 @@ class Session {
     this.windEnabled = true,
     this.humidityEnabled = true,
     this.pressureEnabled = true,
+    this.weaponIds = const [],
   });
 
   int get totalRounds => exercises.fold(0, (sum, ex) => sum + ex.shotsFired);
@@ -689,8 +816,9 @@ class Session {
   Map<String, int> get weaponImpact {
     Map<String, int> impact = {};
     for (var ex in exercises) {
-      if (ex.weaponId == 'none' || ex.weaponId == 'borrowed') continue;
-      impact[ex.weaponId] = (impact[ex.weaponId] ?? 0) + ex.shotsFired;
+      ex.weaponShotImpact.forEach((weaponId, shots) {
+        impact[weaponId] = (impact[weaponId] ?? 0) + shots;
+      });
     }
     return impact;
   }
@@ -699,8 +827,9 @@ class Session {
   Map<String, int> get ammoImpact {
     Map<String, int> impact = {};
     for (var ex in exercises) {
-      if (ex.ammoId == 'none' || ex.ammoId == 'borrowed') continue;
-      impact[ex.ammoId] = (impact[ex.ammoId] ?? 0) + ex.shotsFired;
+      ex.ammoShotImpact.forEach((ammoId, shots) {
+        impact[ammoId] = (impact[ammoId] ?? 0) + shots;
+      });
     }
     return impact;
   }
@@ -709,9 +838,9 @@ class Session {
   Map<String, int> get equipmentImpact {
     Map<String, int> impact = {};
     for (var ex in exercises) {
-      for (final id in ex.equipmentIds) {
-        impact[id] = (impact[id] ?? 0) + ex.shotsFired;
-      }
+      ex.equipmentShotImpact.forEach((equipmentId, shots) {
+        impact[equipmentId] = (impact[equipmentId] ?? 0) + shots;
+      });
     }
     return impact;
   }

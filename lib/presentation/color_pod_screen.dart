@@ -283,7 +283,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               minY: 0.18,
               maxY: 0.78,
               occupied: [if (shapeAnchor != null) shapeAnchor],
-              minDistance: 0.28,
+              minDistance: 0.32, // Augmenté de 0.28 à 0.32
             )
           : null;
       final digitAnchor = hasDigit
@@ -297,7 +297,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
                 if (shapeAnchor != null) shapeAnchor,
                 if (letterAnchor != null) letterAnchor,
               ],
-              minDistance: 0.22,
+              minDistance: 0.26, // Augmenté de 0.22 à 0.26
             )
           : null;
 
@@ -479,7 +479,8 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     final strings = AppStrings.of(context);
     const selectorTileSize = 52.0;
     const selectorTileRadius = 10.0;
-    const sectionBottomGap = AppSpacing.sm;
+    const sectionBottomGap = 4.0; // Réduit de AppSpacing.sm (~16px) à 4px
+    const sectionGap = 16.0; // Réduit de AppSpacing.lg (~24px) à 16px
 
     Widget sectionLabel(String title) => Text(
       title,
@@ -534,6 +535,22 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
         child: Row(children: [
           Expanded(child: Text(strings.colorPodToolTitle,
             style: texts.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
+          // Icône en forme de V pour fermer
+          GestureDetector(
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 28,
+                color: texts.titleLarge?.color?.withValues(alpha: 0.7) ?? colors.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
         ]),
       ),
       Padding(
@@ -591,7 +608,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               ),
             );
           }).toList()),
-          const Gap(AppSpacing.lg),
+          const Gap(sectionGap),
 
           // ── FORMES ───────────────────────────────────────────────────────────
           sectionHeader(
@@ -631,7 +648,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               ),
             );
           }).toList()),
-          const Gap(AppSpacing.lg),
+          const Gap(sectionGap),
 
           // ── LETTRES ──────────────────────────────────────────────────────────
           sectionHeader(
@@ -671,7 +688,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               ),
             );
           }).toList()),
-          const Gap(AppSpacing.lg),
+          const Gap(sectionGap),
 
           // ── CHIFFRES ─────────────────────────────────────────────────────────
           sectionHeader(
@@ -711,7 +728,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               ),
             );
           }).toList()),
-          const Gap(AppSpacing.lg),
+          const Gap(sectionGap),
 
           // ── Sliders ──────────────────────────────────────────────────────────
           _SliderField(
@@ -792,7 +809,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         const shapeBox = 220.0;
-        const textBox = 92.0;
+        const textBox = 100.0; // Augmenté de 92px à 100px pour plus d'espace
 
         Widget anchored({
           required Offset anchor,
@@ -801,8 +818,12 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
         }) {
           final maxLeft = (constraints.maxWidth - box).clamp(0.0, double.infinity);
           final maxTop = (constraints.maxHeight - box).clamp(0.0, double.infinity);
-          final left = (anchor.dx * constraints.maxWidth - box / 2).clamp(0.0, maxLeft);
-          final top = (anchor.dy * constraints.maxHeight - box / 2).clamp(0.0, maxTop);
+          // Ajout d'une marge de sécurité pour éviter les troncatures aux bords
+          final margin = 8.0;
+          final safeMaxLeft = (constraints.maxWidth - box - margin).clamp(0.0, double.infinity);
+          final safeMaxTop = (constraints.maxHeight - box - margin).clamp(0.0, double.infinity);
+          final left = (anchor.dx * constraints.maxWidth - box / 2).clamp(margin, safeMaxLeft);
+          final top = (anchor.dy * constraints.maxHeight - box / 2).clamp(margin, safeMaxTop);
           return Positioned(left: left, top: top, child: SizedBox(width: box, height: box, child: Center(child: child)));
         }
 
@@ -825,9 +846,10 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               child: Text(
                 _currentDigit!,
                 style: TextStyle(
-                  fontSize: 86,
+                  fontSize: 72, // Réduit de 86px à 72px
                   fontWeight: FontWeight.w900,
                   color: textColor.withValues(alpha: 0.95),
+                  height: 1.0, // Ajouté pour contrôler la hauteur de ligne
                 ),
               ),
             ),
@@ -839,9 +861,10 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
               child: Text(
                 _currentLetter!,
                 style: TextStyle(
-                  fontSize: 86,
+                  fontSize: 72, // Réduit de 86px à 72px
                   fontWeight: FontWeight.w900,
                   color: textColor.withValues(alpha: 0.95),
+                  height: 1.0, // Ajouté pour contrôler la hauteur de ligne
                 ),
               ),
             ),

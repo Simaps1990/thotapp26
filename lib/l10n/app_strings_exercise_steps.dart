@@ -202,6 +202,30 @@ String exercisePositionNarrative(ShootingPosition pos) {
         es: 'Arma a',
       );
 
+  String get stepUsedWeaponLabel => _pick(
+        fr: 'Arme utilisée',
+        en: 'Weapon used',
+        de: 'Verwendete Waffe',
+        it: 'Arma usata',
+        es: 'Arma usada',
+      );
+
+  String get stepUsedAmmoLabel => _pick(
+        fr: 'Munition utilisée',
+        en: 'Ammo used',
+        de: 'Verwendete Munition',
+        it: 'Munizione usata',
+        es: 'Munición usada',
+      );
+
+  String get stepWeaponAmmoRequired => _pick(
+        fr: 'Sélectionnez une arme et une munition pour chaque étape de tir.',
+        en: 'Select a weapon and ammo for each firing step.',
+        de: 'Wähle für jeden Schussschritt eine Waffe und Munition aus.',
+        it: 'Seleziona arma e munizione per ogni fase di tiro.',
+        es: 'Selecciona un arma y munición para cada paso de disparo.',
+      );
+
   String get exerciseOptionalHint => _pick(
         fr: ' (optionnel)',
         en: ' (optional)',

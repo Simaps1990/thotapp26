@@ -171,6 +171,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   bool _ammoQuantityError = false;
   bool _accessoryTypeError = false;
   bool _batteryDateError = false;
+  final Set<String> _linkedAccessoryIds = {};
+  final Set<String> _linkedWeaponIds = {};
   
   @override
   void initState() {
@@ -238,6 +240,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
         _trackRounds = weapon.trackRounds;
         _cleaningRoundsThresholdController.text = weapon.cleaningRoundsThreshold.toString();
         _wearRoundsThresholdController.text = weapon.wearRoundsThreshold.toString();
+        _linkedAccessoryIds
+          ..clear()
+          ..addAll(weapon.linkedAccessoryIds);
       });
     } else if (_selectedCategory == 'MUNITION') {
       final ammo = provider.ammos.where((a) => a.id == widget.itemId).firstOrNull;
@@ -307,8 +312,123 @@ class _AddItemScreenState extends State<AddItemScreen> {
             accessory.cleaningRoundsThreshold.toString();
         _wearRoundsThresholdController.text =
             accessory.wearRoundsThreshold.toString();
+        _linkedWeaponIds
+          ..clear()
+          ..addAll(accessory.linkedWeaponIds);
       });
     }
+  }
+
+  void _syncWeaponAccessoryLinks({
+    required ThotProvider provider,
+    required String weaponId,
+    required Set<String> desiredAccessoryIds,
+  }) {
+    final currentAccessoryIds =
+        provider.linkedAccessoriesForWeapon(weaponId).map((a) => a.id).toSet();
+
+    for (final accessoryId in desiredAccessoryIds.difference(currentAccessoryIds)) {
+      provider.linkWeaponToAccessory(
+        weaponId: weaponId,
+        accessoryId: accessoryId,
+      );
+    }
+
+    for (final accessoryId in currentAccessoryIds.difference(desiredAccessoryIds)) {
+      provider.unlinkWeaponFromAccessory(
+        weaponId: weaponId,
+        accessoryId: accessoryId,
+      );
+    }
+  }
+
+  void _syncAccessoryWeaponLinks({
+    required ThotProvider provider,
+    required String accessoryId,
+    required Set<String> desiredWeaponIds,
+  }) {
+    final currentWeaponIds =
+        provider.linkedWeaponsForAccessory(accessoryId).map((w) => w.id).toSet();
+
+    for (final weaponId in desiredWeaponIds.difference(currentWeaponIds)) {
+      provider.linkWeaponToAccessory(
+        weaponId: weaponId,
+        accessoryId: accessoryId,
+      );
+    }
+
+    for (final weaponId in currentWeaponIds.difference(desiredWeaponIds)) {
+      provider.unlinkWeaponFromAccessory(
+        weaponId: weaponId,
+        accessoryId: accessoryId,
+      );
+    }
+  }
+
+  Future<bool> _confirmUnlink() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: const Text('Êtes-vous sûr de vouloir délier cet élément ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(AppStrings.of(ctx).cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(AppStrings.of(ctx).confirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _editLinkedAccessories(ThotProvider provider) async {
+    final updated = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ItemLinkMultiSelectSheet(
+        title: 'Lier des accessoires',
+        items: provider.accessories,
+        initialSelection: _linkedAccessoryIds,
+        labelOf: (a) => a.name,
+        subtitleOf: (a) => [if (a.type.trim().isNotEmpty) a.type, if (a.brand.trim().isNotEmpty) a.brand].join(' • '),
+        idOf: (a) => a.id,
+        icon: Icons.inventory_2_rounded,
+      ),
+    );
+    if (!mounted || updated == null) return;
+    setState(() {
+      _linkedAccessoryIds
+        ..clear()
+        ..addAll(updated);
+    });
+  }
+
+  Future<void> _editLinkedWeapons(ThotProvider provider) async {
+    final updated = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ItemLinkMultiSelectSheet(
+        title: 'Lier des armes',
+        items: provider.weapons,
+        initialSelection: _linkedWeaponIds,
+        labelOf: (w) => w.name,
+        subtitleOf: (w) => [if (w.type.trim().isNotEmpty) w.type, if (w.caliber.trim().isNotEmpty) w.caliber].join(' • '),
+        idOf: (w) => w.id,
+        icon: Icons.sports_martial_arts_rounded,
+      ),
+    );
+    if (!mounted || updated == null) return;
+    setState(() {
+      _linkedWeaponIds
+        ..clear()
+        ..addAll(updated);
+    });
   }
 
   Future<void> _pickBatteryChangedDate() async {
@@ -370,6 +490,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -1115,6 +1236,135 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     ),
                   ),
                 ],
+              ],
+
+              if (_selectedCategory == 'ARME' ||
+                  _selectedCategory == 'ACCESSOIRE') ...[
+                const Gap(AppSpacing.lg),
+                // Header with title and link button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.link_rounded, size: 18, color: colors.primary),
+                        const Gap(8),
+                        Text(
+                          'Liaisons',
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_selectedCategory == 'ARME')
+                      ElevatedButton.icon(
+                        onPressed: () => _editLinkedAccessories(provider),
+                        icon: const Icon(Icons.add_link_rounded, size: 18),
+                        label: const Text('Associer des accessoires'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                        ),
+                      )
+                    else if (_selectedCategory == 'ACCESSOIRE')
+                      ElevatedButton.icon(
+                        onPressed: () => _editLinkedWeapons(provider),
+                        icon: const Icon(Icons.add_link_rounded, size: 18),
+                        label: const Text('Associer des armes'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const Gap(8),
+                Container(
+                  width: double.infinity,
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: colors.outline.withValues(alpha: 0.35)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_selectedCategory == 'ARME') ...[
+                        if (_linkedAccessoryIds.isEmpty)
+                          Text(
+                            'Aucun accessoire lié.',
+                            style: textStyles.bodySmall
+                                ?.copyWith(color: colors.secondary),
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: provider.accessories
+                                .where((a) => _linkedAccessoryIds.contains(a.id))
+                                .map(
+                                  (a) => InputChip(
+                                    avatar: const Icon(Icons.inventory_2_rounded,
+                                        size: 16),
+                                    label: Text(a.name),
+                                    onDeleted: () async {
+                                      if (!await _confirmUnlink()) return;
+                                      if (!mounted) return;
+                                      setState(
+                                        () => _linkedAccessoryIds.remove(a.id),
+                                      );
+                                    },
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                      ],
+                      if (_selectedCategory == 'ACCESSOIRE') ...[
+                        if (_linkedWeaponIds.isEmpty)
+                          Text(
+                            'Aucune arme liée.',
+                            style: textStyles.bodySmall
+                                ?.copyWith(color: colors.secondary),
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: provider.weapons
+                                .where((w) => _linkedWeaponIds.contains(w.id))
+                                .map(
+                                  (w) => InputChip(
+                                    avatar: const Icon(
+                                      Icons.sports_martial_arts_rounded,
+                                      size: 16,
+                                    ),
+                                    label: Text(w.name),
+                                    onDeleted: () async {
+                                      if (!await _confirmUnlink()) return;
+                                      if (!mounted) return;
+                                      setState(
+                                        () => _linkedWeaponIds.remove(w.id),
+                                      );
+                                    },
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
               ],
               const Gap(AppSpacing.lg),
 
@@ -2313,6 +2563,7 @@ Text(
         roundsAtLastRevision: existing?.roundsAtLastRevision ?? initialRounds,
         photoPath: _photoPath,
         documents: documents,
+        linkedAccessoryIds: _linkedAccessoryIds.toList(growable: false),
       );
       
       if (_isEditMode) {
@@ -2327,6 +2578,12 @@ Text(
         }
         provider.addWeapon(weapon);
       }
+
+      _syncWeaponAccessoryLinks(
+        provider: provider,
+        weaponId: weapon.id,
+        desiredAccessoryIds: _linkedAccessoryIds,
+      );
     } else if (_selectedCategory == 'MUNITION') {
       final ammoType = _isAmmoProjectileTypeCustom
           ? _ammoTypeController.text.trim()
@@ -2422,6 +2679,7 @@ Text(
         trackBattery: _trackBattery,
         photoPath: _photoPath,
         documents: documents,
+        linkedWeaponIds: _linkedWeaponIds.toList(growable: false),
       );
       
       if (_isEditMode) {
@@ -2436,12 +2694,166 @@ Text(
         }
         provider.addAccessory(accessory);
       }
+
+      _syncAccessoryWeaponLinks(
+        provider: provider,
+        accessoryId: accessory.id,
+        desiredWeaponIds: _linkedWeaponIds,
+      );
     }
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_isEditMode ? strings.itemSavedSuccess : strings.itemAddedSuccess)),
     );
     context.pop();
+  }
+}
+
+class _ItemLinkMultiSelectSheet<T> extends StatefulWidget {
+  final String title;
+  final List<T> items;
+  final Set<String> initialSelection;
+  final String Function(T item) idOf;
+  final String Function(T item) labelOf;
+  final String Function(T item) subtitleOf;
+  final IconData icon;
+
+  const _ItemLinkMultiSelectSheet({
+    required this.title,
+    required this.items,
+    required this.initialSelection,
+    required this.idOf,
+    required this.labelOf,
+    required this.subtitleOf,
+    required this.icon,
+  });
+
+  @override
+  State<_ItemLinkMultiSelectSheet<T>> createState() =>
+      _ItemLinkMultiSelectSheetState<T>();
+}
+
+class _ItemLinkMultiSelectSheetState<T>
+    extends State<_ItemLinkMultiSelectSheet<T>> {
+  late final Set<String> _selectedIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIds = Set<String>.from(widget.initialSelection);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+
+    return SafeArea(
+      top: false,
+      child: FractionallySizedBox(
+        heightFactor: 0.82,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              const Gap(12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.outline,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              Padding(
+                padding: AppSpacing.paddingLg,
+                child: Row(
+                  children: [
+                    Icon(widget.icon, color: colors.primary, size: 20),
+                    const Gap(8),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: textStyles.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: widget.items.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: AppSpacing.paddingLg,
+                          child: Text(
+                            strings.settingsDocumentsEmptyTitle,
+                            style: textStyles.bodyMedium
+                                ?.copyWith(color: colors.secondary),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: AppSpacing.paddingMd,
+                        itemBuilder: (context, index) {
+                          final item = widget.items[index];
+                          final id = widget.idOf(item);
+                          final selected = _selectedIds.contains(id);
+                          return CheckboxListTile(
+                            value: selected,
+                            onChanged: (checked) {
+                              setState(() {
+                                if (checked ?? false) {
+                                  _selectedIds.add(id);
+                                } else {
+                                  _selectedIds.remove(id);
+                                }
+                              });
+                            },
+                            title: Text(widget.labelOf(item)),
+                            subtitle: Text(widget.subtitleOf(item)),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: AppSpacing.paddingSm,
+                          );
+                        },
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemCount: widget.items.length,
+                      ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: AppSpacing.paddingLg,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(strings.cancel),
+                      ),
+                    ),
+                    const Gap(12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(_selectedIds),
+                        child: Text(strings.validate),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

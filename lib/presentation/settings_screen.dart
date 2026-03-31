@@ -117,6 +117,34 @@ class SettingsScreen extends StatelessWidget {
     required TextTheme textStyles,
   }) {
     return [
+      // Header image from session page
+      Container(
+        height: 200,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/images/carnet.webp', // Same image as session page
+              fit: BoxFit.cover,
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    colors.surface.withValues(alpha: 0.8),
+                    colors.surface,
+                  ],
+                  stops: const [0.4, 0.8, 1.0],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       const Gap(AppSpacing.lg),
     ];
   }

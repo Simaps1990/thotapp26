@@ -44,6 +44,8 @@ class ExerciseStep {
   final String? target; // cible, texte libre
   final String? weaponFrom; // transition : arme de départ
   final String? weaponTo; // transition : arme d'arrivée
+  final String? usedWeaponId; // tir: arme utilisée
+  final String? usedAmmoId; // tir: munition utilisée
   final ReloadType? reloadType;
   final int? durationSeconds; // attente
   final String? trigger; // attente : déclencheur
@@ -60,6 +62,8 @@ final MovementType? movementType;
     this.target,
     this.weaponFrom,
     this.weaponTo,
+    this.usedWeaponId,
+    this.usedAmmoId,
     this.reloadType,
     this.durationSeconds,
     this.trigger,
@@ -77,6 +81,8 @@ final MovementType? movementType;
         'target': target,
         'weaponFrom': weaponFrom,
         'weaponTo': weaponTo,
+        'usedWeaponId': usedWeaponId,
+        'usedAmmoId': usedAmmoId,
         'reloadType': reloadType?.name,
         'durationSeconds': durationSeconds,
         'trigger': trigger,
@@ -125,6 +131,8 @@ ReloadType? parseReloadType(String? raw) {
       target: json['target'] as String?,
       weaponFrom: json['weaponFrom'] as String?,
       weaponTo: json['weaponTo'] as String?,
+      usedWeaponId: json['usedWeaponId'] as String?,
+      usedAmmoId: json['usedAmmoId'] as String?,
       reloadType: parseReloadType(json['reloadType'] as String?),
       durationSeconds: json['durationSeconds'] as int?,
       trigger: json['trigger'] as String?,

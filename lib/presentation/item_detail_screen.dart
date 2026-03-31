@@ -717,6 +717,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final accessory = weapon == null && ammo == null
         ? provider.accessories.where((a) => a.id == widget.itemId).firstOrNull
         : null;
+    final linkedAccessories =
+        weapon != null ? provider.linkedAccessoriesForWeapon(weapon.id) : const <Accessory>[];
+    final linkedWeapons =
+        accessory != null ? provider.linkedWeaponsForAccessory(accessory.id) : const <Weapon>[];
 
     if (weapon == null && ammo == null && accessory == null) {
       return Scaffold(
@@ -1937,6 +1941,78 @@ border: Border.all(
                       ),
                     ),
                     const Gap(AppSpacing.lg),
+                    if (weapon != null || accessory != null) ...[
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.link_rounded,
+                            size: 18,
+                            color: colors.primary,
+                          ),
+                          const Gap(8),
+                          Text(
+                            'Liaisons',
+                            style: textStyles.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(AppSpacing.md),
+                      Container(
+                        width: double.infinity,
+                        padding: AppSpacing.paddingLg,
+                        decoration: BoxDecoration(
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? colors.outline
+                                : LightColors.surfaceHighlight,
+                            width: 1.35,
+                          ),
+                          boxShadow: AppShadows.cardPremium,
+                        ),
+                        child: (weapon != null && linkedAccessories.isEmpty) ||
+                                (accessory != null && linkedWeapons.isEmpty)
+                            ? Text(
+                                weapon != null
+                                    ? 'Aucun accessoire lié.'
+                                    : 'Aucune arme liée.',
+                                style: textStyles.bodyMedium?.copyWith(
+                                  color: colors.secondary,
+                                ),
+                              )
+                            : Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: weapon != null
+                                    ? linkedAccessories
+                                        .map(
+                                          (a) => Chip(
+                                            avatar: const Icon(
+                                              Icons.inventory_2_rounded,
+                                              size: 16,
+                                            ),
+                                            label: Text(a.name),
+                                          ),
+                                        )
+                                        .toList()
+                                    : linkedWeapons
+                                        .map(
+                                          (w) => Chip(
+                                            avatar: const Icon(
+                                              Icons.sports_martial_arts_rounded,
+                                              size: 16,
+                                            ),
+                                            label: Text(w.name),
+                                          ),
+                                        )
+                                        .toList(),
+                              ),
+                      ),
+                      const Gap(AppSpacing.lg),
+                    ],
                     if (comment.trim().isNotEmpty) ...[
                       Row(
                         children: [
