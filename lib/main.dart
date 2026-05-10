@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -33,14 +32,31 @@ void main() async {
   runApp(const MyApp());
 }
 
+Future<String> _loadRevenueCatApiKey() async {
+  if (kIsWeb) return '';
+
+  const channel = MethodChannel('thot/config');
+
+  try {
+    final key = await channel.invokeMethod<String>('getRevenueCatApiKey');
+    return key?.trim() ?? '';
+  } catch (e, st) {
+    debugPrint('❌ Failed to load RevenueCat key from iOS: $e');
+    debugPrint('$st');
+    return '';
+  }
+}
+
 Future<void> _configureRevenueCatSafely() async {
   if (kIsWeb) return;
 
   try {
-const revenueCatApiKey = String.fromEnvironment('REVENUECAT_API_KEY');
+    final revenueCatApiKey = await _loadRevenueCatApiKey();
 
-    if (revenueCatApiKey.trim().isEmpty) {
-      debugPrint('⚠️ REVENUECAT_API_KEY not set. Skipping RevenueCat configuration.');
+    if (revenueCatApiKey.isEmpty) {
+      debugPrint(
+        '⚠️ REVENUECAT_API_KEY not set. Skipping RevenueCat configuration.',
+      );
       return;
     }
 
@@ -79,6 +95,7 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
     with WidgetsBindingObserver {
   int _layoutEpoch = 0;
   String? _lastIntlLocale;
+  Size? _lastScreenSize;
 
   void _forceRelayout() {
     if (!mounted) return;
@@ -94,11 +111,13 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
     final provider = context.read<ThotProvider>();
 
     switch (state) {
-      case AppLifecycleState.inactive:
-      case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        provider.lockSession();
+        if (provider.pinEnabled) provider.lockSession();
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        // Ne pas verrouiller sur les system overlays (sélecteur photo, share sheet iOS)
         break;
 
       case AppLifecycleState.resumed:
@@ -125,7 +144,12 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
 
   @override
   void didChangeMetrics() {
-    _forceRelayout();
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final newSize = view.physicalSize;
+    if (_lastScreenSize != null && _lastScreenSize != newSize) {
+      _forceRelayout();
+    }
+    _lastScreenSize = newSize;
   }
 
   @override
@@ -136,13 +160,18 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
 
   @override
   Widget build(BuildContext context) {
-    final thotProvider = context.watch<ThotProvider>();
+    final themeMode = context.select<ThotProvider, ThemeMode>(
+      (p) => p.themeMode,
+    );
+    final appLocale = context.select<ThotProvider, Locale?>(
+      (p) => p.appLocale,
+    );
 
-    final locale = thotProvider.appLocale ??
-        WidgetsBinding.instance.platformDispatcher.locale;
-    final intlLocale = (locale.countryCode == null || locale.countryCode!.isEmpty)
-        ? locale.languageCode
-        : '${locale.languageCode}_${locale.countryCode}';
+    final locale = appLocale ?? WidgetsBinding.instance.platformDispatcher.locale;
+    final intlLocale =
+        (locale.countryCode == null || locale.countryCode!.isEmpty)
+            ? locale.languageCode
+            : '${locale.languageCode}_${locale.countryCode}';
     if (_lastIntlLocale != intlLocale) {
       _lastIntlLocale = intlLocale;
       Intl.defaultLocale = intlLocale;
@@ -155,8 +184,8 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
         debugShowCheckedModeBanner: false,
         theme: lightTheme,
         darkTheme: darkTheme,
-        themeMode: thotProvider.themeMode,
-        locale: thotProvider.appLocale,
+        themeMode: themeMode,
+        locale: appLocale,
         supportedLocales: AppStrings.supportedLocales,
         localizationsDelegates: const [
           AppStrings.delegate,
@@ -165,10 +194,37 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
           GlobalCupertinoLocalizations.delegate,
         ],
         routerConfig: AppRouter.router,
-        builder: (context, child) => AchievementToastLayer(
-          key: const GlobalObjectKey('achievement_layer'),
-          child: child ?? const SizedBox(),
-        ),
+        builder: (context, child) {
+          const iosElementScale = 0.95;
+          final mediaQuery = MediaQuery.of(context);
+          final theme = Theme.of(context);
+
+          final appChild = child ?? const SizedBox();
+          final shouldScaleIosUi =
+              !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+          final scaledAppChild = shouldScaleIosUi
+              ? MediaQuery(
+                  data: mediaQuery.copyWith(
+                    textScaler: const TextScaler.linear(iosElementScale),
+                  ),
+                  child: Theme(
+                    data: theme.copyWith(
+                      iconTheme: theme.iconTheme.copyWith(
+                        size: (theme.iconTheme.size ?? 24) * iosElementScale,
+                      ),
+                      primaryIconTheme: theme.primaryIconTheme.copyWith(
+                        size:
+                            (theme.primaryIconTheme.size ?? 24) * iosElementScale,
+                      ),
+                    ),
+                    child: appChild,
+                  ),
+                )
+              : appChild;
+
+          return AchievementToastLayer(child: scaledAppChild);
+        },
       ),
     );
   }

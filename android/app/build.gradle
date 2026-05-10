@@ -20,7 +20,7 @@ if (localPropertiesFile.exists()) {
 android {
     namespace = "fr.thotbook.app"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -30,6 +30,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     signingConfigs {
@@ -55,6 +59,10 @@ android {
         targetSdk = 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        // Inject RevenueCat API key from key.properties or local.properties.
+        def revenueCatApiKey = keystoreProperties.getProperty('revenueCatApiKey')
+                ?: localProperties.getProperty('revenueCatApiKey', "")
+        buildConfigField "String", "REVENUECAT_API_KEY", "\"${revenueCatApiKey}\""
     }
 
     buildTypes {

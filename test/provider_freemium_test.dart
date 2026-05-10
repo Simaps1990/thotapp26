@@ -5,7 +5,7 @@ import 'package:thot/data/thot_provider.dart';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-Weapon _weapon({String id = 'w1'}) => Weapon(
+Platform _platform({String id = 'p1'}) => Platform(
       id: id,
       name: 'SIG P320',
       model: 'M17',
@@ -26,24 +26,22 @@ Ammo _ammo({String id = 'a1', int quantity = 100}) => Ammo(
       lastUsed: DateTime(2026, 1, 1),
     );
 
-Accessory _accessory({String id = 'acc1'}) => Accessory(
-      id: id,
-      name: 'Lampe',
-      type: 'Lampe tactique',
-      lastUsed: DateTime(2026, 1, 1),
-    );
 
 Session _session({String id = 's1'}) => Session(
       id: id,
-      name: 'Séance $id',
+      name: 'Session $id',
       date: DateTime(2026, 1, 15),
       location: 'Stand',
     );
 
-Diagnostic _diagnostic({String id = 'd1', String weaponId = 'w1'}) => Diagnostic(
+Diagnostic _diagnostic({String id = 'd1', String platformId = 'w1'}) => Diagnostic(
+      incidentKey: 'none',
+      suspectedIssueKey: 'none',
+      riskLevelKey: 'low',
+      probabilities: const {'none': 100},
       id: id,
       date: DateTime(2026, 1, 10),
-      weaponId: weaponId,
+      platformId: platformId,
       responses: {'q1': 'ok', 'q2': 'nok'},
       finalDecision: 'Révision recommandée',
       summary: 'Usure détectée sur percuteur',
@@ -58,12 +56,12 @@ Future<ThotProvider> _makeProvider() async {
 
 void main() {
   group('ThotProvider — verrouillage plan gratuit (helpers UI)', () {
-    test('isWeaponLockedForFree : index 0 libre, index 1+ verrouillé', () async {
+    test('isPlatformLockedForFree : index 0 libre, index 1+ verrouillé', () async {
       final p = await _makeProvider();
-      final w = _weapon();
-      expect(p.isWeaponLockedForFree(w, 0), false);
-      expect(p.isWeaponLockedForFree(w, 1), true);
-      expect(p.isWeaponLockedForFree(w, 5), true);
+      final w = _platform();
+      expect(p.isPlatformLockedForFree(w, 0), false);
+      expect(p.isPlatformLockedForFree(w, 1), true);
+      expect(p.isPlatformLockedForFree(w, 5), true);
     });
 
     test('isAmmoLockedForFree : index 0 libre, index 1+ verrouillé', () async {
@@ -96,12 +94,12 @@ void main() {
   });
 
   group('ThotProvider — duplicate', () {
-    test('duplicateWeapon retourne false quand limite atteinte', () async {
+    test('duplicatePlatform retourne false quand limite atteinte', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
-      final result = p.duplicateWeapon(_weapon(id: 'w2'));
+      p.addPlatform(_platform(id: 'w1'));
+      final result = p.duplicatePlatform(_platform(id: 'w2'));
       expect(result, false);
-      expect(p.weapons.length, 1);
+      expect(p.platforms.length, 1);
     });
 
     test('duplicateAmmo retourne false quand limite atteinte', () async {
@@ -126,7 +124,7 @@ void main() {
       expect(ids.length, 2);
     });
 
-    test('duplicateSession retourne false après 5 séances (free)', () async {
+    test('duplicateSession retourne false après 5 sessions (free)', () async {
       final p = await _makeProvider();
       for (var i = 0; i < 5; i++) {
         p.addSession(_session(id: 's$i'));
@@ -140,7 +138,7 @@ void main() {
   group('ThotProvider — diagnostics', () {
     test('addDiagnostic insère en tête de liste', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
 
       final d1 = _diagnostic(id: 'd1');
       final d2 = _diagnostic(id: 'd2');
@@ -170,18 +168,18 @@ void main() {
     });
   });
 
-  group('ThotProvider — getWeaponById / getAmmoById', () {
-    test('getWeaponById retourne null si absent', () async {
+  group('ThotProvider — getPlatformById / getAmmoById', () {
+    test('getPlatformById retourne null si absent', () async {
       final p = await _makeProvider();
-      expect(p.getWeaponById('inexistant'), isNull);
+      expect(p.getPlatformById('inexistant'), isNull);
     });
 
-    test('getWeaponById retourne l arme même si cachée', () async {
+    test('getPlatformById retourne la plateforme même si cachée', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
-      p.deleteWeapon('w1'); // soft delete → isHidden = true
-      // getWeaponById cherche dans _weapons (incluant cachés)
-      expect(p.getWeaponById('w1'), isNotNull);
+      p.addPlatform(_platform(id: 'w1'));
+      p.deletePlatform('w1'); // soft delete → isHidden = true
+      // getPlatformById cherche dans _platforms (incluant cachés)
+      expect(p.getPlatformById('w1'), isNotNull);
     });
 
     test('getAmmoById retourne null si absent', () async {
@@ -190,29 +188,29 @@ void main() {
     });
   });
 
-  group('ThotProvider — recordWeaponPartChange', () {
+  group('ThotProvider — recordPlatformPartChange', () {
     test('ajoute une entrée historique de type piece', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
 
-      p.recordWeaponPartChange(
-        weaponId: 'w1',
+      p.recordPlatformPartChange(
+        platformId: 'w1',
         partName: 'Percuteur',
         date: DateTime(2026, 3, 1),
         comment: 'Remplacement préventif',
       );
 
-      final w = p.getWeaponById('w1')!;
+      final w = p.getPlatformById('w1')!;
       expect(w.history.length, 1);
       expect(w.history.first.type, 'piece');
       expect(w.history.first.label, contains('Percuteur'));
     });
 
-    test('ne fait rien si l arme n existe pas', () async {
+    test("ne fait rien si la plateforme n'existe pas", () async {
       final p = await _makeProvider();
       expect(
-        () => p.recordWeaponPartChange(
-          weaponId: 'inexistant',
+        () => p.recordPlatformPartChange(
+          platformId: 'inexistant',
           partName: 'Test',
           date: DateTime(2026, 1, 1),
         ),

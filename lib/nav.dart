@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'data/thot_provider.dart';
+import 'l10n/app_strings.dart';
 import 'presentation/scaffold_with_navbar.dart';
 import 'package:thot/presentation/home_screen.dart' as home;
 import 'presentation/session_list_screen.dart';
@@ -27,6 +28,8 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/splash',
     navigatorKey: _rootNavigatorKey,
+    errorBuilder: (context, state) =>
+        _UnknownRouteScreen(path: state.uri.toString()),
     redirect: (context, state) {
       final provider = Provider.of<ThotProvider>(context, listen: false);
       final isLockScreen = state.matchedLocation == '/lock';
@@ -210,7 +213,11 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/tools',
-                builder: (context, state) => const ToolsScreen(),
+                builder: (context, state) =>
+                    ToolsScreen(
+                      initialOpenTool: state.uri.queryParameters['open'],
+                      initialOpenToken: state.uri.queryParameters['t'],
+                    ),
               ),
             ],
           ),
@@ -227,4 +234,39 @@ class AppRouter {
       ),
     ],
   );
+}
+
+class _UnknownRouteScreen extends StatelessWidget {
+  const _UnknownRouteScreen({required this.path});
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Page introuvable')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                strings.routeNotFoundMessage,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(path, textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => context.go('/'),
+                child: Text(strings.backToHomeLabel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

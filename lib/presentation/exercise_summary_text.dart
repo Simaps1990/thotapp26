@@ -128,13 +128,13 @@ addBold(s.reloadType == null ? '—' : strings.exerciseReloadTypeNarrative(s.rel
   break;
         case StepType.transition:
           add(strings.exerciseNarrativeTransitionPrefix);
-          if ((s.weaponFrom ?? '').trim().isNotEmpty) {
+          if ((s.platformFrom ?? '').trim().isNotEmpty) {
 add(strings.exerciseNarrativeFrom);
-            addBold(s.weaponFrom!.trim());
+            addBold(s.platformFrom!.trim());
           }
-          if ((s.weaponTo ?? '').trim().isNotEmpty) {
+          if ((s.platformTo ?? '').trim().isNotEmpty) {
 add(strings.exerciseNarrativeTo);
-            addBold(s.weaponTo!.trim());
+            addBold(s.platformTo!.trim());
           }
           add('.');
           break;

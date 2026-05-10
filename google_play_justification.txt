@@ -1,0 +1,88 @@
+Justification des permissions THOT pour Google Play Store
+
+=== PERMISSION RECORD_AUDIO (Microphone) ===
+
+Utilisation: Détection sonore pour le timer
+- QUAND: Uniquement lorsque l'utilisateur active manuellement le mode "Départ + micro" ou "Départ + coups + micro"
+- COMMENT: Mesure instantanée du niveau sonore pour détecter un tir
+- DONNÉES: Aucun enregistrement audio, aucune transmission, aucun stockage de fichiers audio
+- SÉCURITÉ: Traitement 100% local sur l'appareil, suppression immédiate des données brutes
+- CONSENTEMENT: Permission demandée au moment de l'activation, peut être révoquée anytime
+- ALTERNATIVE: L'utilisateur peut utiliser le timer sans détection sonore
+
+=== PERMISSION INTERNET ===
+
+Utilisation: Récupération de la météo locale
+- QUAND: Uniquement lorsque l'utilisateur active manuellement la météo ET a saisi/validé une ville
+- COMMENT: Appel API Open-Meteo.com avec coordonnées de la ville saisie
+- DONNÉES: Uniquement température, humidité, vent, pression pour la ville sélectionnée
+- SÉCURITÉ: Pas de tracking, pas de données personnelles, API météo open-source
+- CONSENTEMENT: Action manuelle explicite (switch météo + validation ville)
+- ALTERNATIVE: L'utilisateur peut désactiver la météo et utiliser manuellement
+
+=== PERMISSION POST_NOTIFICATIONS ===
+
+Utilisation: Rappels de péremption des documents
+- QUAND: Uniquement si l'utilisateur active manuellement le switch "Notifications documents" dans les paramètres
+- DÉCLENCHEMENT: Uniquement si un document a une date de péremption + un rappel défini (7/30/90 jours avant)
+- COMMENT: Notification locale planifiée sur l'appareil, sans envoi de données vers un serveur tiers
+- DONNÉES: Nom du document + date de péremption déjà stockés localement dans l'app
+- CONSENTEMENT: Permission demandée à l'activation, révocable à tout moment depuis iOS/Android
+- ALTERNATIVE: L'utilisateur peut laisser le switch désactivé et ne recevoir aucune notification
+
+=== SERVICE TIERS : REVENUECAT ===
+
+Utilisation: Gestion des abonnements Premium (achat, restauration, validation)
+- QUAND: Uniquement lorsque l'utilisateur accède aux fonctionnalités Premium ou restaure un achat
+- DONNÉES: Identifiants de transaction et abonnement nécessaires à la gestion
+- SÉCURITÉ: Communications sécurisées; RevenueCat certifié ISO 27001
+- CONFIDENTIALITÉ: RevenueCat ne reçoit pas les contenus personnels (sessions, documents, images)
+- CONSENTEMENT: Action explicite de l'utilisateur pour acheter/restaurer
+- ALTERNATIVE: L'utilisateur peut utiliser l'application sans abonnement
+
+=== PERMISSION CAMÉRA (iOS) ===
+
+Utilisation: Ajout de photos pour setups, consommables et cibles via file_picker
+- QUAND: Uniquement lorsque l'utilisateur choisit "Prendre une photo" dans le sélecteur de fichiers
+- COMMENT: file_picker déclenche le sélecteur natif iOS; si l'utilisateur choisit l'appareil photo, iOS demande la permission caméra
+- DONNÉES: Seule l'image capturée est stockée localement dans l'application; aucune capture vidéo ni arrière-plan
+- CONSENTEMENT: Demande système iOS uniquement au moment où l'utilisateur choisit explicitement "Prendre une photo"
+- ALTERNATIVE: L'utilisateur peut choisir "Bibliothèque photo" ou annuler et ne pas utiliser la caméra
+
+=== POINTS CLÉS DE CONFORMITÉ ===
+
+1. PAS de localisation automatique:
+   - Aucune permission ACCESS_FINE_LOCATION/ACCESS_COARSE_LOCATION
+   - L'utilisateur saisit manuellement le nom de la ville
+   - Validation manuelle avant récupération météo
+
+2. PAS de background tracking:
+   - Aucun appel en arrière-plan
+   - Aucune collecte automatique
+   - Usage 100% explicite et manuel
+
+3. APPROCHE LOCAL-FIRST:
+   - Toutes les données stockées localement et chiffrées
+   - Pas de compte utilisateur obligatoire
+   - Pas d'analytics ou tracking
+
+4. TRANSPARENCE:
+   - Écran légal détaillé dans l'app
+   - Messages d'erreur clairs sur les permissions
+   - Instructions de retrait de consentement
+
+=== ÉLÉMENTS À FOURNIR DANS PLAY CONSOLE ===
+
+1. Champ "Privacy Policy": https://thotbook.fr/privacy
+2. Champ "App description": Utiliser la description fournie
+3. Section "Permissions": Expliquer comme ci-dessus
+4. Section "Data safety": Cocher "Local device storage" uniquement
+
+=== CONCLUSION ===
+
+L'application THOT est conforme aux politiques Google Play:
+- Permissions justifiées et minimales
+- Usage explicite et consenti
+- Pas de collecte abusive
+- Transparence totale
+- Approche privacy-first

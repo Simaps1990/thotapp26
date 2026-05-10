@@ -5,8 +5,8 @@ import 'package:thot/data/thot_provider.dart';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-Weapon _weapon({String id = 'w1', int totalRounds = 0, int roundsAtLastCleaning = 0}) =>
-    Weapon(
+Platform _platform({String id = 'w1', int totalRounds = 0, int roundsAtLastCleaning = 0}) =>
+    Platform(
       id: id,
       name: 'Glock 17',
       model: 'Gen 5',
@@ -38,14 +38,14 @@ Accessory _accessory({String id = 'acc1', int totalRounds = 0}) => Accessory(
 
 Exercise _exercise({
   String id = 'e1',
-  String weaponId = 'w1',
+  String platformId = 'w1',
   String ammoId = 'a1',
   List<String> equipmentIds = const [],
   int shotsFired = 50,
 }) =>
     Exercise(
       id: id,
-      weaponId: weaponId,
+      platformId: platformId,
       ammoId: ammoId,
       equipmentIds: equipmentIds,
       shotsFired: shotsFired,
@@ -58,7 +58,7 @@ Session _session({
 }) =>
     Session(
       id: id,
-      name: 'Séance $id',
+      name: 'Session $id',
       date: DateTime(2026, 1, 15),
       location: 'Stand',
       exercises: exercises ?? [_exercise()],
@@ -75,11 +75,11 @@ Future<ThotProvider> _makeProvider() async {
 
 void main() {
   group('ThotProvider — limites plan gratuit', () {
-    test('canAddWeapon retourne false quand limite atteinte (free)', () async {
+    test('canAddPlatform retourne false quand limite atteinte (free)', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
-      // 1 arme = limite free atteinte
-      expect(p.canAddWeapon(), false);
+      p.addPlatform(_platform(id: 'w1'));
+      // 1 plateforme = limite free atteinte
+      expect(p.canAddPlatform(), false);
     });
 
     test('canAddAmmo retourne false quand limite atteinte (free)', () async {
@@ -94,7 +94,7 @@ void main() {
       expect(p.canAddAccessory(), false);
     });
 
-    test('canAddSession retourne false après 5 séances (free)', () async {
+    test('canAddSession retourne false après 5 sessions (free)', () async {
       final p = await _makeProvider();
       for (var i = 0; i < 5; i++) {
         p.addSession(_session(id: 's$i', exercises: []));
@@ -102,36 +102,36 @@ void main() {
       expect(p.canAddSession(), false);
     });
 
-    test('addWeapon est silencieux quand limite atteinte', () async {
+    test('addPlatform est silencieux quand limite atteinte', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
-      p.addWeapon(_weapon(id: 'w2')); // doit être ignoré
-      expect(p.weapons.length, 1);
+      p.addPlatform(_platform(id: 'w1'));
+      p.addPlatform(_platform(id: 'w2')); // doit être ignoré
+      expect(p.platforms.length, 1);
     });
   });
 
   group('ThotProvider — addSession + impact matériel', () {
-    test('addSession incrémente totalRounds de l arme', () async {
+    test('addSession incrémente totalRounds de la plateforme', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1', totalRounds: 100));
+      p.addPlatform(_platform(id: 'w1', totalRounds: 100));
       p.addAmmo(_ammo(id: 'a1', quantity: 500));
       p.addSession(_session(exercises: [_exercise(shotsFired: 50)]));
 
-      expect(p.weapons.first.totalRounds, 150);
+      expect(p.platforms.first.totalRounds, 150);
     });
 
-    test('addSession décrémente le stock de munitions', () async {
+    test('addSession décrémente le stock de consommables', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1', quantity: 200));
       p.addSession(_session(exercises: [_exercise(shotsFired: 80)]));
 
       expect(p.ammos.first.quantity, 120);
     });
 
-    test('stock munitions ne descend pas en négatif', () async {
+    test('stock consommables ne descend pas en négatif', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1', quantity: 10));
       p.addSession(_session(exercises: [_exercise(shotsFired: 999)]));
 
@@ -140,7 +140,7 @@ void main() {
 
     test('addSession incrémente totalRounds de l accessoire', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1'));
       p.addAccessory(_accessory(id: 'acc1', totalRounds: 0));
       p.addSession(_session(exercises: [
@@ -152,33 +152,33 @@ void main() {
       expect(acc.totalRounds, 30);
     });
 
-    test('addSession ajoute une entrée dans l historique de l arme', () async {
+    test('addSession ajoute une entrée dans l historique de la plateforme', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1'));
       p.addSession(_session(id: 's1', exercises: [_exercise()]));
 
-      // L'arme doit avoir 1 entrée d'historique de type 'tir'
-      final weapon = p.getWeaponById('w1')!;
-      expect(weapon.history.any((h) => h.type == 'tir'), true);
+      // La plateforme doit avoir 1 entrée d'historique de type 'tir'
+      final platform = p.getPlatformById('w1')!;
+      expect(platform.history.any((h) => h.type == 'tir'), true);
     });
   });
 
   group('ThotProvider — deleteSession + inversion matériel', () {
-    test('deleteSession restaure les rounds de l arme', () async {
+    test('deleteSession restaure les rounds de la plateforme', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1', totalRounds: 0));
+      p.addPlatform(_platform(id: 'w1', totalRounds: 0));
       p.addAmmo(_ammo(id: 'a1', quantity: 500));
       p.addSession(_session(id: 's1', exercises: [_exercise(shotsFired: 50)]));
-      expect(p.weapons.first.totalRounds, 50);
+      expect(p.platforms.first.totalRounds, 50);
 
       p.deleteSession('s1');
-      expect(p.weapons.first.totalRounds, 0);
+      expect(p.platforms.first.totalRounds, 0);
     });
 
-    test('deleteSession restaure le stock de munitions', () async {
+    test('deleteSession restaure le stock de consommables', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1', quantity: 500));
       p.addSession(_session(id: 's1', exercises: [_exercise(shotsFired: 100)]));
       expect(p.ammos.first.quantity, 400);
@@ -189,15 +189,15 @@ void main() {
 
     test('deleteSession supprime les entrées d historique liées', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1'));
       p.addSession(_session(id: 's1', exercises: [_exercise()]));
 
-      final beforeDelete = p.getWeaponById('w1')!.history.length;
+      final beforeDelete = p.getPlatformById('w1')!.history.length;
       expect(beforeDelete, 1);
 
       p.deleteSession('s1');
-      final afterDelete = p.getWeaponById('w1')!.history.length;
+      final afterDelete = p.getPlatformById('w1')!.history.length;
       expect(afterDelete, 0);
     });
   });
@@ -205,12 +205,12 @@ void main() {
   group('ThotProvider — updateSession', () {
     test('updateSession recalcule correctement les impacts', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1', quantity: 500));
 
       final original = _session(id: 's1', exercises: [_exercise(shotsFired: 50)]);
       p.addSession(original);
-      expect(p.weapons.first.totalRounds, 50);
+      expect(p.platforms.first.totalRounds, 50);
       expect(p.ammos.first.quantity, 450);
 
       // Modifie la session : 80 coups au lieu de 50
@@ -223,54 +223,54 @@ void main() {
       );
       p.updateSession(updated);
 
-      expect(p.weapons.first.totalRounds, 80);
+      expect(p.platforms.first.totalRounds, 80);
       expect(p.ammos.first.quantity, 420);
     });
   });
 
-  group('ThotProvider — recordWeaponCleaning / recordWeaponRevision', () {
-    test('recordWeaponCleaning remet roundsAtLastCleaning à totalRounds', () async {
+  group('ThotProvider — recordPlatformCleaning / recordPlatformRevision', () {
+    test('recordPlatformCleaning remet roundsAtLastCleaning à totalRounds', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1', totalRounds: 300, roundsAtLastCleaning: 0));
+      p.addPlatform(_platform(id: 'w1', totalRounds: 300, roundsAtLastCleaning: 0));
       p.addAmmo(_ammo());
 
-      p.recordWeaponCleaning('w1');
+      p.recordPlatformCleaning('w1');
 
-      final w = p.getWeaponById('w1')!;
+      final w = p.getPlatformById('w1')!;
       expect(w.roundsAtLastCleaning, 300);
       expect(w.cleaningProgress, 0.0);
     });
 
-    test('recordWeaponCleaning ne touche pas roundsAtLastRevision', () async {
+    test('recordPlatformCleaning ne touche pas roundsAtLastRevision', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1', totalRounds: 300)..copyWith(roundsAtLastRevision: 100));
+      p.addPlatform(_platform(id: 'w1', totalRounds: 300)..copyWith(roundsAtLastRevision: 100));
       // On vérifie que la révision n'est pas perturbée
-      final before = p.getWeaponById('w1')!.roundsAtLastRevision;
-      p.recordWeaponCleaning('w1');
-      final after = p.getWeaponById('w1')!.roundsAtLastRevision;
+      final before = p.getPlatformById('w1')!.roundsAtLastRevision;
+      p.recordPlatformCleaning('w1');
+      final after = p.getPlatformById('w1')!.roundsAtLastRevision;
       expect(after, before);
     });
 
-    test('recordWeaponRevision ajoute une entrée historique de type revision', () async {
+    test('recordPlatformRevision ajoute une entrée historique de type revision', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
 
-      p.recordWeaponRevision('w1');
+      p.recordPlatformRevision('w1');
 
-      final w = p.getWeaponById('w1')!;
+      final w = p.getPlatformById('w1')!;
       expect(w.history.any((h) => h.type == 'revision'), true);
     });
   });
 
   group('ThotProvider — totalRoundsFired', () {
-    test('retourne 0 sans séances', () async {
+    test('retourne 0 sans sessions', () async {
       final p = await _makeProvider();
       expect(p.totalRoundsFired, 0);
     });
 
-    test('somme tous les coups de toutes les séances', () async {
+    test('somme tous les coups de toutes les sessions', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
+      p.addPlatform(_platform(id: 'w1'));
       p.addAmmo(_ammo(id: 'a1', quantity: 9999));
       p.addSession(_session(id: 's1', exercises: [_exercise(shotsFired: 100)]));
       p.addSession(_session(id: 's2', exercises: [_exercise(id: 'e2', shotsFired: 200)]));
@@ -278,17 +278,17 @@ void main() {
     });
   });
 
-  group('ThotProvider — deleteWeapon (soft delete)', () {
-    test('deleteWeapon cache l arme sans la supprimer des données', () async {
+  group('ThotProvider — deletePlatform (soft delete)', () {
+    test('deletePlatform cache la plateforme sans la supprimer des données', () async {
       final p = await _makeProvider();
-      p.addWeapon(_weapon(id: 'w1'));
-      expect(p.weapons.length, 1);
+      p.addPlatform(_platform(id: 'w1'));
+      expect(p.platforms.length, 1);
 
-      p.deleteWeapon('w1');
-      // weapons (getter) filtre les isHidden
-      expect(p.weapons.length, 0);
-      // mais l'arme existe toujours en interne (pour la cohérence historique)
-      expect(p.getWeaponById('w1'), isNotNull);
+      p.deletePlatform('w1');
+      // platforms (getter) filtre les isHidden
+      expect(p.platforms.length, 0);
+      // mais la plateforme existe toujours en interne (pour la cohérence historique)
+      expect(p.getPlatformById('w1'), isNotNull);
     });
   });
 }

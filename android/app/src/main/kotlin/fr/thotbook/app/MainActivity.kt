@@ -7,12 +7,13 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-  private val channelName = "thot/sound"
+  private val soundChannelName = "thot/sound"
+  private val configChannelName = "thot/config"
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
 
-    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, soundChannelName)
         .setMethodCallHandler { call, result ->
           when (call.method) {
             "beep" -> {
@@ -25,7 +26,17 @@ class MainActivity : FlutterFragmentActivity() {
                 result.error("BEEP_FAILED", e.message, null)
               }
             }
+            else -> result.notImplemented()
+          }
+        }
 
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, configChannelName)
+        .setMethodCallHandler { call, result ->
+          when (call.method) {
+            "getRevenueCatApiKey" -> {
+              val key = BuildConfig.REVENUECAT_API_KEY
+              result.success(key)
+            }
             else -> result.notImplemented()
           }
         }

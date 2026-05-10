@@ -1,0 +1,37 @@
+THOT – Application de suivi et d’entraînement
+
+Description complète :
+THOT est une application de suivi conçue pour organiser vos sessions, gérer votre équipement et analyser vos performances.
+L’application propose également une suite d’outils dédiés à l’entraînement, à l’analyse et à la progression.
+
+Fonctionnalités principales :
+• Gestion de l’équipement (matériel, consommables, accessoires)
+• Suivi détaillé des sessions
+• Statistiques et progression
+• Timer avec détection sonore optionnelle
+• Météo basée sur une ville saisie manuellement
+• Export PDF des sessions
+• Interface claire et efficace
+
+Outils intégrés :
+• Outils de calcul pour l’entraînement et l’analyse
+• Exercices visuels (couleurs, formes, stimuli)
+• Outils de mémorisation et de concentration
+• Enregistrement et rappel de réglages personnalisés
+
+Permissions utilisées :
+• Microphone
+Utilisé uniquement pour une fonctionnalité de détection sonore du timer, activée manuellement par l’utilisateur.
+Aucun enregistrement audio n’est stocké ou transmis.
+• Internet
+
+Utilisé uniquement pour :
+récupérer la météo après saisie manuelle d’une ville
+vérifier le statut des abonnements via des services sécurisés (RevenueCat / Google Play)
+Aucune donnée personnelle sensible n’est collectée ou utilisée à des fins de tracking.
+
+Confidentialité :
+• Données stockées localement sur l’appareil
+• Aucune création de compte obligatoire
+• Aucune collecte de données personnelles à des fins publicitaires
+• Contrôle total par l’utilisateur

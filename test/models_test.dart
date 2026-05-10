@@ -36,17 +36,17 @@ void main() {
     });
   });
 
-  group('WeaponHistoryEntry', () {
+  group('PlatformHistoryEntry', () {
     test('toJson/fromJson roundtrip', () {
-      final original = WeaponHistoryEntry(
+      final original = PlatformHistoryEntry(
         id: 'h1',
         date: DateTime.parse('2026-01-02T03:04:05.000Z'),
         type: 'tir',
-        label: 'Séance',
+        label: 'Session',
         details: '10 coups',
       );
 
-      final decoded = WeaponHistoryEntry.fromJson(original.toJson());
+      final decoded = PlatformHistoryEntry.fromJson(original.toJson());
       expect(decoded.id, original.id);
       expect(decoded.date.toIso8601String(), original.date.toIso8601String());
       expect(decoded.type, original.type);

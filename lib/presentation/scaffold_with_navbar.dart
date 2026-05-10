@@ -1,4 +1,6 @@
-﻿import 'dart:ui' show ImageFilter;
+import 'dart:io' show Platform;
+
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -22,6 +24,19 @@ class ScaffoldWithNavBar extends StatelessWidget {
     );
   }
 
+  Widget _withPlatformIconOffset(Widget icon) {
+    if (Platform.isIOS) {
+      return Transform.translate(
+        offset: const Offset(0, 12),
+        child: icon,
+      );
+    }
+    return Transform.translate(
+      offset: const Offset(0, 2),
+      child: icon,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -29,6 +44,10 @@ class ScaffoldWithNavBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final strings = AppStrings.of(context);
     final currentIndex = navigationShell.currentIndex;
+    final navThemeHeight = Platform.isIOS ? 45.0 : 70.0;
+    final navHeight = Platform.isIOS ? 40.0 : 64.0;
+    final navTopPadding = Platform.isIOS ? 0.0 : 0.0;
+    final navBottomPadding = Platform.isIOS ? 0.0 : 4.0;
 
     return Scaffold(
       body: navigationShell,
@@ -42,7 +61,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           shadowColor: Colors.transparent,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          height: 74,
+          height: navThemeHeight,
           labelPadding: const EdgeInsets.only(top: 1),
           iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
             (states) {
@@ -114,50 +133,47 @@ class ScaffoldWithNavBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      0,
-                      AppSpacing.lg,
-                      6,
-                    ),
-                    child: NavigationBar(
-                      backgroundColor: Colors.transparent,
-                      surfaceTintColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      selectedIndex: currentIndex,
-                      onDestinationSelected: _goBranch,
-                      height: 68,
-                      destinations: [
-                        NavigationDestination(
-                          icon: const Icon(Icons.home_outlined),
-                          selectedIcon: const Icon(Icons.home_rounded),
-                          label: strings.navHomeLabel,
-                        ),
-                        NavigationDestination(
-                          icon: const _NavSvgIcon('assets/images/seance.svg'),
-                          selectedIcon: const _NavSvgIcon('assets/images/seance.svg'),
-                          label: strings.navSessionsLabel,
-                        ),
-                        NavigationDestination(
-                          icon: const _NavSvgIcon('assets/images/material.svg'),
-                          selectedIcon: const _NavSvgIcon('assets/images/material.svg'),
-                          label: strings.navInventoryLabel,
-                        ),
-                        NavigationDestination(
-                          icon: const Icon(Icons.handyman_outlined),
-                          selectedIcon: const Icon(Icons.handyman_rounded),
-                          label: strings.navToolsLabel,
-                        ),
-                        NavigationDestination(
-                          icon: const Icon(Icons.settings_outlined),
-                          selectedIcon: const Icon(Icons.settings_rounded),
-                          label: strings.navSettingsLabel,
-                        ),
-                      ],
-                    ),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    navTopPadding,
+                    AppSpacing.lg,
+                    navBottomPadding,
+                  ),
+                  child: NavigationBar(
+                    backgroundColor: Colors.transparent,
+                    surfaceTintColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    selectedIndex: currentIndex,
+                    onDestinationSelected: _goBranch,
+                    height: navHeight,
+                    destinations: [
+                      NavigationDestination(
+                        icon: _withPlatformIconOffset(const Icon(Icons.home_outlined)),
+                        selectedIcon: _withPlatformIconOffset(const Icon(Icons.home_rounded)),
+                        label: strings.navHomeLabel,
+                      ),
+                      NavigationDestination(
+                        icon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/seance.svg')),
+                        selectedIcon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/seance.svg')),
+                        label: strings.navSessionsLabel,
+                      ),
+                      NavigationDestination(
+                        icon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/material.svg')),
+                        selectedIcon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/material.svg')),
+                        label: strings.navInventoryLabel,
+                      ),
+                      NavigationDestination(
+                        icon: _withPlatformIconOffset(const Icon(Icons.handyman_outlined)),
+                        selectedIcon: _withPlatformIconOffset(const Icon(Icons.handyman_rounded)),
+                        label: strings.navToolsLabel,
+                      ),
+                      NavigationDestination(
+                        icon: _withPlatformIconOffset(const Icon(Icons.settings_outlined)),
+                        selectedIcon: _withPlatformIconOffset(const Icon(Icons.settings_rounded)),
+                        label: strings.navSettingsLabel,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -176,11 +192,12 @@ class _NavSvgIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = IconTheme.of(context).color;
+    final theme = IconTheme.of(context);
+    final color = theme.color;
+    final size = theme.size ?? 28;
     return SvgPicture.asset(
       assetPath,
-      width: 24,
-      height: 24,
+      height: size,
       colorFilter: color == null
           ? null
           : ColorFilter.mode(color, BlendMode.srcIn),

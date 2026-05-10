@@ -1,8 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
-
-import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import 'package:thot/data/thot_provider.dart';
@@ -20,7 +21,7 @@ void showStatisticsModal(BuildContext context) {
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (context) {
-      final height = MediaQuery.of(context).size.height * 0.8;
+      final height = MediaQuery.of(context).size.height * 0.82;
       return AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         height: height,
@@ -30,13 +31,12 @@ void showStatisticsModal(BuildContext context) {
         ),
         child: Column(
           children: [
-            // Handle bar
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Container(
-              height: 4,
               width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: colors.outline,
+                color: LightColors.iconInactive.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -52,59 +52,129 @@ void showStatisticsModal(BuildContext context) {
   );
 }
 
-enum _StatsChartRange { week, month, year }
-
-extension on _StatsChartRange {
-  String shortLabel(AppStrings strings) {
-    switch (this) {
-      case _StatsChartRange.week:
-        return strings.precisionFilterWeekShort;
-      case _StatsChartRange.month:
-        return strings.precisionFilterMonthShort;
-      case _StatsChartRange.year:
-        return strings.precisionFilterYearShort;
-    }
-  }
-
-  String longLabel(AppStrings strings) {
-    switch (this) {
-      case _StatsChartRange.week:
-        return strings.precisionFilterWeekLong;
-      case _StatsChartRange.month:
-        return strings.precisionFilterMonthLong;
-      case _StatsChartRange.year:
-        return strings.precisionFilterYearLong;
-    }
-  }
-}
-
 class StatisticsScreen extends StatefulWidget {
   final Color? backgroundColor;
   final bool useSafeArea;
 
-  const StatisticsScreen({Key? key, this.backgroundColor, this.useSafeArea = true})
-      : super(key: key);
+  const StatisticsScreen({
+    super.key,
+    this.backgroundColor,
+    this.useSafeArea = true,
+  });
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  _StatsChartRange _shotsRange = _StatsChartRange.month;
-  _StatsChartRange _sessionsRange = _StatsChartRange.month;
-
-  BoxDecoration _statsCardDecoration(BuildContext context, {double radius = AppRadius.lg}) {
+  BoxDecoration _statsCardDecoration(
+    BuildContext context, {
+    double radius = 16,
+    Color? borderColor,
+  }) {
     final colors = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return BoxDecoration(
       color: colors.surface,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: isDark ? colors.outline : LightColors.surfaceHighlight,
-        width: 1.35,
+        color: borderColor ?? (isDark ? colors.outline : LightColors.surfaceHighlight),
+        width: 1.2,
       ),
       boxShadow: AppShadows.cardPremium,
     );
+  }
+
+  double? _computeRecentPrecisionDelta(List<dynamic> sessionsWithPrecision) {
+    if (sessionsWithPrecision.length < 2) return null;
+
+    final sorted = [...sessionsWithPrecision]
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    final recentCount = math.min(3, sorted.length);
+    final recent = sorted.sublist(sorted.length - recentCount);
+
+    final previousEnd = sorted.length - recentCount;
+    if (previousEnd <= 0) return null;
+
+    final previousStart = math.max(0, previousEnd - recentCount);
+    final previous = sorted.sublist(previousStart, previousEnd);
+    if (previous.isEmpty) return null;
+
+    final recentAvg =
+        recent.map<double>((s) => s.averagePrecision as double).reduce((a, b) => a + b) /
+            recent.length;
+
+    final previousAvg =
+        previous.map<double>((s) => s.averagePrecision as double).reduce((a, b) => a + b) /
+            previous.length;
+
+    return recentAvg - previousAvg;
+  }
+
+  int? _computeRegularityScore(List<dynamic> sessionsWithPrecision) {
+    if (sessionsWithPrecision.length < 2) return null;
+
+    final values =
+        sessionsWithPrecision.map<double>((s) => s.averagePrecision as double).toList();
+
+    final mean = values.reduce((a, b) => a + b) / values.length;
+    final variance =
+        values.map((v) => math.pow(v - mean, 2)).reduce((a, b) => a + b) / values.length;
+    final stdDev = math.sqrt(variance);
+
+    final score = (100 - (stdDev * 2.4)).clamp(0, 100).round();
+    return score;
+  }
+
+  List<_WeeklyBucket> _buildWeeklyBuckets(List<dynamic> sessions) {
+    final now = DateTime.now();
+    final currentWeekStart = _startOfWeek(now);
+
+    final buckets = <_WeeklyBucket>[];
+    for (int i = 5; i >= 0; i--) {
+      final start = currentWeekStart.subtract(Duration(days: 7 * i));
+      final end = start.add(const Duration(days: 7));
+
+      final weekSessions = sessions.where((s) {
+        final date = s.date as DateTime;
+        return !date.isBefore(start) && date.isBefore(end);
+      }).toList();
+
+      final totalShots = weekSessions.fold<int>(
+        0,
+        (sum, s) => sum + ((s.totalRounds as num?)?.toInt() ?? 0),
+      );
+
+      buckets.add(
+        _WeeklyBucket(
+          label: '${start.day}/${start.month}',
+          sessions: weekSessions.length,
+          shots: totalShots,
+        ),
+      );
+    }
+
+    return buckets;
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    return day.subtract(Duration(days: day.weekday - 1));
+  }
+
+  String _trendLabel(AppStrings strings, double? delta) {
+    if (delta == null) return strings.statisticsTrendStableLabel;
+    if (delta.abs() < 0.5) return strings.statisticsTrendStableLabel;
+    final sign = delta > 0 ? '+' : '';
+    return strings.statisticsTrendPointsLabel('$sign${delta.toStringAsFixed(0)}');
+  }
+
+  Color _trendTone(BuildContext context, double? delta) {
+    final colors = Theme.of(context).colorScheme;
+    if (delta == null || delta.abs() < 0.5) return colors.secondary;
+    return delta > 0 ? colors.primary : colors.tertiary;
   }
 
   @override
@@ -117,11 +187,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final sessions = provider.sessions;
     final sessionsWithPrecision =
-        sessions.where((s) => s.hasCountedPrecision).toList();
+        sessions.where((s) => s.hasCountedPrecision).toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
 
     final totalShots = provider.totalRoundsFired;
     final totalSessions = provider.totalSessions;
-    final totalWeapons = provider.weapons.length;
+    final totalPlatforms = provider.platforms.length;
     final totalAmmos = provider.ammos.length;
     final totalAccessories = provider.accessories.length;
 
@@ -134,41 +205,51 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final bestSession = sessionsWithPrecision.isEmpty
         ? null
-        : (sessionsWithPrecision.toList()
+        : ([...sessionsWithPrecision]
               ..sort((a, b) => b.averagePrecision.compareTo(a.averagePrecision)))
             .first;
 
     final longestSession = sessions.isEmpty
         ? null
-        : (sessions.toList()
-              ..sort((a, b) => b.totalRounds.compareTo(a.totalRounds)))
+        : ([...sessions]..sort((a, b) => b.totalRounds.compareTo(a.totalRounds))).first;
+
+    final lastSession = sessions.isEmpty
+        ? null
+        : ([...sessions]..sort((a, b) => b.date.compareTo(a.date))).first;
+
+    final mostUsedPlatform = provider.platforms.isEmpty
+        ? null
+        : ([...provider.platforms]..sort((a, b) => b.totalRounds.compareTo(a.totalRounds)))
             .first;
 
-    final mostUsedWeapon = provider.weapons.isEmpty
-        ? null
-        : (provider.weapons.toList()
-              ..sort((a, b) => b.totalRounds.compareTo(a.totalRounds)))
-            .first;
+    final topPlatforms = [...provider.platforms]
+      ..sort((a, b) => b.totalRounds.compareTo(a.totalRounds));
+    final topPlatformsLimited = topPlatforms.take(4).toList();
 
     final lowestAmmo = provider.ammos.isEmpty
         ? null
-        : (provider.ammos.toList()
-              ..sort((a, b) => a.quantity.compareTo(b.quantity)))
+        : ([...provider.ammos]
+              ..sort((a, b) {
+                final aRatio = a.lowStockThreshold <= 0
+                    ? double.infinity
+                    : a.quantity / a.lowStockThreshold;
+                final bRatio = b.lowStockThreshold <= 0
+                    ? double.infinity
+                    : b.quantity / b.lowStockThreshold;
+                return aRatio.compareTo(bRatio);
+              }))
             .first;
 
     final perfectSessions = sessions
         .where((s) => s.hasCountedPrecision && s.averagePrecision >= 100)
         .length;
 
-    final avgShotsPerSession =
-        totalSessions == 0 ? 0 : (totalShots / totalSessions);
-
-    final totalMaintenances = provider.weapons
+    final totalMaintenances = provider.platforms
         .expand((w) => w.history)
         .where((h) => h.type == 'entretien')
         .length;
 
-    final totalRevisions = provider.weapons
+    final totalRevisions = provider.platforms
         .expand((w) => w.history)
         .where((h) => h.type == 'revision')
         .length;
@@ -180,34 +261,30 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final sessionsThisWeek = sessions.where((s) {
       final now = DateTime.now();
-      final startOfWeek = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).subtract(Duration(days: now.weekday - 1));
+      final startOfWeek = _startOfWeek(now);
       return !s.date.isBefore(startOfWeek);
     }).length;
 
-    final averageExercisesPerSession = totalSessions == 0
-        ? 0.0
-        : sessions.fold<int>(0, (sum, s) => sum + s.exercises.length) /
-            totalSessions;
-
-    final weaponNeedingRevision = provider.weapons.isEmpty
+    final platformNeedingRevision = provider.platforms.isEmpty
         ? null
-        : (provider.weapons.toList()
-              ..sort(
-                (a, b) => b.revisionProgress.compareTo(a.revisionProgress),
-              ))
+        : ([...provider.platforms]
+              ..sort((a, b) => b.revisionProgress.compareTo(a.revisionProgress)))
             .first;
 
-    final weaponNeedingCleaning = provider.weapons.isEmpty
+    final platformNeedingCleaning = provider.platforms.isEmpty
         ? null
-        : (provider.weapons.toList()
-              ..sort(
-                (a, b) => b.cleaningProgress.compareTo(a.cleaningProgress),
-              ))
+        : ([...provider.platforms]
+              ..sort((a, b) => b.cleaningProgress.compareTo(a.cleaningProgress)))
             .first;
+
+    final platformTypeCounts = <String, int>{};
+    for (final platform in provider.platforms) {
+      platformTypeCounts[platform.type] = (platformTypeCounts[platform.type] ?? 0) + 1;
+    }
+
+    final precisionDelta = _computeRecentPrecisionDelta(sessionsWithPrecision);
+    final regularityScore = _computeRegularityScore(sessionsWithPrecision);
+    final weeklyBuckets = _buildWeeklyBuckets(sessions);
 
     final content = Column(
       children: [
@@ -250,68 +327,120 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _SectionTitle(title: strings.statisticsGlobalSummaryTitle),
-
                 const Gap(AppSpacing.md),
                 _StatsGrid(
+                  childAspectRatio: 1.55,
                   children: [
-                    _StatTile(
+                    _KpiCard(
                       title: strings.statisticsSessionsLabel,
                       value: '$totalSessions',
+                      footnote: '${strings.statisticsThisMonthLabel}: $sessionsThisMonth',
+                      icon: Icons.timeline_rounded,
+                      tone: colors.primary,
                     ),
-                    _StatTile(
+                    _KpiCard(
                       title: strings.statisticsShotsFiredLabel,
                       value: '$totalShots',
+                      footnote: '${strings.statisticsThisWeekLabel}: $sessionsThisWeek',
+                      icon: Icons.gps_fixed_rounded,
+                      tone: colors.primary,
                     ),
-                    _StatTile(
-                      title: strings.statisticsWeaponsLabel,
-                      value: '$totalWeapons',
+                    _KpiCard(
+                      title: strings.statisticsAveragePrecisionLabel,
+                      value: avgPrecision == null
+                          ? '—'
+                          : '${avgPrecision.toStringAsFixed(0)}%',
+                      footnote: _trendLabel(strings, precisionDelta),
+                      icon: Icons.track_changes_rounded,
+                      tone: _trendTone(context, precisionDelta),
                     ),
-                    _StatTile(
-                      title: strings.statisticsAmmosLabel,
-                      value: '$totalAmmos',
-                    ),
-                    _StatTile(
-                      title: strings.statisticsAccessoriesLabel,
-                      value: '$totalAccessories',
-                    ),
-                    _StatTile(
-                      title: strings.statisticsShotsPerSessionLabel,
-                      value: avgShotsPerSession == 0
-                          ? '0'
-                          : avgShotsPerSession.toStringAsFixed(0),
+                    _KpiCard(
+                      title: strings.statisticsRegularityLabel,
+                      value: regularityScore == null ? '—' : '$regularityScore',
+                      suffix: regularityScore == null ? null : '/100',
+                      footnote: strings.statisticsSessionsStabilityLabel,
+                      icon: Icons.insights_rounded,
+                      tone: colors.secondary,
                     ),
                   ],
+                ),
+                const Gap(AppSpacing.lg),
+                _SectionTitle(title: strings.statisticsMyEquipmentTitle),
+                const Gap(AppSpacing.md),
+                SizedBox(
+                  height: 112,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _EquipmentStatCard(
+                          label: strings.statisticsPlatformsLabel,
+                          value: '$totalPlatforms',
+                          svgAsset: 'assets/images/tube.svg',
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      Expanded(
+                        child: _EquipmentStatCard(
+                          label: strings.statisticsAmmosLabel,
+                          value: '$totalAmmos',
+                          svgAsset: 'assets/images/pointe.svg',
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      Expanded(
+                        child: _EquipmentStatCard(
+                          label: strings.statisticsAccessoriesLabel,
+                          value: '$totalAccessories',
+                          svgAsset: 'assets/images/material.svg',
+                          iconSize: 84,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const Gap(AppSpacing.lg),
 
                 _SectionTitle(title: strings.statisticsPrecisionTitle),
                 const Gap(AppSpacing.md),
+                _AnalyticsLineCard(
+                  title: strings.statisticsAveragePrecisionLabel,
+                  value: avgPrecision == null ? '—' : '${avgPrecision.toStringAsFixed(0)}%',
+                  badge: _trendLabel(strings, precisionDelta),
+                  badgeTone: _trendTone(context, precisionDelta),
+                  tone: colors.tertiary,
+                  points: sessionsWithPrecision
+                      .map(
+                        (s) => _LinePoint(
+                          label: '${s.date.day}/${s.date.month}',
+                          value: s.averagePrecision.toDouble(),
+                        ),
+                      )
+                      .toList(),
+                  footerLeft: '${sessionsWithPrecision.length} ${strings.statisticsSessionsWithPrecisionLabel}',
+                  footerRight:
+                      regularityScore == null ? null : strings.statisticsRegularityScoreValue(regularityScore),
+                  emptyLabel: strings.statisticsPrecisionChartEmptyLabel,
+                ),
+                const Gap(AppSpacing.md),
                 _StatsGrid(
+                  childAspectRatio: 1.55,
                   children: [
-                    _StatTile(
-                      title: strings.statisticsAveragePrecisionLabel,
-                      value: avgPrecision == null
-                          ? '—'
-                          : '${avgPrecision.toStringAsFixed(0)}%',
-                    ),
-                    _StatTile(
+                    _KpiCard(
                       title: strings.statisticsPerfectSessionsLabel,
                       value: '$perfectSessions',
+                      footnote: totalSessions == 0 ? '0%' : '${((perfectSessions / totalSessions) * 100).round()}%',
+                      icon: Icons.workspace_premium_rounded,
+                      tone: colors.primary,
                     ),
-                    _StatTile(
+                    _KpiCard(
                       title: strings.statisticsBestSessionLabel,
                       value: bestSession == null
                           ? '—'
-                          : '${bestSession.averagePrecision.toStringAsFixed(0)}%',
-                    ),
-                    _StatTile(
-                      title: strings.statisticsBestSessionDateLabel,
-                      value: bestSession == null
-                          ? '—'
-                          : AppDateFormats.formatDateShort(
-                              context,
-                              bestSession.date,
-                            ),
+                          : bestSession.averagePrecision.toStringAsFixed(0),
+                      suffix: bestSession == null ? null : '%',
+                      footnote: bestSession?.name,
+                      icon: Icons.emoji_events_rounded,
+                      tone: colors.secondary,
                     ),
                   ],
                 ),
@@ -319,25 +448,29 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                 _SectionTitle(title: strings.statisticsRhythmTitle),
                 const Gap(AppSpacing.md),
+                _ActivityBarsCard(
+                  title: strings.statisticsRecentPaceTitle,
+                  subtitle: strings.statisticsSessionsPerWeekLabel,
+                  tone: colors.primary,
+                  buckets: weeklyBuckets,
+                  totalLabel: '${strings.statisticsThisMonthLabel}: $sessionsThisMonth',
+                  emptyLabel: strings.statisticsRhythmChartEmptyLabel,
+                ),
+                const Gap(AppSpacing.md),
                 _StatsGrid(
+                  childAspectRatio: 1.92,
                   children: [
-                    _StatTile(
+                    _KpiCard(
                       title: strings.statisticsThisWeekLabel,
                       value: '$sessionsThisWeek',
+                      icon: Icons.date_range_rounded,
+                      tone: colors.secondary,
                     ),
-                    _StatTile(
+                    _KpiCard(
                       title: strings.statisticsThisMonthLabel,
                       value: '$sessionsThisMonth',
-                    ),
-                    _StatTile(
-                      title: strings.statisticsExercisesPerSessionLabel,
-                      value: averageExercisesPerSession == 0
-                          ? '0'
-                          : averageExercisesPerSession.toStringAsFixed(1),
-                    ),
-                    _StatTile(
-                      title: strings.statisticsSessionsWithPrecisionLabel,
-                      value: '${sessionsWithPrecision.length}',
+                      icon: Icons.calendar_today_rounded,
+                      tone: colors.secondary,
                     ),
                   ],
                 ),
@@ -345,72 +478,68 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                 _SectionTitle(title: strings.statisticsMaintenanceTitle),
                 const Gap(AppSpacing.md),
-                _StatsGrid(
-                  children: [
-                    _StatTile(
-                      title: strings.statisticsCleaningsLabel,
-                      value: '$totalMaintenances',
-                    ),
-                    _StatTile(
-                      title: strings.statisticsRevisionsLabel,
-                      value: '$totalRevisions',
-                    ),
-                  ],
-                ),
-                const Gap(AppSpacing.md),
-                _DetailCard(
-                  label: strings.statisticsClosestRevisionWeaponLabel,
-                  value: weaponNeedingRevision == null
-                      ? '—'
-                      : '${weaponNeedingRevision.name} • ${(weaponNeedingRevision.revisionProgress * 100).round()}%',
-                ),
-                const Gap(AppSpacing.md),
-                _DetailCard(
-                  label: strings.statisticsClosestCleaningWeaponLabel,
-                  value: weaponNeedingCleaning == null
-                      ? '—'
-                      : '${weaponNeedingCleaning.name} • ${(weaponNeedingCleaning.cleaningProgress * 100).round()}%',
+                _MaintenanceOverviewCard(
+                  revisionLabel: strings.statisticsClosestRevisionPlatformLabel,
+                  cleaningLabel: strings.statisticsClosestCleaningPlatformLabel,
+                  revisionPlatform: platformNeedingRevision?.name ?? '—',
+                  cleaningPlatform: platformNeedingCleaning?.name ?? '—',
+                  revisionProgress: platformNeedingRevision?.revisionProgress ?? 0,
+                  cleaningProgress: platformNeedingCleaning?.cleaningProgress ?? 0,
+                  revisionCount: totalRevisions,
+                  cleaningCount: totalMaintenances,
                 ),
                 const Gap(AppSpacing.lg),
 
                 _SectionTitle(title: strings.statisticsSmartIndicatorsTitle),
                 const Gap(AppSpacing.md),
-                _DetailCard(
-                  label: strings.statisticsMostUsedWeaponLabel,
-                  value: mostUsedWeapon == null
+                _InsightRow(
+                  icon: Icons.touch_app_rounded,
+                  label: strings.statisticsMostUsedPlatformLabel,
+                  value: mostUsedPlatform == null
                       ? '—'
-                      : '${mostUsedWeapon.name} • ${strings.statisticsSmartIndicatorShotsValue(mostUsedWeapon.totalRounds)}',
+                      : '${mostUsedPlatform.name} • ${strings.statisticsSmartIndicatorShotsValue(mostUsedPlatform.totalRounds)}',
+                  tone: colors.primary,
                 ),
-                const Gap(AppSpacing.md),
-                _DetailCard(
+                const Gap(AppSpacing.sm),
+                _InsightRow(
+                  icon: Icons.warning_amber_rounded,
                   label: strings.statisticsMostCriticalAmmoLabel,
                   value: lowestAmmo == null
                       ? '—'
                       : '${lowestAmmo.name} • ${strings.statisticsSmartIndicatorAmmoValue(lowestAmmo.quantity, lowestAmmo.lowStockThreshold)}',
+                  tone: colors.tertiary,
                 ),
-                const Gap(AppSpacing.md),
-                _DetailCard(
+                const Gap(AppSpacing.sm),
+                _InsightRow(
+                  icon: Icons.local_fire_department_rounded,
                   label: strings.statisticsLongestSessionLabel,
                   value: longestSession == null
                       ? '—'
                       : '${longestSession.name} • ${strings.statisticsSmartIndicatorShotsValue(longestSession.totalRounds)}',
+                  tone: colors.primary,
                 ),
-                const Gap(AppSpacing.md),
-                _DetailCard(
+                const Gap(AppSpacing.sm),
+                _InsightRow(
+                  icon: Icons.history_rounded,
                   label: strings.statisticsLastSessionLabel,
-                  value: sessions.isEmpty
+                  value: lastSession == null
                       ? '—'
-                      : '${sessions.first.name} • ${AppDateFormats.formatDateShort(context, sessions.first.date)}',
+                      : '${lastSession.name} • ${AppDateFormats.formatDateShort(context, lastSession.date)}',
+                  tone: colors.secondary,
                 ),
-
                 const Gap(AppSpacing.lg),
 
-                const Gap(AppSpacing.lg),
-
-                _SectionTitle(title: strings.statisticsWeaponsByTypeTitle),
-
+                _SectionTitle(title: strings.statisticsPlatformsByTypeTitle),
                 const Gap(AppSpacing.md),
-                _PieWeaponsByTypeChart(weapons: provider.weapons),
+                _ModernDonutCard(
+                  counts: platformTypeCounts,
+                ),
+                const Gap(AppSpacing.md),
+                _TopPlatformsBarsCard(
+                  title: strings.statisticsTopPlatformsTitle,
+                  subtitle: strings.statisticsPlatformVolumeLabel,
+                  platforms: topPlatformsLimited,
+                ),
               ],
             ),
           ),
@@ -434,6 +563,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
+
     return Text(
       title,
       style: textStyles.labelLarge?.copyWith(
@@ -446,8 +576,12 @@ class _SectionTitle extends StatelessWidget {
 
 class _StatsGrid extends StatelessWidget {
   final List<Widget> children;
+  final double childAspectRatio;
 
-  const _StatsGrid({required this.children});
+  const _StatsGrid({
+    required this.children,
+    this.childAspectRatio = 1.55,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -457,54 +591,527 @@ class _StatsGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: AppSpacing.md,
       mainAxisSpacing: AppSpacing.md,
-      childAspectRatio: 2.2,
+      childAspectRatio: childAspectRatio,
       children: children,
     );
   }
 }
 
-class _StatTile extends StatelessWidget {
+class _KpiCard extends StatelessWidget {
   final String title;
   final String value;
+  final String? suffix;
+  final String? footnote;
+  final IconData icon;
+  final Color tone;
 
-  const _StatTile({
+  const _KpiCard({
     required this.title,
     required this.value,
+    required this.icon,
+    required this.tone,
+    this.suffix,
+    this.footnote,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
+
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-            ?._statsCardDecoration(context) ??
-        BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: Theme.of(context).colorScheme.outline),
-        );
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
 
     return Container(
-      padding: AppSpacing.paddingMd,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 4,
+      ),
+      decoration: decoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Gap(12),
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: tone.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 14, color: tone),
+              ),
+              const Gap(8),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyles.labelMedium?.copyWith(
+                    color: colors.secondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyles.headlineSmall?.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+              if (suffix != null) ...[
+                const Gap(4),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(
+                    suffix!,
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (footnote != null) ...[
+            const Gap(6),
+            Text(
+              footnote!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textStyles.labelSmall?.copyWith(
+                color: colors.secondary,
+                height: 1.0,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalyticsLineCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String badge;
+  final Color badgeTone;
+  final Color tone;
+  final List<_LinePoint> points;
+  final String footerLeft;
+  final String? footerRight;
+  final String emptyLabel;
+
+  const _AnalyticsLineCard({
+    required this.title,
+    required this.value,
+    required this.badge,
+    required this.badgeTone,
+    required this.tone,
+    required this.points,
+    required this.footerLeft,
+    required this.emptyLabel,
+    this.footerRight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    final decoration =
+        (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
+
+    final chartPoints = points.isEmpty
+        ? <FlSpot>[]
+        : List.generate(
+            points.length,
+            (i) => FlSpot(i.toDouble(), points[i].value),
+          );
+
+    final double minY = points.isEmpty
+        ? 0.0
+        : math.max(
+            0.0,
+            points.map((e) => e.value).reduce(math.min) - 8,
+          ).toDouble();
+
+    final double maxY = points.isEmpty
+        ? 100.0
+        : math.min(
+            100.0,
+            points.map((e) => e.value).reduce(math.max) + 8,
+          ).toDouble();
+
+    return Container(
+      height: 292,
+      padding: AppSpacing.paddingLg,
+      decoration: decoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: textStyles.labelLarge?.copyWith(
+                    color: colors.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: badgeTone.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  badge,
+                  style: textStyles.labelSmall?.copyWith(
+                    color: badgeTone,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(10),
+          Text(
+            value,
+            style: textStyles.displaySmall?.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w800,
+              height: 1.0,
+            ),
+          ),
+          const Gap(6),
+          Text(
+            footerLeft,
+            style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+          ),
+          const Gap(14),
+          Expanded(
+            child: points.isEmpty
+                ? _ChartEmptyState(label: emptyLabel)
+                : LineChart(
+                    LineChartData(
+                      minY: minY,
+                      maxY: maxY,
+                      lineTouchData: LineTouchData(
+                        handleBuiltInTouches: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipColor: (_) => colors.surface,
+                          tooltipBorder: BorderSide(color: colors.outline),
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final point = points[spot.x.toInt()];
+                              return LineTooltipItem(
+                                '${point.label}\n${point.value.toStringAsFixed(0)}%',
+                                textStyles.bodySmall!.copyWith(
+                                  color: colors.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: 20,
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: colors.outline.withValues(alpha: 0.18),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 28,
+                            interval: 20,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                value.toInt().toString(),
+                                style: textStyles.labelSmall?.copyWith(
+                                  color: colors.secondary,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 24,
+                            interval: points.length > 3 ? (points.length - 1) / 2 : 1,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.round();
+                              if (index < 0 || index >= points.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  points[index].label,
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: colors.secondary,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: chartPoints,
+                          isCurved: true,
+                          color: tone,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, xPercent, barData, index) => FlDotCirclePainter(
+                              radius: 3.2,
+                              color: tone,
+                              strokeWidth: 2,
+                              strokeColor: colors.surface,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: tone.withValues(alpha: 0.08),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+          if (footerRight != null) ...[
+            const Gap(10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                footerRight!,
+                style: textStyles.bodySmall?.copyWith(
+                  color: colors.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityBarsCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String totalLabel;
+  final String emptyLabel;
+  final Color tone;
+  final List<_WeeklyBucket> buckets;
+
+  const _ActivityBarsCard({
+    required this.title,
+    required this.subtitle,
+    required this.totalLabel,
+    required this.emptyLabel,
+    required this.tone,
+    required this.buckets,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+
+    final decoration =
+        (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
+
+    final maxValue = buckets.isEmpty
+        ? 1
+        : buckets.map((e) => e.sessions).reduce(math.max).clamp(1, 9999);
+
+    return Container(
+      height: 256,
+      padding: AppSpacing.paddingLg,
       decoration: decoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: textStyles.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.secondary,
+            style: textStyles.labelLarge?.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w700,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          const Gap(AppSpacing.xs),
-          Text(
-            value,
-            style: textStyles.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+          const Gap(4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  subtitle,
+                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                ),
+              ),
+              Text(
+                totalLabel,
+                style: textStyles.bodySmall?.copyWith(
+                  color: colors.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const Gap(14),
+          Expanded(
+            child: buckets.isEmpty
+                ? _ChartEmptyState(label: emptyLabel)
+                : BarChart(
+                    BarChartData(
+                      maxY: maxValue.toDouble() + 1,
+                      alignment: BarChartAlignment.spaceAround,
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: 1,
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: colors.outline.withValues(alpha: 0.16),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: false,
+                            reservedSize: 0,
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 26,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index < 0 || index >= buckets.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  buckets[index].label,
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: colors.secondary,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      barTouchData: BarTouchData(
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipColor: (_) => colors.surface,
+                          tooltipBorder: BorderSide(color: colors.outline),
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            final bucket = buckets[group.x];
+                            return BarTooltipItem(
+                              strings.statisticsActivityTooltipValue(
+                                bucket.label,
+                                bucket.sessions,
+                                bucket.shots,
+                              ),
+                              textStyles.bodySmall!.copyWith(
+                                color: colors.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      barGroups: List.generate(
+                        buckets.length,
+                        (i) {
+                          final bucket = buckets[i];
+                          final isLatest = i == buckets.length - 1;
+                          return BarChartGroupData(
+                            x: i,
+                            barRods: [
+                              BarChartRodData(
+                                toY: bucket.sessions.toDouble(),
+                                width: 20,
+                                color: isLatest ? tone : tone.withValues(alpha: 0.35),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(8),
+                                ),
+                                backDrawRodData: BackgroundBarChartRodData(
+                                  show: true,
+                                  toY: maxValue.toDouble() + 1,
+                                  color: colors.outline.withValues(alpha: 0.10),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -512,23 +1119,51 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _DetailCard extends StatelessWidget {
-  final String label;
-  final String value;
+class _MaintenanceOverviewCard extends StatelessWidget {
+  final String revisionLabel;
+  final String cleaningLabel;
+  final String revisionPlatform;
+  final String cleaningPlatform;
+  final double revisionProgress;
+  final double cleaningProgress;
+  final int revisionCount;
+  final int cleaningCount;
 
-  const _DetailCard({required this.label, required this.value});
+  const _MaintenanceOverviewCard({
+    required this.revisionLabel,
+    required this.cleaningLabel,
+    required this.revisionPlatform,
+    required this.cleaningPlatform,
+    required this.revisionProgress,
+    required this.cleaningProgress,
+    required this.revisionCount,
+    required this.cleaningCount,
+  });
+
+  Color _tone(BuildContext context, double value) {
+    final colors = Theme.of(context).colorScheme;
+    if (value >= 0.75) return colors.tertiary;
+    if (value >= 0.40) return colors.primary;
+    return colors.secondary;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+
+    final revisionTone = _tone(context, revisionProgress);
+    final cleaningTone = _tone(context, cleaningProgress);
+
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-            ?._statsCardDecoration(context, radius: AppRadius.lg) ??
-        BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: Theme.of(context).colorScheme.outline),
-        );
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
 
     return Container(
       padding: AppSpacing.paddingLg,
@@ -537,18 +1172,50 @@ class _DetailCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: textStyles.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            strings.statisticsMaintenanceOverviewSubtitle,
+            style: textStyles.bodySmall?.copyWith(color: colors.secondary),
           ),
-          const Gap(4),
-          Text(
-            value,
-            style: textStyles.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+          const Gap(16),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniMetric(
+                  label: strings.statisticsCleaningsLabel,
+                  value: '$cleaningCount',
+                  tone: cleaningTone,
+                  icon: Icons.cleaning_services_rounded,
+                  compact: true,
+                ),
+              ),
+              const Gap(AppSpacing.md),
+              Expanded(
+                child: _MiniMetric(
+                  label: strings.statisticsRevisionsLabel,
+                  value: '$revisionCount',
+                  tone: revisionTone,
+                  icon: Icons.build_circle_rounded,
+                  compact: true,
+                ),
+              ),
+            ],
+          ),
+          const Gap(16),
+          _ProgressInsight(
+            icon: Icons.build_rounded,
+            label: revisionLabel,
+            platformName: revisionPlatform,
+            progress: revisionProgress,
+            tone: revisionTone,
+            compact: true,
+          ),
+          const Gap(12),
+          _ProgressInsight(
+            icon: Icons.cleaning_services_rounded,
+            label: cleaningLabel,
+            platformName: cleaningPlatform,
+            progress: cleaningProgress,
+            tone: cleaningTone,
+            compact: true,
           ),
         ],
       ),
@@ -556,587 +1223,655 @@ class _DetailCard extends StatelessWidget {
   }
 }
 
-class _ChartSectionHeader extends StatelessWidget {
-  final String title;
-  final _StatsChartRange selectedRange;
-  final AppStrings strings;
-  final ValueChanged<_StatsChartRange> onSelected;
+class _ModernDonutCard extends StatelessWidget {
+  final Map<String, int> counts;
 
-  const _ChartSectionHeader({
-    required this.title,
-    required this.selectedRange,
-    required this.strings,
-    required this.onSelected,
+  const _ModernDonutCard({
+    required this.counts,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textStyles = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        Expanded(
-          child: _SectionTitle(title: title),
-        ),
-        PopupMenuButton<_StatsChartRange>(
-          initialValue: selectedRange,
-          tooltip: strings.homePrecisionFilterTooltip,
-          onSelected: onSelected,
-          itemBuilder: (context) => _StatsChartRange.values
-              .map(
-                (range) => PopupMenuItem<_StatsChartRange>(
-                  value: range,
-                  child: Text(range.longLabel(strings)),
-                ),
-              )
-              .toList(),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: (context.findAncestorStateOfType<_StatisticsScreenState>())
-                    ?._statsCardDecoration(context, radius: AppRadius.sm) ??
-                BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  border: Border.all(color: colors.outline),
-                ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  selectedRange.shortLabel(strings),
-                  style: textStyles.labelSmall?.copyWith(
-                    color: colors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Icon(
-                  Icons.expand_more_rounded,
-                  color: colors.primary,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ChartBucket {
-  final String label;
-  final int value;
-
-  const _ChartBucket({
-    required this.label,
-    required this.value,
-  });
-}
-
-List<_ChartBucket> _buildChartBuckets(
-  BuildContext context,
-  List<Session> sessions,
-  _StatsChartRange range, {
-  required bool countShots,
-}) {
-  final locale = Localizations.localeOf(context).languageCode;
-  final now = DateTime.now();
-
-  int sessionValue(Session session) {
-    if (!countShots) return 1;
-    return session.exercises.fold<int>(0, (sum, e) {
-      final value = e.shotsFired;
-      return sum + (value is num ? value.toInt() : 0);
-    });
-  }
-
-  switch (range) {
-    case _StatsChartRange.week:
-      final today = DateTime(now.year, now.month, now.day);
-      return List.generate(7, (index) {
-        final day = today.subtract(Duration(days: 6 - index));
-        final value = sessions
-            .where(
-              (s) =>
-                  s.date.year == day.year &&
-                  s.date.month == day.month &&
-                  s.date.day == day.day,
-            )
-            .fold<int>(0, (sum, s) => sum + sessionValue(s));
-        final weekdayLabel = DateFormat('E', locale).format(day);
-        return _ChartBucket(label: weekdayLabel, value: value);
-      });
-
-    case _StatsChartRange.month:
-      return List.generate(12, (index) {
-        final monthDate = DateTime(now.year, now.month - (11 - index), 1);
-        final value = sessions
-            .where(
-              (s) =>
-                  s.date.year == monthDate.year &&
-                  s.date.month == monthDate.month,
-            )
-            .fold<int>(0, (sum, s) => sum + sessionValue(s));
-        return _ChartBucket(
-          label: DateFormat('MMM', locale).format(monthDate),
-          value: value,
-        );
-      });
-
-    case _StatsChartRange.year:
-      return List.generate(10, (index) {
-        final year = now.year - (9 - index);
-        final value = sessions
-            .where((s) => s.date.year == year)
-            .fold<int>(0, (sum, s) => sum + sessionValue(s));
-        return _ChartBucket(label: year.toString(), value: value);
-      });
-  }
-}
-
-double _chartMaxY(List<_ChartBucket> buckets) {
-  final maxValue =
-      buckets.fold<int>(0, (max, bucket) => bucket.value > max ? bucket.value : max);
-  return maxValue <= 0 ? 4.0 : (maxValue * 1.2).ceilToDouble();
-}
-
-double _chartInterval(List<_ChartBucket> buckets) {
-  final maxValue =
-      buckets.fold<int>(0, (max, bucket) => bucket.value > max ? bucket.value : max);
-  final maxY = _chartMaxY(buckets);
-  return maxValue <= 4 ? 1.0 : (maxY / 4).ceilToDouble();
-}
-
-double _chartGroupSpace(_StatsChartRange range) {
-  switch (range) {
-    case _StatsChartRange.week:
-      return 12;
-    case _StatsChartRange.month:
-      return 6;
-    case _StatsChartRange.year:
-      return 8;
-  }
-}
-
-double _chartBottomReservedSize(_StatsChartRange range) {
-  switch (range) {
-    case _StatsChartRange.week:
-      return 32;
-    case _StatsChartRange.month:
-      return 30;
-    case _StatsChartRange.year:
-      return 28;
-  }
-}
-
-double _chartLabelWidth(_StatsChartRange range) {
-  switch (range) {
-    case _StatsChartRange.week:
-      return 32;
-    case _StatsChartRange.month:
-      return 22;
-    case _StatsChartRange.year:
-      return 20;
-  }
-}
-
-double _chartBarWidth(_StatsChartRange range) {
-  switch (range) {
-    case _StatsChartRange.week:
-      return 16;
-    case _StatsChartRange.month:
-      return 10;
-    case _StatsChartRange.year:
-      return 8;
-  }
-}
-
-bool _shouldShowBottomLabel(_StatsChartRange range, int index, int length) {
-  final isLast = index == length - 1;
-  switch (range) {
-    case _StatsChartRange.week:
-      return true;
-
-    case _StatsChartRange.month:
-      return isLast || index % 2 == 0;
-    case _StatsChartRange.year:
-      return isLast || index % 3 == 0;
-  }
-}
-
-class _BarShotsPerPeriodChart extends StatelessWidget {
-  final List<Session> sessions;
-  final _StatsChartRange range;
-
-  const _BarShotsPerPeriodChart({
-    required this.sessions,
-    required this.range,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textStyles = Theme.of(context).textTheme;
-    final buckets = _buildChartBuckets(
-      context,
-      sessions,
-      range,
-      countShots: true,
-    );
-    final bars = <BarChartGroupData>[];
-    for (int i = 0; i < buckets.length; i++) {
-      final v = buckets[i].value.toDouble();
-      bars.add(
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: v,
-              color: colors.primary,
-              width: _chartBarWidth(range),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ],
-        ),
-      );
-    }
-    final chartMaxY = _chartMaxY(buckets);
-    final leftInterval = _chartInterval(buckets);
-
-    final decoration =
-        (context.findAncestorStateOfType<_StatisticsScreenState>())
-            ?._statsCardDecoration(context, radius: AppRadius.sm) ??
-        BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: colors.outline),
-        );
-
-    return Container(
-      height: 260,
-      decoration: decoration,
-      padding: AppSpacing.paddingMd,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: (buckets.length * 46).toDouble() + 40.0,
-          child: BarChart(
-            BarChartData(
-              maxY: chartMaxY,
-              alignment: BarChartAlignment.spaceAround,
-              groupsSpace: _chartGroupSpace(range),
-              borderData: FlBorderData(show: false),
-              gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                horizontalInterval: leftInterval,
-                getDrawingHorizontalLine: (value) => FlLine(
-                  color: colors.outline.withValues(alpha: 0.35),
-                  strokeWidth: 1,
-                ),
-              ),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    interval: leftInterval,
-                    getTitlesWidget: (value, meta) => Text(
-                      value.toInt().toString(),
-                      style: textStyles.labelSmall?.copyWith(
-                        color: colors.secondary,
-                      ),
-                    ),
-                  ),
-                ),
-                rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: _chartBottomReservedSize(range),
-                    interval: 1,
-                    getTitlesWidget: (v, meta) {
-                      final idx = v.toInt();
-                      if (idx < 0 || idx >= buckets.length) {
-                        return const SizedBox.shrink();
-                      }
-                      if (!_shouldShowBottomLabel(range, idx, buckets.length)) {
-                        return const SizedBox.shrink();
-                      }
-                      final label = buckets[idx].label;
-                      return SizedBox(
-                        width: _chartLabelWidth(range),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: textStyles.labelSmall?.copyWith(
-                              color: colors.secondary,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              barGroups: bars,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BarSessionsPerPeriodChart extends StatelessWidget {
-  final List<Session> sessions;
-  final _StatsChartRange range;
-
-  const _BarSessionsPerPeriodChart({
-    required this.sessions,
-    required this.range,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textStyles = Theme.of(context).textTheme;
-    final buckets = _buildChartBuckets(
-      context,
-      sessions,
-      range,
-      countShots: false,
-    );
-    final bars = <BarChartGroupData>[];
-    for (int i = 0; i < buckets.length; i++) {
-      final v = buckets[i].value.toDouble();
-      bars.add(
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: v,
-              color: colors.primary,
-              width: _chartBarWidth(range),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ],
-        ),
-      );
-    }
-    final chartMaxY = _chartMaxY(buckets);
-    final leftInterval = _chartInterval(buckets);
-
-    final decoration =
-        (context.findAncestorStateOfType<_StatisticsScreenState>())
-            ?._statsCardDecoration(context, radius: AppRadius.sm) ??
-        BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: colors.outline),
-        );
-
-    return Container(
-      height: 260,
-      decoration: decoration,
-      padding: AppSpacing.paddingMd,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: (buckets.length * 46).toDouble() + 40.0,
-          child: BarChart(
-            BarChartData(
-              maxY: chartMaxY,
-              alignment: BarChartAlignment.spaceAround,
-              groupsSpace: _chartGroupSpace(range),
-              borderData: FlBorderData(show: false),
-              gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                horizontalInterval: leftInterval,
-                getDrawingHorizontalLine: (value) => FlLine(
-                  color: colors.outline.withValues(alpha: 0.35),
-                  strokeWidth: 1,
-                ),
-              ),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    interval: leftInterval,
-                    getTitlesWidget: (value, meta) => Text(
-                      value.toInt().toString(),
-                      style: textStyles.labelSmall?.copyWith(
-                        color: colors.secondary,
-                      ),
-                    ),
-                  ),
-                ),
-                rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: _chartBottomReservedSize(range),
-                    interval: 1,
-                    getTitlesWidget: (v, meta) {
-                      final idx = v.toInt();
-                      if (idx < 0 || idx >= buckets.length) {
-                        return const SizedBox.shrink();
-                      }
-                      if (!_shouldShowBottomLabel(range, idx, buckets.length)) {
-                        return const SizedBox.shrink();
-                      }
-                      final label = buckets[idx].label;
-                      return SizedBox(
-                        width: _chartLabelWidth(range),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: textStyles.labelSmall?.copyWith(
-                              color: colors.secondary,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              barGroups: bars,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PieWeaponsByTypeChart extends StatelessWidget {
-  final List<Weapon> weapons;
-
-  const _PieWeaponsByTypeChart({required this.weapons});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
-    final counts = <String, int>{};
+    final textStyles = Theme.of(context).textTheme;
 
-    for (final w in weapons) {
-      counts[w.type] = (counts[w.type] ?? 0) + 1;
-    }
-
-    final total =
-        counts.values.isEmpty ? 1 : counts.values.reduce((a, b) => a + b);
+    final decoration =
+        (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
 
     final palette = [
       colors.primary,
       colors.secondary,
-      colors.tertiary ?? colors.primaryContainer,
-      colors.error,
-      colors.surfaceTint,
+      colors.tertiary,
+      colors.primary.withValues(alpha: 0.60),
+      colors.secondary.withValues(alpha: 0.60),
+      colors.tertiary.withValues(alpha: 0.60),
     ];
 
+    final total = counts.values.isEmpty ? 1 : counts.values.reduce((a, b) => a + b);
     int i = 0;
+
     final sections = counts.entries.map((e) {
       final value = e.value.toDouble();
       final color = palette[i++ % palette.length];
       return PieChartSectionData(
         value: value,
         color: color,
-        radius: 46,
-        title: '${((value / total) * 100).round()}% ',
-        titleStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+        radius: 18,
+        title: '',
       );
     }).toList();
 
-    final decoration =
-        (context.findAncestorStateOfType<_StatisticsScreenState>())
-            ?._statsCardDecoration(context, radius: AppRadius.sm) ??
-        BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: colors.outline),
-        );
+    final entries = counts.entries.toList();
 
     return Container(
-      height: 260,
+      height: 218,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: 0,
+      ),
       decoration: decoration,
-      padding: AppSpacing.paddingMd,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: PieChart(
-              PieChartData(
-                sections: sections.isEmpty
-                    ? [
-                        PieChartSectionData(
-                          value: 1,
-                          color: colors.outline,
-                          radius: 46,
-                          title: '—',
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      PieChart(
+                        PieChartData(
+                          sections: sections.isEmpty
+                              ? [
+                                  PieChartSectionData(
+                                    value: 1,
+                                    color: colors.outline.withValues(alpha: 0.25),
+                                    radius: 18,
+                                    title: '',
+                                  ),
+                                ]
+                              : sections,
+                          sectionsSpace: 4,
+                          centerSpaceRadius: 48,
                         ),
-                      ]
-                    : sections,
-                sectionsSpace: 2,
-                centerSpaceRadius: 34,
-              ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${counts.length}',
+                            style: textStyles.headlineSmall?.copyWith(
+                              color: colors.onSurface,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            strings.statisticsTypesShortLabel,
+                            style: textStyles.labelSmall?.copyWith(
+                              color: colors.secondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: entries.isEmpty
+                        ? [
+                            Text(
+                              '—',
+                              style: textStyles.bodyMedium?.copyWith(
+                                color: colors.secondary,
+                              ),
+                            ),
+                          ]
+                        : entries.asMap().entries.map((item) {
+                            final index = item.key;
+                            final entry = item.value;
+                            final tone = palette[index % palette.length];
+                            final percent = ((entry.value / total) * 100).round();
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: tone,
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  Flexible(
+                                    child: Text(
+                                      strings.itemPlatformTypeLabel(entry.key),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: textStyles.bodySmall?.copyWith(
+                                        color: colors.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  const Gap(6),
+                                  Text(
+                                    '$percent%',
+                                    style: textStyles.labelSmall?.copyWith(
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const Gap(AppSpacing.sm),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: counts.entries.map((e) {
-              final idx = counts.keys.toList().indexOf(e.key);
-              final c = palette[idx % palette.length];
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: c,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${strings.itemWeaponTypeLabel(e.key)} (${e.value})',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colors.secondary,
-                        ),
-                  ),
-                ],
-              );
-            }).toList(),
           ),
         ],
       ),
     );
   }
+}
+
+class _TopPlatformsBarsCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<Platform> platforms;
+
+  const _TopPlatformsBarsCard({
+    required this.title,
+    required this.subtitle,
+    required this.platforms,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+
+    final decoration =
+        (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
+
+    final maxRounds = platforms.isEmpty
+        ? 1
+        : platforms.map((e) => e.totalRounds).reduce(math.max).clamp(1, 999999);
+
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: decoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: textStyles.labelLarge?.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Gap(4),
+          Text(
+            subtitle,
+            style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+          ),
+          const Gap(16),
+          if (platforms.isEmpty)
+            _ChartEmptyState(label: strings.statisticsNoPlatformsToAnalyzeLabel)
+          else
+            Column(
+              children: List.generate(platforms.length, (index) {
+                final platform = platforms[index];
+                final tone = [
+                  colors.primary,
+                  colors.secondary,
+                  colors.tertiary,
+                  colors.primary.withValues(alpha: 0.55),
+                ][index % 4];
+                final ratio = platform.totalRounds / maxRounds;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              platform.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textStyles.bodyMedium?.copyWith(
+                                color: colors.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const Gap(8),
+                          Text(
+                            '${platform.totalRounds}',
+                            style: textStyles.labelMedium?.copyWith(
+                              color: colors.secondary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          minHeight: 10,
+                          value: ratio.clamp(0.0, 1.0),
+                          backgroundColor: colors.outline.withValues(alpha: 0.12),
+                          valueColor: AlwaysStoppedAnimation(tone),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color tone;
+  final bool compact;
+
+  const _MiniMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.tone,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    final decoration = compact
+        ? BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
+          )
+        : (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: decoration,
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: tone),
+          const Gap(8),
+          Expanded(
+            child: Text(
+              label,
+              style: textStyles.bodySmall?.copyWith(
+                color: colors.secondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: textStyles.titleMedium?.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressInsight extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String platformName;
+  final double progress;
+  final Color tone;
+  final bool compact;
+
+  const _ProgressInsight({
+    required this.icon,
+    required this.label,
+    required this.platformName,
+    required this.progress,
+    required this.tone,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    final decoration = compact
+        ? BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
+          )
+        : (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: decoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: tone),
+              const Gap(8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Text(
+                '${(progress.clamp(0.0, 1.0) * 100).round()}%',
+                style: textStyles.labelMedium?.copyWith(
+                  color: tone,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const Gap(8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 8,
+              value: progress.clamp(0.0, 1.0),
+              backgroundColor: tone.withValues(alpha: 0.12),
+              valueColor: AlwaysStoppedAnimation(tone),
+            ),
+          ),
+          const Gap(8),
+          Text(
+            platformName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textStyles.bodyMedium?.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final String? tag;
+  final Color? tone;
+
+  const _InsightRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    // ignore: unused_element_parameter
+    this.tag,
+    this.tone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final rowTone = tone ?? colors.primary;
+
+    final decoration =
+        (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context, radius: 16) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.outline),
+            );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      decoration: decoration,
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: rowTone.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: rowTone),
+          ),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: textStyles.labelSmall?.copyWith(
+                    color: colors.secondary,
+                  ),
+                ),
+                const Gap(2),
+                Text(
+                  value,
+                  style: textStyles.bodyMedium?.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (tag != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: rowTone.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                tag!,
+                style: textStyles.labelSmall?.copyWith(
+                  color: rowTone,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EquipmentStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String svgAsset;
+  final double? iconSize;
+
+  const _EquipmentStatCard({
+    required this.label,
+    required this.value,
+    required this.svgAsset,
+    this.iconSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    final decoration =
+        (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context, radius: 16) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.outline),
+            );
+
+    return Container(
+      decoration: decoration,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Align(
+            alignment: const Alignment(0, 0.40),
+            child: SvgPicture.asset(
+              svgAsset,
+              width: iconSize ?? 68,
+              height: iconSize ?? 68,
+              colorFilter: ColorFilter.mode(
+                colors.secondary.withValues(alpha: 0.15),
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyles.labelSmall?.copyWith(
+                    color: colors.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Gap(2),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textStyles.displaySmall?.copyWith(
+                        color: colors.onSurface,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChartEmptyState extends StatelessWidget {
+  final String label;
+
+  const _ChartEmptyState({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colors.secondary,
+            ),
+      ),
+    );
+  }
+}
+
+class _LinePoint {
+  final String label;
+  final double value;
+
+  const _LinePoint({
+    required this.label,
+    required this.value,
+  });
+}
+
+class _WeeklyBucket {
+  final String label;
+  final int sessions;
+  final int shots;
+
+  const _WeeklyBucket({
+    required this.label,
+    required this.sessions,
+    required this.shots,
+  });
 }

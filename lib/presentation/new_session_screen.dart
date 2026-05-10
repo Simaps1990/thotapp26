@@ -1,19 +1,17 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:thot/data/exercise_step.dart';
 import 'package:thot/data/models.dart';
+import 'package:thot/data/standard_drills.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/presentation/pro_screen.dart';
@@ -22,11 +20,39 @@ import 'package:thot/presentation/shooting_timer_screen.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
+class _CitySuggestion {
+  final String name;
+  final String countryCode;
+  final double latitude;
+  final double longitude;
+
+  const _CitySuggestion({
+    required this.name,
+    required this.countryCode,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  String get label => '$name, $countryCode';
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _CitySuggestion &&
+            other.name == name &&
+            other.countryCode == countryCode &&
+            other.latitude == latitude &&
+            other.longitude == longitude;
+  }
+
+  @override
+  int get hashCode => Object.hash(name, countryCode, latitude, longitude);
+}
 
 class NewSessionScreen extends StatefulWidget {
   final String? sessionId;
 
-  const NewSessionScreen({Key? key, this.sessionId}) : super(key: key);
+  const NewSessionScreen({super.key, this.sessionId});
 
   @override
   State<NewSessionScreen> createState() => _NewSessionScreenState();
@@ -35,6 +61,7 @@ class NewSessionScreen extends StatefulWidget {
 class _NewSessionScreenState extends State<NewSessionScreen> {
   final _nameController = TextEditingController();
   final _locationController = TextEditingController();
+  final _locationFocusNode = FocusNode();
   final _shootingDistanceController = TextEditingController();
 
   final _sessionScrollController = ScrollController();
@@ -50,7 +77,7 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
   bool _exercisesError = false;
 
   DateTime _selectedDate = DateTime.now();
-  String _sessionType = 'Personnel';
+  String _sessionType = 'Personnel'; // Stored as internal key, displayed via AppStrings
 
   // Weather
   bool _weatherEnabled = false;
@@ -68,107 +95,18 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
   // Exercises
   List<Exercise> _exercises = [];
 
-  bool _isLocating = false;
-  bool _isWeatherLocating = false;
-  double? _lastResolvedLatitude;
-  double? _lastResolvedLongitude;
+  double? _selectedCityLatitude;
+  double? _selectedCityLongitude;
 
-Future<String?> _reverseGeocodeCityCountry(
-    {required double lat, required double lon}) async {
-  try {
-    // Web: prefer a CORS-friendly endpoint.
-    if (kIsWeb) {
-      final uri = Uri.parse(
-        'https://api.bigdatacloud.net/data/reverse-geocode-client'
-        '?latitude=$lat'
-        '&longitude=$lon'
-        '&localityLanguage=fr',
-      );
-      final res = await http.get(uri).timeout(const Duration(seconds: 10));
-      if (res.statusCode < 200 || res.statusCode >= 300) {
-        debugPrint('Reverse geocode (web) failed with HTTP ${res.statusCode}.');
-        return null;
-      }
-
-      final json = jsonDecode(utf8.decode(res.bodyBytes));
-      if (json is! Map<String, dynamic>) return null;
-
-      final city = (json['city'] as String?)?.trim();
-      final locality = (json['locality'] as String?)?.trim();
-      final countryCode =
-          (json['countryCode'] as String?)?.trim().toUpperCase();
-
-      final name = (city?.isNotEmpty == true ? city : locality);
-      if (name == null || name.isEmpty) return null;
-      return countryCode?.isNotEmpty == true ? '$name, $countryCode' : name;
-    }
-
-    // Mobile/desktop: use OpenStreetMap Nominatim.
-    final uri = Uri.parse(
-      'https://nominatim.openstreetmap.org/reverse'
-      '?format=jsonv2'
-      '&lat=$lat'
-      '&lon=$lon'
-      '&zoom=10'
-      '&addressdetails=1'
-      '&accept-language=fr',
-    );
-    final res = await http.get(uri, headers: {
-      'User-Agent': 'thot-app/1.0 (THOT)',
-      'Accept': 'application/json',
-    }).timeout(const Duration(seconds: 10));
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      debugPrint('Reverse geocode failed with HTTP ${res.statusCode}.');
-      return null;
-    }
-
-    final json = jsonDecode(utf8.decode(res.bodyBytes));
-    if (json is! Map<String, dynamic>) return null;
-    final address = json['address'];
-    if (address is! Map<String, dynamic>) return null;
-
-    String? pickString(String key) => (address[key] as String?)?.trim();
-
-    final city = pickString('city') ??
-        pickString('town') ??
-        pickString('village') ??
-        pickString('municipality') ??
-        pickString('county');
-    final countryCode = (pickString('country_code'))?.toUpperCase();
-
-    if (city == null || city.isEmpty) return null;
-    return countryCode?.isNotEmpty == true ? '$city, $countryCode' : city;
-  } catch (e) {
-    debugPrint('Reverse geocode failed.');
-    return null;
-  }
-}
-
-LocationSettings _buildLocationSettings() {
-  if (kIsWeb) {
-    return WebSettings(
-      accuracy: LocationAccuracy.high,
-      maximumAge: const Duration(minutes: 5),
-    );
-  }
-
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    return AndroidSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 0,
-      intervalDuration: const Duration(seconds: 2),
-    );
-  }
-
-  return const LocationSettings(
-    accuracy: LocationAccuracy.high,
-    distanceFilter: 0,
-  );
-}
+  bool _isApplyingCitySelection = false;
+  bool _citySearchError = false;
+  Timer? _cityDebounce;
+  int _cityRequestId = 0;
 
   @override
   void initState() {
     super.initState();
+
     if (widget.sessionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadSession();
@@ -176,33 +114,45 @@ LocationSettings _buildLocationSettings() {
     }
   }
 
-  void _loadSession() {
-    final provider = Provider.of<ThotProvider>(context, listen: false);
-    try {
-      final session =
-          provider.sessions.firstWhere((s) => s.id == widget.sessionId);
+void _loadSession() {
+  final provider = Provider.of<ThotProvider>(context, listen: false);
 
-      setState(() {
-        _nameController.text = session.name;
-        _locationController.text = session.location;
-        _shootingDistanceController.text = session.shootingDistance ?? '';
-        _selectedDate = session.date;
-        _sessionType = session.sessionType;
-        _weatherEnabled = session.weatherEnabled;
-        _tempController.text = session.temperature;
-        _windController.text = session.wind;
-        _humidityController.text = session.humidity;
-        _pressureController.text = session.pressure;
-        _tempEnabled = session.temperatureEnabled;
-        _windEnabled = session.windEnabled;
-        _humidityEnabled = session.humidityEnabled;
-        _pressureEnabled = session.pressureEnabled;
-        _exercises = List.from(session.exercises);
-      });
-    } catch (e) {
-      debugPrint('Error loading session: $e');
-    }
+  try {
+    final session =
+        provider.sessions.firstWhere((s) => s.id == widget.sessionId);
+
+    setState(() {
+      _nameController.text = session.name;
+      _locationController.text = session.location;
+      _shootingDistanceController.text = session.shootingDistance ?? '';
+      _selectedDate = session.date;
+      _sessionType = session.sessionType;
+      _weatherEnabled = session.weatherEnabled;
+      _tempController.text = session.temperature;
+      _windController.text = session.wind;
+      _humidityController.text = session.humidity;
+      _pressureController.text = session.pressure;
+      _tempEnabled = session.temperatureEnabled;
+      _windEnabled = session.windEnabled;
+      _humidityEnabled = session.humidityEnabled;
+      _pressureEnabled = session.pressureEnabled;
+      _exercises = List.from(session.exercises);
+
+      _selectedCityLatitude = session.locationLatitude;
+      _selectedCityLongitude = session.locationLongitude;
+
+      final rawLocation = session.location.trim();
+      if (rawLocation.contains(',')) {
+        final parts = rawLocation.split(',');
+        if (parts.isEmpty) {
+          // keep location as typed; no additional metadata to store here
+        }
+      }
+    });
+  } catch (e) {
+    debugPrint('Error loading session: $e');
   }
+}
 
   Widget _buildHeader({
     required ColorScheme colors,
@@ -210,25 +160,27 @@ LocationSettings _buildLocationSettings() {
     required double topInset,
   }) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, topInset + 12, 20, 12),
+      padding: EdgeInsets.fromLTRB(20, defaultTargetPlatform == TargetPlatform.iOS ? (topInset / 2 + 30) : (topInset + 30), 20, 12),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.outline)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          const SizedBox(width: 48),
+          Expanded(
+            child: Text(
+              strings.newSessionTitle,
+              textAlign: TextAlign.center,
+              style: textStyles.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.close_rounded),
             color: colors.onSurface,
             onPressed: () => context.pop(),
           ),
-          Text(
-            strings.newSessionTitle,
-            style: textStyles.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(width: 48),
         ],
       ),
     );
@@ -281,13 +233,6 @@ LocationSettings _buildLocationSettings() {
 
       Container(
         key: _nameFieldKey,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: _nameError ? colors.error : Colors.transparent,
-            width: 1.4,
-          ),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -333,7 +278,7 @@ LocationSettings _buildLocationSettings() {
 
       // Date and Time
       InkWell(
-        onTap: () => _selectDateTime(context),
+        onTap: _selectDateTime,
         child: InputDecorator(
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.calendar_today_rounded),
@@ -358,89 +303,80 @@ LocationSettings _buildLocationSettings() {
           ),
         ),
       ),
+
       const Gap(AppSpacing.md),
 
       Container(
         key: _locationFieldKey,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: _locationError ? colors.error : Colors.transparent,
-            width: 1.4,
-          ),
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _locationController,
-                  onChanged: (_) {
-                    if (_locationError &&
-                        _locationController.text.trim().isNotEmpty) {
-                      setState(() => _locationError = false);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: strings.locationLabel,
-                    hintText: strings.locationHint,
-                    errorText: null,
-                    prefixIcon: const Icon(Icons.place_rounded),
-                    filled: true,
-                    fillColor: colors.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                  ),
+        child: Autocomplete<_CitySuggestion>(
+          textEditingController: _locationController,
+          focusNode: _locationFocusNode,
+          displayStringForOption: (_CitySuggestion option) => option.label,
+          optionsBuilder: (TextEditingValue textEditingValue) async {
+            final query = textEditingValue.text.trim();
+
+            if (_isApplyingCitySelection || query.length < 2) {
+              return const <_CitySuggestion>[];
+            }
+
+            return await _searchCitiesDebounced(query);
+          },
+          onSelected: (city) async {
+            await _onCitySelected(city);
+          },
+          fieldViewBuilder: (
+            BuildContext context,
+            TextEditingController textEditingController,
+            FocusNode focusNode,
+            VoidCallback onFieldSubmitted,
+          ) {
+            return TextFormField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => onFieldSubmitted(),
+              onChanged: (value) {
+                if (_isApplyingCitySelection) return;
+
+                setState(() {
+                  if (_locationError && value.trim().isNotEmpty) {
+                    _locationError = false;
+                  }
+
+                  _citySearchError = false;
+                  _selectedCityLatitude = null;
+                  _selectedCityLongitude = null;
+                  _weatherEnabled = false;
+                  _tempController.clear();
+                  _windController.clear();
+                  _humidityController.clear();
+                  _pressureController.clear();
+                });
+              },
+              decoration: InputDecoration(
+                labelText: strings.locationLabel,
+                hintText: strings.locationHint,
+                errorText: _locationError
+                    ? strings.locationRequiredForWeather
+                    : (_citySearchError ? strings.citySearchUnavailable : null),
+                prefixIcon: const Icon(Icons.place_rounded),
+                filled: true,
+                fillColor: colors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.outline),
                 ),
               ),
-              const Gap(AppSpacing.md),
-              SizedBox(
-                width: 56,
-                child: Material(
-                  color: colors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    side: BorderSide(color: colors.primary),
-                  ),
-                  child: InkWell(
-                    onTap: _isLocating || _isWeatherLocating
-                        ? null
-                        : _fillWithCurrentPosition,
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    splashFactory: NoSplash.splashFactory,
-                    highlightColor: colors.onPrimary.withValues(alpha: 0.10),
-                    child: Center(
-                      child: _isLocating
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.4,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Icon(
-                              Icons.my_location_rounded,
-                              color: colors.onPrimary,
-                              size: 22,
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
 
@@ -470,12 +406,6 @@ LocationSettings _buildLocationSettings() {
 
       const Gap(AppSpacing.md),
 
-      Text(
-        '${strings.locationUsageExplanation}\n\n${strings.reverseGeocodingExplanation}',
-        style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-      ),
-
-      const Gap(AppSpacing.sm),
     ];
   }
 
@@ -517,12 +447,12 @@ LocationSettings _buildLocationSettings() {
           ),
           child: FilledButton(
             onPressed: _saveSession,
-            child: Text(strings.saveSessionButton),
             style: FilledButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
             ),
+            child: Text(strings.saveSessionButton),
           ),
         ),
       ),
@@ -560,6 +490,9 @@ LocationSettings _buildLocationSettings() {
               label: Text(strings.createExerciseButton),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
               ),
             ),
           ),
@@ -571,6 +504,9 @@ LocationSettings _buildLocationSettings() {
               label: Text(strings.importExerciseButton),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
               ),
             ),
           ),
@@ -579,13 +515,6 @@ LocationSettings _buildLocationSettings() {
       const Gap(AppSpacing.md),
       Container(
         key: _exercisesFieldKey,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: _exercisesError ? colors.error : Colors.transparent,
-            width: 1.4,
-          ),
-        ),
         child: _exercises.isEmpty
             ? Material(
                 color: Colors.transparent,
@@ -606,7 +535,9 @@ LocationSettings _buildLocationSettings() {
                           width: 40,
                           height: 40,
                           colorFilter: ColorFilter.mode(
-                            colors.outline,
+                            Theme.of(context).brightness == Brightness.dark
+                                ? colors.onSurface
+                                : colors.outline,
                             BlendMode.srcIn,
                           ),
                         ),
@@ -614,7 +545,11 @@ LocationSettings _buildLocationSettings() {
                         Text(
                           strings.noExerciseAdded,
                           style: textStyles.bodyMedium?.copyWith(
-                            color: _exercisesError ? colors.error : colors.outline,
+                            color: _exercisesError
+                                ? colors.error
+                                : (Theme.of(context).brightness == Brightness.dark
+                                    ? colors.onSurface
+                                    : colors.outline),
                           ),
                         ),
                       ],
@@ -660,10 +595,6 @@ LocationSettings _buildLocationSettings() {
     required TextTheme textStyles,
     required UnitConverter converter,
   }) {
-    final hasWeatherData = _tempController.text.trim().isNotEmpty ||
-        _windController.text.trim().isNotEmpty ||
-        _humidityController.text.trim().isNotEmpty ||
-        _pressureController.text.trim().isNotEmpty;
 
     return [
       // Weather Section
@@ -686,32 +617,7 @@ LocationSettings _buildLocationSettings() {
       ),
       if (_weatherEnabled) ...[
         const Gap(AppSpacing.md),
-        if (!hasWeatherData) ...[
-          SizedBox(
-            height: 44,
-            child: FilledButton.icon(
-              onPressed: _isLocating || _isWeatherLocating
-                  ? null
-                  : _fillWeatherFromCurrentPosition,
-              icon: _isWeatherLocating
-                  ? SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.my_location_rounded, size: 18, color: Colors.white),
-              label: Text(strings.fetchLocalWeatherButton),
-              style: FilledButton.styleFrom(
-                backgroundColor: colors.primary,
-                foregroundColor: colors.onPrimary,
-              ),
-            ),
-          ),
-          const Gap(AppSpacing.md),
-        ],
+
         if (_isWeatherLoading)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -799,7 +705,7 @@ LocationSettings _buildLocationSettings() {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<ThotProvider>(context);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
     final converter = UnitConverter(provider.useMetric);
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
@@ -807,24 +713,28 @@ LocationSettings _buildLocationSettings() {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: colors.surface,
+        statusBarColor: colors.surface, // Couleur du fond du header
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SafeArea(
+        body: GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: SafeArea(
           top: false,
           child: Column(
             children: [
               _buildHeader(
                 colors: colors,
                 textStyles: textStyles,
-                topInset: MediaQuery.of(context).padding.top,
+                topInset: MediaQuery.paddingOf(context).top,
               ),
 
               Expanded(
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   controller: _sessionScrollController,
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -861,17 +771,20 @@ LocationSettings _buildLocationSettings() {
             ],
           ),
         ),
+        ),
       ),
     );
   }
 
-  Future<void> _selectDateTime(BuildContext context) async {
+  Future<void> _selectDateTime() async {
     final date = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
+
+    if (!mounted) return;
 
     if (date != null) {
       final time = await showTimePicker(
@@ -893,18 +806,43 @@ LocationSettings _buildLocationSettings() {
     }
   }
 
+  void _addTemplateAsExercise(ExerciseTemplate t) {
+    final exercise = Exercise(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      name: t.name,
+      platformId: _exercises.isNotEmpty ? _exercises.last.platformId : '',
+      ammoId: _exercises.isNotEmpty ? _exercises.last.ammoId : '',
+      shotsFired: t.shotsFired,
+      distance: t.distance,
+      observations: t.observations,
+      steps: t.steps != null ? List<ExerciseStep>.from(t.steps!) : null,
+      platformLabel: null,
+      ammoLabel: null,
+      equipmentIds: const [],
+      targetName: null,
+      targetPhotos: const [],
+      precision: null,
+      precisionEnabled: true,
+    );
+    setState(() {
+      _exercises.add(exercise);
+      _exercisesError = false;
+    });
+  }
+
   void _importExerciseFromTemplate() {
     final provider = Provider.of<ThotProvider>(context, listen: false);
-    final templates = provider.exerciseTemplates;
+    final userTemplates = provider.exerciseTemplates;
     final strings = AppStrings.of(context);
+    final standardDrills = StandardDrills.all(strings);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
           maxChildSize: 0.9,
           expand: false,
           builder: (_, controller) {
@@ -918,12 +856,12 @@ LocationSettings _buildLocationSettings() {
               ),
               child: Column(
                 children: [
+                  const SizedBox(height: 12),
                   Container(
-                    margin: const EdgeInsets.only(top: 12),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: colors.outline,
+                      color: LightColors.iconInactive.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -936,8 +874,74 @@ LocationSettings _buildLocationSettings() {
                     ),
                   ),
                   Expanded(
-                    child: templates.isEmpty
-                        ? Center(
+                    child: ListView(
+                      controller: controller,
+                      padding: AppSpacing.paddingLg,
+                      children: [
+                        if (standardDrills.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                            child: Text(
+                              strings.exerciseTemplatesStandardSection,
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colors.primary,
+                              ),
+                            ),
+                          ),
+                          ...standardDrills.map((t) {
+                            final subtitle = t.detailedMode
+                                ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${t.distance} m'
+                                : '${t.shotsFired} coups · ${t.distance} m';
+                            return ListTile(
+                              title: Text(
+                                t.name,
+                                style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                subtitle,
+                                style: textStyles.bodySmall,
+                              ),
+                              trailing: Icon(Icons.add_circle_outline, color: colors.primary),
+                              onTap: () {
+                                _addTemplateAsExercise(t);
+                                Navigator.pop(ctx);
+                              },
+                            );
+                          }),
+                          const Gap(AppSpacing.xl),
+                        ],
+                        if (userTemplates.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                            child: Text(
+                              strings.exerciseTemplatesMyTemplatesSection,
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colors.primary,
+                              ),
+                            ),
+                          ),
+                          ...userTemplates.map((t) {
+                            return ListTile(
+                              title: Text(
+                                t.name,
+                                style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                '${t.shotsFired} coups, ${t.distance}m',
+                                style: textStyles.bodySmall,
+                              ),
+                              trailing: Icon(Icons.add_circle_outline, color: colors.primary),
+                              onTap: () {
+                                _addTemplateAsExercise(t);
+                                if (ctx.mounted) Navigator.of(ctx).pop();
+                              },
+                            );
+                          }),
+                        ],
+                        if (standardDrills.isEmpty && userTemplates.isEmpty)
+                          Center(
                             child: Padding(
                               padding: AppSpacing.paddingLg,
                               child: Column(
@@ -960,54 +964,9 @@ LocationSettings _buildLocationSettings() {
                                 ],
                               ),
                             ),
-                          )
-                        : ListView.builder(
-                            controller: controller,
-                            padding: AppSpacing.paddingLg,
-                            itemCount: templates.length,
-                            itemBuilder: (_, i) {
-                              final t = templates[i];
-                              return ListTile(
-                                title: Text(
-                                  t.name,
-                                  style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  t.detailedMode
-                                      ? '${t.steps?.length ?? 0} étapes'
-                                      : '${t.shotsFired} coups · ${t.distance} m',
-                                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                                ),
-                                trailing: FilledButton(
-                                  onPressed: () {
-                                    final exercise = Exercise(
-                                      id: DateTime.now().microsecondsSinceEpoch.toString(),
-                                      name: t.name,
-                                      weaponId: _exercises.isNotEmpty ? _exercises.last.weaponId : '',
-                                      ammoId: _exercises.isNotEmpty ? _exercises.last.ammoId : '',
-                                      shotsFired: t.shotsFired,
-                                      distance: t.distance,
-                                      observations: t.observations,
-                                      steps: t.steps != null ? List<ExerciseStep>.from(t.steps!) : null,
-                                      weaponLabel: null,
-                                      ammoLabel: null,
-                                      equipmentIds: const [],
-                                      targetName: null,
-                                      targetPhotos: const [],
-                                      precision: null,
-                                      precisionEnabled: true,
-                                    );
-                                    setState(() {
-                                      _exercises.add(exercise);
-                                      _exercisesError = false;
-                                    });
-if (ctx.mounted) Navigator.of(ctx).pop();
-                                  },
-                                  child: Text(strings.templateImportButton),
-                                ),
-                              );
-                            },
                           ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1025,13 +984,13 @@ if (ctx.mounted) Navigator.of(ctx).pop();
       template = Exercise(
         id: '',
         name: '',
-        weaponId: lastExercise.weaponId,
-        weaponLabel: lastExercise.weaponLabel,
+        platformId: lastExercise.platformId,
+        platformLabel: lastExercise.platformLabel,
         ammoId: lastExercise.ammoId,
         ammoLabel: lastExercise.ammoLabel,
         equipmentIds: List<String>.from(lastExercise.equipmentIds),
-        weaponAssignments: List<ExerciseWeaponAssignment>.from(
-          lastExercise.weaponAssignments,
+        platformAssignments: List<ExercisePlatformAssignment>.from(
+          lastExercise.platformAssignments,
         ),
         shotAllocations: List<ExerciseShotAllocation>.from(
           lastExercise.shotAllocations,
@@ -1137,29 +1096,31 @@ if (ctx.mounted) Navigator.of(ctx).pop();
       return;
     }
 
-    final session = Session(
-      id: widget.sessionId ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
-      name: _nameController.text.trim(),
-      date: _selectedDate,
-      location: _locationController.text.trim(),
-      shootingDistance: _shootingDistanceController.text.isEmpty
-          ? null
-          : _shootingDistanceController.text,
-      sessionType: _sessionType,
-      exercises: _exercises,
-      weatherEnabled: _weatherEnabled,
-      temperature: _tempController.text,
-      wind: _windController.text,
-      humidity: _humidityController.text,
-      pressure: _pressureController.text,
+final session = Session(
+  id: widget.sessionId ??
+      DateTime.now().millisecondsSinceEpoch.toString(),
+  name: _nameController.text.trim(),
+  date: _selectedDate,
+  location: _locationController.text.trim(),
+  shootingDistance: _shootingDistanceController.text.isEmpty
+      ? null
+      : _shootingDistanceController.text,
+  locationLatitude: _selectedCityLatitude,
+  locationLongitude: _selectedCityLongitude,
+  sessionType: _sessionType,
+  exercises: _exercises,
+  weatherEnabled: _weatherEnabled,
+  temperature: _tempController.text,
+  wind: _windController.text,
+  humidity: _humidityController.text,
+  pressure: _pressureController.text,
       temperatureEnabled: _tempEnabled,
       windEnabled: _windEnabled,
       humidityEnabled: _humidityEnabled,
       pressureEnabled: _pressureEnabled,
-      weaponIds: {
+      platformIds: {
         for (final ex in _exercises)
-          ...ex.weaponShotImpact.keys.where(
+          ...ex.platformShotImpact.keys.where(
             (wid) => wid.trim().isNotEmpty && wid != 'none' && wid != 'borrowed',
           ),
       }.toList(growable: false),
@@ -1174,10 +1135,13 @@ if (ctx.mounted) Navigator.of(ctx).pop();
 
     if (!provider.isPremium) {
       for (final ex in _exercises) {
-        for (final weaponId in ex.weaponShotImpact.keys) {
-          if (!provider.canUseWeaponId(weaponId)) {
+        for (final platformId in ex.platformShotImpact.keys) {
+          if (!provider.canUsePlatformId(platformId)) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(strings.freeVersionWeaponLimit)),
+              SnackBar(
+                content: Text(strings.freeVersionPlatformLimit),
+                duration: const Duration(seconds: 3),
+              ),
             );
             showProModal(context);
             return;
@@ -1187,7 +1151,10 @@ if (ctx.mounted) Navigator.of(ctx).pop();
         for (final ammoId in ex.ammoShotImpact.keys) {
           if (!provider.canUseAmmoId(ammoId)) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(strings.freeVersionAmmoLimit)),
+              SnackBar(
+                content: Text(strings.freeVersionAmmoLimit),
+                duration: const Duration(seconds: 3),
+              ),
             );
             showProModal(context);
             return;
@@ -1197,7 +1164,10 @@ if (ctx.mounted) Navigator.of(ctx).pop();
         for (final accId in ex.equipmentShotImpact.keys) {
           if (!provider.canUseAccessoryId(accId)) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(strings.freeVersionAccessoryLimit)),
+              SnackBar(
+                content: Text(strings.freeVersionAccessoryLimit),
+                duration: const Duration(seconds: 3),
+              ),
             );
             showProModal(context);
             return;
@@ -1211,7 +1181,10 @@ if (ctx.mounted) Navigator.of(ctx).pop();
     } else {
       if (!provider.canAddSession()) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(provider.getLimitMessage('session'))),
+          SnackBar(
+            content: Text(provider.getLimitMessage('session')),
+            duration: const Duration(seconds: 3),
+          ),
         );
         showProModal(context);
         return;
@@ -1221,201 +1194,182 @@ if (ctx.mounted) Navigator.of(ctx).pop();
 
     context.pop();
   }
-
-  Future<void> _fillWithCurrentPosition() async {
-    setState(() => _isLocating = true);
-    try {
-      await _resolveLocationAndWeather(updateLocationField: true);
-    } catch (e) {
-      debugPrint('Failed to get current position: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.positionRetrievalFailed)),
-        );
+  @override
+  void dispose() {
+    _cityDebounce?.cancel();
+    _nameController.dispose();
+    _locationController.dispose();
+    _locationFocusNode.dispose();
+    _shootingDistanceController.dispose();
+    _sessionScrollController.dispose();
+    _tempController.dispose();
+    _windController.dispose();
+    _humidityController.dispose();
+    _pressureController.dispose();
+    super.dispose();
+  }
+  Future<List<_CitySuggestion>> _searchCitiesDebounced(String query) {
+    _cityDebounce?.cancel();
+    final completer = Completer<List<_CitySuggestion>>();
+    final myId = ++_cityRequestId;
+    _cityDebounce = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        final result = await _searchCities(query);
+        if (myId != _cityRequestId) {
+          if (!completer.isCompleted) completer.complete(const []);
+        } else {
+          if (!completer.isCompleted) completer.complete(result);
+        }
+      } catch (e) {
+        if (!completer.isCompleted) completer.complete(const []);
       }
-    } finally {
-      if (mounted) setState(() => _isLocating = false);
-    }
+    });
+    return completer.future;
   }
 
-  Future<void> _fillWeatherFromCurrentPosition() async {
-    setState(() => _isWeatherLocating = true);
-    try {
-      await _resolveLocationAndWeather(updateLocationField: false);
-    } catch (e) {
-      debugPrint('Failed to get weather from current position: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.weatherRetrievalError)),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isWeatherLocating = false);
-    }
-  }
+  Future<List<_CitySuggestion>> _searchCities(String query) async {
+  final trimmed = query.trim();
+  if (trimmed.length < 2) return const [];
 
-  Future<void> _onWeatherToggled(bool enabled) async {
+  try {
+    final uri = Uri.https(
+      'geocoding-api.open-meteo.com',
+      '/v1/search',
+      <String, String>{
+        'name': trimmed,
+        'count': '8',
+        'format': 'json',
+      },
+    );
+
+    final res = await http.get(uri).timeout(const Duration(seconds: 10));
+
+    if (res.statusCode != 200) {
+      throw Exception('HTTP ${res.statusCode}');
+    }
+
+    final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+    final results =
+        decoded is Map<String, dynamic> ? decoded['results'] as List? : null;
+
+    if (results == null) {
+      if (mounted) {
+        setState(() => _citySearchError = false);
+      }
+      return const [];
+    }
+
+    final suggestions = <_CitySuggestion>[];
+
+    for (final item in results) {
+      if (item is! Map<String, dynamic>) continue;
+
+      final name = (item['name'] as String?)?.trim();
+      final country =
+          (item['country'] as String?)?.trim() ??
+          (item['country_code'] as String?)?.trim().toUpperCase() ??
+          '';
+      final lat = (item['latitude'] as num?)?.toDouble();
+      final lon = (item['longitude'] as num?)?.toDouble();
+
+      if (name == null || name.isEmpty) continue;
+      if (country.isEmpty) continue;
+      if (lat == null || lon == null) continue;
+
+      suggestions.add(
+        _CitySuggestion(
+          name: name,
+          countryCode: country,
+          latitude: lat,
+          longitude: lon,
+        ),
+      );
+    }
+
+    if (mounted && _citySearchError) {
+      setState(() => _citySearchError = false);
+    }
+
+    debugPrint('City query "$trimmed" -> ${suggestions.length} result(s)');
+    return suggestions;
+  } catch (e) {
+    debugPrint('City search failed for "$trimmed": $e');
+
+    if (mounted) {
+      setState(() => _citySearchError = true);
+    }
+
+    return const [];
+  }
+}
+
+  Future<void> _onCitySelected(_CitySuggestion city) async {
+  _isApplyingCitySelection = true;
+
+  _locationController.text = city.label;
+  _locationController.selection = TextSelection.collapsed(
+    offset: _locationController.text.length,
+  );
+
+  setState(() {
+    _selectedCityLatitude = city.latitude;
+    _selectedCityLongitude = city.longitude;
+    _locationError = false;
+    _citySearchError = false;
+  });
+
+  try {
+    await _autofillWeatherForCoordinates(
+      lat: city.latitude,
+      lon: city.longitude,
+    );
+  } finally {
+    _isApplyingCitySelection = false;
+  }
+}
+
+   Future<void> _onWeatherToggled(bool enabled) async {
     if (!enabled) {
-      setState(() => _weatherEnabled = false);
+      setState(() {
+        _weatherEnabled = false;
+      });
+      return;
+    }
+
+    final hasValidatedCity =
+        _selectedCityLatitude != null &&
+        _selectedCityLongitude != null &&
+        _locationController.text.trim().isNotEmpty;
+
+    if (!hasValidatedCity) {
+      setState(() {
+        _locationError = true;
+        _weatherEnabled = false;
+      });
+
+      if (_locationFieldKey.currentContext != null) {
+        await Scrollable.ensureVisible(
+          _locationFieldKey.currentContext!,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(strings.locationRequiredForWeather),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
       return;
     }
 
     setState(() {
       _weatherEnabled = true;
-      // Re-enable everything when turning weather back on.
-      _tempEnabled = true;
-      _windEnabled = true;
-      _humidityEnabled = true;
-      _pressureEnabled = true;
     });
-  }
-
-  Future<Position?> _requestCurrentPosition({
-    required String permissionDeniedMessage,
-    required String permissionDeniedForeverMessage,
-    required String servicesDisabledMessage,
-  }) async {
-    try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        debugPrint('Location permission permanently denied');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(permissionDeniedForeverMessage),
-              action: SnackBarAction(
-                label: strings.openAppSettingsLabel,
-                onPressed: () {
-                  Geolocator.openAppSettings();
-                },
-              ),
-            ),
-          );
-        }
-        return null;
-      }
-
-      if (permission == LocationPermission.denied) {
-        debugPrint('Location permission denied');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(permissionDeniedMessage)),
-          );
-        }
-        return null;
-      }
-
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        debugPrint('Location services disabled');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(servicesDisabledMessage),
-              action: SnackBarAction(
-                label: strings.openAppSettingsLabel,
-                onPressed: () {
-                  Geolocator.openLocationSettings();
-                },
-              ),
-            ),
-          );
-        }
-        return null;
-      }
-
-      return await Geolocator.getCurrentPosition(
-        locationSettings: _buildLocationSettings(),
-      );
-    } on TimeoutException {
-      debugPrint('Location request timed out');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.positionRetrievalFailed)),
-        );
-      }
-      return null;
-    } on LocationServiceDisabledException {
-      debugPrint('Location service disabled while requesting position');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(servicesDisabledMessage),
-            action: SnackBarAction(
-              label: strings.openAppSettingsLabel,
-              onPressed: () {
-                Geolocator.openLocationSettings();
-              },
-            ),
-          ),
-        );
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Failed to retrieve current position: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.positionRetrievalFailed)),
-        );
-      }
-      return null;
-    }
-  }
-
-  Future<void> _resolveLocationAndWeather({
-    required bool updateLocationField,
-  }) async {
-    // Check offline first
-    try {
-      final result = await InternetAddress.lookup('dns.google')
-          .timeout(const Duration(seconds: 3));
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.offlineLocationUnavailable)),
-          );
-        }
-        return;
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.offlineLocationUnavailable)),
-        );
-      }
-      return;
-    }
-
-    final position = await _requestCurrentPosition(
-      permissionDeniedMessage: strings.locationPermissionDenied,
-      permissionDeniedForeverMessage: strings.locationPermissionDeniedForever,
-      servicesDisabledMessage: strings.locationServicesDisabled,
-    );
-    if (position == null) return;
-
-    final lat = position.latitude;
-    final lon = position.longitude;
-
-    _lastResolvedLatitude = lat;
-    _lastResolvedLongitude = lon;
-
-    if (updateLocationField) {
-      _locationController.text =
-          '${lat.toStringAsFixed(6)}, ${lon.toStringAsFixed(6)}';
-
-      final pretty = await _reverseGeocodeCityCountry(lat: lat, lon: lon);
-      if (pretty != null && pretty.isNotEmpty) {
-        _locationController.text = pretty;
-      }
-    } else {
-      unawaited(_reverseGeocodeCityCountry(lat: lat, lon: lon));
-    }
-
-    await _autofillWeatherForCoordinates(lat: lat, lon: lon);
   }
 
   Future<void> _autofillWeatherForCoordinates({
@@ -1423,27 +1377,6 @@ if (ctx.mounted) Navigator.of(ctx).pop();
     required double lon,
   }) async {
     if (_isWeatherLoading) return;
-
-    // Check offline first
-    try {
-      final result = await InternetAddress.lookup('dns.google')
-          .timeout(const Duration(seconds: 3));
-      if (result.isEmpty || result[0].rawAddress.isNotEmpty == false) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.offlineWeatherUnavailable)),
-          );
-        }
-        return;
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.offlineWeatherUnavailable)),
-        );
-      }
-      return;
-    }
 
     setState(() => _isWeatherLoading = true);
 
@@ -1464,7 +1397,10 @@ if (ctx.mounted) Navigator.of(ctx).pop();
         debugPrint('Weather autofill: HTTP ${res.statusCode}: ${res.body}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.weatherNetworkError)),
+            SnackBar(
+              content: Text(strings.weatherNetworkError),
+              duration: const Duration(seconds: 3),
+            ),
           );
         }
         return;
@@ -1476,7 +1412,10 @@ if (ctx.mounted) Navigator.of(ctx).pop();
         debugPrint('Weather autofill: invalid response shape: $json');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.weatherInvalidResponse)),
+            SnackBar(
+              content: Text(strings.weatherInvalidResponse),
+              duration: const Duration(seconds: 3),
+            ),
           );
         }
         return;
@@ -1494,26 +1433,37 @@ if (ctx.mounted) Navigator.of(ctx).pop();
         debugPrint('Weather autofill: missing values: $current');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.weatherUnavailable)),
+            SnackBar(
+              content: Text(strings.weatherUnavailable),
+              duration: const Duration(seconds: 3),
+            ),
           );
         }
         return;
       }
 
       setState(() {
-        if (tempC != null)
+        if (tempC != null) {
           _tempController.text = converter.formatTemperature(tempC);
-        if (windKmh != null)
+        }
+        if (windKmh != null) {
           _windController.text = converter.formatWindSpeed(windKmh);
-        if (humidity != null) _humidityController.text = '${humidity.round()}%';
-        if (pressureHpa != null)
+        }
+        if (humidity != null) {
+          _humidityController.text = '${humidity.round()}%';
+        }
+        if (pressureHpa != null) {
           _pressureController.text = converter.formatPressure(pressureHpa);
+        }
       });
     } catch (e) {
       debugPrint('Weather autofill failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.weatherRetrievalError)),
+          SnackBar(
+            content: Text(strings.weatherRetrievalError),
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     } finally {
@@ -1542,11 +1492,9 @@ class WeatherEditableField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<ThotProvider>(context, listen: false);
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-final distUnit = provider.useMetric ? 'm' : 'yd';
     final radius = BorderRadius.circular(AppRadius.lg);
 
     final field = TextField(
@@ -1574,7 +1522,7 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: radius,
-          borderSide: BorderSide(color: colors.primary, width: 1.6),
+          borderSide: BorderSide(color: colors.outline),
         ),
         suffixIcon: IconButton(
           tooltip: enabled ? strings.disableTooltip : strings.enableTooltip,
@@ -1747,15 +1695,6 @@ class _ExerciseCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    
-    final weapon = provider.getWeaponById(exercise.weaponId);
-    final ammo = provider.getAmmoById(exercise.ammoId);
-    final equipmentNames = exercise.equipmentIds
-        .map((id) =>
-            provider.accessories.where((a) => a.id == id).firstOrNull?.name)
-        .whereType<String>()
-        .where((name) => name.trim().isNotEmpty)
-        .toList();
 
     final exerciseTitle = exercise.name.trim().isEmpty
         ? strings.exerciseCardTitle(index)
@@ -1819,7 +1758,7 @@ class _ExerciseCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardDecoration = BoxDecoration(
       color: colors.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       border: isDark
           ? null
           : Border.all(
@@ -1890,8 +1829,7 @@ class _ExerciseCard extends StatelessWidget {
                   const Gap(8),
                   IconButton(
                     onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                    color: colors.error,
+                    icon: const Icon(Icons.delete_rounded, size: 20),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -1899,110 +1837,6 @@ class _ExerciseCard extends StatelessWidget {
               ),
             ],
           ),
-          const Gap(AppSpacing.md),
-
-          // Weapons and Ammo blocks - horizontal layout
-          Row(
-            children: [
-              // Weapon block
-              Expanded(
-                child: Container(
-                  padding: AppSpacing.paddingMd,
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: colors.outline),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/images/gun.svg',
-                            width: 20,
-                            height: 20,
-                            colorFilter: ColorFilter.mode(
-                              colors.onSurface,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          const Gap(8),
-                          Text(
-                            'Arme',
-                            style: textStyles.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                      const Gap(AppSpacing.md),
-                      _InfoRow(
-                        label: strings.weaponTitle,
-                        value: exercise.weaponId == 'borrowed'
-                            ? ((exercise.weaponLabel?.trim().isNotEmpty ?? false)
-                                ? exercise.weaponLabel!.trim()
-                                : strings.borrowedWeaponFallback)
-                            : (weapon?.name ?? '—'),
-                      ),
-                      if (equipmentNames.isNotEmpty)
-                        _InfoRow(
-                          label: strings.equipmentTitle,
-                          value: equipmentNames.join(', '),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const Gap(AppSpacing.md),
-              
-              // Ammo block
-              Expanded(
-                child: Container(
-                  padding: AppSpacing.paddingMd,
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: colors.outline),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/images/bullet.svg',
-                            width: 20,
-                            height: 20,
-                            colorFilter: ColorFilter.mode(
-                              colors.onSurface,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          const Gap(8),
-                          Text(
-                            'Munition',
-                            style: textStyles.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                      const Gap(AppSpacing.md),
-                      _InfoRow(
-                        label: strings.ammoTitle,
-                        value: exercise.ammoId == 'borrowed'
-                            ? ((exercise.ammoLabel?.trim().isNotEmpty ?? false)
-                                ? exercise.ammoLabel!.trim()
-                                : strings.borrowedAmmoFallback)
-                            : (ammo?.name ?? '—'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
           const Gap(AppSpacing.md),
 
           // Card 3: shooting results (main target photo + shots & distance)
@@ -2158,6 +1992,18 @@ class _SessionSummary extends StatelessWidget {
 
   const _SessionSummary({required this.exercises, required this.provider});
 
+  String _getCurrencySymbol(String? currency) {
+    switch (currency) {
+      case 'USD':
+        return '\$';
+      case 'CAD':
+        return 'CAD';
+      case 'EUR':
+      default:
+        return '€';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -2176,13 +2022,13 @@ class _SessionSummary extends StatelessWidget {
       });
     }
 
-    // Impact on weapons (inventory only)
-    final Map<String, int> weaponImpact = {};
+    // Impact on platforms (inventory only)
+    final Map<String, int> platformImpact = {};
     for (final ex in exercises) {
-      ex.weaponShotImpact.forEach((weaponId, shots) {
-        final weapon = provider.getWeaponById(weaponId);
-        if (weapon == null) return;
-        weaponImpact[weapon.id] = (weaponImpact[weapon.id] ?? 0) + shots;
+      ex.platformShotImpact.forEach((platformId, shots) {
+        final platform = provider.getPlatformById(platformId);
+        if (platform == null) return;
+        platformImpact[platform.id] = (platformImpact[platform.id] ?? 0) + shots;
       });
     }
 
@@ -2199,7 +2045,7 @@ class _SessionSummary extends StatelessWidget {
       padding: AppSpacing.paddingMd,
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: colors.outline),
       ),
       child: Column(
@@ -2211,20 +2057,20 @@ class _SessionSummary extends StatelessWidget {
           ),
           const Gap(AppSpacing.md),
 
-          // Weapons impact
-          if (weaponImpact.isNotEmpty) ...[
+          // Platforms impact
+          if (platformImpact.isNotEmpty) ...[
             Text(
-              'Armes utilisées',
+              strings.platformsUsedLabel,
               style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Gap(4),
-            ...weaponImpact.entries.map((e) {
-              final weapon = provider.getWeaponById(e.key);
-              if (weapon == null) return const SizedBox.shrink();
+            ...platformImpact.entries.map((e) {
+              final platform = provider.getPlatformById(e.key);
+              if (platform == null) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                  '• ${weapon.name}: ${e.value} coups',
+                  '• ${platform.name}: ${e.value} coups',
                   style: textStyles.bodySmall,
                 ),
               );
@@ -2235,18 +2081,31 @@ class _SessionSummary extends StatelessWidget {
           // Ammo impact
           if (ammoImpact.isNotEmpty) ...[
             Text(
-              'Munitions utilisées',
+              strings.consumablesUsedLabel,
               style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Gap(4),
             ...ammoImpact.entries.map((e) {
               final ammo = provider.getAmmoById(e.key);
               if (ammo == null) return const SizedBox.shrink();
-              final remaining = (ammo.quantity - e.value).clamp(0, 1 << 30);
+              final remaining =
+                  (ammo.quantity - e.value).clamp(0, 1 << 30).toInt();
+              final lineCost = ammo.unitPrice != null
+                  ? (e.value * ammo.unitPrice!).toStringAsFixed(2)
+                  : null;
+              final currencySymbol = _getCurrencySymbol(ammo.currency);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                  '• ${ammo.name}: ${e.value} cartouches (restantes: $remaining)',
+                  lineCost == null
+                      ? strings.sessionSummaryAmmoImpactLine(ammo.name, e.value, remaining)
+                      : strings.sessionSummaryAmmoImpactLineWithCost(
+                          ammo.name,
+                          e.value,
+                          remaining,
+                          lineCost,
+                          currencySymbol,
+                        ),
                   style: textStyles.bodySmall,
                 ),
               );
@@ -2298,7 +2157,7 @@ class _ExerciseForm extends StatefulWidget {
 class _ExerciseFormState extends State<_ExerciseForm> {
   final _exerciseNameController = TextEditingController();
   final _exerciseScrollController = ScrollController();
-  final _weaponFieldKey = GlobalKey();
+  final _platformFieldKey = GlobalKey();
   final _ammoFieldKey = GlobalKey();
   final _shotsFieldKey = GlobalKey();
   final _distanceFieldKey = GlobalKey();
@@ -2306,18 +2165,19 @@ class _ExerciseFormState extends State<_ExerciseForm> {
   bool _detailedMode = false;
   final List<ExerciseStep> _steps = [];
 
-  bool _weaponError = false;
+  bool _platformError = false;
   bool _ammoError = false;
   bool _shotsError = false;
   bool _distanceError = false;
 
-  String _weaponSource = 'inventory'; // inventory | borrowed
+  String _platformSource = 'inventory'; // inventory | borrowed
   String _ammoSource = 'inventory'; // inventory | borrowed
-  String? _selectedWeaponId;
+  String? _selectedPlatformId;
   String? _selectedAmmoId;
-  final _borrowedWeaponController = TextEditingController();
+  final _borrowedPlatformController = TextEditingController();
   final _borrowedAmmoController = TextEditingController();
   final Set<String> _selectedEquipmentIds = {};
+  final Set<String> _removedLinkedAccessoryIds = {};
   final _targetNameController = TextEditingController();
   final List<ExercisePhoto> _targetPhotos = [];
   final _shotsFiredController = TextEditingController();
@@ -2335,14 +2195,14 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     if (widget.exercise != null) {
       _exerciseNameController.text = widget.exercise!.name;
 
-      final weaponId = widget.exercise!.weaponId;
-      if (weaponId == 'borrowed' || weaponId == 'none') {
-        _weaponSource = 'borrowed';
-        _selectedWeaponId = null;
-        _borrowedWeaponController.text = widget.exercise!.weaponLabel ?? '';
+      final platformId = widget.exercise!.platformId;
+      if (platformId == 'borrowed' || platformId == 'none') {
+        _platformSource = 'borrowed';
+        _selectedPlatformId = null;
+        _borrowedPlatformController.text = widget.exercise!.platformLabel ?? '';
       } else {
-        _weaponSource = 'inventory';
-        _selectedWeaponId = weaponId;
+        _platformSource = 'inventory';
+        _selectedPlatformId = platformId;
       }
 
       final ammoId = widget.exercise!.ammoId;
@@ -2358,6 +2218,17 @@ class _ExerciseFormState extends State<_ExerciseForm> {
       _selectedEquipmentIds
         ..clear()
         ..addAll(widget.exercise!.equipmentIds);
+      
+      // Si on est en mode édition avec une plateforme sélectionnée et aucun équipement personnalisé,
+      // ajouter automatiquement les accessoires liés
+      if (_platformSource == 'inventory' && _selectedPlatformId != null && widget.exercise!.equipmentIds.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            final provider = Provider.of<ThotProvider>(context, listen: false);
+            _updateEquipmentForPlatform(provider);
+          }
+        });
+      }
       _targetNameController.text = widget.exercise!.targetName ?? '';
       _targetPhotos
         ..clear()
@@ -2376,7 +2247,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
         ..clear()
         ..addAll(widget.exercise!.steps ?? const []);
     } else {
-      _distanceController.text = '0';
+      // Les deux champs démarrent vides
     }
   }
 
@@ -2392,11 +2263,43 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     return distances.reduce((a, b) => a > b ? a : b);
   }
 
-  List<Weapon> _availableWeaponsForStep(ThotProvider provider) {
-    if (_weaponSource != 'inventory' || _selectedWeaponId == null) {
+  Set<String> _getLinkedAccessoryIds(ThotProvider provider) {
+    if (_platformSource != 'inventory' || _selectedPlatformId == null) {
+      return const {};
+    }
+    final platform = provider.getPlatformById(_selectedPlatformId!);
+    if (platform == null) return const {};
+    return provider.linkedAccessoriesForPlatform(platform.id)
+        .map((a) => a.id)
+        .toSet();
+  }
+
+  void _updateEquipmentForPlatform(ThotProvider provider) {
+    if (_platformSource != 'inventory' || _selectedPlatformId == null) {
+      return;
+    }
+    
+    final platform = provider.getPlatformById(_selectedPlatformId!);
+    if (platform == null) return;
+    
+    // Récupérer les accessoires liés à cette plateforme
+    final linkedAccessories = provider.linkedAccessoriesForPlatform(platform.id);
+    
+    // Réinitialiser les suppressions de liaison quand on change de plateforme
+    _removedLinkedAccessoryIds.clear();
+    
+    // Ajouter les accessoires liés à la sélection existante
+    setState(() {
+      _selectedEquipmentIds.clear();
+      _selectedEquipmentIds.addAll(linkedAccessories.map((a) => a.id));
+    });
+  }
+
+  List<Platform> _availablePlatformsForStep(ThotProvider provider) {
+    if (_platformSource != 'inventory' || _selectedPlatformId == null) {
       return const [];
     }
-    final selected = provider.getWeaponById(_selectedWeaponId!);
+    final selected = provider.getPlatformById(_selectedPlatformId!);
     if (selected == null) return const [];
     return [selected];
   }
@@ -2414,19 +2317,6 @@ String _stepTitle(StepType type) {
     return AppStrings.of(context).exerciseStepTypeLabel(type);
   }
 
-  String _stepIcon(StepType type) {
-    return switch (type) {
-      StepType.tir => '💥',
-      StepType.deplacement => '🏃🏻‍♂️‍➡️',
-      StepType.rechargement => '🔄',
-      StepType.transition => '🔃',
-      StepType.miseEnJoue => '⏺️',
-      StepType.attente => '⏸️',
-      StepType.securite => '🛡️',
-      StepType.autre => '⚙️',
-    };
-  }
-
 String _positionShort(ShootingPosition? pos) {
     if (pos == null) return '';
     final strings = AppStrings.of(context);
@@ -2438,11 +2328,11 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     final provider = Provider.of<ThotProvider>(context, listen: false);
     if (s.type == StepType.tir && s.shots != null) {
       parts.add('${s.shots} ${strings.exerciseNarrativeShotsWord}');
-      final usedWeaponId = (s.usedWeaponId ?? '').trim();
-      if (usedWeaponId.isNotEmpty) {
-        final weaponName = provider.getWeaponById(usedWeaponId)?.name;
-        if (weaponName != null && weaponName.trim().isNotEmpty) {
-          parts.add(weaponName);
+      final usedPlatformId = (s.usedPlatformId ?? '').trim();
+      if (usedPlatformId.isNotEmpty) {
+        final platformName = provider.getPlatformById(usedPlatformId)?.name;
+        if (platformName != null && platformName.trim().isNotEmpty) {
+          parts.add(platformName);
         }
       }
       final usedAmmoId = (s.usedAmmoId ?? '').trim();
@@ -2461,11 +2351,11 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     }
     if ((s.target ?? '').trim().isNotEmpty) parts.add(s.target!.trim());
     if (s.type == StepType.transition) {
-      if ((s.weaponFrom ?? '').trim().isNotEmpty) {
-        parts.add('${strings.exerciseNarrativeFrom.trim()} ${s.weaponFrom!.trim()}');
+      if ((s.platformFrom ?? '').trim().isNotEmpty) {
+        parts.add('${strings.exerciseNarrativeFrom.trim()} ${s.platformFrom!.trim()}');
       }
-      if ((s.weaponTo ?? '').trim().isNotEmpty) {
-        parts.add('${strings.exerciseNarrativeTo.trim()} ${s.weaponTo!.trim()}');
+      if ((s.platformTo ?? '').trim().isNotEmpty) {
+        parts.add('${strings.exerciseNarrativeTo.trim()} ${s.platformTo!.trim()}');
       }
     }
     if (s.type == StepType.rechargement && s.reloadType != null) {
@@ -2488,17 +2378,17 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() {
-        if (_weaponSource == 'inventory') {
-          final exists = _selectedWeaponId != null &&
-              provider.weapons.any((w) => w.id == _selectedWeaponId);
-          final allowed = _selectedWeaponId != null
-              ? provider.canUseWeaponId(_selectedWeaponId!)
+        if (_platformSource == 'inventory') {
+          final exists = _selectedPlatformId != null &&
+              provider.platforms.any((w) => w.id == _selectedPlatformId);
+          final allowed = _selectedPlatformId != null
+              ? provider.canUsePlatformId(_selectedPlatformId!)
               : true;
           if (!exists || !allowed) {
-            _selectedWeaponId = provider.weapons.isNotEmpty
-                ? provider.weapons.first.id
+            _selectedPlatformId = provider.platforms.isNotEmpty
+                ? provider.platforms.first.id
                 : null;
-            if (provider.weapons.isEmpty) _weaponSource = 'borrowed';
+            if (provider.platforms.isEmpty) _platformSource = 'borrowed';
           }
         }
 
@@ -2515,6 +2405,11 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
           }
         }
       });
+
+      // Auto-ajouter les accessoires liés quand la plateforme est pré-sélectionnée
+      if (_platformSource == 'inventory' && _selectedPlatformId != null && _selectedEquipmentIds.isEmpty) {
+        _updateEquipmentForPlatform(provider);
+      }
     });
   }
 
@@ -2540,7 +2435,7 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
   @override
   void dispose() {
     _exerciseNameController.dispose();
-    _borrowedWeaponController.dispose();
+    _borrowedPlatformController.dispose();
     _borrowedAmmoController.dispose();
     _targetNameController.dispose();
     _shotsFiredController.dispose();
@@ -2549,32 +2444,31 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     for (var c in _photoControllers.values) {
       c.dispose();
     }
+    _exerciseScrollController.dispose();
     super.dispose();
   }
   Future<void> _pickTargetPhoto() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
-      );
+      final picker = ImagePicker();
+      final List<XFile> files = await picker.pickMultiImage();
+      
       if (!mounted) return;
-      if (result == null || result.files.isEmpty) return;
+      if (files.isEmpty) return;
 
       final List<ExercisePhoto> picked = [];
 
-      for (final file in result.files) {
+      for (final file in files) {
         String? path;
 
         if (kIsWeb) {
-          final bytes = file.bytes;
-          if (bytes == null) continue;
+          final bytes = await file.readAsBytes();
           final base64 = base64Encode(bytes);
-          path = 'data:image/${file.extension ?? "png"};base64,$base64';
+          path = 'data:image/${file.name.split('.').last};base64,$base64';
         } else {
           path = file.path;
         }
 
-        if (path == null || path.isEmpty) continue;
+        if (path.isEmpty) continue;
 
         picked.add(
           ExercisePhoto(
@@ -2623,20 +2517,21 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     final strings = AppStrings.of(context);
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
 
-return Container(
+return GestureDetector(
+  onTap: () => FocusScope.of(context).unfocus(),
+  child: Container(
   decoration: BoxDecoration(
     color: baseBackground,
     borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
   ),
       child: Column(
         children: [
-          // Handle bar
+          const SizedBox(height: 12),
           Container(
-            margin: const EdgeInsets.only(top: 12),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: colors.outline,
+              color: LightColors.iconInactive.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -2649,9 +2544,16 @@ return Container(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-icon: const Icon(Icons.arrow_back_rounded),
-                  color: colors.onSurface,
-                  onPressed: () => Navigator.of(context).pop(),
+icon: const Icon(Icons.timer_rounded),
+                  color: colors.primary,
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const ShootingTimerScreen(),
+                    );
+                  },
 
                 ),
                 Expanded(
@@ -2685,18 +2587,6 @@ icon: const Icon(Icons.arrow_back_rounded),
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.timer_rounded),
-                  color: colors.primary,
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const ShootingTimerScreen(),
-                    );
-                  },
-                ),
               ],
             ),
           ),
@@ -2727,9 +2617,12 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       ),
                       const Gap(8),
                       Text(
-                        strings.exerciseNameLabel,
-                        style: textStyles.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        strings.exerciseNameLabel.toUpperCase(),
+                        style: textStyles.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: colors.onSurface,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ],
                   ),
@@ -2738,6 +2631,8 @@ controller: widget.scrollController ?? _exerciseScrollController,
                   TextField(
                     controller: _exerciseNameController,
                     textInputAction: TextInputAction.next,
+                    onTap: () => _exerciseNameController.selection = TextSelection(baseOffset: 0, extentOffset: _exerciseNameController.text.length),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'.*'))],
                     decoration: InputDecoration(
                       hintText: strings.exerciseNameHint,
                       filled: true,
@@ -2756,70 +2651,60 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       ),
                     ),
                   ),
-                  const Gap(AppSpacing.md),
+                  const Gap(AppSpacing.lg),
 
-                  // Weapon & Ammo Card (grouped)
-                  Text(
-                    strings.sessionWeaponAndEquipmentDetailsTitle,
-                    style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                  // Platform Section
+                  Row(
+                    children: [
+                      SvgPicture.asset(
+                        'assets/images/tube.svg',
+                        width: 18,
+                        height: 18,
+                        colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                      ),
+                      const Gap(8),
+                      Text(
+                        strings.platformTitle.toUpperCase(),
+                        style: textStyles.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: colors.onSurface,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                   const Gap(AppSpacing.sm),
                   Container(
                     padding: AppSpacing.paddingMd,
                     decoration: BoxDecoration(
                       color: colors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                       border: Border.all(color: colors.outline),
                     ),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Left column: weapon
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    SvgPicture.asset(
-                                      'assets/images/gun.svg',
-                                      width: 18,
-                                      height: 18,
-                                      colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-                                    ),
-                                    const Gap(8),
-                                    Text(
-                                      strings.weaponTitle,
-                                      style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                                const Gap(AppSpacing.sm),
-                                _SourceToggleRow(
-                                  leftLabel: strings.myInventory,
-                                  rightLabel: strings.borrowed,
-                                  value: _weaponSource,
-                                  onChanged: (v) => setState(() {
-                                    _weaponSource = v;
-                                    if (_weaponSource == 'borrowed') _selectedWeaponId = null;
-                                    if (_weaponSource != 'borrowed') {
-                                      _borrowedWeaponController.text = '';
-                                    }
-                                  }),
-                                ),
-                                const Gap(10),
-                                Container(
-                                  key: _weaponFieldKey,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    border: Border.all(
-                                      color: _weaponError ? colors.error : Colors.transparent,
-                                      width: 1.4,
-                                    ),
-                                  ),
-                        child: _weaponSource == 'inventory'
-                            ? (provider.weapons.isEmpty
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SourceToggleRow(
+                          leftLabel: strings.myInventory,
+                          rightLabel: strings.borrowed,
+                          value: _platformSource,
+                          onChanged: (v) => setState(() {
+                            _platformSource = v;
+                            if (_platformSource == 'borrowed') {
+                              _selectedPlatformId = null;
+                              // Vider les équipements quand on passe en mode emprunté
+                              _selectedEquipmentIds.clear();
+                            }
+                            if (_platformSource != 'borrowed') {
+                              _borrowedPlatformController.text = '';
+                            }
+                          }),
+                        ),
+                        const Gap(10),
+                        Container(
+                          key: _platformFieldKey,
+                        child: _platformSource == 'inventory'
+                            ? (provider.platforms.isEmpty
                                 ? Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Row(
@@ -2832,7 +2717,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                         const Gap(8),
                                         Expanded(
                                           child: Text(
-                                            strings.noWeaponInStock,
+                                            strings.noPlatformInStock,
                                             style: textStyles.bodySmall?.copyWith(
                                               color: colors.secondary,
                                             ),
@@ -2842,9 +2727,9 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                     ),
                                   )
                                 : _SelectedSingleItemField(
-                                    leading: _selectedWeaponId == null
+                                    leading: _selectedPlatformId == null
                                         ? SvgPicture.asset(
-                                            'assets/images/gun.svg',
+                                            'assets/images/tube.svg',
                                             width: 18,
                                             height: 18,
                                             colorFilter: ColorFilter.mode(
@@ -2856,26 +2741,26 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                             color: colors.primary,
                                           ),
                                     titleWhenEmpty:
-                                        strings.chooseWeaponFromInventory,
-                                    titleWhenSet: (_selectedWeaponId == null
+                                        strings.choosePlatformFromInventory,
+                                    titleWhenSet: (_selectedPlatformId == null
                                             ? null
-                                            : provider.getWeaponById(
-                                                _selectedWeaponId!))
+                                            : provider.getPlatformById(
+                                                _selectedPlatformId!))
                                         ?.name ??
-                                        strings.chooseWeaponFromInventory,
-                                    subtitle: (_selectedWeaponId == null
+                                        strings.choosePlatformFromInventory,
+                                    subtitle: (_selectedPlatformId == null
                                                 ? null
-                                                : provider.getWeaponById(
-                                                    _selectedWeaponId!)) ==
+                                                : provider.getPlatformById(
+                                                    _selectedPlatformId!)) ==
                                             null
                                         ? null
                                         : strings.tapToChange,
                                     onTap: () async {
-                                      if (provider.weapons.isEmpty) {
+                                      if (provider.platforms.isEmpty) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                                strings.noWeaponInStockSwitchBorrowed),
+                                                strings.noPlatformInStockSwitchBorrowed),
                                           ),
                                         );
                                         return;
@@ -2886,20 +2771,20 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                         isScrollControlled: true,
                                         backgroundColor: Colors.transparent,
                                         builder: (context) =>
-                                            _SingleSelectSheet<Weapon>(
-                                          title: strings.weaponsTab,
-                                          items: provider.weapons,
-                                          initialId: _selectedWeaponId,
+                                            _SingleSelectSheet<Platform>(
+                                          title: strings.platformsTab,
+                                          items: provider.platforms,
+                                          initialId: _selectedPlatformId,
                                           isLockedItem: (w) {
-                                            final idx = provider.weapons.indexOf(w);
+                                            final idx = provider.platforms.indexOf(w);
                                             return idx >= 0
-                                                ? provider.isWeaponLockedForFree(
+                                                ? provider.isPlatformLockedForFree(
                                                     w, idx)
                                                 : false;
                                           },
                                           iconBuilder: (selected, colors) =>
                                               SvgPicture.asset(
-                                            'assets/images/gun.svg',
+                                            'assets/images/tube.svg',
                                             width: 20,
                                             height: 20,
                                             colorFilter: ColorFilter.mode(
@@ -2912,7 +2797,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                           primaryText: (w) => w.name,
                                           secondaryText: (w) =>
                                               [
-                                                strings.itemWeaponTypeLabel(
+                                                strings.itemPlatformTypeLabel(
                                                     w.type),
                                                 if (w.model.trim().isNotEmpty)
                                                   w.model,
@@ -2942,17 +2827,20 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                       );
                                       if (!mounted || selected == null) return;
                                       setState(() {
-                                        _selectedWeaponId = selected;
-                                        _weaponError = false;
+                                        _selectedPlatformId = selected;
+                                        _platformError = false;
                                       });
+                                      // Auto-ajouter les accessoires liés à la plateforme
+                                      _updateEquipmentForPlatform(provider);
                                     },
                                   ))
                             : TextField(
-                                controller: _borrowedWeaponController,
+                                controller: _borrowedPlatformController,
                                 textInputAction: TextInputAction.next,
+                                onTap: () => _borrowedPlatformController.selection = TextSelection(baseOffset: 0, extentOffset: _borrowedPlatformController.text.length),
                                 decoration: InputDecoration(
-                                  labelText: strings.borrowedWeaponOptional,
-                                  hintText: strings.borrowedWeaponHint,
+                                  labelText: strings.borrowedPlatformOptional,
+                                  hintText: strings.borrowedPlatformHint,
                                   prefixIcon: const Padding(
                                     padding: EdgeInsets.all(12),
                                     child: Icon(
@@ -2986,56 +2874,128 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                   ),
                                 ),
                               ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            color: colors.outline,
-                          ),
-                          const Gap(AppSpacing.md),
-                          // Right column: ammo
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    SvgPicture.asset(
-                                      'assets/images/bullet.svg',
-                                      width: 18,
-                                      height: 18,
-                                      colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-                                    ),
-                                    const Gap(8),
-                                    Text(
-                                      strings.ammoTitle,
-                                      style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                                const Gap(AppSpacing.sm),
-                                _SourceToggleRow(
-                                  leftLabel: strings.myInventory,
-                                  rightLabel: strings.borrowed,
-                                  value: _ammoSource,
-                                  onChanged: (v) => setState(() {
-                                    _ammoSource = v;
-                                    if (_ammoSource == 'borrowed') _selectedAmmoId = null;
-                                    if (_ammoSource != 'borrowed') _borrowedAmmoController.text = '';
-                                  }),
-                                ),
-                                const Gap(10),
-                                Container(
-                                  key: _ammoFieldKey,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    border: Border.all(
-                                      color: _ammoError ? colors.error : Colors.transparent,
-                                      width: 1.4,
-                                    ),
-                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Gap(AppSpacing.lg),
+
+                  // Équipement utilisé
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.inventory_2_rounded,
+                        size: 18,
+                        color: colors.primary,
+                      ),
+                      const Gap(8),
+                      Text(
+                        strings.usedEquipmentLabel.toUpperCase(),
+                        style: textStyles.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: colors.onSurface,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(AppSpacing.sm),
+                  Container(
+                    padding: AppSpacing.paddingMd,
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: colors.outline),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SelectedEquipmentField(
+              accessories: provider.accessories,
+              selectedIds: _selectedEquipmentIds,
+              linkedIds: _getLinkedAccessoryIds(provider).difference(_removedLinkedAccessoryIds),
+              onTap: () => _editEquipments(provider),
+              onRemove: (id) =>
+                  setState(() => _selectedEquipmentIds.remove(id)),
+              onUnlinkForSession: (id) async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(strings.confirmDeleteTitle),
+                    content: Text(
+                      strings.unlinkAccessoryForSessionMessage,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(strings.actionCancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.error,
+                        ),
+                        child: Text(strings.actionDelete),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true || !mounted) return;
+                setState(() {
+                  _removedLinkedAccessoryIds.add(id);
+                  _selectedEquipmentIds.remove(id);
+                });
+              },
+            ),
+                        ],
+                    ),
+                  ),
+                  const Gap(AppSpacing.lg),
+
+                  // Consommable Section
+                  Row(
+                    children: [
+                      SvgPicture.asset(
+                        'assets/images/pointe.svg',
+                        width: 18,
+                        height: 18,
+                        colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                      ),
+                      const Gap(8),
+                      Text(
+                        strings.ammoTitle.toUpperCase(),
+                        style: textStyles.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: colors.onSurface,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(AppSpacing.sm),
+                  Container(
+                    padding: AppSpacing.paddingMd,
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: colors.outline),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SourceToggleRow(
+                          leftLabel: strings.myInventory,
+                          rightLabel: strings.borrowed,
+                          value: _ammoSource,
+                          onChanged: (v) => setState(() {
+                            _ammoSource = v;
+                            if (_ammoSource == 'borrowed') _selectedAmmoId = null;
+                            if (_ammoSource != 'borrowed') _borrowedAmmoController.text = '';
+                          }),
+                        ),
+                        const Gap(10),
+                        Container(
+                          key: _ammoFieldKey,
               child: _ammoSource == 'inventory'
                   ? (provider.ammos.isEmpty
                       ? Padding(
@@ -3139,6 +3099,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
                   : TextField(
                       controller: _borrowedAmmoController,
                       textInputAction: TextInputAction.next,
+                      onTap: () => _borrowedAmmoController.selection = TextSelection(baseOffset: 0, extentOffset: _borrowedAmmoController.text.length),
                       decoration: InputDecoration(
                         labelText: strings.borrowedAmmoOptional,
                         hintText: strings.borrowedAmmoHint,
@@ -3166,48 +3127,13 @@ controller: widget.scrollController ?? _exerciseScrollController,
                         ),
                       ),
                     ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Gap(AppSpacing.md),
+                  const Gap(AppSpacing.lg),
 
-                  // Équipement utilisé (outside the card)
-            Row(
-              children: [
-                Icon(
-                  Icons.inventory_2_rounded,
-                  size: 18,
-                  color: colors.primary,
-                ),
-                const Gap(8),
-                Text(
-                  strings.usedEquipmentLabel,
-                  style: textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const Gap(AppSpacing.sm),
-            _SelectedEquipmentField(
-              accessories: provider.accessories,
-              selectedIds: _selectedEquipmentIds,
-              onTap: () => _editEquipments(provider),
-              onRemove: (id) =>
-                  setState(() => _selectedEquipmentIds.remove(id)),
-            ),
-            const Gap(AppSpacing.md),
-
-            // Shooting Results section
-            Text(
-              strings.sessionShootingResultsTitle,
-              style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const Gap(AppSpacing.sm),
+            // DÉROULÉ Section
             Row(
               children: [
                 Icon(
@@ -3217,532 +3143,393 @@ controller: widget.scrollController ?? _exerciseScrollController,
                 ),
                 const Gap(8),
                 Text(
-                  strings.exerciseModeLabel,
-                  style: textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  strings.exerciseModeLabel.toUpperCase(),
+                  style: textStyles.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colors.onSurface,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ],
             ),
-            const Gap(10),
-            _SlidingSegmentedSelector(
-              selectedIndex: _detailedMode ? 1 : 0,
-              labels: [
-                strings.exerciseModeSimple,
-                strings.exerciseModeDetailed,
-              ],
-              onSelected: (index) {
-                setState(() {
-                  _detailedMode = index == 1;
-                });
-              },
-            ),
-
-            if (!_detailedMode) ...[
-              const Gap(AppSpacing.md),
-              Row(
+            const Gap(AppSpacing.sm),
+            Container(
+              padding: AppSpacing.paddingMd,
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: colors.outline),
+              ),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                  _SlidingSegmentedSelector(
+                    selectedIndex: _detailedMode ? 1 : 0,
+                    labels: [
+                      strings.exerciseModeSimple,
+                      strings.exerciseModeDetailed,
+                    ],
+                    onSelected: (index) {
+                      setState(() {
+                        _detailedMode = index == 1;
+                      });
+                    },
+                  ),
+                  if (!_detailedMode) ...[
+                    const Gap(AppSpacing.md),
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            SvgPicture.asset(
-                              'assets/images/hit.svg',
-                              width: 18,
-                              height: 18,
-                              colorFilter: ColorFilter.mode(
-                                  colors.primary, BlendMode.srcIn),
-                            ),
-                            const Gap(8),
-                            Text(
-                              strings.shotsCountLabel,
-                              style: textStyles.titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                        const Gap(AppSpacing.sm),
-                        Container(
-                          key: _shotsFieldKey,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                            border: Border.all(
-                              color: _shotsError
-                                  ? colors.error
-                                  : Colors.transparent,
-                              width: 1.4,
-                            ),
-                          ),
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              TextField(
-                                controller: _shotsFiredController,
-                                keyboardType: TextInputType.number,
-                                onChanged: (_) {
-                                  final shots = int.tryParse(
-                                      _shotsFiredController.text.trim());
-                                  if (_shotsError &&
-                                      shots != null &&
-                                      shots > 0) {
-                                    setState(() => _shotsError = false);
-                                  }
-                                },
-                                decoration: InputDecoration(
-                                  hintText: '0',
-                                  errorText: null,
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
+                              Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/images/hit.svg',
+                                    width: 14,
+                                    height: 14,
+                                    colorFilter: ColorFilter.mode(
+                                        colors.primary, BlendMode.srcIn),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.primary,
-                                      width: 1.6,
+                                  const Gap(6),
+                                  Text(
+                                    strings.shotsCountLabel.toUpperCase(),
+                                    style: textStyles.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                      fontSize: 11,
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
-                              if (_shotsError)
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      12, 8, 12, 10),
-                                  child: Text(
-                                    strings.shotsFiredError,
-                                    style: textStyles.bodySmall
-                                        ?.copyWith(color: colors.error),
+                              const Gap(6),
+                              Container(
+                                key: _shotsFieldKey,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                  border: Border.all(
+                                    color: _shotsError
+                                        ? colors.error
+                                        : Colors.transparent,
+                                    width: 1.4,
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Gap(AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.straighten_rounded,
-                              size: 18,
-                              color: colors.primary,
-                            ),
-                            const Gap(8),
-                            Text(
-                              strings.distanceLabel,
-                              style: textStyles.titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                        const Gap(AppSpacing.sm),
-                        Container(
-                          key: _distanceFieldKey,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                            border: Border.all(
-                              color: _distanceError
-                                  ? colors.error
-                                  : Colors.transparent,
-                              width: 1.4,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              TextField(
-                                controller: _distanceController,
-                                keyboardType: TextInputType.number,
-                                onChanged: (_) {
-                                  final distance = int.tryParse(
-                                      _distanceController.text.trim());
-                                  if (_distanceError &&
-                                      distance != null &&
-                                      distance > 0) {
-                                    setState(() => _distanceError = false);
-                                  }
-                                },
-                                decoration: InputDecoration(
-                                  hintText:
-                                      converter.useMetric ? '25' : '27',
-                                  errorText: null,
-                                  suffixIcon: Padding(
-                                    padding:
-                                        const EdgeInsets.only(right: 12),
-                                    child: Text(
-                                      converter.useMetric ? 'm' : 'yd',
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        color: colors.secondary,
-                                        fontWeight: FontWeight.w700,
+                                child: TextField(
+                                  controller: _shotsFiredController,
+                                  keyboardType: TextInputType.number,
+                                  style: textStyles.titleMedium,
+                                  onTap: () => _shotsFiredController.selection = TextSelection(baseOffset: 0, extentOffset: _shotsFiredController.text.length),
+                                  onChanged: (_) {
+                                    final shots = int.tryParse(
+                                        _shotsFiredController.text.trim());
+                                    if (_shotsError &&
+                                        shots != null &&
+                                        shots > 0) {
+                                      setState(() => _shotsError = false);
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: '0',
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    filled: true,
+                                    fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.primary,
+                                        width: 1.6,
                                       ),
                                     ),
                                   ),
-                                  suffixIconConstraints:
-                                      const BoxConstraints(minWidth: 42),
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.straighten_rounded,
+                                    size: 14,
+                                    color: colors.primary,
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
+                                  const Gap(6),
+                                  Text(
+                                    strings.distanceLabel.toUpperCase(),
+                                    style: textStyles.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                      fontSize: 11,
+                                    ),
                                   ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.primary,
-                                      width: 1.6,
+                                ],
+                              ),
+                              const Gap(6),
+                              Container(
+                                key: _distanceFieldKey,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                  border: Border.all(
+                                    color: _distanceError
+                                        ? colors.error
+                                        : Colors.transparent,
+                                    width: 1.4,
+                                  ),
+                                ),
+                                child: TextField(
+                                  controller: _distanceController,
+                                  keyboardType: TextInputType.number,
+                                  style: textStyles.titleMedium,
+                                  onTap: () => _distanceController.selection = TextSelection(baseOffset: 0, extentOffset: _distanceController.text.length),
+                                  onChanged: (_) {
+                                    final distance = int.tryParse(
+                                        _distanceController.text.trim());
+                                    if (_distanceError &&
+                                        distance != null &&
+                                        distance > 0) {
+                                      setState(() => _distanceError = false);
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: '0',
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    suffixText: converter.useMetric ? 'm' : 'yd',
+                                    filled: true,
+                                    fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.primary,
+                                        width: 1.6,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                              if (_distanceError)
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      12, 8, 12, 10),
-                                  child: Text(
-                                    strings.distanceError,
-                                    style: textStyles.bodySmall
-                                        ?.copyWith(color: colors.error),
-                                  ),
-                                ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ],
-
-            if (_detailedMode) ...[
-              const Gap(AppSpacing.md),
-              Container(
-                padding: AppSpacing.paddingMd,
-                decoration: BoxDecoration(
-                  color: Color.alphaBlend(
-                    colors.primary.withValues(alpha: 0.12),
-                    colors.surface,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(
-                    color: colors.primary.withValues(alpha: 0.25),
-                    width: 1.1,
-                  ),
-                ),
-                child: Row(
-                  children: [
+                    if (_shotsError || _distanceError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          _shotsError ? strings.shotsFiredError : strings.distanceError,
+                          style: textStyles.bodySmall?.copyWith(color: colors.error),
+                        ),
+                      ),
+                  ] else ...[
+                    const Gap(AppSpacing.md),
+                    // Badge Total
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
-                        color: colors.primary,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: LightColors.surfaceHighlight,
-                          width: 1.35,
+                        color: Color.alphaBlend(
+                          colors.primary.withValues(alpha: 0.1),
+                          colors.surface,
                         ),
-                      ),
-                      child: Text(
-                        strings.exerciseAutoBadge,
-                        style: textStyles.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colors.onPrimary,
-                        ),
-                      ),
-                    ),
-                    const Gap(10),
-                    Expanded(
-                      child: Text(
-                        strings.exerciseAutoTotals(
-                          _computedTotalShots(),
-                          _steps.length,
-                          _computedMaxDistance(),
-                          converter.useMetric ? 'm' : 'yd',
-                        ),
-                        style: textStyles.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Gap(AppSpacing.md),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    strings.exerciseStepsTitle,
-                    style: textStyles.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  FilledButton.icon(
-                    onPressed: () async {
-                      final availableWeapons = _availableWeaponsForStep(provider);
-                      final availableAmmos = _availableAmmosForStep(provider);
-                      final step = await showModalBottomSheet<ExerciseStep>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => _AddExerciseStepSheet(
-                          availableWeapons: availableWeapons,
-                          availableAmmos: availableAmmos,
-                          defaultWeaponId:
-                              _weaponSource == 'inventory' ? _selectedWeaponId : null,
-                          defaultAmmoId:
-                              _ammoSource == 'inventory' ? _selectedAmmoId : null,
-                        ),
-                      );
-                      if (!mounted || step == null) return;
-                      setState(() => _steps.add(step));
-                    },
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: Text(strings.exerciseAddStep),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.primary,
-                      foregroundColor: colors.onPrimary,
-                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(AppSpacing.sm),
-              if (_steps.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: AppSpacing.paddingMd,
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: colors.outline),
-                  ),
-                  child: Text(
-                    strings.exerciseNoSteps,
-                    style: textStyles.bodySmall?.copyWith(
-                      color: colors.secondary,
-                    ),
-                  ),
-                )
-              else
-                ReorderableListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  itemCount: _steps.length,
-                  onReorder: (oldIndex, newIndex) {
-                    setState(() {
-                      if (newIndex > oldIndex) newIndex -= 1;
-                      final item = _steps.removeAt(oldIndex);
-                      _steps.insert(newIndex, item);
-                    });
-                  },
-                  itemBuilder: (context, i) {
-                    final s = _steps[i];
-                    return Container(
-                      key: ValueKey(s.id),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: AppSpacing.paddingMd,
-                      decoration: BoxDecoration(
-                        color: colors.surface,
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: colors.outline),
+                        border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
                       ),
                       child: Row(
                         children: [
-                          Text(
-                            (i + 1).toString().padLeft(2, '0'),
-                            style: textStyles.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colors.primary,
+                              borderRadius: BorderRadius.circular(99),
                             ),
-                          ),
-                          const Gap(10),
-                          Text(
-                            _stepIcon(s.type),
-                            style: const TextStyle(fontSize: 18),
+                            child: Text(
+                              strings.exerciseAutoBadge,
+                              style: textStyles.labelSmall?.copyWith(color: colors.onPrimary, fontWeight: FontWeight.w800),
+                            ),
                           ),
                           const Gap(10),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _stepTitle(s.type),
-                                  style: textStyles.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const Gap(2),
-                                Text(
-                                  '${_positionShort(s.position)}${_positionShort(s.position).isEmpty ? '' : ' · '}${_stepSummary(s, strings, provider.useMetric)}',
-                                  style: textStyles.bodySmall?.copyWith(
-                                    color: colors.secondary,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuButton<String>(
-                            icon: Icon(
-                              Icons.more_vert_rounded,
-                              size: 18,
-                              color: colors.secondary,
-                            ),
-                            onSelected: (value) async {
-                              if (value == 'edit') {
-                                final availableWeapons =
-                                    _availableWeaponsForStep(provider);
-                                final availableAmmos =
-                                    _availableAmmosForStep(provider);
-                                final updated = await showModalBottomSheet<ExerciseStep>(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (_) => _AddExerciseStepSheet(
-                                    initialStep: s,
-                                    availableWeapons: availableWeapons,
-                                    availableAmmos: availableAmmos,
-                                    defaultWeaponId: _weaponSource == 'inventory'
-                                        ? _selectedWeaponId
-                                        : null,
-                                    defaultAmmoId:
-                                        _ammoSource == 'inventory' ? _selectedAmmoId : null,
-                                  ),
-                                );
-                                if (!mounted || updated == null) return;
-                                setState(() {
-                                  _steps[i] = updated;
-                                });
-                              } else if (value == 'duplicate') {
-                                setState(() {
-                                  final copy = ExerciseStep(
-                                    id: DateTime.now()
-                                        .microsecondsSinceEpoch
-                                        .toString(),
-                                    type: s.type,
-                                    position: s.position,
-                                    distanceM: s.distanceM,
-                                    shots: s.shots,
-                                    target: s.target,
-                                    weaponFrom: s.weaponFrom,
-                                    weaponTo: s.weaponTo,
-                                    usedWeaponId: s.usedWeaponId,
-                                    usedAmmoId: s.usedAmmoId,
-                                    reloadType: s.reloadType,
-                                    durationSeconds: s.durationSeconds,
-                                    trigger: s.trigger,
-                                    comment: s.comment,
-                                  );
-                                  _steps.insert(i + 1, copy);
-                                });
-                              } else if (value == 'delete') {
-                                final confirmed = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: Text(strings.confirmDeleteTitle),
-                                    content: Text(
-                                      strings.exerciseConfirmDeleteStepMessage(
-                                        _stepTitle(s.type),
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(ctx).pop(false),
-                                        child: Text(strings.actionCancel),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () =>
-                                            Navigator.of(ctx).pop(true),
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: colors.error,
-                                        ),
-                                        child: Text(strings.actionDelete),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirmed != true) return;
-                                if (!mounted) return;
-                                setState(() => _steps.removeAt(i));
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              PopupMenuItem<String>(
-                                value: 'edit',
-                                child: Text(strings.edit),
+                            child: Text(
+                              strings.exerciseAutoTotals(
+                                _computedTotalShots(),
+                                _steps.length,
+                                _computedMaxDistance(),
+                                converter.useMetric ? 'm' : 'yd',
                               ),
-                              PopupMenuItem<String>(
-                                value: 'duplicate',
-                                child: Text(strings.duplicate),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'delete',
-                                child: Text(strings.delete),
-                              ),
-                            ],
-                          ),
-                          const Gap(2),
-                          ReorderableDragStartListener(
-                            index: i,
-                            child: Icon(
-                              Icons.menu_rounded,
-                              color: colors.secondary,
+                              style: textStyles.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
-            ],
-            const Gap(AppSpacing.md),
+                    ),
+                    const Gap(AppSpacing.md),
+                    // Header Steps
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          strings.exerciseStepsTitle.toUpperCase(),
+                          style: textStyles.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            fontSize: 11,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final availablePlatforms = _availablePlatformsForStep(provider);
+                            final availableAmmos = _availableAmmosForStep(provider);
+                            final step = await showModalBottomSheet<ExerciseStep>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => _AddExerciseStepSheet(
+                                availablePlatforms: availablePlatforms,
+                                availableAmmos: availableAmmos,
+                                defaultPlatformId: _platformSource == 'inventory' ? _selectedPlatformId : null,
+                                defaultAmmoId: _ammoSource == 'inventory' ? _selectedAmmoId : null,
+                              ),
+                            );
+                            if (!mounted || step == null) return;
+                            setState(() => _steps.add(step));
+                          },
+                          icon: const Icon(Icons.add_rounded, size: 14),
+                          label: Text(strings.exerciseAddStep, style: const TextStyle(fontSize: 11)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colors.primary,
+                            foregroundColor: colors.onPrimary,
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(AppSpacing.sm),
+                    if (_steps.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(color: colors.outline),
+                        ),
+                        child: Text(
+                          strings.exerciseNoSteps,
+                          style: textStyles.bodyMedium?.copyWith(
+                            color: colors.secondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    else
+                      ReorderableListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        buildDefaultDragHandles: false,
+                        itemCount: _steps.length,
+                        onReorder: (oldIndex, newIndex) {
+                          setState(() {
+                            if (newIndex > oldIndex) newIndex -= 1;
+                            final item = _steps.removeAt(oldIndex);
+                            _steps.insert(newIndex, item);
+                          });
+                        },
+                        itemBuilder: (context, i) {
+                          final s = _steps[i];
+                          return Container(
+                            key: ValueKey(s.id),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.fromLTRB(12, 8, 2, 8),
+                            decoration: BoxDecoration(
+                              color: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
+                            ),
+                            child: Row(
+                              children: [
+                                Text((i + 1).toString().padLeft(2, '0'), style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w900)),
+                                const Gap(10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(_stepTitle(s.type), style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800, fontSize: 13)),
+                                      Text(
+                                        '${_positionShort(s.position)}${_positionShort(s.position).isEmpty ? '' : ' · '}${_stepSummary(s, strings, provider.useMetric)}',
+                                        style: textStyles.bodySmall?.copyWith(color: colors.secondary, fontSize: 11),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Gap(2),
+                                ReorderableDragStartListener(
+                                  index: i,
+                                  child: Icon(Icons.drag_indicator_rounded, size: 20, color: colors.onSurface),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_rounded, size: 18),
+                                  onPressed: () => setState(() => _steps.removeAt(i)),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  splashRadius: 20,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ],
+              ),
+            ),
+
+
+            const Gap(AppSpacing.lg),
 
             // Cible utilisée
             Row(
               children: [
-                Icon(Icons.adjust_rounded, size: 20, color: colors.primary),
+                Icon(Icons.adjust_rounded, size: 18, color: colors.primary),
                 const Gap(8),
-                Text(strings.usedTargetLabel,
-                    style: textStyles.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  strings.usedTargetLabel.toUpperCase(),
+                  style: textStyles.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colors.onSurface,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ],
             ),
             const Gap(AppSpacing.sm),
             TextField(
               controller: _targetNameController,
+              onTap: () => _targetNameController.selection = TextSelection(baseOffset: 0, extentOffset: _targetNameController.text.length),
               decoration: InputDecoration(
                 hintText: strings.targetNameHint,
                 filled: true,
@@ -3761,7 +3548,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
                 ),
               ),
             ),
-            const Gap(AppSpacing.md),
+            const Gap(AppSpacing.lg),
 
             // Photo de la cible
             Row(
@@ -3776,9 +3563,11 @@ controller: widget.scrollController ?? _exerciseScrollController,
                     ),
                     const Gap(8),
                     Text(
-                      strings.targetPhotosTitle,
+                      strings.targetPhotosTitle.toUpperCase(),
                       style: textStyles.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w800,
+                        color: colors.onSurface,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -3896,7 +3685,6 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                       onPressed: () => _removeTargetPhoto(photo.id),
                                       icon: Icon(
                                         Icons.delete_rounded,
-                                        color: colors.error,
                                       ),
                                       tooltip: strings.removePhoto,
                                       splashColor: Colors.transparent,
@@ -3927,7 +3715,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
               ),
             ),
 
-            const Gap(AppSpacing.md),
+            const Gap(AppSpacing.lg),
 
             // Mesurer la précision
             Row(
@@ -3942,9 +3730,12 @@ controller: widget.scrollController ?? _exerciseScrollController,
                     ),
                     const Gap(8),
                     Text(
-                      strings.measurePrecisionTitle,
-                      style: textStyles.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      strings.measurePrecisionTitle.toUpperCase(),
+                      style: textStyles.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: colors.onSurface,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ],
                 ),
@@ -3971,7 +3762,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
                   style: textStyles.titleMedium?.copyWith(
                       color: colors.primary, fontWeight: FontWeight.bold)),
             ],
-            const Gap(AppSpacing.md),
+            const Gap(AppSpacing.lg),
 
             // Observations
             Row(
@@ -3983,9 +3774,11 @@ controller: widget.scrollController ?? _exerciseScrollController,
                 ),
                 const Gap(8),
                 Text(
-                  strings.observationsTitle,
+                  strings.observationsTitle.toUpperCase(),
                   style: textStyles.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
+                    color: colors.onSurface,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -3995,6 +3788,7 @@ controller: widget.scrollController ?? _exerciseScrollController,
               controller: _observationsController,
               maxLines: 3,
               textAlignVertical: TextAlignVertical.top,
+              onTap: () => _observationsController.selection = TextSelection(baseOffset: 0, extentOffset: _observationsController.text.length),
               decoration: InputDecoration(
                 hintText: strings.observationsExample,
                 contentPadding: const EdgeInsets.symmetric(
@@ -4032,12 +3826,12 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       ),
                       child: FilledButton(
                         onPressed: _save,
-                        child: Text(strings.saveExerciseButton),
                         style: FilledButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppRadius.lg),
                           ),
                         ),
+                        child: Text(strings.saveExerciseButton),
                       ),
                     ),
                   ),
@@ -4059,13 +3853,15 @@ controller: widget.scrollController ?? _exerciseScrollController,
               ],
             ),
             const Gap(AppSpacing.lg),
+            const Gap(AppSpacing.sm),
           ],
         ),
       ),
     ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   void _saveAsTemplate() {
@@ -4109,7 +3905,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                   .saveExerciseTemplate(template);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.templateSavedSnack)),
+                SnackBar(
+                  content: Text(strings.templateSavedSnack),
+                  duration: const Duration(seconds: 3),
+                ),
               );
             },
             child: Text(strings.validate),
@@ -4132,11 +3931,11 @@ controller: widget.scrollController ?? _exerciseScrollController,
         _steps.any((s) =>
             s.type == StepType.tir &&
             (s.shots ?? 0) > 0 &&
-            ((s.usedWeaponId ?? '').trim().isEmpty ||
+            ((s.usedPlatformId ?? '').trim().isEmpty ||
                 (s.usedAmmoId ?? '').trim().isEmpty));
 
     setState(() {
-      _weaponError = _weaponSource == 'inventory' && _selectedWeaponId == null;
+      _platformError = _platformSource == 'inventory' && _selectedPlatformId == null;
       _ammoError = _ammoSource == 'inventory' && _selectedAmmoId == null;
       _shotsError = _detailedMode
           ? (hasTirStep && computedShots <= 0)
@@ -4146,9 +3945,9 @@ controller: widget.scrollController ?? _exerciseScrollController,
           : (distance == null || distance <= 0);
     });
 
-    if (_weaponError) {
+    if (_platformError) {
       await Scrollable.ensureVisible(
-        _weaponFieldKey.currentContext!,
+        _platformFieldKey.currentContext!,
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeInOut,
         alignment: 0.15,
@@ -4188,13 +3987,16 @@ controller: widget.scrollController ?? _exerciseScrollController,
 
     if (hasUnattributedTirStep) {
       ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
+SnackBar(
+  content: Text(AppStrings.of(context).stepPlatformAmmoRequired),
+  duration: const Duration(seconds: 3),
+),
       );
       return;
     }
 
-    final effectiveWeaponId =
-        _weaponSource == 'borrowed' ? 'borrowed' : _selectedWeaponId!;
+    final effectivePlatformId =
+        _platformSource == 'borrowed' ? 'borrowed' : _selectedPlatformId!;
 
     final effectiveAmmoId =
         _ammoSource == 'borrowed' ? 'borrowed' : _selectedAmmoId!;
@@ -4203,25 +4005,27 @@ SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
         _detailedMode ? List<ExerciseStep>.from(_steps) : null;
     final provider = Provider.of<ThotProvider>(context, listen: false);
 
-    final effectiveWeaponAssignments = <ExerciseWeaponAssignment>[];
+    final effectivePlatformAssignments = <ExercisePlatformAssignment>[];
     final effectiveShotAllocations = <ExerciseShotAllocation>[];
 
-    if (effectiveWeaponId != 'borrowed' &&
-        effectiveWeaponId != 'none' &&
-        effectiveWeaponId.trim().isNotEmpty) {
+    if (effectivePlatformId != 'borrowed' &&
+        effectivePlatformId != 'none' &&
+        effectivePlatformId.trim().isNotEmpty) {
       final linkedAccessoryIds = provider
-          .linkedAccessoriesForWeapon(effectiveWeaponId)
+          .linkedAccessoriesForPlatform(effectivePlatformId)
           .map((a) => a.id)
           .toSet();
       final effectiveAccessoryIds = {
         ...linkedAccessoryIds,
         ..._selectedEquipmentIds,
-      }.toList(growable: false);
-      effectiveWeaponAssignments.add(
-        ExerciseWeaponAssignment(
-          weaponId: effectiveWeaponId,
-          weaponLabel: _weaponSource == 'borrowed'
-              ? _borrowedWeaponController.text.trim()
+      };
+      effectiveAccessoryIds.removeAll(_removedLinkedAccessoryIds);
+      
+      effectivePlatformAssignments.add(
+        ExercisePlatformAssignment(
+          platformId: effectivePlatformId,
+          platformLabel: _platformSource == 'borrowed'
+              ? _borrowedPlatformController.text.trim()
               : null,
           ammoIds: [
             if (effectiveAmmoId.trim().isNotEmpty &&
@@ -4229,7 +4033,7 @@ SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
                 effectiveAmmoId != 'borrowed')
               effectiveAmmoId,
           ],
-          accessoryIds: effectiveAccessoryIds,
+          accessoryIds: effectiveAccessoryIds.toList(growable: false),
         ),
       );
     }
@@ -4239,12 +4043,12 @@ SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
         if (step.type != StepType.tir) continue;
         final stepShots = step.shots ?? 0;
         if (stepShots <= 0) continue;
-        final usedWeaponId =
-            (step.usedWeaponId ?? effectiveWeaponId).trim();
+        final usedPlatformId =
+            (step.usedPlatformId ?? effectivePlatformId).trim();
         final usedAmmoId = (step.usedAmmoId ?? effectiveAmmoId).trim();
-        if (usedWeaponId.isEmpty ||
-            usedWeaponId == 'none' ||
-            usedWeaponId == 'borrowed') {
+        if (usedPlatformId.isEmpty ||
+            usedPlatformId == 'none' ||
+            usedPlatformId == 'borrowed') {
           continue;
         }
         if (usedAmmoId.isEmpty ||
@@ -4254,20 +4058,20 @@ SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
         }
         effectiveShotAllocations.add(
           ExerciseShotAllocation(
-            weaponId: usedWeaponId,
+            platformId: usedPlatformId,
             ammoId: usedAmmoId,
             shots: stepShots,
           ),
         );
       }
     } else if (computedShots > 0 &&
-        effectiveWeaponId != 'borrowed' &&
-        effectiveWeaponId != 'none' &&
+        effectivePlatformId != 'borrowed' &&
+        effectivePlatformId != 'none' &&
         effectiveAmmoId != 'borrowed' &&
         effectiveAmmoId != 'none') {
       effectiveShotAllocations.add(
         ExerciseShotAllocation(
-          weaponId: effectiveWeaponId,
+          platformId: effectivePlatformId,
           ammoId: effectiveAmmoId,
           shots: computedShots,
         ),
@@ -4278,12 +4082,12 @@ SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
       id: widget.exercise?.id ??
           DateTime.now().microsecondsSinceEpoch.toString(),
       name: _exerciseNameController.text.trim(),
-      weaponId: effectiveWeaponId,
-      weaponLabel:
-          effectiveWeaponId == 'borrowed' ? _borrowedWeaponController.text.trim() : null,
+      platformId: effectivePlatformId,
+      platformLabel:
+          effectivePlatformId == 'borrowed' ? _borrowedPlatformController.text.trim() : null,
       ammoId: effectiveAmmoId,
       ammoLabel: effectiveAmmoId == 'borrowed' ? _borrowedAmmoController.text.trim() : null,
-      equipmentIds: _selectedEquipmentIds.toList(),
+      equipmentIds: _selectedEquipmentIds.where((id) => !_removedLinkedAccessoryIds.contains(id)).toList(),
       targetName: _targetNameController.text.isEmpty
           ? null
           : _targetNameController.text,
@@ -4294,7 +4098,7 @@ SnackBar(content: Text(AppStrings.of(context).stepWeaponAmmoRequired)),
       precisionEnabled: _measurePrecision ? _precisionEnabled : true,
       observations: _observationsController.text,
       steps: effectiveSteps,
-      weaponAssignments: effectiveWeaponAssignments,
+      platformAssignments: effectivePlatformAssignments,
       shotAllocations: effectiveShotAllocations,
     );
 
@@ -4327,44 +4131,6 @@ return SizedBox(
     },
   ),
 );
-  }
-}
-
-class _SourceChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _SourceChip(
-      {required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? colors.primary : colors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border:
-                Border.all(color: selected ? colors.primary : colors.outline),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: selected ? colors.onPrimary : colors.onSurface,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -4556,7 +4322,7 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
                 ),
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
-                  hintText: strings.sessionsSearchHint,
+                  hintText: strings.searchSessionsHint,
                   hintStyle: textStyles.bodyMedium?.copyWith(
                     fontSize: 14,
                     color: colors.secondary,
@@ -4613,7 +4379,6 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
                       itemBuilder: (context, index) {
                         final it = filtered[index];
                         final id = widget.getId(it);
-                        final selected = _selection == id;
                         final isLocked = widget.isLockedItem?.call(it) ?? false;
 
                         final tile = Container(
@@ -4635,7 +4400,12 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
                                     onChanged: isLocked
                                         ? null
                                         : (v) => setState(() => _selection = v),
-                                    activeColor: colors.primary,
+                                    fillColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return colors.primary;
+                        }
+                        return Colors.transparent;
+                      }),
                                     title: Text(widget.primaryText(it),
                                         style: textStyles.bodyMedium?.copyWith(
                                             fontWeight: FontWeight.w700)),
@@ -4734,14 +4504,18 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
 class _SelectedEquipmentField extends StatelessWidget {
   final List<Accessory> accessories;
   final Set<String> selectedIds;
+  final Set<String> linkedIds;
   final VoidCallback onTap;
   final ValueChanged<String> onRemove;
+  final ValueChanged<String>? onUnlinkForSession;
 
   const _SelectedEquipmentField({
     required this.accessories,
     required this.selectedIds,
+    this.linkedIds = const {},
     required this.onTap,
     required this.onRemove,
+    this.onUnlinkForSession,
   });
 
   @override
@@ -4803,18 +4577,37 @@ class _SelectedEquipmentField extends StatelessWidget {
                     runSpacing: 8,
                     children: selected
                         .map(
-                          (a) => InputChip(
-                            label:
-                                Text(a.name, overflow: TextOverflow.ellipsis),
-                            onDeleted: () => onRemove(a.id),
-                            deleteIcon: Icon(Icons.close_rounded,
-                                size: 18, color: colors.onSurface),
-                            backgroundColor: colors.surface,
-                            shape: StadiumBorder(
-                                side: BorderSide(color: colors.outline)),
-                            labelStyle: textStyles.labelLarge
-                                ?.copyWith(color: colors.onSurface),
-                          ),
+                          (a) {
+                            final isLinked = linkedIds.contains(a.id);
+                            return InputChip(
+                              avatar: isLinked
+                                  ? Icon(Icons.link_rounded,
+                                      size: 16, color: colors.primary)
+                                  : null,
+                              label:
+                                  Text(a.name, overflow: TextOverflow.ellipsis),
+                              onDeleted: () {
+                                if (isLinked && onUnlinkForSession != null) {
+                                  onUnlinkForSession!(a.id);
+                                } else {
+                                  onRemove(a.id);
+                                }
+                              },
+                              deleteIcon: Icon(Icons.close_rounded,
+                                  size: 18, color: colors.onSurface),
+                              backgroundColor: isLinked
+                                  ? colors.primary.withValues(alpha: 0.1)
+                                  : colors.surface,
+                              shape: StadiumBorder(
+                                  side: BorderSide(
+                                    color: isLinked
+                                        ? colors.primary.withValues(alpha: 0.4)
+                                        : colors.outline,
+                                  )),
+                              labelStyle: textStyles.labelLarge
+                                  ?.copyWith(color: colors.onSurface),
+                            );
+                          },
                         )
                         .toList(),
                   ),
@@ -4852,16 +4645,17 @@ class _SelectedEquipmentField extends StatelessWidget {
 
 class _AddExerciseStepSheet extends StatefulWidget {
   final ExerciseStep? initialStep;
-  final List<Weapon> availableWeapons;
+  final List<Platform> availablePlatforms;
   final List<Ammo> availableAmmos;
-  final String? defaultWeaponId;
+  final String? defaultPlatformId;
   final String? defaultAmmoId;
 
   const _AddExerciseStepSheet({
+    // ignore: unused_element_parameter
     this.initialStep,
-    this.availableWeapons = const [],
+    this.availablePlatforms = const [],
     this.availableAmmos = const [],
-    this.defaultWeaponId,
+    this.defaultPlatformId,
     this.defaultAmmoId,
   });
 
@@ -4876,9 +4670,9 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
   final _distanceController = TextEditingController();
   final _shotsController = TextEditingController();
   final _targetController = TextEditingController();
-  final _weaponFromController = TextEditingController();
-  final _weaponToController = TextEditingController();
-  String? _usedWeaponId;
+  final _platformFromController = TextEditingController();
+  final _platformToController = TextEditingController();
+  String? _usedPlatformId;
   String? _usedAmmoId;
   ReloadType? _reloadType;
   final _durationController = TextEditingController();
@@ -4890,7 +4684,7 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     super.initState();
     final initial = widget.initialStep;
     if (initial == null) {
-      _usedWeaponId = widget.defaultWeaponId;
+      _usedPlatformId = widget.defaultPlatformId;
       _usedAmmoId = widget.defaultAmmoId;
       return;
     }
@@ -4902,9 +4696,9 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     _distanceController.text = initial.distanceM?.toString() ?? '';
     _shotsController.text = initial.shots?.toString() ?? '';
     _targetController.text = initial.target ?? '';
-    _weaponFromController.text = initial.weaponFrom ?? '';
-    _weaponToController.text = initial.weaponTo ?? '';
-    _usedWeaponId = initial.usedWeaponId ?? widget.defaultWeaponId;
+    _platformFromController.text = initial.platformFrom ?? '';
+    _platformToController.text = initial.platformTo ?? '';
+    _usedPlatformId = initial.usedPlatformId ?? widget.defaultPlatformId;
     _usedAmmoId = initial.usedAmmoId ?? widget.defaultAmmoId;
     _durationController.text = initial.durationSeconds?.toString() ?? '';
     _triggerController.text = initial.trigger ?? '';
@@ -4916,8 +4710,8 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     _distanceController.dispose();
     _shotsController.dispose();
     _targetController.dispose();
-    _weaponFromController.dispose();
-    _weaponToController.dispose();
+    _platformFromController.dispose();
+    _platformToController.dispose();
     _durationController.dispose();
     _triggerController.dispose();
     _commentController.dispose();
@@ -4932,11 +4726,11 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     final provider = Provider.of<ThotProvider>(context, listen: false);
 final distUnit = provider.useMetric ? 'm' : 'yd';
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
-    final availableWeaponIds =
-        widget.availableWeapons.map((w) => w.id).toSet();
+    final availablePlatformIds =
+        widget.availablePlatforms.map((w) => w.id).toSet();
     final availableAmmoIds = widget.availableAmmos.map((a) => a.id).toSet();
-    final selectedWeaponValue =
-        availableWeaponIds.contains(_usedWeaponId) ? _usedWeaponId : null;
+    final selectedPlatformValue =
+        availablePlatformIds.contains(_usedPlatformId) ? _usedPlatformId : null;
     final selectedAmmoValue =
         availableAmmoIds.contains(_usedAmmoId) ? _usedAmmoId : null;
 
@@ -5082,9 +4876,9 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
 
                   if (_type == StepType.tir) ...[
                     DropdownButtonFormField<String>(
-                      value: selectedWeaponValue,
-                      decoration: decoration(strings.stepUsedWeaponLabel),
-                      items: widget.availableWeapons
+                      initialValue: selectedPlatformValue,
+                      decoration: decoration(strings.stepUsedPlatformLabel),
+                      items: widget.availablePlatforms
                           .map(
                             (w) => DropdownMenuItem<String>(
                               value: w.id,
@@ -5092,11 +4886,11 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                             ),
                           )
                           .toList(),
-                      onChanged: (v) => setState(() => _usedWeaponId = v),
+                      onChanged: (v) => setState(() => _usedPlatformId = v),
                     ),
                     const Gap(10),
                     DropdownButtonFormField<String>(
-                      value: selectedAmmoValue,
+                      initialValue: selectedAmmoValue,
                       decoration: decoration(strings.stepUsedAmmoLabel),
                       items: widget.availableAmmos
                           .map(
@@ -5160,13 +4954,13 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                     ),
                   ] else if (_type == StepType.transition) ...[
                     TextField(
-                      controller: _weaponFromController,
-                      decoration: decoration('${strings.exerciseFieldWeaponFrom}${strings.exerciseOptionalHint}'),
+                      controller: _platformFromController,
+                      decoration: decoration('${strings.exerciseFieldPlatformFrom}${strings.exerciseOptionalHint}'),
                     ),
-                    if (_weaponFromController.text.isNotEmpty && widget.defaultWeaponId == null) ...[
+                    if (_platformFromController.text.isNotEmpty && widget.defaultPlatformId == null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        strings.exerciseWeaponSelectionHint,
+                        strings.exercisePlatformSelectionHint,
                         style: textStyles.bodySmall?.copyWith(
                           color: colors.primary,
                           fontStyle: FontStyle.italic,
@@ -5175,13 +4969,13 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                     ],
                     const Gap(10),
                     TextField(
-                      controller: _weaponToController,
-                      decoration: decoration('${strings.exerciseFieldWeaponTo}${strings.exerciseOptionalHint}'),
+                      controller: _platformToController,
+                      decoration: decoration('${strings.exerciseFieldPlatformTo}${strings.exerciseOptionalHint}'),
                     ),
-                    if (_weaponToController.text.isNotEmpty && widget.defaultWeaponId == null) ...[
+                    if (_platformToController.text.isNotEmpty && widget.defaultPlatformId == null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        strings.exerciseWeaponSelectionHint,
+                        strings.exercisePlatformSelectionHint,
                         style: textStyles.bodySmall?.copyWith(
                           color: colors.primary,
                           fontStyle: FontStyle.italic,
@@ -5245,11 +5039,12 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
 
                           if (_type == StepType.tir &&
                               ((shots ?? 0) > 0) &&
-                              ((_usedWeaponId ?? '').trim().isEmpty ||
+                              ((_usedPlatformId ?? '').trim().isEmpty ||
                                   (_usedAmmoId ?? '').trim().isEmpty)) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(strings.stepWeaponAmmoRequired),
+                                content: Text(strings.stepPlatformAmmoRequired),
+                                duration: const Duration(seconds: 3),
                               ),
                             );
                             return;
@@ -5267,16 +5062,16 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                             target: _targetController.text.trim().isEmpty
                                 ? null
                                 : _targetController.text.trim(),
-                            weaponFrom:
-                                _weaponFromController.text.trim().isEmpty
+                            platformFrom:
+                                _platformFromController.text.trim().isEmpty
                                     ? null
-                                    : _weaponFromController.text.trim(),
-                            weaponTo: _weaponToController.text.trim().isEmpty
+                                    : _platformFromController.text.trim(),
+                            platformTo: _platformToController.text.trim().isEmpty
                                 ? null
-                                : _weaponToController.text.trim(),
-                            usedWeaponId: (_usedWeaponId ?? '').trim().isEmpty
+                                : _platformToController.text.trim(),
+                            usedPlatformId: (_usedPlatformId ?? '').trim().isEmpty
                                 ? null
-                                : _usedWeaponId!.trim(),
+                                : _usedPlatformId!.trim(),
                             usedAmmoId: (_usedAmmoId ?? '').trim().isEmpty
                                 ? null
                                 : _usedAmmoId!.trim(),

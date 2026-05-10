@@ -1,15 +1,21 @@
-import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/presentation/diagnostic_screen.dart';
-import 'package:thot/presentation/millieme_tool_screen.dart';
+import 'package:thot/presentation/ballistic_calc_screen.dart';
 import 'package:thot/presentation/shooting_timer_screen.dart';
+import 'package:thot/presentation/color_pod_screen.dart';
+import 'package:thot/presentation/reflexes_screen.dart';
+import 'package:thot/presentation/shooting_tables_screen.dart';
 import 'package:thot/presentation/achievements_screen.dart';
 import 'package:thot/presentation/statistics_screen.dart';
 import 'package:thot/presentation/pro_screen.dart';
@@ -19,7 +25,10 @@ import 'package:thot/l10n/app_strings.dart';
 import '../utils/achievement_definitions.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'package:thot/data/models.dart';
+import 'package:thot/data/training_history.dart';
+import 'package:thot/widgets/tutorial_overlay.dart';
 
 // ── Modèle d'alerte ──────────────────────────────────────────────────────────
 
@@ -27,7 +36,7 @@ enum _AlertType { wear, fouling, stock, document }
 
 class _MaintenanceAlert {
   final String id;
-  /// weaponId, ammoId, or itemId depending on type
+  /// platformId, ammoId, or itemId depending on type
   final String itemId;
   final String itemName;
   final _AlertType type;
@@ -37,6 +46,7 @@ class _MaintenanceAlert {
   final String? documentName;
   final int? daysRemaining;
   bool isRead;
+  bool isDeleted;
 
   _MaintenanceAlert({
     required this.id,
@@ -47,6 +57,7 @@ class _MaintenanceAlert {
     this.documentName,
     this.daysRemaining,
     this.isRead = false,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -58,20 +69,57 @@ class _MaintenanceAlert {
         if (documentName != null) 'documentName': documentName,
         if (daysRemaining != null) 'daysRemaining': daysRemaining,
         'isRead': isRead,
+        'isDeleted': isDeleted,
       };
 
   factory _MaintenanceAlert.fromJson(Map<String, dynamic> j) =>
       _MaintenanceAlert(
         id: j['id'] as String,
-        itemId: j['itemId'] as String? ?? j['weaponId'] as String? ?? '',
-        itemName: j['itemName'] as String? ?? j['weaponName'] as String? ?? '',
+        itemId: j['itemId'] as String? ?? j['platformId'] as String? ?? '',
+        itemName: j['itemName'] as String? ?? j['platformName'] as String? ?? '',
         type: _AlertType.values.firstWhere((e) => e.name == j['type'],
             orElse: () => _AlertType.wear),
         progress: (j['progress'] as num).toDouble(),
         documentName: j['documentName'] as String?,
         daysRemaining: j['daysRemaining'] as int?,
         isRead: j['isRead'] as bool? ?? false,
+        isDeleted: j['isDeleted'] as bool? ?? false,
       );
+}
+
+void _showReflexesModal(BuildContext context) {
+  final provider = Provider.of<ThotProvider>(context, listen: false);
+  if (!provider.isPremium) {
+    showProModal(context);
+    return;
+  }
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const ReflexesScreen(),
+  );
+}
+
+void _showAudioStimuliComingSoon(BuildContext context) {
+  final provider = Provider.of<ThotProvider>(context, listen: false);
+  if (!provider.isPremium) {
+    showProModal(context);
+    return;
+  }
+  final strings = AppStrings.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(strings.toolComingSoon)),
+  );
+}
+
+void _showCalculationToolsModal(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const BallisticCalcScreen(),
+  );
 }
 
 // ── Écran d'accueil ──────────────────────────────────────────────────────────
@@ -100,7 +148,7 @@ void _showMilliemeModal(BuildContext context) {
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (context) {
-      return const MilliemeToolScreen();
+      return const BallisticCalcScreen();
     },
   );
 }
@@ -114,7 +162,6 @@ void _showTimerModal(BuildContext context) {
   );
 }
 void _showAchievementsModal(BuildContext context) {
-  final colors = Theme.of(context).colorScheme;
   final baseBackground = Theme.of(context).scaffoldBackgroundColor;
   showModalBottomSheet(
     context: context,
@@ -131,16 +178,16 @@ void _showAchievementsModal(BuildContext context) {
         ),
         child: Column(
           children: [
+            const SizedBox(height: 12),
             Container(
-              margin: const EdgeInsets.only(top: 12),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: LightColors.iconInactive.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const Gap(AppSpacing.md),
             const Expanded(child: AchievementsScreen(useSafeArea: false)),
           ],
         ),
@@ -150,7 +197,6 @@ void _showAchievementsModal(BuildContext context) {
 }
 
 void _showStatisticsModal(BuildContext context) {
-  final colors = Theme.of(context).colorScheme;
   final baseBackground = Theme.of(context).scaffoldBackgroundColor;
   showModalBottomSheet(
     context: context,
@@ -167,16 +213,16 @@ void _showStatisticsModal(BuildContext context) {
         ),
         child: Column(
           children: [
+            const SizedBox(height: 12),
             Container(
-              margin: const EdgeInsets.only(top: 12),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: LightColors.iconInactive.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const Gap(AppSpacing.md),
             Expanded(
               child: StatisticsScreen(
                 backgroundColor: baseBackground,
@@ -187,6 +233,24 @@ void _showStatisticsModal(BuildContext context) {
         ),
       );
     },
+  );
+}
+
+void _showColorPodModal(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const ColorPodScreen(),
+  );
+}
+
+void _showShootingTablesModal(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const ShootingTablesScreen(),
   );
 }
 
@@ -234,31 +298,200 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   _PrecisionRange _precisionRange = _PrecisionRange.month;
 
+  final ScrollController _homeScrollController = ScrollController();
   final GlobalKey _bellKey = GlobalKey();
+  final GlobalKey _quickAccessKey = GlobalKey();
+  final GlobalKey _trainingKey = GlobalKey();
+  final GlobalKey _trainingHighlightKey = GlobalKey();
+  final GlobalKey _indicatorsPlaceholderKey = GlobalKey();
+  final GlobalKey _statsKey = GlobalKey();
+  final GlobalKey _rewardsKey = GlobalKey();
+  final GlobalKey _newSessionKey = GlobalKey();
   OverlayEntry? _overlayEntry;
+  OverlayEntry? _tutorialOverlayEntry;
   List<_MaintenanceAlert> _alerts = [];
   static const _prefKey = 'maintenance_alerts_v1';
+  static const _deletedPrefKey = 'maintenance_alerts_deleted_v1';
+  static const _tutorialNeverShowAgainKey =
+      'home_tutorial_never_show_again_v1';
 
   bool _isOnline = true;
+  // ignore: cancel_subscriptions
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  bool _tutorialCheckScheduled = false;
+  bool _tutorialDismissedThisSession = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncAlerts();
-      _checkConnectivity();
+      _initConnectivity();
+      _loadTrainingHistory();
+      _checkAndShowTutorial();
+    });
+    TrainingHistory.updates.addListener(_onTrainingHistoryUpdate);
+  }
+
+  Future<void> _checkAndShowTutorial() async {
+    if (_tutorialDismissedThisSession) return;
+    final prefs = await SharedPreferences.getInstance();
+    final neverShowAgain =
+        prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
+    if (!neverShowAgain && mounted && _tutorialOverlayEntry == null) {
+      _showTutorial();
+    }
+  }
+
+  void _scheduleTutorialCheck() {
+    if (_tutorialCheckScheduled || !mounted) return;
+    _tutorialCheckScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _tutorialCheckScheduled = false;
+      if (!mounted) return;
+      await _checkAndShowTutorial();
     });
   }
 
-  Future<void> _checkConnectivity() async {
-    try {
-      final result = await InternetAddress.lookup('dns.google')
-          .timeout(const Duration(seconds: 3));
-      final online = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-      if (mounted && online != _isOnline) setState(() => _isOnline = online);
-    } catch (_) {
-      if (mounted && _isOnline) setState(() => _isOnline = false);
+  void _showTutorial() {
+    final strings = AppStrings.of(context);
+    final steps = [
+      TutorialStep(
+        targetKey: _bellKey,
+        title: strings.tutorialHomeBellTitle,
+        description: strings.tutorialHomeBellDescription,
+      ),
+      TutorialStep(
+        targetKey: _quickAccessKey,
+        title: strings.tutorialHomeQuickAccessTitle,
+        description: strings.tutorialHomeQuickAccessDescription,
+      ),
+      TutorialStep(
+        targetKey: _trainingHighlightKey,
+        title: strings.tutorialHomeTrackingTitle,
+        description: strings.tutorialHomeTrackingDescription,
+      ),
+      TutorialStep(
+        targetKey: _indicatorsPlaceholderKey,
+        title: strings.tutorialHomeIndicatorsTitle,
+        description: strings.tutorialHomeIndicatorsDescription,
+      ),
+      TutorialStep(
+        targetKey: _statsKey,
+        title: strings.tutorialHomeStatsTitle,
+        description: strings.tutorialHomeStatsDescription,
+      ),
+      TutorialStep(
+        targetKey: _rewardsKey,
+        title: strings.tutorialHomeRewardsTitle,
+        description: strings.tutorialHomeRewardsDescription,
+      ),
+    ];
+
+    _tutorialOverlayEntry = OverlayEntry(
+      builder: (_) => TutorialOverlay(
+        steps: steps,
+        onStepChanged: _onTutorialStepChanged,
+        onComplete: () {
+          _hideTutorial();
+        },
+        onSkip: () {
+          _hideTutorial();
+        },
+        onNeverShowAgain: () async {
+          _hideTutorial();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(_tutorialNeverShowAgainKey, true);
+        },
+      ),
+    );
+
+    final rootOverlay = Overlay.of(context, rootOverlay: true);
+    rootOverlay.insert(_tutorialOverlayEntry!);
+  }
+
+  void _onTutorialStepChanged(int stepIndex) {
+    final stepKeys = <GlobalKey>[
+      _bellKey,
+      _quickAccessKey,
+      _trainingHighlightKey,
+      _indicatorsPlaceholderKey,
+      _statsKey,
+      _rewardsKey,
+    ];
+    final stepAlignments = <double>[
+      0.12,
+      0.12,
+      0.12,
+      0.05,
+      0.12,
+      0.12,
+    ];
+    if (stepIndex < 0 || stepIndex >= stepKeys.length) return;
+
+    final contextForStep = stepKeys[stepIndex].currentContext;
+    if (contextForStep == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || stepKeys[stepIndex].currentContext == null) return;
+      Scrollable.ensureVisible(
+        stepKeys[stepIndex].currentContext!,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOut,
+        alignment: stepAlignments[stepIndex],
+      );
+    });
+  }
+
+  void _hideTutorial() {
+    _tutorialOverlayEntry?.remove();
+    _tutorialOverlayEntry = null;
+    _tutorialDismissedThisSession = true;
+    if (mounted) {
+      setState(() {});
     }
+  }
+
+  void _onTrainingHistoryUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadTrainingHistory() async {
+    await TrainingHistory.load();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-sync alerts whenever provider data changes (new session, stock update, etc.)
+    _syncAlerts();
+    _scheduleTutorialCheck();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    _homeScrollController.dispose();
+    TrainingHistory.updates.removeListener(_onTrainingHistoryUpdate);
+    _tutorialOverlayEntry?.remove();
+    super.dispose();
+  }
+
+  Future<void> _initConnectivity() async {
+    // Initial check
+    final result = await Connectivity().checkConnectivity();
+    if (mounted) {
+      setState(() => _isOnline = !result.contains(ConnectivityResult.none));
+    }
+    // Stream for subsequent changes — uses OS APIs, no network request
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+      if (mounted) {
+        setState(() => _isOnline = !results.contains(ConnectivityResult.none));
+      }
+    });
   }
 
   Future<void> _syncAlerts() async {
@@ -266,55 +499,93 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_prefKey);
     final saved = <String, bool>{};
+    final deleted = <String>{};
     if (raw != null) {
       try {
         final List decoded = jsonDecode(raw) as List;
         for (final item in decoded) {
           final m = _MaintenanceAlert.fromJson(item as Map<String, dynamic>);
           saved[m.id] = m.isRead;
+          if (m.isDeleted) deleted.add(m.id);
         }
       } catch (_) {}
     }
+    // Charger les IDs supprimés persistés (survivent aux syncs)
+    final deletedList = prefs.getStringList(_deletedPrefKey) ?? const [];
+    deleted.addAll(deletedList);
+
+    // Migration des anciens IDs de documents (name.hashCode -> path.hashCode)
+    final migratedDeleted = <String>{};
+    final providerItems = [
+      ...provider.platforms.map((p) => (p.id, p.documents)),
+      ...provider.ammos.map((a) => (a.id, a.documents)),
+      ...provider.accessories.map((a) => (a.id, a.documents)),
+    ];
+    for (final deletedId in deleted) {
+      // Vérifier si c'est un ancien ID de document (contient "_doc_")
+      if (deletedId.contains('_doc_')) {
+        // Essayer de trouver le document correspondant et migrer l'ID
+        for (final (itemId, docs) in providerItems) {
+          for (final doc in docs) {
+            final oldId = '${itemId}_doc_${doc.name.hashCode}';
+            final newId = '${itemId}_doc_${doc.path.hashCode}';
+            if (deletedId == oldId) {
+              migratedDeleted.add(newId);
+            }
+          }
+        }
+      } else {
+        migratedDeleted.add(deletedId);
+      }
+    }
+    deleted.addAll(migratedDeleted);
+
     final fresh = <_MaintenanceAlert>[];
     final now = DateTime.now();
 
-    // Wear & fouling alerts (weapons)
-    for (final w in provider.weapons) {
+    // Wear & fouling alerts (platforms)
+    for (final w in provider.platforms.where((p) => !p.isHidden)) {
       if (w.trackCleanliness && w.cleaningProgress >= 0.8) {
         final id = '${w.id}_fouling';
-        fresh.add(_MaintenanceAlert(
-          id: id, itemId: w.id, itemName: w.name,
-          type: _AlertType.fouling, progress: w.cleaningProgress,
-          isRead: saved[id] ?? false,
-        ));
+        if (!deleted.contains(id)) {
+          fresh.add(_MaintenanceAlert(
+            id: id, itemId: w.id, itemName: w.name,
+            type: _AlertType.fouling, progress: w.cleaningProgress,
+            isRead: saved[id] ?? false,
+          ));
+        }
       }
       if (w.trackWear && w.revisionProgress >= 0.8) {
         final id = '${w.id}_wear';
-        fresh.add(_MaintenanceAlert(
-          id: id, itemId: w.id, itemName: w.name,
-          type: _AlertType.wear, progress: w.revisionProgress,
-          isRead: saved[id] ?? false,
-        ));
+        if (!deleted.contains(id)) {
+          fresh.add(_MaintenanceAlert(
+            id: id, itemId: w.id, itemName: w.name,
+            type: _AlertType.wear, progress: w.revisionProgress,
+            isRead: saved[id] ?? false,
+          ));
+        }
       }
-      // Document expiry alerts for weapons
+      // Document expiry alerts for platforms
       for (final doc in w.documents) {
         if (doc.expiryDate != null && doc.notifyBeforeDays > 0) {
           final days = doc.expiryDate!.difference(now).inDays;
           if (days <= doc.notifyBeforeDays) {
-            final id = '${w.id}_doc_${doc.name.hashCode}';
-            fresh.add(_MaintenanceAlert(
-              id: id, itemId: w.id, itemName: w.name,
-              type: _AlertType.document, progress: 0,
-              documentName: doc.name, daysRemaining: days,
-              isRead: saved[id] ?? false,
-            ));
+            final id = '${w.id}_doc_${doc.path.hashCode}';
+            if (!deleted.contains(id)) {
+              fresh.add(_MaintenanceAlert(
+                id: id, itemId: w.id, itemName: w.name,
+                type: _AlertType.document, progress: 0,
+                documentName: doc.name, daysRemaining: days,
+                isRead: saved[id] ?? false,
+              ));
+            }
           }
         }
       }
     }
 
     // Stock alerts (ammo)
-    for (final a in provider.ammos) {
+    for (final a in provider.ammos.where((a) => !a.isHidden)) {
       if (a.trackStock) {
         final threshold = a.lowStockThreshold.toDouble();
         final rawInitial = a.initialQuantity.toDouble();
@@ -323,15 +594,17 @@ class _HomeScreenState extends State<HomeScreen> {
         if (rawInitial <= threshold) {
           criticality = current <= threshold ? 1.0 : 0.0;
         } else {
-          criticality = (1.0 - ((current - threshold) / (rawInitial - threshold)).clamp(0.0, 1.0)).clamp(0.0, 1.0);
+          criticality = (1.0 - ((current - threshold) / (rawInitial - threshold))).clamp(0.0, 1.0).clamp(0.0, 1.0);
         }
         if (criticality >= 0.8) {
           final id = '${a.id}_stock';
-          fresh.add(_MaintenanceAlert(
-            id: id, itemId: a.id, itemName: a.name,
-            type: _AlertType.stock, progress: criticality,
-            isRead: saved[id] ?? false,
-          ));
+          if (!deleted.contains(id)) {
+            fresh.add(_MaintenanceAlert(
+              id: id, itemId: a.id, itemName: a.name,
+              type: _AlertType.stock, progress: criticality,
+              isRead: saved[id] ?? false,
+            ));
+          }
         }
       }
       // Document expiry alerts for ammo
@@ -339,31 +612,55 @@ class _HomeScreenState extends State<HomeScreen> {
         if (doc.expiryDate != null && doc.notifyBeforeDays > 0) {
           final days = doc.expiryDate!.difference(now).inDays;
           if (days <= doc.notifyBeforeDays) {
-            final id = '${a.id}_doc_${doc.name.hashCode}';
-            fresh.add(_MaintenanceAlert(
-              id: id, itemId: a.id, itemName: a.name,
-              type: _AlertType.document, progress: 0,
-              documentName: doc.name, daysRemaining: days,
-              isRead: saved[id] ?? false,
-            ));
+            final id = '${a.id}_doc_${doc.path.hashCode}';
+            if (!deleted.contains(id)) {
+              fresh.add(_MaintenanceAlert(
+                id: id, itemId: a.id, itemName: a.name,
+                type: _AlertType.document, progress: 0,
+                documentName: doc.name, daysRemaining: days,
+                isRead: saved[id] ?? false,
+              ));
+            }
           }
         }
       }
     }
 
-    // Document expiry alerts for accessories
-    for (final acc in provider.accessories) {
+    // Wear, fouling & document expiry alerts for accessories
+    for (final acc in provider.accessories.where((a) => !a.isHidden)) {
+      if (acc.trackCleanliness && acc.cleaningProgress >= 0.8) {
+        final id = '${acc.id}_fouling';
+        if (!deleted.contains(id)) {
+          fresh.add(_MaintenanceAlert(
+            id: id, itemId: acc.id, itemName: acc.name,
+            type: _AlertType.fouling, progress: acc.cleaningProgress,
+            isRead: saved[id] ?? false,
+          ));
+        }
+      }
+      if (acc.trackWear && acc.revisionProgress >= 0.8) {
+        final id = '${acc.id}_wear';
+        if (!deleted.contains(id)) {
+          fresh.add(_MaintenanceAlert(
+            id: id, itemId: acc.id, itemName: acc.name,
+            type: _AlertType.wear, progress: acc.revisionProgress,
+            isRead: saved[id] ?? false,
+          ));
+        }
+      }
       for (final doc in acc.documents) {
         if (doc.expiryDate != null && doc.notifyBeforeDays > 0) {
           final days = doc.expiryDate!.difference(now).inDays;
           if (days <= doc.notifyBeforeDays) {
-            final id = '${acc.id}_doc_${doc.name.hashCode}';
-            fresh.add(_MaintenanceAlert(
-              id: id, itemId: acc.id, itemName: acc.name,
-              type: _AlertType.document, progress: 0,
-              documentName: doc.name, daysRemaining: days,
-              isRead: saved[id] ?? false,
-            ));
+            final id = '${acc.id}_doc_${doc.path.hashCode}';
+            if (!deleted.contains(id)) {
+              fresh.add(_MaintenanceAlert(
+                id: id, itemId: acc.id, itemName: acc.name,
+                type: _AlertType.document, progress: 0,
+                documentName: doc.name, daysRemaining: days,
+                isRead: saved[id] ?? false,
+              ));
+            }
           }
         }
       }
@@ -375,16 +672,18 @@ class _HomeScreenState extends State<HomeScreen> {
         final days = doc.expiryDate!.difference(now).inDays;
         if (days <= doc.notifyBeforeDays) {
           final id = 'global_doc_${doc.id}';
-          fresh.add(_MaintenanceAlert(
-            id: id,
-            itemId: 'global',
-            itemName: doc.name,
-            type: _AlertType.document,
-            progress: 0,
-            documentName: doc.name,
-            daysRemaining: days,
-            isRead: saved[id] ?? false,
-          ));
+          if (!deleted.contains(id)) {
+            fresh.add(_MaintenanceAlert(
+              id: id,
+              itemId: 'global',
+              itemName: doc.name,
+              type: _AlertType.document,
+              progress: 0,
+              documentName: doc.name,
+              daysRemaining: days,
+              isRead: saved[id] ?? false,
+            ));
+          }
         }
       }
     }
@@ -398,7 +697,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await prefs.setString(_prefKey, jsonEncode(_alerts.map((a) => a.toJson()).toList()));
   }
 
-  int get _unreadCount => _alerts.where((a) => !a.isRead).length;
+  int get _unreadCount => _alerts.where((a) => !a.isRead && !a.isDeleted).length;
 
   void _markRead(String id) {
     setState(() { for (final a in _alerts) { if (a.id == id) a.isRead = true; } });
@@ -413,15 +712,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _deleteAlert(String id) {
-    setState(() => _alerts.removeWhere((a) => a.id == id));
+    setState(() {
+      for (final a in _alerts) {
+        if (a.id == id) a.isDeleted = true;
+      }
+    });
     _saveAlerts();
+    _persistDeletedIds();
     _overlayEntry?.markNeedsBuild();
   }
 
   void _deleteAllRead() {
-    setState(() => _alerts.removeWhere((a) => a.isRead));
+    setState(() {
+      for (final a in _alerts) {
+        if (a.isRead) a.isDeleted = true;
+      }
+    });
     _saveAlerts();
+    _persistDeletedIds();
     _overlayEntry?.markNeedsBuild();
+  }
+
+  Future<void> _persistDeletedIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = (prefs.getStringList(_deletedPrefKey) ?? const []).toSet();
+    for (final a in _alerts) {
+      if (a.isDeleted) existing.add(a.id);
+    }
+    await prefs.setStringList(_deletedPrefKey, existing.toList());
   }
 
   void _togglePanel() {
@@ -442,7 +760,7 @@ class _HomeScreenState extends State<HomeScreen> {
         topOffset: topOffset,
         leftOffset: 16,
         width: screenWidth - 32,
-        alerts: _alerts,
+        alerts: _alerts.where((a) => !a.isDeleted).toList(),
         onMarkRead: _markRead,
         onMarkAllRead: _markAllRead,
         onDelete: _deleteAlert,
@@ -499,6 +817,181 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
+  List<Widget> _buildIndicatorsSection({
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
+    final strings = AppStrings.of(context);
+    final hasTrackedPlatform = provider.platforms.any((w) => w.trackWear || w.trackCleanliness);
+    final hasTrackedAmmo = provider.ammos.any((a) => a.trackStock);
+    final hasTrackedAccessory = provider.accessories.any(
+      (a) => a.trackWear || a.trackCleanliness,
+    );
+    final shouldShowMaintenanceInvite =
+        !(hasTrackedPlatform || hasTrackedAmmo || hasTrackedAccessory);
+    return [
+      Container(
+        key: _indicatorsPlaceholderKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 24,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    strings.homeIndicatorsTitle,
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Gap(9),
+            shouldShowMaintenanceInvite
+                ? _buildIndicatorsPlaceholderCard(colors: colors, textStyles: textStyles)
+                : _buildMaintenanceIndicatorsCard(provider: provider, colors: colors, textStyles: textStyles),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildIndicatorsPlaceholderCard({
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
+    final strings = AppStrings.of(context);
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: _hardCardDecoration(colors, radius: 16),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            height: 42,
+            child: Center(
+              child: SvgPicture.asset(
+                'assets/images/material.svg',
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  colors.primary,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+          const Gap(AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.homeIndicatorsPlaceholderTitle,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  ),
+                ),
+                const Gap(4),
+                Text(
+                  strings.homeIndicatorsPlaceholderSubtitle,
+                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsPlaceholderCard({
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
+    final strings = AppStrings.of(context);
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: _hardCardDecoration(colors, radius: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 28,
+            child: Center(
+              child: Icon(
+                Icons.insert_chart_rounded,
+                size: 24,
+                color: colors.primary,
+              ),
+            ),
+          ),
+          const Gap(AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.homeStatsPlaceholderTitle,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  ),
+                ),
+                const Gap(4),
+                Text(
+                  strings.homeStatsPlaceholderSubtitle,
+                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildStatsInviteSection({
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
+    final strings = AppStrings.of(context);
+    return [
+      Container(
+        key: _statsKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 24,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    strings.homeStatsTitle,
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Gap(9),
+            _buildStatsPlaceholderCard(colors: colors, textStyles: textStyles),
+          ],
+        ),
+      ),
+    ];
+  }
+
   Widget _buildAchievementsButton({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
     final strings = AppStrings.of(context);
     return _HomeStandardActionCard(
@@ -524,9 +1017,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final strings = AppStrings.of(context);
     if (provider.sessions.isEmpty) return const [];
     return [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
+      SizedBox(
+        height: 24,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
           Text(strings.homePrecisionTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
           PopupMenuButton<_PrecisionRange>(
             initialValue: _precisionRange,
@@ -540,14 +1035,15 @@ class _HomeScreenState extends State<HomeScreen> {
               PopupMenuItem(value: _PrecisionRange.total, child: Text(strings.precisionFilterTotalLong)),
             ],
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(_precisionRange.labelForLocale(strings), style: textStyles.labelSmall?.copyWith(color: colors.secondary, fontWeight: FontWeight.w600)),
+              Text(_precisionRange.labelForLocale(strings), style: textStyles.labelLarge?.copyWith(color: colors.secondary, fontWeight: FontWeight.w700)),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right_rounded, color: colors.secondary, size: 16),
+              Icon(Icons.keyboard_arrow_down_rounded, color: colors.secondary, size: 20),
             ]),
           ),
         ],
       ),
-      const Gap(AppSpacing.md),
+      ),
+      const Gap(9),
       Builder(builder: (context) {
         final now = DateTime.now();
         final sessionsWithPrecision = provider.sessions.where((s) => s.exercises.any((e) => e.isPrecisionCounted)).toList()..sort((a, b) => a.date.compareTo(b.date));
@@ -613,52 +1109,276 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> _buildQuickAccessSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
     final strings = AppStrings.of(context);
     return [
-      Text(strings.homeQuickAccessTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
-      const Gap(AppSpacing.md),
-      Row(children: [
-        for (int i = 0; i < provider.quickActions.length; i++) ...[
-          if (i > 0) const Gap(AppSpacing.sm),
-          Expanded(child: Builder(builder: (context) {
-            final action = _getQuickAction(context, provider.quickActions[i], provider);
-            return _QuickActionItem(icon: action['icon'] as Widget, label: action['label'] as String, onTap: action['onTap'] as VoidCallback);
-          })),
-        ],
-      ]),
+      Container(
+        key: _quickAccessKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(strings.homeQuickAccessTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+            const Gap(9),
+            Row(children: [
+              for (int i = 0; i < provider.quickActions.length; i++) ...[
+                if (i > 0) const Gap(AppSpacing.sm),
+                Expanded(child: Builder(builder: (context) {
+                  final action = _getQuickAction(context, provider.quickActions[i], provider);
+                  final actionId = provider.quickActions[i];
+                  final key = actionId == 'new_session' ? _newSessionKey : null;
+                  return _QuickActionItem(
+                    key: key,
+                    icon: action['icon'] as Widget,
+                    label: action['label'] as String,
+                    onTap: action['onTap'] as VoidCallback,
+                  );
+                })),
+              ],
+            ]),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildTrainingProgramSection({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasTraining = TrainingHistory.hasAnyTraining();
+    
+    return [
+      Container(
+        key: _trainingKey,
+        child: Container(
+          key: _trainingHighlightKey,
+          child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 24,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    strings.homeProgramTitle,
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Gap(9),
+            GestureDetector(
+              onTap: () {
+                StatefulNavigationShell.of(context).goBranch(2);
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (context.mounted) {
+                    context.push('/reflexes');
+                  }
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? colors.outline.withValues(alpha: 0.3)
+                      : LightColors.surfaceHighlight,
+                  width: 1,
+                ),
+                boxShadow: AppShadows.cardPremium,
+                image: DecorationImage(
+                  image: AssetImage(
+                    Theme.of(context).brightness == Brightness.dark
+                        ? 'assets/images/trainn.webp'
+                        : 'assets/images/train.webp',
+                  ),
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  colorFilter: const ColorFilter.mode(
+                    Color.fromRGBO(0, 0, 0, 0.5),
+                    BlendMode.darken,
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                strings.homeProgramCardTitle,
+                                style: textStyles.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (!hasTraining || true) ...[
+                                const Gap(4),
+                                Text(
+                                  strings.homeProgramStartMessage,
+                                  style: textStyles.bodySmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.92),
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withValues(alpha: 0.5),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.md),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ],
+                    ),
+                    const Gap(AppSpacing.md),
+                    Row(
+                      children: List.generate(7, (index) {
+                        final weeklyTraining = TrainingHistory.getWeeklyTraining();
+                        final localeTag = Localizations.localeOf(context).toLanguageTag();
+                        final dayName = DateFormat.E(localeTag).format(
+                          DateTime.now().subtract(Duration(days: 6 - index)),
+                        );
+                        final isTrained =
+                            index < weeklyTraining.length ? weeklyTraining[index] : false;
+                        return Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              right: index < 6 ? AppSpacing.xs : 0,
+                            ),
+                            child: Column(
+                              children: [
+                                AnimatedScale(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.elasticOut,
+                                  scale: isTrained ? 1.05 : 1.0,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    curve: Curves.easeOut,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      gradient: isTrained
+                                          ? const LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                LightColors.primary,
+                                                Color(0xFF7A9E6B),
+                                              ],
+                                            )
+                                          : null,
+                                      color: isTrained
+                                          ? null
+                                          : Colors.white.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isTrained
+                                            ? Colors.white.withValues(alpha: 0.75)
+                                            : Colors.white.withValues(alpha: 0.25),
+                                        width: 1,
+                                      ),
+                                      boxShadow: isTrained
+                                          ? [
+                                              BoxShadow(
+                                                color: LightColors.primary.withValues(alpha: 0.4),
+                                                blurRadius: 8,
+                                                spreadRadius: 1,
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        isTrained
+                                            ? Icons.check_rounded
+                                            : Icons.remove_rounded,
+                                        size: 16,
+                                        color: Colors.white.withValues(
+                                          alpha: isTrained ? 1 : 0.65,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const Gap(4),
+                                Text(
+                                  dayName.substring(0, 2).toUpperCase(),
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ),
+          ],
+        ),
+        ),
+      ),
     ];
   }
 
   Widget _buildMaintenanceIndicatorsCard({required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
     final strings = AppStrings.of(context);
-    final hasWear = provider.weapons.isNotEmpty && provider.weapons.any((w) => w.trackWear);
-    final hasClean = provider.weapons.isNotEmpty && provider.weapons.any((w) => w.trackCleanliness);
+    final hasWear = provider.platforms.isNotEmpty && provider.platforms.any((w) => w.trackWear);
+    final hasClean = provider.platforms.isNotEmpty && provider.platforms.any((w) => w.trackCleanliness);
     final hasAmmo = provider.ammos.isNotEmpty && provider.ammos.any((a) => a.trackStock);
+    final hasAccessoryWear = provider.accessories.isNotEmpty && provider.accessories.any((a) => a.trackWear);
+    final hasAccessoryClean = provider.accessories.isNotEmpty && provider.accessories.any((a) => a.trackCleanliness);
+    final hasMaintainedData =
+        hasWear || hasClean || hasAmmo || hasAccessoryWear || hasAccessoryClean;
 
     return Container(
       padding: AppSpacing.paddingLg,
       decoration: _hardCardDecoration(colors, radius: 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Icon(Icons.warning_amber_rounded, color: colors.error, size: 20),
-          const Gap(AppSpacing.sm),
-          Text(strings.homeMaintenanceTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface)),
-        ]),
-        const Gap(AppSpacing.sm),
-        if (provider.weapons.isEmpty && provider.ammos.isEmpty)
+        if (!hasMaintainedData)
           Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(strings.homeMaintenanceEmpty, style: textStyles.bodyMedium?.copyWith(color: colors.secondary))))
         else ...[
           if (hasWear) ...[
             Builder(builder: (context) {
-              final mostWorn = provider.weapons.where((w) => w.trackWear).reduce((a, b) => a.revisionProgress > b.revisionProgress ? a : b);
+              final mostWorn = provider.platforms.where((w) => w.trackWear).reduce((a, b) => a.revisionProgress > b.revisionProgress ? a : b);
               return _MaintenanceBar(label: '${strings.homeMaintenanceRevisionLabel}${mostWorn.name}', value: (mostWorn.revisionProgress * 100).round(), valueUnit: "%", progress: mostWorn.revisionProgress.clamp(0.0, 1.0), colors: colors);
             }),
-            if (hasClean || hasAmmo) const Gap(AppSpacing.md),
+            if (hasClean || hasAmmo || hasAccessoryWear || hasAccessoryClean) const Gap(AppSpacing.md),
           ],
           if (hasClean) ...[
             Builder(builder: (context) {
-              final dirtiest = provider.weapons.where((w) => w.trackCleanliness).reduce((a, b) => a.cleaningProgress > b.cleaningProgress ? a : b);
+              final dirtiest = provider.platforms.where((w) => w.trackCleanliness).reduce((a, b) => a.cleaningProgress > b.cleaningProgress ? a : b);
               return _MaintenanceBar(label: '${strings.homeMaintenanceCleaningLabel}${dirtiest.name}', value: (dirtiest.cleaningProgress * 100).round(), valueUnit: "%", progress: dirtiest.cleaningProgress.clamp(0.0, 1.0), colors: colors);
             }),
-            if (hasAmmo) const Gap(AppSpacing.md),
+            if (hasAmmo || hasAccessoryWear || hasAccessoryClean) const Gap(AppSpacing.md),
           ],
           if (hasAmmo) ...[
             Builder(builder: (context) {
@@ -674,6 +1394,20 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               return _MaintenanceBar(label: '${strings.homeMaintenanceStockLabel}${lowestStock.name}', value: lowestStock.quantity, valueUnit: strings.homeRemainingSuffix, progress: criticality, colors: colors);
             }),
+            if (hasAccessoryWear || hasAccessoryClean) const Gap(AppSpacing.md),
+          ],
+          if (hasAccessoryWear) ...[
+            Builder(builder: (context) {
+              final mostWornAccessory = provider.accessories.where((a) => a.trackWear).reduce((a, b) => a.revisionProgress > b.revisionProgress ? a : b);
+              return _MaintenanceBar(label: '${strings.homeMaintenanceRevisionLabel}${mostWornAccessory.name}', value: (mostWornAccessory.revisionProgress * 100).round(), valueUnit: "%", progress: mostWornAccessory.revisionProgress.clamp(0.0, 1.0), colors: colors);
+            }),
+            if (hasAccessoryClean) const Gap(AppSpacing.md),
+          ],
+          if (hasAccessoryClean) ...[
+            Builder(builder: (context) {
+              final dirtiestAccessory = provider.accessories.where((a) => a.trackCleanliness).reduce((a, b) => a.cleaningProgress > b.cleaningProgress ? a : b);
+              return _MaintenanceBar(label: '${strings.homeMaintenanceCleaningLabel}${dirtiestAccessory.name}', value: (dirtiestAccessory.cleaningProgress * 100).round(), valueUnit: "%", progress: dirtiestAccessory.cleaningProgress.clamp(0.0, 1.0), colors: colors);
+            }),
           ],
         ],
       ]),
@@ -684,11 +1418,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (provider.sessions.isEmpty) return const [];
     final strings = AppStrings.of(context);
     return [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(strings.homeLastSessionTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
-        TextButton(onPressed: () => StatefulNavigationShell.of(context).goBranch(1), child: Text(strings.homeSeeAll, style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
-      ]),
-      const Gap(AppSpacing.sm),
+      SizedBox(
+        height: 24,
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text(strings.homeLastSessionTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+          TextButton(onPressed: () => StatefulNavigationShell.of(context).goBranch(1), style: TextButton.styleFrom(padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap), child: Text(strings.homeSeeAll, style: textStyles.labelLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
+        ]),
+      ),
+      const Gap(9),
       _LastSessionCard(session: provider.sessions.first, provider: provider, colors: colors, textStyles: textStyles),
     ];
   }
@@ -697,26 +1434,147 @@ class _HomeScreenState extends State<HomeScreen> {
     final strings = AppStrings.of(context);
     final avgShotsPerSession = provider.totalSessions == 0 ? '0' : (provider.totalRoundsFired / provider.totalSessions).toStringAsFixed(0);
     return [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(strings.homeStatsTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
-        TextButton(onPressed: () => _showStatisticsModal(context), child: Text(strings.homeSeeAll, style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
-      ]),
-      const Gap(AppSpacing.xs),
-      Row(children: [
-        Expanded(child: _StatCard(title: strings.homeStatSessions, value: "${provider.totalSessions}", colors: colors, textStyles: textStyles)),
-        const Gap(AppSpacing.sm),
-        Expanded(child: _StatCard(title: strings.homeStatShotsFired, value: "${provider.totalRoundsFired}", colors: colors, textStyles: textStyles)),
-        const Gap(AppSpacing.sm),
-        Expanded(child: _StatCard(title: strings.homeStatWeapons, value: "${provider.weapons.length}", colors: colors, textStyles: textStyles)),
-      ]),
-      const Gap(AppSpacing.sm),
-      Row(children: [
-        Expanded(child: _StatCard(title: strings.statisticsAmmosLabel, value: "${provider.ammos.length}", colors: colors, textStyles: textStyles)),
-        const Gap(AppSpacing.sm),
-        Expanded(child: _StatCard(title: strings.statisticsAccessoriesLabel, value: "${provider.accessories.length}", colors: colors, textStyles: textStyles)),
-        const Gap(AppSpacing.sm),
-        Expanded(child: _StatCard(title: strings.statisticsShotsPerSessionLabel, value: avgShotsPerSession, colors: colors, textStyles: textStyles)),
-      ]),
+      Container(
+        key: _statsKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 24,
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(strings.homeStatsTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+                TextButton(onPressed: () => _showStatisticsModal(context), style: TextButton.styleFrom(padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap), child: Text(strings.homeSeeAll, style: textStyles.labelLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
+              ]),
+            ),
+            const Gap(9),
+            Row(children: [
+              Expanded(child: _StatCard(title: strings.homeStatSessions, value: "${provider.totalSessions}", colors: colors, textStyles: textStyles)),
+              const Gap(AppSpacing.sm),
+              Expanded(child: _StatCard(title: strings.homeStatShotsFired, value: "${provider.totalRoundsFired}", colors: colors, textStyles: textStyles)),
+              const Gap(AppSpacing.sm),
+              Expanded(child: _StatCard(title: strings.homeStatPlatforms, value: "${provider.platforms.length}", colors: colors, textStyles: textStyles)),
+            ]),
+            const Gap(AppSpacing.sm),
+            Row(children: [
+              Expanded(child: _StatCard(title: strings.statisticsAmmosLabel, value: "${provider.ammos.length}", colors: colors, textStyles: textStyles)),
+              const Gap(AppSpacing.sm),
+              Expanded(child: _StatCard(title: strings.statisticsAccessoriesLabel, value: "${provider.accessories.length}", colors: colors, textStyles: textStyles)),
+              const Gap(AppSpacing.sm),
+              Expanded(child: _StatCard(title: strings.statisticsShotsPerSessionLabel, value: avgShotsPerSession, colors: colors, textStyles: textStyles)),
+            ]),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildCostDashboardSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+    final strings = AppStrings.of(context);
+    final monthlyCosts = provider.getMonthlyCosts(12);
+    final topAmmos = provider.getTopAmmosByCost(12);
+    final totalYearlyCost = monthlyCosts.fold<double>(0, (sum, m) => sum + (m['cost'] as double));
+
+    if (totalYearlyCost == 0) return [];
+
+    return [
+      SizedBox(
+        height: 24,
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text(strings.costDashboardTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+          Text('${strings.costDashboardYearlyTotal}: ${totalYearlyCost.toStringAsFixed(2)} €', style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold)),
+        ]),
+      ),
+      const Gap(9),
+      Container(
+        padding: AppSpacing.paddingLg,
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.cardPremium,
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? colors.outline
+                : LightColors.surfaceHighlight,
+            width: 1.2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top 5 ammos by cost
+            if (topAmmos.isNotEmpty) ...[
+              Text(
+                'Top 5 ${strings.statisticsAmmosLabel}',
+                style: textStyles.labelSmall?.copyWith(color: colors.secondary),
+              ),
+              const Gap(8),
+              ...topAmmos.entries.take(5).toList().asMap().entries.map((entry) {
+                final index = entry.key;
+                final ammo = provider.ammos.firstWhere((a) => a.id == entry.value.key, orElse: () => Ammo(
+                  id: '',
+                  name: '',
+                  brand: '',
+                  caliber: '',
+                  quantity: 0,
+                  lastUsed: DateTime.now(),
+                ));
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Text('${index + 1}.', style: textStyles.labelMedium?.copyWith(color: colors.secondary)),
+                      const Gap(8),
+                      Expanded(child: Text(ammo.name, style: textStyles.bodyMedium)),
+                      Text('${entry.value.value.toStringAsFixed(2)} €', style: textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: colors.primary)),
+                    ],
+                  ),
+                );
+              }).toList(),
+              const Gap(12),
+            ],
+            // Monthly cost chart (simple bar representation)
+            Text(
+              'Coût mensuel (12 mois)',
+              style: textStyles.labelSmall?.copyWith(color: colors.secondary),
+            ),
+            const Gap(8),
+            SizedBox(
+              height: 100,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: monthlyCosts.map((m) {
+                  final cost = m['cost'] as double;
+                  final maxCost = monthlyCosts.fold<double>(0, (max, mc) => (mc['cost'] as double) > max ? mc['cost'] as double : max);
+                  final height = maxCost > 0 ? (cost / maxCost * 80).clamp(4.0, 80.0) : 4.0;
+                  final month = m['month'] as DateTime;
+                  final localeTag = Localizations.localeOf(context).toLanguageTag();
+                  final monthLabel = DateFormat.M(localeTag).format(month);
+                  return Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          height: height,
+                          width: 8,
+                          decoration: BoxDecoration(
+                            color: colors.primary,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const Gap(4),
+                        Text(
+                          monthLabel,
+                          style: textStyles.labelSmall?.copyWith(fontSize: 10, color: colors.secondary),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
     ];
   }
 
@@ -726,26 +1584,50 @@ class _HomeScreenState extends State<HomeScreen> {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
+    _scheduleTutorialCheck();
     final lastSessionSection = _buildLastSessionSection(context: context, provider: provider, colors: colors, textStyles: textStyles);
     final precisionSection = _buildPrecisionChartSection(provider: provider, colors: colors, textStyles: textStyles);
+    final costDashboardSection = _buildCostDashboardSection(context: context, provider: provider, colors: colors, textStyles: textStyles);
+    final hasStatsData = provider.totalSessions > 0 || provider.totalRoundsFired > 0 || provider.platforms.isNotEmpty || provider.ammos.isNotEmpty || provider.accessories.isNotEmpty;
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
+          controller: _homeScrollController,
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            defaultTargetPlatform == TargetPlatform.iOS ? (MediaQuery.paddingOf(context).top / 6) : (MediaQuery.paddingOf(context).top - 10),
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             ..._buildHeaderSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
             ..._buildQuickAccessSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
-            const Gap(AppSpacing.md),
-            _buildMaintenanceIndicatorsCard(provider: provider, colors: colors, textStyles: textStyles),
-            if (lastSessionSection.isNotEmpty) ...[const Gap(AppSpacing.md), ...lastSessionSection],
-            const Gap(AppSpacing.md),
-            ..._buildStatsOverviewSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
-            if (precisionSection.isNotEmpty) ...[const Gap(AppSpacing.lg), ...precisionSection],
-            const Gap(AppSpacing.lg),
-            _buildSectionTitle(title: strings.homeRewardsSectionTitle, textStyles: textStyles, colors: colors),
-            const Gap(AppSpacing.md),
-            _buildAchievementsButton(context: context, provider: provider, colors: colors, textStyles: textStyles),
+            const Gap(26),
+            ..._buildTrainingProgramSection(context: context, colors: colors, textStyles: textStyles),
+            const Gap(26),
+            ..._buildIndicatorsSection(provider: provider, colors: colors, textStyles: textStyles),
+            if (lastSessionSection.isNotEmpty) ...[const Gap(26), ...lastSessionSection],
+            const Gap(26),
+            ...(hasStatsData
+                ? _buildStatsOverviewSection(context: context, provider: provider, colors: colors, textStyles: textStyles)
+                : _buildStatsInviteSection(provider: provider, colors: colors, textStyles: textStyles)),
+            if (costDashboardSection.isNotEmpty) ...[const Gap(26), ...costDashboardSection],
+            if (precisionSection.isNotEmpty) ...[const Gap(26), ...precisionSection],
+            const Gap(26),
+            Container(
+              key: _rewardsKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildSectionTitle(title: strings.homeRewardsSectionTitle, textStyles: textStyles, colors: colors),
+                  const Gap(9),
+                  _buildAchievementsButton(context: context, provider: provider, colors: colors, textStyles: textStyles),
+                ],
+              ),
+            ),
+            if (_tutorialOverlayEntry != null)
+              const SizedBox(height: 160),
             const Gap(AppSpacing.lg),
           ]),
         ),
@@ -759,7 +1641,6 @@ class _HomeStandardActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  final bool showProBadge;
   final ColorScheme colors;
   final TextTheme textStyles;
 
@@ -768,13 +1649,12 @@ class _HomeStandardActionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.showProBadge = false,
     required this.colors,
     required this.textStyles,
   });
 
   BoxDecoration _hardCardDecoration(ColorScheme colors, {double radius = 16}) {
-    final isDark = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    final isDark = colors.brightness == Brightness.dark;
     return BoxDecoration(
       color: colors.surface,
       borderRadius: BorderRadius.circular(radius),
@@ -790,81 +1670,52 @@ class _HomeStandardActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            Container(
-              padding: AppSpacing.paddingLg,
-              decoration: _hardCardDecoration(colors, radius: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 28,
-                    child: Center(child: leading),
-                  ),
-                  const Gap(AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: textStyles.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
-                          ),
+    return Container(
+      decoration: _hardCardDecoration(colors, radius: 16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: AppSpacing.paddingLg,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 28,
+                  child: Center(child: leading),
+                ),
+                const Gap(AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: textStyles.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
                         ),
-                        const Gap(AppSpacing.xs),
-                        Text(
-                          subtitle,
-                          style: textStyles.bodySmall?.copyWith(
-                            color: colors.secondary,
-                          ),
+                      ),
+                      const Gap(AppSpacing.xs),
+                      Text(
+                        subtitle,
+                        style: textStyles.bodySmall?.copyWith(
+                          color: colors.secondary,
                         ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: colors.secondary,
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-            if (showProBadge)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.primary,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: LightColors.surfaceHighlight,
-                      width: 1.35,
-                    ),
-                  ),
-                  child: Text(
-                    strings.proBadge,
-                    style: textStyles.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.onPrimary,
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-          ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: colors.secondary,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -891,7 +1742,10 @@ Map<String, dynamic> _getQuickAction(
         'onTap': () {
           if (!provider.canAddSession()) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(provider.getLimitMessage('session'))),
+              SnackBar(
+                content: Text(provider.getLimitMessage('session')),
+                duration: const Duration(seconds: 3),
+              ),
             );
             context.push('/pro');
             return;
@@ -900,31 +1754,34 @@ Map<String, dynamic> _getQuickAction(
         },
       };
 
-    case 'new_weapon':
+    case 'new_platform':
       return {
         'icon': SvgPicture.asset(
-          'assets/images/gun.svg',
+          'assets/images/tube.svg',
           width: 24,
           height: 24,
           colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
         ),
-        'label': strings.quickActionLabelWeapon,
+        'label': strings.quickActionLabelPlatform,
         'onTap': () {
-          if (!provider.canAddWeapon()) {
+          if (!provider.canAddPlatform()) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(provider.getLimitMessage('weapon'))),
+              SnackBar(
+                content: Text(provider.getLimitMessage('platform')),
+                duration: const Duration(seconds: 3),
+              ),
             );
             context.push('/pro');
             return;
           }
-          context.push('/inventory/add?itemType=ARME');
+          context.push('/inventory/add?itemType=PLATEFORME');
         },
       };
 
     case 'new_ammo':
       return {
         'icon': SvgPicture.asset(
-          'assets/images/bullet.svg',
+          'assets/images/pointe.svg',
           width: 24,
           height: 24,
           colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
@@ -933,12 +1790,15 @@ Map<String, dynamic> _getQuickAction(
         'onTap': () {
           if (!provider.canAddAmmo()) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(provider.getLimitMessage('ammo'))),
+              SnackBar(
+                content: Text(provider.getLimitMessage('ammo')),
+                duration: const Duration(seconds: 3),
+              ),
             );
             context.push('/pro');
             return;
           }
-          context.push('/inventory/add?itemType=MUNITION');
+          context.push('/inventory/add?itemType=CONSOMMABLE');
         },
       };
 
@@ -953,7 +1813,10 @@ Map<String, dynamic> _getQuickAction(
         'onTap': () {
           if (!provider.canAddAccessory()) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(provider.getLimitMessage('accessory'))),
+              SnackBar(
+                content: Text(provider.getLimitMessage('accessory')),
+                duration: const Duration(seconds: 3),
+              ),
             );
             context.push('/pro');
             return;
@@ -969,26 +1832,26 @@ Map<String, dynamic> _getQuickAction(
         'onTap': () => provider.toggleTheme(),
       };
 
-    case 'view_weapons':
+    case 'view_platforms':
       return {
         'icon': Icon(
           Icons.inventory_2_rounded,
           color: colors.primary,
           size: 24,
         ),
-        'label': strings.quickActionLabelWeapon,
+        'label': strings.quickActionLabelPlatform,
         'onTap': () => StatefulNavigationShell.of(context).goBranch(2),
       };
 
     case 'view_ammo':
       return {
         'icon': SvgPicture.asset(
-          'assets/images/bullet.svg',
+          'assets/images/pointe.svg',
           width: 24,
           height: 24,
           colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
         ),
-        'label': 'Munitions',
+        'label': 'Consommables',
         'onTap': () => StatefulNavigationShell.of(context).goBranch(2),
       };
 
@@ -1006,14 +1869,14 @@ Map<String, dynamic> _getQuickAction(
     case 'view_sessions':
       return {
         'icon': Icon(Icons.history_rounded, color: colors.primary, size: 24),
-        'label': 'Séances',
+        'label': 'Sessions',
         'onTap': () => StatefulNavigationShell.of(context).goBranch(1),
       };
 
     case 'settings':
       return {
         'icon': Icon(Icons.settings_rounded, color: colors.primary, size: 24),
-        'label': 'Paramètres',
+        'label': strings.navSettingsLabel,
         'onTap': () => context.go('/settings'),
       };
 
@@ -1028,18 +1891,53 @@ Map<String, dynamic> _getQuickAction(
         'onTap': () => _showDiagnosticModal(context),
       };
 
-    case 'timer':
-      return {
-        'icon': Icon(Icons.timer_rounded, color: colors.primary, size: 24),
-        'label': strings.quickActionLabelTimer,
-        'onTap': () => _showTimerModal(context),
-      };
-
     case 'millieme':
       return {
         'icon': Icon(Icons.straighten_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelMillieme,
         'onTap': () => _showMilliemeModal(context),
+      };
+
+    case 'timer':
+      return {
+        'icon': Icon(Icons.timer_rounded, color: colors.primary, size: 24),
+        'label': strings.shortcutTimer,
+        'onTap': () => _showTimerModal(context),
+      };
+
+    case 'shooting_tables':
+      return {
+        'icon': Icon(Icons.table_chart_outlined, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelShootingTables,
+        'onTap': () => _showShootingTablesModal(context),
+      };
+
+    case 'visual_stimuli':
+      return {
+        'icon': Icon(Icons.palette_rounded, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelVisualStimuli,
+        'onTap': () => _showColorPodModal(context),
+      };
+
+    case 'audio_stimuli':
+      return {
+        'icon': Icon(Icons.graphic_eq_rounded, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelAudioStimuli,
+        'onTap': () => _showAudioStimuliComingSoon(context),
+      };
+
+    case 'reaction_exercises':
+      return {
+        'icon': Icon(Icons.bolt_rounded, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelReactionExercises,
+        'onTap': () => _showReflexesModal(context),
+      };
+
+    case 'calculation_tools':
+      return {
+        'icon': Icon(Icons.calculate_rounded, color: colors.primary, size: 24),
+        'label': strings.quickActionLabelCalculationTools,
+        'onTap': () => _showCalculationToolsModal(context),
       };
 
     default:
@@ -1058,6 +1956,7 @@ class _QuickActionItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _QuickActionItem({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -1227,6 +2126,8 @@ class _StatCard extends StatelessWidget {
               style: (textStyles.labelSmall ?? const TextStyle()).copyWith(
                 color: colors.secondary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const Gap(AppSpacing.xs),
             Text(
@@ -1262,12 +2163,12 @@ class _LastSessionCard extends StatelessWidget {
     final accuracy = session.averagePrecision.toStringAsFixed(0);
     final hasPrecision = session.hasCountedPrecision;
 
-    String weaponName = "—";
+    String platformName = "—";
     String ammoName = "—";
     if (session.exercises.isNotEmpty) {
       final firstEx = session.exercises.first;
-      weaponName = weaponDisplayName(provider, firstEx);
-      ammoName = ammoDisplayName(provider, firstEx);
+      platformName = platformDisplayName(context, provider, firstEx);
+      ammoName = ammoDisplayName(context, provider, firstEx);
     }
 
     final borderColor = colors.primary.withValues(alpha: 0.4);
@@ -1396,7 +2297,7 @@ class _LastSessionCard extends StatelessWidget {
                               Row(
                                 children: [
                                   SvgPicture.asset(
-                                    'assets/images/gun.svg',
+                                    'assets/images/tube.svg',
                                     width: 16,
                                     height: 16,
                                     colorFilter: ColorFilter.mode(
@@ -1406,7 +2307,7 @@ class _LastSessionCard extends StatelessWidget {
                                   ),
                                   const Gap(8),
                                   Text(
-                                    strings.quickActionLabelWeapon,
+                                    strings.quickActionLabelPlatform,
                                     style: (textStyles.labelSmall ??
                                             const TextStyle())
                                         .copyWith(
@@ -1417,7 +2318,7 @@ class _LastSessionCard extends StatelessWidget {
                               ),
                               const Gap(4),
                               Text(
-                                weaponName,
+                                platformName,
                                 style: (textStyles.bodySmall ??
                                         const TextStyle())
                                     .copyWith(
@@ -1444,7 +2345,7 @@ class _LastSessionCard extends StatelessWidget {
                               Row(
                                 children: [
                                   SvgPicture.asset(
-                                    'assets/images/bullet.svg',
+                                    'assets/images/pointe.svg',
                                     width: 16,
                                     height: 16,
                                     colorFilter: ColorFilter.mode(
@@ -1590,24 +2491,6 @@ class _SessionStat extends StatelessWidget {
   }
 }
 
-String _globalAveragePrecision(ThotProvider provider) {
-  final sessions =
-      provider.sessions.where((s) => s.hasCountedPrecision).toList();
-  if (sessions.isEmpty) return '—';
-  final total = sessions.fold<double>(0, (sum, s) => sum + s.averagePrecision);
-  final avg = total / sessions.length;
-  return "${avg.toStringAsFixed(0)}%";
-}
-
-String _bestSessionPrecision(ThotProvider provider) {
-  final sessions =
-      provider.sessions.where((s) => s.hasCountedPrecision).toList();
-  if (sessions.isEmpty) return '—';
-  final best =
-      sessions.map((s) => s.averagePrecision).reduce((a, b) => a > b ? a : b);
-  return "${best.toStringAsFixed(0)}%";
-}
-
 class _ProCornerButton extends StatelessWidget {
   final bool isPremium;
   final bool isOnline;
@@ -1629,6 +2512,7 @@ class _ProCornerButton extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bell = GestureDetector(
       onTap: onBellTap,
@@ -1667,15 +2551,15 @@ class _ProCornerButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.full),
-              border: Border.all(color: Colors.black, width: 1.5),
+              border: Border.all(color: colors.onSurface, width: 1.5),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.wifi_off_rounded, size: 13, color: Colors.black),
+              Icon(Icons.wifi_off_rounded, size: 13, color: isDark ? Colors.white : colors.onSurface),
               const Gap(5),
               Text(
                 strings.offlineBadgeLabel,
                 style: textStyles.labelSmall?.copyWith(
-                  color: Colors.black,
+                  color: isDark ? Colors.white : colors.onSurface,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
@@ -1751,7 +2635,7 @@ class _NotificationPanelState extends State<_NotificationPanel>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final allRead = widget.alerts.every((a) => a.isRead);
     final hasRead = widget.alerts.any((a) => a.isRead);
-    // Kaki clair pour le divider — même teinte que les séparateurs de la dernière séance
+    // Kaki clair pour le divider — même teinte que les séparateurs de la dernière session
     final dividerColor = const Color(0xFFC2A14A).withValues(alpha: 0.25);
 
     return Stack(children: [
@@ -1936,17 +2820,15 @@ class _AlertTile extends StatelessWidget {
       case _AlertType.document:
         icon = Icons.picture_as_pdf_rounded;
         typeLabel = strings.notifAlertDocument;
-        final docName = alert.documentName ?? typeLabel;
         final days = alert.daysRemaining ?? 0;
         if (days < 0) {
-          subtitle = 'Votre garantie "$docName" est expirée.';
+          subtitle = strings.notifDocumentExpired;
           barColor = const Color(0xFFD64545);
         } else if (days == 0) {
-          subtitle = 'Votre garantie "$docName" a expiré aujourd\'hui.';
+          subtitle = strings.notifDocumentExpiredToday;
           barColor = const Color(0xFFD64545);
         } else {
-          subtitle =
-              'Votre garantie "$docName" arrive à expiration dans $days jour${days > 1 ? 's' : ''}.';
+          subtitle = strings.notifDocumentExpiresDays(days);
           barColor = days <= 7
               ? const Color(0xFFD64545)
               : const Color(0xFFC2A14A);
@@ -1954,39 +2836,35 @@ class _AlertTile extends StatelessWidget {
         break;
     }
 
-    return GestureDetector(
-      onTap: () {
-        if (!alert.isRead) onMarkRead();
-        if (alert.type != _AlertType.document) {
-          onNavigate();
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Opacity(
-        opacity: alert.isRead ? 0.55 : 1.0,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: barColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Icon(icon, size: 15, color: barColor),
+    return Opacity(
+      opacity: alert.isRead ? 0.55 : 1.0,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: barColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(7),
                 ),
-                const Gap(10),
-                Expanded(
+                child: Icon(icon, size: 15, color: barColor),
+              ),
+              const Gap(10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    if (!alert.isRead) onMarkRead();
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         alert.type == _AlertType.document
-                            ? '${alert.itemName} — ${alert.documentName ?? ''}'
+                            ? alert.documentName ?? alert.itemName
                             : alert.itemName,
                         style: textStyles.bodySmall?.copyWith(
                             fontWeight: FontWeight.w700,
@@ -1995,44 +2873,36 @@ class _AlertTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        '$typeLabel — $subtitle',
+                        alert.type == _AlertType.document
+                            ? subtitle
+                            : '$typeLabel — $subtitle',
                         style: textStyles.labelSmall?.copyWith(
                             color: barColor, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                 ),
-                if (!alert.isRead)
-                  GestureDetector(
-                    onTap: onMarkRead,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.check_rounded,
-                          size: 18, color: colors.primary),
-                    ),
-                  )
-                else
-                  GestureDetector(
-                    onTap: onDelete,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.close_rounded,
-                          size: 18, color: colors.secondary),
-                    ),
-                  ),
-              ]),
-              if (alert.type != _AlertType.document) ...[
-                const Gap(6),
-                LinearProgressIndicator(
-                  value: alert.progress.clamp(0.0, 1.0),
-                  backgroundColor: colors.outline.withValues(alpha: 0.15),
-                  color: barColor,
-                  minHeight: 4,
-                  borderRadius: BorderRadius.circular(2),
+              ),
+              GestureDetector(
+                onTap: onDelete,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(Icons.close_rounded,
+                      size: 18, color: colors.secondary),
                 ),
-              ],
+              ),
+            ]),
+            if (alert.type != _AlertType.document) ...[
+              const Gap(6),
+              LinearProgressIndicator(
+                value: alert.progress.clamp(0.0, 1.0),
+                backgroundColor: colors.outline.withValues(alpha: 0.15),
+                color: barColor,
+                minHeight: 4,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

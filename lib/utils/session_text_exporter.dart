@@ -11,6 +11,7 @@ import 'package:thot/utils/exercise_display.dart';
 /// Builds a readable, structured, plain-text summary for a shooting session.
 abstract final class SessionTextExporter {
   static String buildSummary({
+    required BuildContext context,
     required Session session,
     required ThotProvider provider,
     required UnitConverter converter,
@@ -20,7 +21,7 @@ abstract final class SessionTextExporter {
     final buffer = StringBuffer();
 
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('📊 RAPPORT DE SÉANCE DE TIR');
+    buffer.writeln('📊 RAPPORT DE SESSION DE TIR');
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     buffer.writeln();
 
@@ -70,15 +71,15 @@ abstract final class SessionTextExporter {
 
       for (int i = 0; i < session.exercises.length; i++) {
         final ex = session.exercises[i];
-        final weaponName = weaponDisplayName(provider, ex);
-        final ammoName = ammoDisplayName(provider, ex);
+        final platformName = platformDisplayName(context, provider, ex);
+        final ammoName = ammoDisplayName(context, provider, ex);
 
         final equipmentNames = _resolveEquipmentNames(ex.equipmentIds, provider);
 
         buffer.writeln();
         buffer.writeln('▪️  EXERCICE ${i + 1}${ex.name.trim().isEmpty ? '' : ' — ${ex.name}'}');
-        buffer.writeln('   ├─ Arme: $weaponName');
-        buffer.writeln('   ├─ Munition: $ammoName');
+        buffer.writeln('   ├─ Plateforme: $platformName');
+        buffer.writeln('   ├─ Consommable: $ammoName');
         if (equipmentNames.isNotEmpty) buffer.writeln('   ├─ Équipement: ${equipmentNames.join(', ')}');
         if (ex.targetName != null && ex.targetName!.trim().isNotEmpty) buffer.writeln('   ├─ Cible: ${ex.targetName}');
 
@@ -118,8 +119,8 @@ abstract final class SessionTextExporter {
           if (st.reloadType != null) details.add('rechargement ${st.reloadType!.name}');
           if (st.durationSeconds != null) details.add('${st.durationSeconds} s');
           if ((st.trigger ?? '').trim().isNotEmpty) details.add('déclencheur ${st.trigger!.trim()}');
-          if ((st.weaponFrom ?? '').trim().isNotEmpty || (st.weaponTo ?? '').trim().isNotEmpty) {
-            details.add('de ${st.weaponFrom ?? '—'} vers ${st.weaponTo ?? '—'}');
+          if ((st.platformFrom ?? '').trim().isNotEmpty || (st.platformTo ?? '').trim().isNotEmpty) {
+            details.add('de ${st.platformFrom ?? '—'} vers ${st.platformTo ?? '—'}');
           }
 
           buffer.writeln('   │   $icon $idx — ${st.type.name}${details.isEmpty ? '' : ' · ${details.join(' · ')}'}');

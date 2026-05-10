@@ -1,17 +1,19 @@
 /// Options de sélection pour l'export PDF THOT.
 class PdfExportOptions {
-  final bool includeWeapons;
+  final bool includePlatforms;
   final bool includeAmmos;
   final bool includeAccessories;
   final bool includeSessions;
+  final bool includeAuth;
 
   const PdfExportOptions({
-    this.includeWeapons = true,
+    this.includePlatforms = true,
     this.includeAmmos = true,
     this.includeAccessories = true,
     this.includeSessions = true,
+    this.includeAuth = true,
   });
 
   bool get isEmpty =>
-      !includeWeapons && !includeAmmos && !includeAccessories && !includeSessions;
+      !includePlatforms && !includeAmmos && !includeAccessories && !includeSessions;
 }

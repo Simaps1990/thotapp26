@@ -1,0 +1,175 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "02F67F7A",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6762545196",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "DM99N5XL65",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 798320682.60113895,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "22040998",
+      "localizations" : [
+        {
+          "description" : "",
+          "displayName" : "THOT Pro",
+          "locale" : "it"
+        },
+        {
+          "description" : "",
+          "displayName" : "THOT Pro",
+          "locale" : "fr"
+        },
+        {
+          "description" : "",
+          "displayName" : "THOT Pro",
+          "locale" : "de"
+        },
+        {
+          "description" : "",
+          "displayName" : "THOT Pro",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "",
+          "displayName" : "THOT Pro",
+          "locale" : "es_ES"
+        }
+      ],
+      "name" : "THOT Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "34.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6762551714",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "Accès complet à toutes les fonctionnalités THOT Pro.",
+              "displayName" : "THOT Pro Annuel",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Accesso completo a tutte le funzionalità di THOT Pro.",
+              "displayName" : "THOT Pro Annuale",
+              "locale" : "it"
+            },
+            {
+              "description" : "Acceso completo a todas las funciones de THOT Pro.",
+              "displayName" : "THOT Pro Anual",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "Full access to all THOT Pro features.",
+              "displayName" : "THOT Pro Yearly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Vollzugriff auf alle Funktionen von THOT Pro.",
+              "displayName" : "THOT Pro Jährlich",
+              "locale" : "de"
+            }
+          ],
+          "productID" : "thot_pro_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "THOT Pro Annuel",
+          "subscriptionGroupID" : "22040998",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6762551252",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "Full access to all THOT Pro features.",
+              "displayName" : "THOT Pro Monthly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Accès complet à toutes les fonctionnalités THOT Pro.",
+              "displayName" : "THOT Pro Mensuel",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Acceso completo a todas las funciones de THOT Pro.",
+              "displayName" : "THOT Pro Mensual",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "Accesso completo a tutte le funzionalità di THOT Pro.",
+              "displayName" : "THOT Pro Mensile",
+              "locale" : "it"
+            },
+            {
+              "description" : "Vollzugriff auf alle Funktionen von THOT Pro.",
+              "displayName" : "THOT Pro Monatlich",
+              "locale" : "de"
+            }
+          ],
+          "productID" : "thot_pro_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "THOT Pro Mensuel",
+          "subscriptionGroupID" : "22040998",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 5,
+    "minor" : 0
+  }
+}

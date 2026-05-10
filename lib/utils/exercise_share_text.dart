@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/data/exercise_step.dart';
 import 'package:thot/data/thot_provider.dart';
@@ -5,20 +6,21 @@ import 'package:thot/utils/exercise_display.dart';
 import 'package:thot/utils/unit_converter.dart';
 
 String generateExerciseShareText({
+  required BuildContext context,
   required Session session,
   required Exercise exercise,
   required ThotProvider provider,
   required UnitConverter converter,
 }) {
-  final weaponName = weaponDisplayName(provider, exercise);
-  final ammoName = ammoDisplayName(provider, exercise);
+  final platformName = platformDisplayName(context, provider, exercise);
+  final ammoName = ammoDisplayName(context, provider, exercise);
   final target = (exercise.targetName ?? '').trim();
 
   if (exercise.steps == null || exercise.steps!.isEmpty) {
     final buffer = StringBuffer();
     buffer.writeln('⚡ EXERCICE — ${exercise.name.trim().isEmpty ? 'Sans nom' : exercise.name.trim()}');
     buffer.writeln('📅 ${session.date.toLocal()} · ${session.sessionType}');
-    buffer.writeln('🔫 $weaponName · $ammoName${target.isEmpty ? '' : ' · $target'}');
+    buffer.writeln('🔫 $platformName · $ammoName${target.isEmpty ? '' : ' · $target'}');
     buffer.writeln();
     buffer.writeln('Mode simple : ${exercise.shotsFired} coups · ${converter.formatDistance(exercise.distance)}');
     if (exercise.observations.trim().isNotEmpty) {
@@ -33,7 +35,7 @@ String generateExerciseShareText({
   final buffer = StringBuffer();
   buffer.writeln('📋 EXERCICE — ${exercise.name.trim().isEmpty ? 'Sans nom' : exercise.name.trim()}');
   buffer.writeln('📅 ${session.date.toLocal()} · ${session.sessionType}');
-  buffer.writeln('🔫 $weaponName · $ammoName');
+  buffer.writeln('🔫 $platformName · $ammoName');
   buffer.writeln();
   buffer.writeln('Étapes :');
   for (int i = 0; i < steps.length; i++) {
@@ -56,8 +58,8 @@ String generateExerciseShareText({
     if (st.shots != null) details.add('${st.shots} coups');
     if (st.distanceM != null) details.add('${st.distanceM} m');
     if ((st.target ?? '').trim().isNotEmpty) details.add('cible ${st.target!.trim()}');
-    if ((st.weaponFrom ?? '').trim().isNotEmpty || (st.weaponTo ?? '').trim().isNotEmpty) {
-      details.add('de ${st.weaponFrom ?? '—'} vers ${st.weaponTo ?? '—'}');
+    if ((st.platformFrom ?? '').trim().isNotEmpty || (st.platformTo ?? '').trim().isNotEmpty) {
+      details.add('de ${st.platformFrom ?? '—'} vers ${st.platformTo ?? '—'}');
     }
     if (st.reloadType != null) details.add('rechargement ${st.reloadType!.name}');
     if (st.durationSeconds != null) details.add('${st.durationSeconds} s');

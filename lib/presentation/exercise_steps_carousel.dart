@@ -328,8 +328,8 @@ static _StepUiConfig fromStep(BuildContext context, ExerciseStep step, AppString
 
     // Normalize optional text fields once to avoid null-check errors.
     final targetText = (step.target ?? '').trim();
-    final weaponFromText = (step.weaponFrom ?? '').trim();
-    final weaponToText = (step.weaponTo ?? '').trim();
+    final platformFromText = (step.platformFrom ?? '').trim();
+    final platformToText = (step.platformTo ?? '').trim();
     final triggerText = (step.trigger ?? '').trim();
 
     switch (step.type) {
@@ -380,10 +380,10 @@ case StepType.deplacement:
           title: strings.exerciseStepTypeLabel(StepType.transition),
           subtitle: positionText,
           color: LightColors.transitionViolet,
-          info1Label: strings.exerciseFieldWeaponFrom,
-          info1Value: weaponFromText,
-          info2Label: strings.exerciseFieldWeaponTo,
-          info2Value: weaponToText,
+          info1Label: strings.exerciseFieldPlatformFrom,
+          info1Value: platformFromText,
+          info2Label: strings.exerciseFieldPlatformTo,
+          info2Value: platformToText,
           info3Label: '',
           info3Value: '',
         );

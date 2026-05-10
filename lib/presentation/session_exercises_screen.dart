@@ -91,12 +91,21 @@ class SessionExercisesScreen extends StatelessWidget {
     final subtitle =
         '${session.sessionType} • ${AppDateFormats.formatDateShort(context, session.date)} • ${AppDateFormats.formatTimeShort(context, session.date)}';
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: colors.surface,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          top: false,
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
               child: _Header(
                 title: session.name,
                 subtitle: subtitle,
@@ -110,6 +119,7 @@ class SessionExercisesScreen extends StatelessWidget {
                       );
                     } else if (value == 'share') {
                       final summary = SessionTextExporter.buildSummary(
+                        context: context,
                         session: session,
                         provider: provider,
                         converter: converter,
@@ -131,8 +141,41 @@ class SessionExercisesScreen extends StatelessWidget {
                         );
                       }
                     } else if (value == 'delete') {
-                      provider.deleteSession(session.id);
-                      if (context.mounted) context.pop();
+                      Future<void>.delayed(Duration.zero, () async {
+                        if (!context.mounted) return;
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          useRootNavigator: true,
+                          builder: (dialogContext) => AlertDialog(
+                            title: Text(strings.confirmDeleteTitle),
+                            content: Text(
+                              strings.confirmDeleteSessionMessage(session.name),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(false),
+                                child: Text(strings.actionCancel),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(true),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                                ),
+                                child: Text(strings.actionDelete),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed != true || !context.mounted) return;
+                        provider.deleteSession(session.id);
+                        context.pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(strings.sessionDeletedSnack(session.name)),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      });
                     }
                   },
                   itemBuilder: (context) => [
@@ -159,6 +202,7 @@ class SessionExercisesScreen extends StatelessWidget {
             if (session.exercises.isNotEmpty) SliverToBoxAdapter(child: _ProgressChart(session: session)),
             const SliverToBoxAdapter(child: Gap(AppSpacing.xl)),
           ],
+          ),
         ),
       ),
     );
@@ -198,8 +242,10 @@ class _Header extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
+    final topPadding = MediaQuery.paddingOf(context).top;
+
     return Container(
-      padding: AppSpacing.paddingLg,
+      padding: EdgeInsets.fromLTRB(AppSpacing.lg, topPadding + 20.0, AppSpacing.lg, 32.0),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.outline)),
@@ -592,8 +638,8 @@ class _ExerciseCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    final weaponName = weaponDisplayName(provider, exercise);
-    final ammoName = ammoDisplayName(provider, exercise);
+    final platformName = platformDisplayName(context, provider, exercise);
+    final ammoName = ammoDisplayName(context, provider, exercise);
     final accessories = exercise.equipmentIds
         .map((id) => provider.accessories.where((a) => a.id == id).firstOrNull)
         .whereType<Accessory>()
@@ -750,6 +796,7 @@ class _ExerciseCard extends StatelessWidget {
                         .firstOrNull;
                     if (session == null) return;
                     final summary = generateExerciseShareText(
+                      context: context,
                       session: session,
                       exercise: exercise,
                       provider: provider,
@@ -758,7 +805,10 @@ class _ExerciseCard extends StatelessWidget {
                     await Clipboard.setData(ClipboardData(text: summary));
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(strings.copiedSnack)),
+                      SnackBar(
+                        content: Text(strings.copiedSnack),
+                        duration: const Duration(seconds: 3),
+                      ),
                     );
                   } else if (value == 'delete') {
                     final confirmed = await showDialog<bool>(
@@ -803,9 +853,9 @@ class _ExerciseCard extends StatelessWidget {
           ),
           const Gap(AppSpacing.md),
 
-// Card 1: weapon & equipment details
+// Card 1: platform & equipment details
           Text(
-            strings.sessionWeaponAndEquipmentDetailsTitle,
+            strings.sessionPlatformAndEquipmentDetailsTitle,
             style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const Gap(AppSpacing.sm),
@@ -820,12 +870,12 @@ child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Left column: weapon
+                  // Left column: platform
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _InfoRow(label: strings.sessionLabelWeapon, value: weaponName),
+                        _InfoRow(label: strings.sessionLabelPlatform, value: platformName),
                       ],
                     ),
                   ),

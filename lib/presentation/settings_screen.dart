@@ -4,13 +4,18 @@ import 'package:provider/provider.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:thot/data/models.dart';
 import 'package:thot/data/thot_provider.dart';
+import 'package:thot/data/training_history.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/utils/app_date_formats.dart';
@@ -18,9 +23,111 @@ import 'package:thot/utils/web_document_opener.dart';
 import 'package:thot/utils/pdf_exporter.dart';
 import 'package:thot/utils/pdf_export_options.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/widgets/tutorial_overlay.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final GlobalKey _profileKey = GlobalKey();
+  final GlobalKey _preferencesKey = GlobalKey();
+  final GlobalKey _shortcutsKey = GlobalKey();
+  final GlobalKey _securityKey = GlobalKey();
+  final GlobalKey _supportKey = GlobalKey();
+  OverlayEntry? _tutorialOverlayEntry;
+  static const _tutorialNeverShowAgainKey =
+      'settings_tutorial_never_show_again_v1';
+  bool _tutorialDismissedThisSession = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowTutorial();
+    });
+  }
+
+  Future<void> _checkAndShowTutorial() async {
+    if (_tutorialDismissedThisSession) return;
+    final prefs = await SharedPreferences.getInstance();
+    final neverShowAgain =
+        prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
+    if (!neverShowAgain && mounted && _tutorialOverlayEntry == null) {
+      _showTutorial();
+    }
+  }
+
+  void _showTutorial() {
+    final strings = AppStrings.of(context);
+    final steps = [
+      TutorialStep(
+        targetKey: _profileKey,
+        title: strings.tutorialSettingsProfileTitle,
+        description: strings.tutorialSettingsProfileDescription,
+      ),
+      TutorialStep(
+        targetKey: _preferencesKey,
+        title: strings.tutorialSettingsPreferencesTitle,
+        description: strings.tutorialSettingsPreferencesDescription,
+      ),
+      TutorialStep(
+        targetKey: _shortcutsKey,
+        title: strings.tutorialSettingsShortcutsTitle,
+        description: strings.tutorialSettingsShortcutsDescription,
+      ),
+      TutorialStep(
+        targetKey: _securityKey,
+        title: strings.tutorialSettingsSecurityTitle,
+        description: strings.tutorialSettingsSecurityDescription,
+      ),
+      TutorialStep(
+        targetKey: _supportKey,
+        title: strings.tutorialSettingsSupportTitle,
+        description: strings.tutorialSettingsSupportDescription,
+      ),
+    ];
+
+    _tutorialOverlayEntry = OverlayEntry(
+      builder: (_) => TutorialOverlay(
+        steps: steps,
+        onComplete: () {
+          _hideTutorial();
+        },
+        onSkip: () {
+          _hideTutorial();
+        },
+        onNeverShowAgain: () async {
+          _hideTutorial();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(_tutorialNeverShowAgainKey, true);
+        },
+      ),
+    );
+
+    final rootOverlay = Overlay.of(context, rootOverlay: true);
+    if (rootOverlay == null) return;
+    rootOverlay.insert(_tutorialOverlayEntry!);
+  }
+
+  void _hideTutorial() {
+    _tutorialOverlayEntry?.remove();
+    _tutorialOverlayEntry = null;
+    _tutorialDismissedThisSession = true;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _tutorialOverlayEntry?.remove();
+    super.dispose();
+  }
 
   String _getInitials(String name) {
     if (name.isEmpty) return "?";
@@ -35,6 +142,50 @@ class SettingsScreen extends StatelessWidget {
     } catch (e) {
       return "?";
     }
+  }
+
+  Future<String> _persistPickedDocument(PlatformFile file) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final docsDir = Directory('${appDir.path}/user_documents');
+    if (!await docsDir.exists()) {
+      await docsDir.create(recursive: true);
+    }
+
+    final safeName = file.name.trim().isEmpty
+        ? 'document'
+        : file.name.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final targetPath = '${docsDir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+    final targetFile = File(targetPath);
+
+    final Uint8List? bytes = file.bytes;
+    if (bytes != null && bytes.isNotEmpty) {
+      await targetFile.writeAsBytes(bytes, flush: true);
+      return targetFile.path;
+    }
+
+    final stream = file.readStream;
+    if (stream != null) {
+      final sink = targetFile.openWrite();
+      await sink.addStream(stream);
+      await sink.close();
+      return targetFile.path;
+    }
+
+    final path = file.path;
+    if (path != null && path.trim().isNotEmpty) {
+      if (path.startsWith('file://')) {
+        final source = File(Uri.parse(path).toFilePath());
+        await source.copy(targetFile.path);
+        return targetFile.path;
+      }
+      if (!path.startsWith('content://')) {
+        final source = File(path);
+        await source.copy(targetFile.path);
+        return targetFile.path;
+      }
+    }
+
+    throw Exception('Could not persist selected document');
   }
 
   Future<void> _showContactDialog(BuildContext context) async {
@@ -86,6 +237,35 @@ class SettingsScreen extends StatelessWidget {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  Future<void> _restorePurchases(
+    BuildContext context,
+    ThotProvider provider,
+  ) async {
+    final strings = AppStrings.of(context);
+    try {
+      await provider.restorePurchases();
+      if (!context.mounted) return;
+
+      final message = provider.isPremium
+          ? strings.proRestorePurchasesSuccess
+          : strings.proRestorePurchasesNoActiveSubscription;
+      ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(strings.proRestorePurchasesError),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   SwitchThemeData _buildUnifiedSwitchTheme(
     BuildContext context,
     ColorScheme colors,
@@ -117,7 +297,7 @@ class SettingsScreen extends StatelessWidget {
     required TextTheme textStyles,
   }) {
     return [
-      const Gap(AppSpacing.lg),
+      const Gap(AppSpacing.xs),
     ];
   }
 
@@ -129,9 +309,11 @@ class SettingsScreen extends StatelessWidget {
     required String licenseSubtitle,
   }) {
     final strings = AppStrings.of(context);
-    return _SettingsGroup(
-      title: strings.profileGroupTitle,
-      children: [
+    return Container(
+      key: _profileKey,
+      child: _SettingsGroup(
+        title: strings.profileGroupTitle,
+        children: [
         _SettingsItem(
           icon: Icons.person_outline_rounded,
           label: displayName,
@@ -154,6 +336,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -166,9 +349,11 @@ class SettingsScreen extends StatelessWidget {
     final strings = AppStrings.of(context);
     final switchTheme = _buildUnifiedSwitchTheme(context, colors);
 
-    return _SettingsGroup(
-      title: strings.preferencesGroupTitle,
-      children: [
+    return Container(
+      key: _preferencesKey,
+      child: _SettingsGroup(
+        title: strings.preferencesGroupTitle,
+        children: [
         _SettingsItem(
           icon: Icons.dark_mode_rounded,
           label: strings.darkModeLabel,
@@ -178,7 +363,7 @@ class SettingsScreen extends StatelessWidget {
             child: Switch(
               value: provider.themeMode == ThemeMode.dark,
               onChanged: (val) => provider.toggleTheme(),
-              activeColor: colors.primary,
+              activeThumbColor: colors.primary,
             ),
           ),
         ),
@@ -187,6 +372,7 @@ class SettingsScreen extends StatelessWidget {
           icon: Icons.language_rounded,
           label: strings.appLanguageLabel,
           subtitle: null,
+          compact: true,
           trailing: DropdownButtonHideUnderline(
             child: DropdownButton<String?>(
               alignment: Alignment.centerRight,
@@ -250,6 +436,7 @@ class SettingsScreen extends StatelessWidget {
           icon: Icons.square_foot_rounded,
           label: strings.unitsLabel,
           subtitle: null,
+          compact: true,
           trailing: DropdownButtonHideUnderline(
             child: DropdownButton<bool>(
               value: provider.useMetric,
@@ -284,6 +471,7 @@ class SettingsScreen extends StatelessWidget {
           icon: Icons.calendar_month_rounded,
           label: strings.dateFormatLabel,
           subtitle: null,
+          compact: true,
           trailing: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: provider.dateFormatPreference,
@@ -315,15 +503,44 @@ class SettingsScreen extends StatelessWidget {
         ),
         const Divider(indent: 48, height: 1),
         _SettingsItem(
+          icon: Icons.notifications_active_outlined,
+          label: strings.documentPushRemindersLabel,
+          subtitle: strings.documentPushRemindersSubtitle,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SwitchTheme(
+                data: switchTheme,
+                child: Switch(
+                  value: provider.documentExpiryPushEnabled,
+                  onChanged: (val) async {
+                    final before = provider.documentExpiryPushEnabled;
+                    await provider.setDocumentExpiryPushEnabled(val);
+                    if (!context.mounted) return;
+                    if (val && before == provider.documentExpiryPushEnabled) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(strings.documentPushPermissionDenied),
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  },
+                  activeThumbColor: colors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
           icon: Icons.shield_rounded,
           label: strings.backupLabel,
           subtitle: strings.backupSubtitle,
-          trailing: Icon(
-            Icons.check_circle_rounded,
-            color: colors.primary,
-          ),
+          trailing: const SizedBox.shrink(),
         ),
       ],
+      ),
     );
   }
 
@@ -337,16 +554,16 @@ class SettingsScreen extends StatelessWidget {
     final yearlyPrice = provider.yearlyPrice;
     final monthlyPrice = provider.monthlyPrice;
 
-    String _buildBannerPrice() {
+    String buildBannerPrice() {
       final hasYearly = yearlyPrice != null && yearlyPrice.trim().isNotEmpty;
       final hasMonthly = monthlyPrice != null && monthlyPrice.trim().isNotEmpty;
 
       if (hasYearly && hasMonthly) {
         return '$yearlyPrice • $monthlyPrice';
       } else if (hasYearly) {
-        return yearlyPrice!.trim();
+        return yearlyPrice.trim();
       } else if (hasMonthly) {
-        return monthlyPrice!.trim();
+        return monthlyPrice.trim();
       }
 
       return strings.premiumBannerPrice;
@@ -404,7 +621,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             const Gap(4),
                             Text(
-                              _buildBannerPrice(),
+                              buildBannerPrice(),
                               style: textStyles.titleMedium?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 fontWeight: FontWeight.bold,
@@ -438,6 +655,25 @@ class SettingsScreen extends StatelessWidget {
                         _PremiumFeature(strings.proBenefitLogbookExportTitle),
                         _PremiumFeature(strings.proBenefitUnlimitedDocumentsTitle),
                       ],
+                    ),
+                  ),
+                  const Gap(8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => _restorePurchases(context, provider),
+                      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      label: Text(
+                        strings.proRestorePurchases,
+                        style: textStyles.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 0),
+                      ),
                     ),
                   ),
                 ],
@@ -485,61 +721,11 @@ class SettingsScreen extends StatelessWidget {
       Theme.of(context).colorScheme,
     );
 
-    return _SettingsGroup(
-      title: strings.shortcutsGroupTitle,
-      children: [
-        _ShortcutToggle(
-          iconBuilder: (c) =>
-              Icon(Icons.add_circle_outline_rounded, color: c, size: 22),
-          label: strings.shortcutNewSession,
-          actionId: 'new_session',
-          enabled: provider.quickActions.contains('new_session'),
-          onChanged: (val) => provider.toggleQuickAction('new_session'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => SvgPicture.asset(
-            'assets/images/gun.svg',
-            width: 22,
-            height: 22,
-            colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
-          ),
-          label: strings.shortcutNewWeapon,
-          actionId: 'new_weapon',
-          enabled: provider.quickActions.contains('new_weapon'),
-          onChanged: (val) => provider.toggleQuickAction('new_weapon'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => SvgPicture.asset(
-            'assets/images/bullet.svg',
-            width: 22,
-            height: 22,
-            colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
-          ),
-          label: strings.shortcutNewAmmo,
-          actionId: 'new_ammo',
-          enabled: provider.quickActions.contains('new_ammo'),
-          onChanged: (val) => provider.toggleQuickAction('new_ammo'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) =>
-              Icon(Icons.inventory_2_rounded, color: c, size: 22),
-          label: strings.shortcutNewAccessory,
-          actionId: 'new_accessory',
-          enabled: provider.quickActions.contains('new_accessory'),
-          onChanged: (val) => provider.toggleQuickAction('new_accessory'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
+    return Container(
+      key: _shortcutsKey,
+      child: _SettingsGroup(
+        title: strings.shortcutsGroupTitle,
+        children: [
         _ShortcutToggle(
           iconBuilder: (c) => Icon(Icons.dark_mode_rounded, color: c, size: 22),
           label: strings.shortcutToggleTheme,
@@ -562,12 +748,105 @@ class SettingsScreen extends StatelessWidget {
         ),
         const Divider(indent: 48, height: 1),
         _ShortcutToggle(
+          iconBuilder: (c) => Icon(Icons.bolt_rounded, color: c, size: 22),
+          label: strings.quickActionLabelReactionExercises,
+          actionId: 'reaction_exercises',
+          enabled: provider.quickActions.contains('reaction_exercises'),
+          onChanged: (val) => provider.toggleQuickAction('reaction_exercises'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
           iconBuilder: (c) =>
               Icon(Icons.straighten_rounded, color: c, size: 22),
           label: strings.quickActionLabelMillieme,
           actionId: 'millieme',
           enabled: provider.quickActions.contains('millieme'),
           onChanged: (val) => provider.toggleQuickAction('millieme'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
+          iconBuilder: (c) =>
+              Icon(Icons.inventory_2_rounded, color: c, size: 22),
+          label: strings.shortcutNewAccessory,
+          actionId: 'new_accessory',
+          enabled: provider.quickActions.contains('new_accessory'),
+          onChanged: (val) => provider.toggleQuickAction('new_accessory'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
+          iconBuilder: (c) => SvgPicture.asset(
+            'assets/images/pointe.svg',
+            width: 22,
+            height: 22,
+            colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+          ),
+          label: strings.shortcutNewAmmo,
+          actionId: 'new_ammo',
+          enabled: provider.quickActions.contains('new_ammo'),
+          onChanged: (val) => provider.toggleQuickAction('new_ammo'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
+          iconBuilder: (c) => SvgPicture.asset(
+            'assets/images/tube.svg',
+            width: 22,
+            height: 22,
+            colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+          ),
+          label: strings.shortcutNewPlatform,
+          actionId: 'new_platform',
+          enabled: provider.quickActions.contains('new_platform'),
+          onChanged: (val) => provider.toggleQuickAction('new_platform'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
+          iconBuilder: (c) =>
+              Icon(Icons.add_circle_outline_rounded, color: c, size: 22),
+          label: strings.shortcutNewSession,
+          actionId: 'new_session',
+          enabled: provider.quickActions.contains('new_session'),
+          onChanged: (val) => provider.toggleQuickAction('new_session'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
+          iconBuilder: (c) =>
+              Icon(Icons.calculate_rounded, color: c, size: 22),
+          label: strings.quickActionLabelCalculationTools,
+          actionId: 'calculation_tools',
+          enabled: provider.quickActions.contains('calculation_tools'),
+          onChanged: (val) => provider.toggleQuickAction('calculation_tools'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
+          iconBuilder: (c) => Icon(Icons.palette_rounded, color: c, size: 22),
+          label: strings.quickActionLabelVisualStimuli,
+          actionId: 'visual_stimuli',
+          enabled: provider.quickActions.contains('visual_stimuli'),
+          onChanged: (val) => provider.toggleQuickAction('visual_stimuli'),
+          maxReached: provider.quickActions.length >= 4,
+          switchTheme: switchTheme,
+        ),
+        const Divider(indent: 48, height: 1),
+        _ShortcutToggle(
+          iconBuilder: (c) => Icon(Icons.table_chart_outlined, color: c, size: 22),
+          label: strings.quickActionLabelShootingTables,
+          actionId: 'shooting_tables',
+          enabled: provider.quickActions.contains('shooting_tables'),
+          onChanged: (val) => provider.toggleQuickAction('shooting_tables'),
           maxReached: provider.quickActions.length >= 4,
           switchTheme: switchTheme,
         ),
@@ -582,6 +861,7 @@ class SettingsScreen extends StatelessWidget {
           switchTheme: switchTheme,
         ),
       ],
+      ),
     );
   }
 
@@ -593,9 +873,11 @@ class SettingsScreen extends StatelessWidget {
     final strings = AppStrings.of(context);
     final switchTheme = _buildUnifiedSwitchTheme(context, colors);
 
-    return _SettingsGroup(
-      title: strings.securityGroupTitle,
-      children: [
+    return Container(
+      key: _securityKey,
+      child: _SettingsGroup(
+        title: strings.securityGroupTitle,
+        children: [
         _SettingsItem(
           icon: Icons.pin_outlined,
           label: strings.pinCodeLabel,
@@ -612,12 +894,15 @@ class SettingsScreen extends StatelessWidget {
                   await provider.togglePinEnabled(false);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(strings.pinDisabledSnack)),
+                      SnackBar(
+                        content: Text(strings.pinDisabledSnack),
+                        duration: const Duration(seconds: 3),
+                      ),
                     );
                   }
                 }
               },
-              activeColor: colors.primary,
+              activeThumbColor: colors.primary,
             ),
           ),
         ),
@@ -637,6 +922,7 @@ class SettingsScreen extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(strings.biometricRequiresPinSnack),
+                      duration: const Duration(seconds: 3),
                     ),
                   );
                   return;
@@ -648,15 +934,17 @@ class SettingsScreen extends StatelessWidget {
                       content: Text(
                         strings.biometricStatusChangedSnack(val),
                       ),
+                      duration: const Duration(seconds: 3),
                     ),
                   );
                 }
               },
-              activeColor: colors.primary,
+              activeThumbColor: colors.primary,
             ),
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -666,9 +954,14 @@ class SettingsScreen extends StatelessWidget {
     required ColorScheme colors,
   }) {
     final strings = AppStrings.of(context);
-    return _SettingsGroup(
-      title: strings.supportGroupTitle,
-      children: [
+    final isTutorialActive = _tutorialOverlayEntry != null;
+    return Container(
+      margin: isTutorialActive ? const EdgeInsets.only(bottom: 200) : null,
+      child: Container(
+        key: _supportKey,
+        child: _SettingsGroup(
+        title: strings.supportGroupTitle,
+        children: [
         _SettingsItem(
           icon: Icons.picture_as_pdf_rounded,
           label: strings.exportPdfLabel,
@@ -751,6 +1044,8 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ],
+      ),
+      ),
     );
   }
 
@@ -770,9 +1065,13 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () async {
               Navigator.pop(dialogContext);
               await provider.clearAllLocalData();
+              await TrainingHistory.clear();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(strings.settingsDeleteAllDataSuccess)),
+                  SnackBar(
+                    content: Text(strings.settingsDeleteAllDataSuccess),
+                    duration: const Duration(seconds: 3),
+                  ),
                 );
               }
             },
@@ -816,7 +1115,9 @@ class SettingsScreen extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Image.asset(
-                      'assets/images/seance.webp', // Same image as session page
+                      Theme.of(context).brightness == Brightness.dark
+                          ? 'assets/images/carnetn.webp'
+                          : 'assets/images/carnet.webp',
                       fit: BoxFit.cover,
                     ),
                     DecoratedBox(
@@ -855,7 +1156,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               Positioned(
                 right: AppSpacing.lg,
-                top: MediaQuery.of(context).padding.top + 12,
+                top: panelTop - 56,
                 child: TextButton.icon(
                   onPressed: () => _showEditProfileDialog(context, provider),
                   icon: Icon(
@@ -875,7 +1176,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.35),
+                    backgroundColor: Colors.black.withValues(alpha: 0.6),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(100),
@@ -909,14 +1210,14 @@ class SettingsScreen extends StatelessWidget {
                         displayName: displayName,
                         licenseSubtitle: licenseSubtitle,
                       ),
-                      const Gap(AppSpacing.lg),
+                      const Gap(32),
                       _buildPreferencesGroup(
                         context: context,
                         provider: provider,
                         colors: colors,
                         textStyles: textStyles,
                       ),
-                      const Gap(AppSpacing.lg),
+                      const Gap(32),
                       _buildPremiumSection(
                         context: context,
                         provider: provider,
@@ -927,13 +1228,13 @@ class SettingsScreen extends StatelessWidget {
                         context: context,
                         provider: provider,
                       ),
-                      const Gap(AppSpacing.lg),
+                      const Gap(32),
                       _buildSecurityGroup(
                         context: context,
                         provider: provider,
                         colors: colors,
                       ),
-                      const Gap(AppSpacing.lg),
+                      const Gap(32),
                       _buildSupportGroup(
                         context: context,
                         provider: provider,
@@ -968,24 +1269,63 @@ class SettingsScreen extends StatelessWidget {
             TextField(
               controller: nameController,
               decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 labelText: strings.settingsProfileNameLabel,
                 prefixIcon: Icon(Icons.person_outline_rounded),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
               ),
             ),
             const Gap(16),
             TextField(
               controller: licenseController,
               decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 labelText: strings.settingsProfileLicenseLabel,
                 prefixIcon: Icon(Icons.badge_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
               ),
             ),
             const Gap(16),
             TextField(
               controller: emailController,
               decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 labelText: strings.settingsProfileEmailLabel,
                 prefixIcon: Icon(Icons.email_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
               ),
               keyboardType: TextInputType.emailAddress,
             ),
@@ -1005,7 +1345,10 @@ class SettingsScreen extends StatelessWidget {
               );
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.settingsProfileUpdatedSnack)),
+                SnackBar(
+                  content: Text(strings.settingsProfileUpdatedSnack),
+                  duration: const Duration(seconds: 3),
+                ),
               );
             },
             child: Text(strings.settingsDialogSave),
@@ -1041,8 +1384,19 @@ Future<void> _handleExportPdf(
     if (options.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sélectionnez au moins une section.')),
+          SnackBar(
+            content: Text(strings.selectAtLeastOneSection),
+            duration: Duration(seconds: 3),
+          ),
         );
+      }
+      return;
+    }
+
+    // Paywall: export with authentication requires Pro
+    if (options.includeAuth && !provider.isPremium) {
+      if (context.mounted) {
+        showProModal(context);
       }
       return;
     }
@@ -1052,7 +1406,10 @@ Future<void> _handleExportPdf(
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.settingsExportError(e))),
+          SnackBar(
+            content: Text(strings.settingsExportError(e)),
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     }
@@ -1062,10 +1419,12 @@ Future<void> _handleExportPdf(
     BuildContext context,
     ThotProvider provider,
   ) async {
-    bool weapons = true;
+    final strings = AppStrings.of(context);
+    bool platforms = true;
     bool ammos = true;
     bool accessories = true;
     bool sessions = true;
+    bool includeAuth = true;
 
     return showDialog<PdfExportOptions>(
       context: context,
@@ -1085,7 +1444,12 @@ Future<void> _handleExportPdf(
                     Checkbox(
                       value: value,
                       onChanged: onChanged,
-                      activeColor: colors.primary,
+                      fillColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return colors.primary;
+                        }
+                        return Colors.transparent;
+                      }),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
                     const Gap(8),
@@ -1111,47 +1475,59 @@ Future<void> _handleExportPdf(
               children: [
                 Icon(Icons.picture_as_pdf_rounded, color: colors.primary, size: 22),
                 const Gap(10),
-                const Text('Exporter le carnet'),
+                Text(strings.exportNotebookTitle),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Sections à inclure :', style: textStyles.labelLarge?.copyWith(color: colors.secondary)),
+                Text(strings.exportSectionsLabel, style: textStyles.labelLarge?.copyWith(color: colors.secondary)),
                 const Gap(8),
-                option('Armes', '${provider.weapons.length}', weapons,
-                    (v) => setLocalState(() => weapons = v ?? weapons)),
-                option('Munitions', '${provider.ammos.length}', ammos,
+                option(strings.exportPlatformsLabel, '${provider.platforms.length}', platforms,
+                    (v) => setLocalState(() => platforms = v ?? platforms)),
+                option(strings.exportConsumablesLabel, '${provider.ammos.length}', ammos,
                     (v) => setLocalState(() => ammos = v ?? ammos)),
-                option('Matériel', '${provider.accessories.length}', accessories,
+                option(strings.exportEquipmentLabel, '${provider.accessories.length}', accessories,
                     (v) => setLocalState(() => accessories = v ?? accessories)),
-                option('Séances', '${provider.sessions.length}', sessions,
+                option(strings.exportSessionsLabel, '${provider.sessions.length}', sessions,
                     (v) => setLocalState(() => sessions = v ?? sessions)),
                 const Gap(8),
                 TextButton.icon(
                   onPressed: () => setLocalState(() {
-                    weapons = true; ammos = true; accessories = true; sessions = true;
+                    platforms = true; ammos = true; accessories = true; sessions = true;
                   }),
                   icon: Icon(Icons.select_all_rounded, size: 18, color: colors.primary),
-                  label: Text('Tout sélectionner', style: TextStyle(color: colors.primary)),
+                  label: Text(strings.selectAllLabel, style: TextStyle(color: colors.primary)),
+                ),
+                const Gap(12),
+                const Divider(),
+                const Gap(12),
+                CheckboxListTile(
+                  title: Text(strings.pdfExportIncludeAuthOption),
+                  subtitle: Text(strings.pdfExportIncludeAuthDescription, style: textStyles.bodySmall?.copyWith(color: colors.secondary)),
+                  value: includeAuth,
+                  onChanged: (v) => setLocalState(() => includeAuth = v ?? true),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
                 ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annuler'),
+                child: Text(strings.cancel),
               ),
               FilledButton.icon(
                 onPressed: () => Navigator.pop(ctx, PdfExportOptions(
-                  includeWeapons: weapons,
+                  includePlatforms: platforms,
                   includeAmmos: ammos,
                   includeAccessories: accessories,
                   includeSessions: sessions,
+                  includeAuth: includeAuth,
                 )),
                 icon: const Icon(Icons.download_rounded, size: 18),
-                label: const Text('Exporter'),
+                label: Text(strings.exportNotebookTitle),
               ),
             ],
           );
@@ -1212,8 +1588,10 @@ Future<void> _handleExportPdf(
                 ),
               ),
               Expanded(
-                child: provider.userDocuments.isEmpty
-                    ? Center(
+                child: Consumer<ThotProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.userDocuments.isEmpty) {
+                      return Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: Column(
@@ -1253,30 +1631,34 @@ Future<void> _handleExportPdf(
                             ],
                           ),
                         ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: provider.userDocuments.length,
-                        separatorBuilder: (context, index) => const Gap(8),
-                        itemBuilder: (context, index) {
-                          final doc = provider.userDocuments[index];
-                          final isLocked = !provider.isPremium && index >= 1;
-                          return _DocumentItem(
-                            document: doc,
-                            isLocked: isLocked,
-                            onDelete: () {
-                              provider.deleteUserDocument(doc.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    strings.settingsDocumentDeleted(doc.name),
-                                  ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: provider.userDocuments.length,
+                      separatorBuilder: (context, index) => const Gap(8),
+                      itemBuilder: (context, index) {
+                        final doc = provider.userDocuments[index];
+                        final isLocked = !provider.isPremium && index >= 1;
+                        return _DocumentItem(
+                          document: doc,
+                          isLocked: isLocked,
+                          onDelete: () {
+                            provider.deleteUserDocument(doc.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  strings.settingsDocumentDeleted(doc.name),
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
               Container(
                 padding: AppSpacing.paddingLg,
@@ -1286,16 +1668,16 @@ Future<void> _handleExportPdf(
                     top: BorderSide(color: Theme.of(context).colorScheme.outline),
                   ),
                 ),
-                child: Builder(
-                  builder: (context) {
+                child: Consumer<ThotProvider>(
+                  builder: (context, provider, child) {
                     final colors = Theme.of(context).colorScheme;
                     final textStyles = Theme.of(context).textTheme;
                     final strings = AppStrings.of(context);
 
                     final reachedLimit =
-                        !provider.isPremium && provider.userDocuments.length >= 1;
+                        !provider.isPremium && provider.userDocuments.isNotEmpty;
                     final bgColor =
-                        reachedLimit ? colors.surfaceVariant : colors.primary;
+                        reachedLimit ? colors.surfaceContainerHighest : colors.primary;
                     final fgColor =
                         reachedLimit ? colors.secondary : colors.onPrimary;
 
@@ -1360,17 +1742,18 @@ Future<void> _handleExportPdf(
 
   Future<void> _pickDocument(BuildContext context, ThotProvider provider) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
         allowMultiple: false,
-        withData: kIsWeb,
+        withData: true,
+        withReadStream: !kIsWeb,
       );
 
       if (result == null || result.files.isEmpty) return;
       final file = result.files.single;
 
-      final String? resolvedPathOrDataUrl;
+      final String resolvedPathOrDataUrl;
       if (kIsWeb) {
         final bytes = file.bytes;
         if (bytes == null || bytes.isEmpty) {
@@ -1387,11 +1770,10 @@ Future<void> _handleExportPdf(
                     : 'application/octet-stream');
         resolvedPathOrDataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
       } else {
-        resolvedPathOrDataUrl = file.path;
+        resolvedPathOrDataUrl = await _persistPickedDocument(file);
       }
 
-      if (resolvedPathOrDataUrl == null ||
-          resolvedPathOrDataUrl.trim().isEmpty) {
+      if (resolvedPathOrDataUrl.trim().isEmpty) {
         throw Exception('No usable file reference from picker');
       }
 
@@ -1407,7 +1789,10 @@ Future<void> _handleExportPdf(
       if (context.mounted) {
         final strings = AppStrings.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.settingsPickFileError(e))),
+          SnackBar(
+            content: Text(strings.settingsPickFileError(e)),
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     }
@@ -1429,7 +1814,7 @@ Future<void> _handleExportPdf(
       strings.settingsDocumentTypeHuntingPermit,
       strings.settingsDocumentTypeFftLicense,
       strings.settingsDocumentTypeIdCard,
-      strings.settingsDocumentTypeWeaponPermit,
+      strings.settingsDocumentTypePlatformPermit,
       strings.settingsDocumentTypeMedicalCertificate,
       strings.settingsDocumentTypeOther,
     ];
@@ -1446,23 +1831,48 @@ Future<void> _handleExportPdf(
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   labelText: strings.settingsDocumentNameLabel,
                   hintText: strings.settingsDocumentNameHint,
-                  prefixIcon: Icon(Icons.edit_outlined),
+                  prefixIcon: Icon(Icons.edit_rounded),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.clear_rounded, size: 18),
                     onPressed: () {
                       nameController.clear();
                     },
                   ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
                 ),
               ),
               const Gap(16),
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 decoration: InputDecoration(
                   labelText: strings.settingsDocumentTypeLabel,
                   prefixIcon: Icon(Icons.category_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
                 ),
                 items: documentTypes.map((type) {
                   return DropdownMenuItem<String>(
@@ -1493,8 +1903,7 @@ Future<void> _handleExportPdf(
                           onPressed: () async {
                             final picked = await showDatePicker(
                               context: context,
-                              initialDate:
-                                  DateTime.now().add(const Duration(days: 365)),
+                              initialDate: DateTime.now(),
                               firstDate: DateTime.now(),
                               lastDate: DateTime.now()
                                   .add(const Duration(days: 365 * 20)),
@@ -1561,31 +1970,52 @@ Future<void> _handleExportPdf(
                 ),
                 const Gap(8),
                 DropdownButtonFormField<int>(
-                  value: selectedNotifyDays > 0 ? selectedNotifyDays : 0,
+                  initialValue: selectedNotifyDays > 0 ? selectedNotifyDays : 0,
                   decoration: InputDecoration(
-                    labelText: strings.docExpiryNotifyDaysLabel,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
                   ),
-                  items: const [
+                  items: [
                     DropdownMenuItem<int>(
                       value: 0,
-                      child: Text('Aucune notification'),
+                      child: Text(strings.docExpiryNotifyNone),
                     ),
                     DropdownMenuItem<int>(
                       value: 7,
-                      child: Text('1 semaine avant'),
+                      child: Text(strings.docExpiryNotifyOneWeek),
                     ),
                     DropdownMenuItem<int>(
                       value: 30,
-                      child: Text('1 mois avant'),
+                      child: Text(strings.docExpiryNotifyOneMonth),
                     ),
                     DropdownMenuItem<int>(
                       value: 90,
-                      child: Text('3 mois avant'),
+                      child: Text(strings.docExpiryNotifyThreeMonths),
                     ),
                   ],
                   onChanged: (v) {
                     setState(() => selectedNotifyDays = v ?? 0);
                   },
+                ),
+                const Gap(8),
+                Text(
+                  strings.docExpiryNotifyHint,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.secondary),
                 ),
               ],
             ],
@@ -1596,7 +2026,22 @@ Future<void> _handleExportPdf(
               child: Text(strings.settingsDialogCancel),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: () async {
+                final remindersReady = await provider.ensureDocumentReminderEnabled(
+                  notifyBeforeDays: selectedNotifyDays,
+                );
+                if (!remindersReady) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(strings.documentPushPermissionDenied),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
                 final document = UserDocument(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   name: nameController.text.isNotEmpty
@@ -1613,7 +2058,10 @@ Future<void> _handleExportPdf(
                 Navigator.pop(context);
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(strings.settingsDocumentAddedSuccess)),
+                  SnackBar(
+                    content: Text(strings.settingsDocumentAddedSuccess),
+                    duration: const Duration(seconds: 3),
+                  ),
                 );
               },
               child: Text(strings.settingsAdd),
@@ -1647,7 +2095,7 @@ class _SettingsGroup extends StatelessWidget {
             color: colors.secondary,
           ),
         ),
-        const Gap(4),
+        const Gap(12),
         Container(
           decoration: BoxDecoration(
             color: colors.surface,
@@ -1676,6 +2124,7 @@ class _SettingsItem extends StatelessWidget {
   final String? subtitle;
   final Widget trailing;
   final VoidCallback? onTap;
+  final bool compact;
 
   const _SettingsItem({
     required this.icon,
@@ -1683,6 +2132,7 @@ class _SettingsItem extends StatelessWidget {
     required this.subtitle,
     required this.trailing,
     this.onTap,
+    this.compact = false,
   });
 
   @override
@@ -1693,7 +2143,9 @@ class _SettingsItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: AppSpacing.paddingMd,
+        padding: compact
+            ? const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs)
+            : AppSpacing.paddingMd,
         child: Row(
           children: [
             Icon(icon, color: colors.primary, size: 22),
@@ -1822,7 +2274,7 @@ class _ShortcutToggle extends StatelessWidget {
             child: Switch(
               value: enabled,
               onChanged: canToggle ? onChanged : null,
-              activeColor: colors.primary,
+              activeThumbColor: colors.primary,
             ),
           ),
         ],
@@ -1867,13 +2319,11 @@ class _DocumentItem extends StatelessWidget {
   final UserDocument document;
   final bool isLocked;
   final VoidCallback onDelete;
-  final VoidCallback? onEdit;
 
   const _DocumentItem({
     required this.document,
     required this.isLocked,
     required this.onDelete,
-    this.onEdit,
   });
 
   IconData _getDocumentIcon(String type) {
@@ -1884,7 +2334,7 @@ class _DocumentItem extends StatelessWidget {
         return Icons.card_membership_outlined;
       case "Carte d'identité":
         return Icons.credit_card_outlined;
-      case "Autorisation de port d'arme":
+      case "Autorisation de port de plateforme":
         return Icons.gavel_outlined;
       case "Certificat médical":
         return Icons.medical_services_outlined;
@@ -1956,17 +2406,28 @@ class _DocumentItem extends StatelessWidget {
         return;
       }
 
-      final ok = await launchUrl(
-        Uri.file(path),
-        mode: LaunchMode.externalApplication,
-      );
-      if (!ok) throw Exception('launchUrl failed for file');
+      if (path.startsWith('file://')) {
+        final localPath = Uri.parse(path).toFilePath();
+        final result = await OpenFilex.open(localPath);
+        if (result.type != ResultType.done) {
+          throw Exception('OpenFilex failed for file://: ${result.message}');
+        }
+        return;
+      }
+
+      final result = await OpenFilex.open(path);
+      if (result.type != ResultType.done) {
+        throw Exception('OpenFilex failed for file: ${result.message}');
+      }
     } catch (e) {
       debugPrint('Failed to open user document.');
       if (context.mounted) {
         final strings = AppStrings.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.settingsOpenDocumentFailed)),
+          SnackBar(
+            content: Text(strings.settingsOpenDocumentFailed),
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     }
@@ -1977,8 +2438,11 @@ class _DocumentItem extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    final typeLabel = _humanizeDocumentType(document.type);
-    final subtitle = typeLabel;
+    final baseTypeLabel = _humanizeDocumentType(document.type);
+    final expiryLabel = document.expiryDate == null
+        ? null
+        : 'Expire le ${AppDateFormats.formatDateShort(context, document.expiryDate!)}';
+    final subtitle = expiryLabel == null ? baseTypeLabel : '$baseTypeLabel • $expiryLabel';
 
     final card = Material(
       color: colors.surface,
@@ -2034,13 +2498,8 @@ class _DocumentItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!isLocked && onEdit != null)
-                  IconButton(
-                    icon: Icon(Icons.edit_outlined, color: colors.secondary),
-                    onPressed: onEdit,
-                  ),
                 IconButton(
-                  icon: Icon(Icons.delete_outline_rounded, color: colors.error),
+                  icon: Icon(Icons.delete_rounded),
                   onPressed: () {
                     showDialog(
                       context: context,

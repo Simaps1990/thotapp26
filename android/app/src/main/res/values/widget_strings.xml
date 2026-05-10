@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_stats_name">THOT · Stats</string>
+    <string name="widget_maintenance_name">THOT · Maintenance</string>
+    <string name="widget_documents_name">THOT · Documents</string>
+    <string name="widget_activity_name">THOT · Activité</string>
+    <string name="widget_stats_description">Stats du jour THOT</string>
+    <string name="widget_maintenance_description">Maintenance THOT</string>
+    <string name="widget_documents_description">Rappels documents THOT</string>
+    <string name="widget_activity_description">Activite THOT</string>
+</resources>

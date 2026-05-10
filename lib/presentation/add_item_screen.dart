@@ -1,10 +1,12 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform, Uint8List;
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
@@ -15,7 +17,6 @@ import '../widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/utils/web_document_opener.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class AddItemScreen extends StatefulWidget {
   final String? itemId;
@@ -58,7 +59,7 @@ class _DocumentDetails {
 }
 
 class _AddItemScreenState extends State<AddItemScreen> {
-  String _selectedCategory = 'ARME'; // ARME, MUNITION, ACCESSOIRE
+  String _selectedCategory = 'PLATEFORME'; // PLATEFORME, CONSOMMABLE, ACCESSOIRE
   bool _isEditMode = false;
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
@@ -69,6 +70,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _typeController = TextEditingController();
   final _ammoTypeController = TextEditingController();
   final _quantityController = TextEditingController(text: "0");
+  final _unitPriceController = TextEditingController();
+  String _selectedCurrency = 'EUR';
   final _commentController = TextEditingController();
   final _lowStockThresholdController = TextEditingController(text: "50");
   final _cleaningRoundsThresholdController = TextEditingController(text: "500");
@@ -81,7 +84,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
   static const List<String> _documentTypes = [
     'Facture',
     'Révision',
-    'Entretien',
     'Manuel',
     'Garantie',
     'Autre',
@@ -96,8 +98,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     'Chargeurs',
     'Porte-chargeurs',
     'Nettoyage',
-    'Modérateurs',
-    'Réducteur de son',
+    'SUPP',
     'Compensateurs',
     'Poignées',
     'Bipieds',
@@ -117,16 +118,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
     'Divers',
   ];
 
-  static const List<String> _weaponTypes = [
-    'Pistolet semi-auto',
+  static const List<String> _platformTypes = [
+    'PA',
     'Révolver',
-    'Pistolet mitrailleur',
-    "Fusil d'assaut",
-    'Fusil mitrailleur',
+    'PM',
+    'FA',
+    'FM',
     'Carabine',
-    'Fusil à pompe',
+    'FAP',
     'Fusil de chasse',
-    'Fusil de précision',
+    'FP',
     'Autre',
   ];
 
@@ -142,10 +143,85 @@ class _AddItemScreenState extends State<AddItemScreen> {
     'Autre',
   ];
 
+  List<String> getDocumentTypes(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return [
+      strings.documentTypeInvoice,
+      strings.documentTypeRevision,
+      strings.documentTypeMaintenance,
+      strings.documentTypeManual,
+      strings.documentTypeWarranty,
+      strings.documentTypeOther,
+    ];
+  }
+
+  List<String> getAccessoryTypes(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return [
+      strings.accessoryTypeOptics,
+      strings.accessoryTypeLights,
+      strings.accessoryTypeLasers,
+      strings.accessoryTypeHolsters,
+      strings.accessoryTypeSlings,
+      strings.accessoryTypeMagazines,
+      strings.accessoryTypeMagazinePouches,
+      strings.accessoryTypeCleaning,
+      strings.accessoryTypeSuppressor,
+      strings.accessoryTypeCompensators,
+      strings.accessoryTypeGrips,
+      strings.accessoryTypeBipods,
+      strings.accessoryTypeMounts,
+      strings.accessoryTypeIronSights,
+      strings.accessoryTypeStocks,
+      strings.accessoryTypeTriggers,
+      strings.accessoryTypeInternalParts,
+      strings.accessoryTypeTransport,
+      strings.accessoryTypeSafety,
+      strings.accessoryTypeProtection,
+      strings.accessoryTypeChronographs,
+      strings.accessoryTypeTimers,
+      strings.accessoryTypeTargets,
+      strings.accessoryTypeShootingStands,
+      strings.accessoryTypeTools,
+      strings.accessoryTypeMisc,
+    ];
+  }
+
+  List<String> getPlatformTypes(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return [
+      strings.platformTypePA,
+      strings.platformTypeRevolver,
+      strings.platformTypePM,
+      strings.platformTypeFA,
+      strings.platformTypeFM,
+      strings.platformTypeCarbine,
+      strings.platformTypeFAP,
+      strings.platformTypeShotgun,
+      strings.platformTypeFP,
+      strings.platformTypeOther,
+    ];
+  }
+
+  List<String> getAmmoProjectileTypes(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return [
+      strings.ammoTypeFMJ,
+      strings.ammoTypeTMJ,
+      strings.ammoTypeJHP,
+      strings.ammoTypeGoldDot,
+      strings.ammoTypeSoftPoint,
+      strings.ammoTypeLead,
+      strings.ammoTypeSubsonic,
+      strings.ammoTypeTracer,
+      strings.documentTypeOther,
+    ];
+  }
+
   String _selectedAccessoryType = _accessoryTypes.first;
   bool _isAccessoryTypeCustom = false;
 
-  String _selectedWeaponType = _weaponTypes.first;
+  String _selectedPlatformType = _platformTypes.first;
 
   String _selectedAmmoProjectileType = _ammoProjectileTypes.first;
   bool _isAmmoProjectileTypeCustom = false;
@@ -158,21 +234,84 @@ class _AddItemScreenState extends State<AddItemScreen> {
   bool _trackBattery = false;
   DateTime? _batteryChangedAt;
 
+  static const Set<String> _accessoryWearEnabledTypes = {
+    'Optiques',
+    'Lampes',
+    'Lasers',
+    'SUPP',
+    'Compensateurs',
+    'Montages',
+    'Détentes',
+    'Pièces internes',
+  };
+
+  static const Set<String> _accessoryCleanlinessEnabledTypes = {
+    'SUPP',
+    'Compensateurs',
+  };
+
+  static const Set<String> _accessoryBatteryEnabledTypes = {
+    'Optiques',
+    'Lampes',
+    'Lasers',
+    'Chronographes',
+    'Timers',
+  };
+
+  String get _trackingAccessoryType =>
+      _isAccessoryTypeCustom ? '__custom__' : _selectedAccessoryType.trim();
+
+  bool _canTrackAccessoryWear(String type) {
+    return type == '__custom__' ||
+        type == 'Divers' ||
+        _accessoryWearEnabledTypes.contains(type);
+  }
+
+  bool _canTrackAccessoryCleanliness(String type) {
+    return type == '__custom__' ||
+        type == 'Divers' ||
+        _accessoryCleanlinessEnabledTypes.contains(type);
+  }
+
+  bool _canTrackAccessoryBattery(String type) {
+    return type == '__custom__' ||
+        type == 'Divers' ||
+        _accessoryBatteryEnabledTypes.contains(type);
+  }
+
+  bool _shouldShowTrackingOptions() {
+    if (_selectedCategory == 'PLATEFORME') {
+      return _trackWear || _trackCleanliness || _trackRounds;
+    }
+    if (_selectedCategory == 'CONSOMMABLE') {
+      return _trackStock;
+    }
+    if (_selectedCategory == 'ACCESSOIRE') {
+      final batteryEligible = _canTrackAccessoryBattery(_trackingAccessoryType);
+      final wearEligible = _canTrackAccessoryWear(_trackingAccessoryType);
+      final cleanlinessEligible = _canTrackAccessoryCleanliness(_trackingAccessoryType);
+      return (batteryEligible && _trackBattery) ||
+             (wearEligible && _trackWear) ||
+             (cleanlinessEligible && _trackCleanliness);
+    }
+    return false;
+  }
+
   final _primaryNameFieldKey = GlobalKey();
   final _caliberFieldKey = GlobalKey();
-  final _weaponTypeFieldKey = GlobalKey();
+  final _platformTypeFieldKey = GlobalKey();
   final _ammoQuantityFieldKey = GlobalKey();
   final _accessoryTypeFieldKey = GlobalKey();
   final _batteryDateFieldKey = GlobalKey();
 
   bool _primaryNameError = false;
   bool _caliberError = false;
-  bool _weaponTypeError = false;
+  bool _platformTypeError = false;
   bool _ammoQuantityError = false;
   bool _accessoryTypeError = false;
   bool _batteryDateError = false;
   final Set<String> _linkedAccessoryIds = {};
-  final Set<String> _linkedWeaponIds = {};
+  final Set<String> _linkedPlatformIds = {};
   
   @override
   void initState() {
@@ -199,6 +338,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     _typeController.dispose();
     _ammoTypeController.dispose();
     _quantityController.dispose();
+    _unitPriceController.dispose();
     _commentController.dispose();
     _lowStockThresholdController.dispose();
     _cleaningRoundsThresholdController.dispose();
@@ -209,46 +349,52 @@ class _AddItemScreenState extends State<AddItemScreen> {
   void _loadItem() {
     final provider = Provider.of<ThotProvider>(context, listen: false);
     
-    if (_selectedCategory == 'ARME') {
-      final weapon = provider.weapons.where((w) => w.id == widget.itemId).firstOrNull;
-      if (weapon == null) {
+    if (_selectedCategory == 'PLATEFORME') {
+      final platform = provider.platforms.where((w) => w.id == widget.itemId).firstOrNull;
+      if (platform == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).itemNotFound)),
+          SnackBar(
+            content: Text(AppStrings.of(context).itemNotFound),
+            duration: const Duration(seconds: 3),
+          ),
         );
         context.pop();
         return;
       }
       setState(() {
-        _nameController.text = weapon.name;
-        _brandController.text = weapon.model;
-        _caliberController.text = weapon.caliber;
-        _serialController.text = weapon.serialNumber;
-        _weightController.text = weapon.weight == 0 ? '' : weapon.weight.toString();
-        _initialRoundsController.text = weapon.totalRounds.toString();
-        _commentController.text = weapon.comment;
-        _selectedWeaponType = _weaponTypes.contains(weapon.type) ? weapon.type : _weaponTypes.first;
-        _photoPath = weapon.photoPath;
-        _documents = weapon.documents
+        _nameController.text = platform.name;
+        _brandController.text = platform.model;
+        _caliberController.text = platform.caliber;
+        _serialController.text = platform.serialNumber;
+        _weightController.text = platform.weight == 0 ? '' : platform.weight.toString();
+        _initialRoundsController.text = platform.totalRounds.toString();
+        _commentController.text = platform.comment;
+        _selectedPlatformType = _platformTypes.contains(platform.type) ? platform.type : _platformTypes.first;
+        _photoPath = platform.photoPath;
+        _documents = platform.documents
             .map((d) => _ItemDocumentDraft(
                   name: d.name,
                   type: d.type,
                   file: PlatformFile(name: d.name, path: d.path, size: 0),
                 ))
             .toList();
-        _trackWear = weapon.trackWear;
-        _trackCleanliness = weapon.trackCleanliness;
-        _trackRounds = weapon.trackRounds;
-        _cleaningRoundsThresholdController.text = weapon.cleaningRoundsThreshold.toString();
-        _wearRoundsThresholdController.text = weapon.wearRoundsThreshold.toString();
+        _trackWear = platform.trackWear;
+        _trackCleanliness = platform.trackCleanliness;
+        _trackRounds = platform.trackRounds;
+        _cleaningRoundsThresholdController.text = platform.cleaningRoundsThreshold.toString();
+        _wearRoundsThresholdController.text = platform.wearRoundsThreshold.toString();
         _linkedAccessoryIds
           ..clear()
-          ..addAll(weapon.linkedAccessoryIds);
+          ..addAll(platform.linkedAccessoryIds);
       });
-    } else if (_selectedCategory == 'MUNITION') {
+    } else if (_selectedCategory == 'CONSOMMABLE') {
       final ammo = provider.ammos.where((a) => a.id == widget.itemId).firstOrNull;
       if (ammo == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).itemNotFound)),
+          SnackBar(
+            content: Text(AppStrings.of(context).itemNotFound),
+            duration: const Duration(seconds: 3),
+          ),
         );
         context.pop();
         return;
@@ -259,6 +405,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
         _caliberController.text = ammo.caliber;
         _quantityController.text = ammo.quantity.toString();
         _initialRoundsController.text = ammo.initialQuantity.toString();
+        _unitPriceController.text = ammo.unitPrice?.toString() ?? '';
+        _selectedCurrency = ammo.currency;
         _commentController.text = ammo.comment;
         _lowStockThresholdController.text = ammo.lowStockThreshold.toString();
         _photoPath = ammo.photoPath;
@@ -279,7 +427,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
       final accessory = provider.accessories.where((a) => a.id == widget.itemId).firstOrNull;
       if (accessory == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).itemNotFound)),
+          SnackBar(
+            content: Text(AppStrings.of(context).itemNotFound),
+            duration: const Duration(seconds: 3),
+          ),
         );
         context.pop();
         return;
@@ -312,54 +463,68 @@ class _AddItemScreenState extends State<AddItemScreen> {
             accessory.cleaningRoundsThreshold.toString();
         _wearRoundsThresholdController.text =
             accessory.wearRoundsThreshold.toString();
-        _linkedWeaponIds
+        _linkedPlatformIds
           ..clear()
-          ..addAll(accessory.linkedWeaponIds);
+          ..addAll(accessory.linkedPlatformIds);
       });
     }
   }
 
-  void _syncWeaponAccessoryLinks({
+  void _syncPlatformAccessoryLinks({
     required ThotProvider provider,
-    required String weaponId,
+    required String platformId,
     required Set<String> desiredAccessoryIds,
   }) {
     final currentAccessoryIds =
-        provider.linkedAccessoriesForWeapon(weaponId).map((a) => a.id).toSet();
+        provider.linkedAccessoriesForPlatform(platformId).map((a) => a.id).toSet();
 
-    for (final accessoryId in desiredAccessoryIds.difference(currentAccessoryIds)) {
-      provider.linkWeaponToAccessory(
-        weaponId: weaponId,
-        accessoryId: accessoryId,
-      );
+    for (final accessoryId in desiredAccessoryIds) {
+      final accessory = provider.getAccessoryById(accessoryId);
+      final linkedOnPlatform = currentAccessoryIds.contains(accessoryId);
+      final linkedOnAccessory =
+          accessory != null && accessory.linkedPlatformIds.contains(platformId);
+
+      if (!linkedOnPlatform || !linkedOnAccessory) {
+        provider.linkPlatformToAccessory(
+          platformId: platformId,
+          accessoryId: accessoryId,
+        );
+      }
     }
 
     for (final accessoryId in currentAccessoryIds.difference(desiredAccessoryIds)) {
-      provider.unlinkWeaponFromAccessory(
-        weaponId: weaponId,
+      provider.unlinkPlatformFromAccessory(
+        platformId: platformId,
         accessoryId: accessoryId,
       );
     }
   }
 
-  void _syncAccessoryWeaponLinks({
+  void _syncAccessoryPlatformLinks({
     required ThotProvider provider,
     required String accessoryId,
-    required Set<String> desiredWeaponIds,
+    required Set<String> desiredPlatformIds,
   }) {
-    final currentWeaponIds =
-        provider.linkedWeaponsForAccessory(accessoryId).map((w) => w.id).toSet();
+    final currentPlatformIds =
+        provider.linkedPlatformsForAccessory(accessoryId).map((w) => w.id).toSet();
 
-    for (final weaponId in desiredWeaponIds.difference(currentWeaponIds)) {
-      provider.linkWeaponToAccessory(
-        weaponId: weaponId,
-        accessoryId: accessoryId,
-      );
+    for (final platformId in desiredPlatformIds) {
+      final platform = provider.getPlatformById(platformId);
+      final linkedOnAccessory = currentPlatformIds.contains(platformId);
+      final linkedOnPlatform =
+          platform != null && platform.linkedAccessoryIds.contains(accessoryId);
+
+      if (!linkedOnAccessory || !linkedOnPlatform) {
+        provider.linkPlatformToAccessory(
+          platformId: platformId,
+          accessoryId: accessoryId,
+        );
+      }
     }
 
-    for (final weaponId in currentWeaponIds.difference(desiredWeaponIds)) {
-      provider.unlinkWeaponFromAccessory(
-        weaponId: weaponId,
+    for (final platformId in currentPlatformIds.difference(desiredPlatformIds)) {
+      provider.unlinkPlatformFromAccessory(
+        platformId: platformId,
         accessoryId: accessoryId,
       );
     }
@@ -369,7 +534,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        content: const Text('Êtes-vous sûr de vouloir délier cet élément ?'),
+        content: Text(AppStrings.of(ctx).unlinkConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -390,8 +555,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _ItemLinkMultiSelectSheet(
-        title: 'Lier des accessoires',
+      builder: (context) => ItemLinkMultiSelectSheet(
+        title: AppStrings.of(context).linkAccessories,
         items: provider.accessories,
         initialSelection: _linkedAccessoryIds,
         labelOf: (a) => a.name,
@@ -401,34 +566,74 @@ class _AddItemScreenState extends State<AddItemScreen> {
       ),
     );
     if (!mounted || updated == null) return;
+
     setState(() {
       _linkedAccessoryIds
         ..clear()
         ..addAll(updated);
     });
+
+    if (!_isEditMode || widget.itemId == null) {
+      return;
+    }
+
+    // En édition, synchroniser immédiatement les liaisons bidirectionnelles.
+    if (_selectedCategory == 'PLATEFORME') {
+      _syncPlatformAccessoryLinks(
+        provider: provider,
+        platformId: widget.itemId!,
+        desiredAccessoryIds: updated,
+      );
+    } else if (_selectedCategory == 'ACCESSOIRE') {
+      _syncAccessoryPlatformLinks(
+        provider: provider,
+        accessoryId: widget.itemId!,
+        desiredPlatformIds: updated,
+      );
+    }
   }
 
-  Future<void> _editLinkedWeapons(ThotProvider provider) async {
+  Future<void> _editLinkedPlatforms(ThotProvider provider) async {
     final updated = await showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _ItemLinkMultiSelectSheet(
-        title: 'Lier des armes',
-        items: provider.weapons,
-        initialSelection: _linkedWeaponIds,
+      builder: (context) => ItemLinkMultiSelectSheet(
+        title: AppStrings.of(context).linkPlatforms,
+        items: provider.platforms,
+        initialSelection: _linkedPlatformIds,
         labelOf: (w) => w.name,
         subtitleOf: (w) => [if (w.type.trim().isNotEmpty) w.type, if (w.caliber.trim().isNotEmpty) w.caliber].join(' • '),
         idOf: (w) => w.id,
-        icon: Icons.sports_martial_arts_rounded,
+        icon: Icons.link_rounded,
       ),
     );
     if (!mounted || updated == null) return;
+
     setState(() {
-      _linkedWeaponIds
+      _linkedPlatformIds
         ..clear()
         ..addAll(updated);
     });
+
+    if (!_isEditMode || widget.itemId == null) {
+      return;
+    }
+
+    // En édition, synchroniser immédiatement les liaisons bidirectionnelles.
+    if (_selectedCategory == 'PLATEFORME') {
+      _syncPlatformAccessoryLinks(
+        provider: provider,
+        platformId: widget.itemId!,
+        desiredAccessoryIds: updated,
+      );
+    } else if (_selectedCategory == 'ACCESSOIRE') {
+      _syncAccessoryPlatformLinks(
+        provider: provider,
+        accessoryId: widget.itemId!,
+        desiredPlatformIds: updated,
+      );
+    }
   }
 
   Future<void> _pickBatteryChangedDate() async {
@@ -459,28 +664,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
     return _pageTitle();
   }
 
-  Widget _headerIcon(ColorScheme colors) {
-    switch (_selectedCategory) {
-      case 'ARME':
-        return SvgPicture.asset(
-          'assets/images/gun.svg',
-          width: 18,
-          height: 18,
-          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-        );
-      case 'MUNITION':
-        return SvgPicture.asset(
-          'assets/images/bullet.svg',
-          width: 18,
-          height: 18,
-          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-        );
-      default:
-        return Icon(Icons.inventory_2_rounded,
-            size: 18, color: colors.primary);
-    }
-  }
-
   String _primaryNameLabel() => AppStrings.of(context).itemPrimaryNameLabel(_selectedCategory);
 
   String _primaryNameHint() => AppStrings.of(context).itemPrimaryNameHint(_selectedCategory);
@@ -501,15 +684,18 @@ class _AddItemScreenState extends State<AddItemScreen> {
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: baseBackground,
-        body: SafeArea(
+        body: GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: SafeArea(
           top: false,
           child: Column(
             children: [
               Container(
                 padding: EdgeInsets.fromLTRB(
                   20,
-                  MediaQuery.of(context).padding.top + 12,
+                  defaultTargetPlatform == TargetPlatform.iOS ? (MediaQuery.paddingOf(context).top / 2 + 30) : (MediaQuery.paddingOf(context).top + 30),
                   20,
                   12,
                 ),
@@ -518,24 +704,27 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   border: Border(bottom: BorderSide(color: colors.outline)),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    const SizedBox(width: 48),
+                    Expanded(
+                      child: Text(
+                        _headerTitle(strings),
+                        textAlign: TextAlign.center,
+                        style: textStyles.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
                       color: colors.onSurface,
                       onPressed: () => context.pop(),
                     ),
-                    Text(
-                      _headerTitle(strings),
-                      style: textStyles.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(width: 48),
                   ],
                 ),
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -543,13 +732,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     // Form
                     Row(
                       children: [
-                  Icon(Icons.edit_note_rounded, size: 18, color: colors.primary),
+                  Icon(Icons.edit_note_rounded, size: 18),
                   const Gap(8),
                   Text(
-                    _sentenceCase(_primaryNameLabel()),
+                    _primaryNameLabel().toUpperCase(),
                     style: textStyles.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w900,
                       color: colors.onSurface,
+                      letterSpacing: 1.1,
                     ),
                   ),
                 ],
@@ -557,13 +747,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
               const Gap(8),
               Container(
                 key: _primaryNameFieldKey,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(
-                    color: _primaryNameError ? colors.error : colors.outline,
-                    width: 1.4,
-                  ),
-                ),
                 child: TextField(
                   controller: _nameController,
                   onChanged: (_) {
@@ -572,6 +755,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     }
                   },
                   decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     hintText: _primaryNameHint(),
                     helperText:
                         _primaryNameError ? strings.requiredFieldError : null,
@@ -592,21 +776,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       borderSide:
                           BorderSide(color: colors.primary, width: 2),
                     ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.error),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.error, width: 2),
-                    ),
                   ),
                 ),
               ),
               const Gap(AppSpacing.lg),
 
               // Category-specific fields
-              if (_selectedCategory == 'ARME') ...[
+              if (_selectedCategory == 'PLATEFORME') ...[
                 Row(
                   children: [
                     Expanded(
@@ -618,17 +794,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               Icon(Icons.sell_rounded,
                                   size: 18, color: colors.primary),
                               const Gap(8),
-                              Text(_sentenceCase(strings.brandModelLabel),
+                              Text(strings.brandModelLabel.toUpperCase(),
                               style: textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.onSurface)),
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.onSurface,
+                                  letterSpacing: 1.1)),
                             ],
                           ),
                           const Gap(8),
                           TextField(
                             controller: _brandController,
                             decoration: InputDecoration(
-                              hintText: strings.itemWeaponBrandHint,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              hintText: strings.itemPlatformBrandHint,
                               filled: true,
                               fillColor: colors.surface,
                               border: OutlineInputBorder(
@@ -656,13 +834,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.straighten_rounded,
-                                  size: 18, color: colors.primary),
+                              SvgPicture.asset(
+                                'assets/images/pointe.svg',
+                                width: 18,
+                                height: 18,
+                                colorFilter: ColorFilter.mode(
+                                  colors.primary,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
                               const Gap(8),
-                              Text(_sentenceCase(strings.caliberLabel),
+                              Text(strings.caliberLabel.toUpperCase(),
                               style: textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.onSurface)),
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.onSurface,
+                                  letterSpacing: 1.1)),
                             ],
                           ),
                           const Gap(8),
@@ -675,6 +861,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               }
                             },
                             decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemCaliberHint,
                               helperText:
                                   _caliberError
@@ -710,51 +897,46 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     Icon(Icons.category_rounded,
                         size: 18, color: colors.primary),
                     const Gap(8),
-                    Text(_sentenceCase(strings.typeLabel),
-                    style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: colors.onSurface)),
+                    Text(strings.typeLabel.toUpperCase(),
+                    style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colors.onSurface,
+                        letterSpacing: 1.1)),
                   ],
                 ),
                 const Gap(8),
                 Container(
-                  key: _weaponTypeFieldKey,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(
-                      color: _weaponTypeError ? colors.error : colors.outline,
-                      width: 1.4,
-                    ),
-                  ),
+                  key: _platformTypeFieldKey,
                   child: DropdownButtonFormField<String>(
-                    value: _selectedWeaponType,
+                    value: _selectedPlatformType,
                     decoration: InputDecoration(
                       helperText:
-                          _weaponTypeError ? strings.requiredFieldError : null,
+                          _platformTypeError ? strings.requiredFieldError : null,
                       helperStyle:
                           textStyles.bodySmall?.copyWith(color: colors.error),
                       filled: true,
                       fillColor: colors.surface,
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide.none),
+                          borderSide: BorderSide(color: colors.outline)),
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide.none),
+                          borderSide: BorderSide(color: colors.outline)),
                       focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide:
-                              BorderSide(color: colors.primary, width: 1.6)),
+                          borderSide: BorderSide(color: colors.outline)),
                     ),
-                    items: _weaponTypes
+                    items: _platformTypes
                         .map((t) => DropdownMenuItem(
                               value: t,
-                              child: Text(strings.itemWeaponTypeLabel(t)),
+                              child: Text(strings.itemPlatformTypeLabel(t)),
                             ))
                         .toList(),
                     onChanged: (v) {
                       if (v == null) return;
                       setState(() {
-                        _selectedWeaponType = v;
-                        _weaponTypeError = false;
+                        _selectedPlatformType = v;
+                        _platformTypeError = false;
                       });
                     },
                   ),
@@ -771,16 +953,18 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               Icon(Icons.confirmation_number_rounded,
                                   size: 18, color: colors.primary),
                               const Gap(8),
-                              Text(_sentenceCase(strings.serialNumberLabel),
+                              Text(strings.serialNumberLabel.toUpperCase(),
                               style: textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.onSurface)),
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.onSurface,
+                                  letterSpacing: 1.1)),
                             ],
                           ),
                           const Gap(8),
                           TextField(
                             controller: _serialController,
                             decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemSerialNumberHint,
                               filled: true,
                               fillColor: colors.surface,
@@ -812,10 +996,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               Icon(Icons.scale_rounded,
                                   size: 18, color: colors.primary),
                               const Gap(8),
-                              Text(_sentenceCase(strings.weightGramsLabel),
+                              Text(strings.weightGramsLabel.toUpperCase(),
                               style: textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.onSurface)),
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.onSurface,
+                                  letterSpacing: 1.1)),
                             ],
                           ),
                           const Gap(8),
@@ -823,6 +1008,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             controller: _weightController,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemWeightHint,
                               filled: true,
                               fillColor: colors.surface,
@@ -848,7 +1034,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 ),
               ],
               
-              if (_selectedCategory == 'MUNITION') ...[
+              if (_selectedCategory == 'CONSOMMABLE') ...[
                 Row(
                   children: [
                     Expanded(
@@ -860,16 +1046,18 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               Icon(Icons.sell_rounded,
                                   size: 18, color: colors.primary),
                               const Gap(8),
-                              Text(_sentenceCase(strings.brandLabel),
+                              Text(strings.brandLabel.toUpperCase(),
                               style: textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.onSurface)),
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.onSurface,
+                                  letterSpacing: 1.1)),
                             ],
                           ),
                           const Gap(8),
                           TextField(
                             controller: _brandController,
                             decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemAmmoBrandHint,
                               filled: true,
                               fillColor: colors.surface,
@@ -896,10 +1084,25 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(strings.caliberLabel,
-                              style: textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.onSurface)),
+                          Row(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/images/pointe.svg',
+                                width: 18,
+                                height: 18,
+                                colorFilter: ColorFilter.mode(
+                                  colors.primary,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const Gap(8),
+                              Text(strings.caliberLabel.toUpperCase(),
+                                  style: textStyles.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      color: colors.onSurface,
+                                      letterSpacing: 1.1)),
+                            ],
+                          ),
                           const Gap(8),
                           TextField(
                             controller: _caliberController,
@@ -910,6 +1113,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               }
                             },
                             decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemCaliberHint,
                               helperText:
                                   _caliberError
@@ -945,31 +1149,32 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     Icon(Icons.category_rounded,
                         size: 18, color: colors.primary),
                     const Gap(8),
-                    Text(_sentenceCase(strings.typeLabel),
-                    style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: colors.onSurface)),
+                    Text(strings.typeLabel.toUpperCase(),
+                    style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colors.onSurface,
+                        letterSpacing: 1.1)),
                   ],
                 ),
                 const Gap(8),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: colors.outline, width: 1.4),
                   ),
                   child: DropdownButtonFormField<String>(
-                    value: _isAmmoProjectileTypeCustom ? null : _selectedAmmoProjectileType,
+                    value: _isAmmoProjectileTypeCustom ? '__custom__' : _selectedAmmoProjectileType,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: colors.surface,
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide.none),
+                          borderSide: BorderSide(color: colors.outline)),
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide.none),
+                          borderSide: BorderSide(color: colors.outline)),
                       focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide:
-                              BorderSide(color: colors.primary, width: 1.6)),
+                          borderSide: BorderSide(color: colors.outline)),
                     ),
                     items: [
                       ..._ammoProjectileTypes
@@ -997,23 +1202,22 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 ),
                 if (_isAmmoProjectileTypeCustom) ...[
                   const Gap(12),
-                  TextField(
-                    controller: _ammoTypeController,
-                    decoration: InputDecoration(
-                      hintText: strings.itemProjectileCustomHint,
-                      filled: true,
-                      fillColor: colors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(
+                        color: colors.outline.withValues(alpha: 0.25),
+                        width: 1.4,
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.primary, width: 1.6),
+                    ),
+                    child: TextField(
+                      controller: _ammoTypeController,
+                      decoration: InputDecoration(
+                        hintText: strings.itemProjectileCustomHint,
+                        filled: true,
+                        fillColor: colors.surface,
+                        border: InputBorder.none,
+                        contentPadding: AppSpacing.paddingMd,
                       ),
                     ),
                   ),
@@ -1024,26 +1228,25 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     Icon(Icons.inventory_2_rounded,
                         size: 18, color: colors.primary),
                     const Gap(8),
-                    Text(_sentenceCase(strings.initialQuantityLabel),
+                    Text(strings.initialQuantityLabel.toUpperCase(),
                     style: textStyles.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600, color: colors.onSurface)),
+                        fontWeight: FontWeight.w900,
+                        color: colors.onSurface,
+                        letterSpacing: 1.1)),
                   ],
                 ),
                 const Gap(8),
                 Container(
                   key: _ammoQuantityFieldKey,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(
-                      color: _ammoQuantityError
-                          ? colors.error
-                          : colors.outline,
-                      width: 1.4,
-                    ),
-                  ),
                   child: TextField(
                     controller: _quantityController,
                     keyboardType: TextInputType.number,
+                    onTap: () {
+                      // Effacer le zéro si c'est la seule valeur
+                      if (_quantityController.text == "0") {
+                        _quantityController.clear();
+                      }
+                    },
                     onChanged: (_) {
                       final qty = int.tryParse(_quantityController.text.trim());
                       if (_ammoQuantityError && (qty ?? 0) > 0) {
@@ -1061,19 +1264,83 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       fillColor: colors.surface,
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide.none),
+                          borderSide: BorderSide(color: colors.outline)),
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide.none),
+                          borderSide: BorderSide(color: colors.outline)),
                       focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide:
-                              BorderSide(color: colors.primary, width: 1.6)),
+                          borderSide: BorderSide(color: colors.outline)),
                     ),
                   ),
                 ),
+                const Gap(AppSpacing.lg),
+                Row(
+                  children: [
+                    Icon(Icons.euro_rounded,
+                        size: 18, color: colors.primary),
+                    const Gap(8),
+                    Text(strings.ammoUnitPriceLabel.toUpperCase(),
+                    style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colors.onSurface,
+                        letterSpacing: 1.1)),
+                  ],
+                ),
+                const Gap(8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _unitPriceController,
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          hintText: strings.ammoUnitPriceHint,
+                          filled: true,
+                          fillColor: colors.surface,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: BorderSide(color: colors.outline)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: BorderSide(color: colors.outline)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: BorderSide(color: colors.primary, width: 1.6)),
+                        ),
+                      ),
+                    ),
+                    const Gap(8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: colors.outline),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCurrency,
+                          items: const [
+                            DropdownMenuItem(value: 'EUR', child: Text('€')),
+                            DropdownMenuItem(value: 'USD', child: Text('\$')),
+                            DropdownMenuItem(value: 'CAD', child: Text('CAD')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedCurrency = value;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-              
+
               if (_selectedCategory == 'ACCESSOIRE') ...[
                 Row(
                   children: [
@@ -1086,14 +1353,18 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               Icon(Icons.sell_rounded,
                                   size: 18, color: colors.primary),
                               const Gap(8),
-                              Text(_sentenceCase(strings.brandLabel),
-                              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: colors.onSurface)),
+                              Text(strings.brandLabel.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.onSurface,
+                                  letterSpacing: 1.1)),
                             ],
                           ),
                           const Gap(8),
                           TextField(
                             controller: _brandController,
                             decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemAccessoryBrandHint,
                               filled: true,
                               fillColor: colors.surface,
@@ -1125,43 +1396,65 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               Icon(Icons.category_rounded,
                                   size: 18, color: colors.primary),
                               const Gap(8),
-                              Text(_sentenceCase(strings.typeLabel),
-                              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: colors.onSurface)),
+                              Text(strings.typeLabel.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.onSurface,
+                                  letterSpacing: 1.1)),
                             ],
                           ),
                           const Gap(8),
                           Container(
                             key: _accessoryTypeFieldKey,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              border: Border.all(
-                                color: _accessoryTypeError
-                                    ? colors.error
-                                    : colors.outline,
-                                width: 1.4,
-                              ),
-                            ),
                             child: DropdownButtonFormField<String>(
                               isExpanded: true,
                               value: _isAccessoryTypeCustom
-                                  ? null
+                                  ? '__custom__'
                                   : _selectedAccessoryType,
+                              style: textStyles.bodyMedium?.copyWith(
+                                color: colors.onSurface,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              selectedItemBuilder: (context) {
+                                final labels = [
+                                  ..._accessoryTypes
+                                      .map((t) => strings.itemAccessoryTypeLabel(t)),
+                                  strings.customOtherLabel,
+                                ];
+                                return labels
+                                    .map(
+                                      (label) => Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          label,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: textStyles.bodyMedium?.copyWith(
+                                            color: colors.onSurface,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList();
+                              },
                               decoration: InputDecoration(
-                                errorText: _accessoryTypeError
+                                helperText: _accessoryTypeError
                                     ? strings.requiredFieldError
                                     : null,
+                                helperStyle:
+                                    textStyles.bodySmall?.copyWith(color: colors.error),
                                 filled: true,
                                 fillColor: colors.surface,
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide.none),
+                                    borderSide: BorderSide(color: colors.outline)),
                                 enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide.none),
+                                    borderSide: BorderSide(color: colors.outline)),
                                 focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                        color: colors.primary, width: 1.6)),
+                                    borderSide: BorderSide(color: colors.outline)),
                               ),
                               items: [
                                 ..._accessoryTypes.map(
@@ -1171,12 +1464,22 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                       strings.itemAccessoryTypeLabel(t),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
+                                      style: textStyles.bodyMedium?.copyWith(
+                                        color: colors.onSurface,
+                                        fontWeight: FontWeight.w400,
+                                      ),
                                     ),
                                   ),
                                 ),
                                 DropdownMenuItem(
                                     value: '__custom__',
-                                    child: Text(strings.customOtherLabel)),
+                                    child: Text(
+                                      strings.customOtherLabel,
+                                      style: textStyles.bodyMedium?.copyWith(
+                                        color: colors.onSurface,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    )),
                               ],
                               onChanged: (v) {
                                 if (v == null) return;
@@ -1204,41 +1507,37 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 ),
                 if (_isAccessoryTypeCustom) ...[
                   const Gap(AppSpacing.lg),
-                  Text(strings.customTypeLabel,
-                      style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: colors.onSurface)),
+                  Text(strings.customTypeLabel.toUpperCase(),
+                      style: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: colors.onSurface,
+                          letterSpacing: 1.1)),
                   const Gap(8),
-                  TextField(
-                    controller: _typeController,
-                    onChanged: (_) {
-                      if (_accessoryTypeError &&
-                          _typeController.text.trim().isNotEmpty) {
-                        setState(() => _accessoryTypeError = false);
-                      }
-                    },
-                    decoration: InputDecoration(
-                      hintText: strings.itemAccessoryCustomTypeHint,
-                      errorText:
-                          _accessoryTypeError ? strings.requiredFieldError : null,
-                      filled: true,
-                      fillColor: colors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.primary, width: 1.6),
+                  Container(
+                    key: _accessoryTypeFieldKey,
+                    child: TextField(
+                      controller: _typeController,
+                      onChanged: (_) {
+                        if (_accessoryTypeError &&
+                            _typeController.text.trim().isNotEmpty) {
+                          setState(() => _accessoryTypeError = false);
+                        }
+                      },
+                      decoration: InputDecoration(
+                        hintText: strings.itemAccessoryCustomTypeHint,
+                        errorText:
+                            _accessoryTypeError ? strings.requiredFieldError : null,
+                        filled: true,
+                        fillColor: colors.surface,
+                        border: InputBorder.none,
+                        contentPadding: AppSpacing.paddingMd,
                       ),
                     ),
                   ),
                 ],
               ],
 
-              if (_selectedCategory == 'ARME' ||
+              if (_selectedCategory == 'PLATEFORME' ||
                   _selectedCategory == 'ACCESSOIRE') ...[
                 const Gap(AppSpacing.lg),
                 // Header with title and link button
@@ -1250,39 +1549,40 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         Icon(Icons.link_rounded, size: 18, color: colors.primary),
                         const Gap(8),
                         Text(
-                          'Liaisons',
+                          strings.liaisonsLabel.toUpperCase(),
                           style: textStyles.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w900,
                             color: colors.onSurface,
+                            letterSpacing: 1.1,
                           ),
                         ),
                       ],
                     ),
-                    if (_selectedCategory == 'ARME')
+                    if (_selectedCategory == 'PLATEFORME')
                       ElevatedButton.icon(
                         onPressed: () => _editLinkedAccessories(provider),
                         icon: const Icon(Icons.add_link_rounded, size: 18),
-                        label: const Text('Associer des accessoires'),
+                        label: Text(AppStrings.of(context).associateAccessory),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                          backgroundColor: colors.primary,
+                          foregroundColor: colors.onPrimary,
                           elevation: 2,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                           ),
                         ),
                       )
                     else if (_selectedCategory == 'ACCESSOIRE')
                       ElevatedButton.icon(
-                        onPressed: () => _editLinkedWeapons(provider),
+                        onPressed: () => _editLinkedPlatforms(provider),
                         icon: const Icon(Icons.add_link_rounded, size: 18),
-                        label: const Text('Associer des armes'),
+                        label: Text(AppStrings.of(context).associatePlatform),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                          backgroundColor: colors.primary,
+                          foregroundColor: colors.onPrimary,
                           elevation: 2,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                           ),
                         ),
                       ),
@@ -1295,15 +1595,15 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   decoration: BoxDecoration(
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: colors.outline.withValues(alpha: 0.35)),
+                    border: Border.all(color: colors.outline),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_selectedCategory == 'ARME') ...[
+                      if (_selectedCategory == 'PLATEFORME') ...[
                         if (_linkedAccessoryIds.isEmpty)
                           Text(
-                            'Aucun accessoire lié.',
+                            strings.noAccessoryLinked,
                             style: textStyles.bodySmall
                                 ?.copyWith(color: colors.secondary),
                           )
@@ -1331,9 +1631,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           ),
                       ],
                       if (_selectedCategory == 'ACCESSOIRE') ...[
-                        if (_linkedWeaponIds.isEmpty)
+                        if (_linkedPlatformIds.isEmpty)
                           Text(
-                            'Aucune arme liée.',
+                            strings.noPlatformLinked,
                             style: textStyles.bodySmall
                                 ?.copyWith(color: colors.secondary),
                           )
@@ -1341,12 +1641,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: provider.weapons
-                                .where((w) => _linkedWeaponIds.contains(w.id))
+                            children: provider.platforms
+                                .where((w) => _linkedPlatformIds.contains(w.id))
                                 .map(
                                   (w) => InputChip(
                                     avatar: const Icon(
-                                      Icons.sports_martial_arts_rounded,
+                                      Icons.link_rounded,
                                       size: 16,
                                     ),
                                     label: Text(w.name),
@@ -1354,7 +1654,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                       if (!await _confirmUnlink()) return;
                                       if (!mounted) return;
                                       setState(
-                                        () => _linkedWeaponIds.remove(w.id),
+                                        () => _linkedPlatformIds.remove(w.id),
                                       );
                                     },
                                   ),
@@ -1371,12 +1671,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
               // Comment
               Row(
                 children: [
-                  Icon(Icons.edit_rounded, size: 18, color: colors.primary),
+                  Icon(Icons.edit_rounded, size: 18),
                   const Gap(8),
                   Text(
-                    _sentenceCase(strings.commentOptionalLabel),
+                    strings.commentOptionalLabel.toUpperCase(),
                     style: textStyles.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600, color: colors.onSurface),
+                        fontWeight: FontWeight.w900,
+                        color: colors.onSurface,
+                        letterSpacing: 1.1),
                   ),
                 ],
               ),
@@ -1386,6 +1688,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 maxLines: 4,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   hintText: strings.itemCommentHint,
                   filled: true,
                   fillColor: colors.surface,
@@ -1411,10 +1714,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   Icon(Icons.photo_camera_rounded,
                       size: 18, color: colors.primary),
                   const Gap(8),
-                  Text(strings.itemPhotoLabel,
+                  Text(strings.itemPhotoLabel.toUpperCase(),
                       style: textStyles.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colors.onSurface)),
+                          fontWeight: FontWeight.w900,
+                          color: colors.onSurface,
+                          letterSpacing: 1.1)),
                 ],
               ),
               const Gap(8),
@@ -1480,8 +1784,12 @@ Row(
       children: [
         Icon(Icons.picture_as_pdf_rounded, size: 18, color: colors.primary),
         const Gap(8),
-        Text(strings.itemDocumentsLabel,
-            style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+        Text(strings.itemDocumentsLabel.toUpperCase(),
+            style: textStyles.labelLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: colors.onSurface,
+              letterSpacing: 1.1,
+            )),
       ],
     ),
     FilledButton.icon(
@@ -1491,6 +1799,7 @@ Row(
       style: FilledButton.styleFrom(
         backgroundColor: colors.primary,
         foregroundColor: colors.onPrimary,
+        elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
@@ -1498,7 +1807,7 @@ Row(
     ),
   ],
 ),
-const Gap(AppSpacing.md),
+const Gap(8),
 if (_documents.isEmpty)
   Container(
     width: double.infinity,
@@ -1506,8 +1815,9 @@ if (_documents.isEmpty)
     decoration: BoxDecoration(
       color: colors.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
-      border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
-      boxShadow: AppShadows.cardPremium,
+      border: Border.all(
+        color: colors.outline,
+      ),
     ),
     child: Text(
       strings.settingsDocumentsEmptyTitle,
@@ -1526,7 +1836,6 @@ else
             color: colors.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
-            boxShadow: AppShadows.cardPremium,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1581,483 +1890,535 @@ else
 
               const Gap(AppSpacing.lg),
 
-              // Tracking options
-              Row(
-                children: [
-                  Icon(
-                    Icons.track_changes_rounded,
-                    size: 18,
-                    color: colors.primary,
-                  ),
-                  const Gap(8),
-                  Text(
-                    _sentenceCase(strings.trackingOptionsTitle),
-                    style: textStyles.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+              // Tracking options - only show if at least one option is applicable and enabled
+              if (_shouldShowTrackingOptions()) ...[
+                // Tracking options
+                Row(
+                  children: [
+                    Icon(
+                      Icons.track_changes_rounded,
+                      size: 18,
+                      color: colors.primary,
+                    ),
+                    const Gap(8),
+                    Text(
+                      strings.trackingOptionsTitle.toUpperCase(),
+                      style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colors.onSurface,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Gap(8),
+
+                Container(
+                  padding: AppSpacing.paddingLg,
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(
+                      color: colors.outline,
                     ),
                   ),
-                ],
-              ),
-
-              const Gap(8),
-
-              Container(
-                padding: AppSpacing.paddingLg,
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(
-                    color: colors.outline,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Weapon-specific tracking
-                    if (_selectedCategory == 'ARME') ...[
-                      _TrackingToggle(
-                        label: strings.weaponWearTrackingLabel,
-                        subtitle: strings.weaponWearTrackingSubtitle,
-                        value: _trackWear,
-                        onChanged: (val) => setState(() => _trackWear = val),
-                      ),
-                      if (_trackWear) ...[
-                        const Gap(8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(strings.wearThresholdLabel,
-                                  style: textStyles.bodyMedium
-                                      ?.copyWith(color: colors.secondary)),
-                            ),
-                            const Gap(16),
-                            SizedBox(
-                              width: 132,
-                              child: TextField(
-                                controller: _wearRoundsThresholdController,
-                                textAlign: TextAlign.end,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.outline,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 8),
-                                  suffix: Text(strings.sessionLabelShots,
-                                      style: textStyles.bodySmall
-                                          ?.copyWith(color: colors.secondary)),
-                                ),
-                              ),
-                            ),
-                          ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Platform-specific tracking
+                      if (_selectedCategory == 'PLATEFORME') ...[
+                        _TrackingToggle(
+                          label: strings.platformWearTrackingLabel,
+                          subtitle: strings.platformWearTrackingSubtitle,
+                          value: _trackWear,
+                          onChanged: (val) => setState(() => _trackWear = val),
                         ),
-                      ],
-                      const Gap(20),
-                      _TrackingToggle(
-                        label: strings.weaponCleaningTrackingLabel,
-                        subtitle: strings.weaponCleaningTrackingSubtitle,
-                        value: _trackCleanliness,
-                        onChanged: (val) => setState(() => _trackCleanliness = val),
-                      ),
-                      if (_trackCleanliness) ...[
-                        const Gap(8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(strings.cleaningThresholdShotsLabel,
-                                  style: textStyles.bodyMedium
-                                      ?.copyWith(color: colors.secondary)),
-                            ),
-                            const Gap(16),
-                            SizedBox(
-                              width: 132,
-                              child: TextField(
-                                controller: _cleaningRoundsThresholdController,
-                                textAlign: TextAlign.end,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.outline,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 8),
-                                  suffix: Text(strings.sessionLabelShots,
-                                      style: textStyles.bodySmall
-                                          ?.copyWith(color: colors.secondary)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const Gap(20),
-                      _TrackingToggle(
-                        label: strings.weaponRoundCounterLabel,
-                        subtitle: strings.weaponRoundCounterSubtitle,
-                        value: _trackRounds,
-                        onChanged: (val) => setState(() => _trackRounds = val),
-                      ),
-                      if (_trackRounds) ...[
-                        const Gap(8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(strings.initialRoundCounterLabel,
-                                style: textStyles.bodyMedium
-                                    ?.copyWith(color: colors.secondary)),
-                            SizedBox(
-                              width: 132,
-                              child: TextField(
-                                controller: _initialRoundsController,
-                                textAlign: TextAlign.end,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.outline,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 8),
-                                  suffix: Text(
-                                    strings.sessionLabelShots,
-                                    style: textStyles.bodySmall
-                                        ?.copyWith(color: colors.secondary),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                    
-                    // Ammo-specific tracking
-                    if (_selectedCategory == 'MUNITION') ...[
-                      _TrackingToggle(
-                        label: strings.stockTrackingLabel,
-                        subtitle: strings.stockTrackingSubtitle,
-                        value: _trackStock,
-                        onChanged: (val) => setState(() => _trackStock = val),
-                      ),
-                      if (_trackStock) ...[
-                        const Gap(8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(strings.stockAlertThresholdLabel,
-                                  style: textStyles.bodyMedium
-                                      ?.copyWith(color: colors.secondary)),
-                            ),
-                            const Gap(16),
-                            SizedBox(
-                              width: 132,
-                              child: TextField(
-                                controller: _lowStockThresholdController,
-                                textAlign: TextAlign.end,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide:
-                                        BorderSide(color: colors.outline),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.outline,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 8,
-                                  ),
-                                  suffix: Text(
-                                    strings.sessionLabelShots,
-                                    style: textStyles.bodySmall
-                                        ?.copyWith(color: colors.secondary),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                    
-                    // Accessory-specific tracking
-                    if (_selectedCategory == 'ACCESSOIRE' &&
-                        {
-                          'Optiques',
-                          'Lampes',
-                          'Lasers',
-                          'Chronographes',
-                          'Timers',
-                        }.contains(_isAccessoryTypeCustom ? _typeController.text.trim() : _selectedAccessoryType)) ...[
-                      _TrackingToggle(
-                        label: strings.batteryChangeDateLabel,
-                        subtitle: strings.batteryChangeDateSubtitle,
-                        value: _trackBattery,
-                        onChanged: (val) => setState(() {
-                          _trackBattery = val;
-                          if (!_trackBattery) {
-                            _batteryChangedAt = null;
-                            _batteryDateError = false;
-                          } else {
-                            // Keep existing value (edit mode) but don't auto-fill on first enable.
-                            // The date becomes required and will be requested on save.
-                            _batteryChangedAt = _batteryChangedAt;
-                          }
-                        }),
-                      ),
-                      if (_trackBattery) ...[
-                        const Gap(12),
-                        Container(
-                          key: _batteryDateFieldKey,
-                          padding: AppSpacing.paddingMd,
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            border: Border.all(
-                              color: _batteryDateError
-                                  ? colors.error
-                                  : colors.outline,
-                              width: _batteryDateError ? 1.4 : 1,
-                            ),
-                          ),
-                          child: Row(
+                        if (_trackWear) ...[
+                          const Gap(8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      strings.lastChangeLabel,
-                                      style: textStyles.bodySmall
-                                          ?.copyWith(color: colors.secondary),
+                                child: Text(strings.wearThresholdLabel,
+                                    style: textStyles.bodyMedium
+                                        ?.copyWith(color: colors.secondary)),
+                              ),
+                              const Gap(16),
+                              SizedBox(
+                                width: 108,
+                                child: TextField(
+                                  controller: _wearRoundsThresholdController,
+                                  textAlign: TextAlign.end,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
                                     ),
-                                    const Gap(4),
-                                    Text(
-                                      _batteryChangedAt == null
-                                          ? strings.selectDateLabel
-                                          : AppDateFormats.formatDateShort(
-                                              context, _batteryChangedAt!),
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.outline,
+                                        width: 2,
                                       ),
                                     ),
-                                  ],
+                                    suffix: Text(strings.sessionLabelShots,
+                                        style: textStyles.bodySmall
+                                            ?.copyWith(color: colors.secondary)),
+                                  ),
                                 ),
-                              ),
-                              const Gap(12),
-                              OutlinedButton.icon(
-                                onPressed: () async {
-                                  await _pickBatteryChangedDate();
-                                  if (_batteryDateError && _batteryChangedAt != null) {
-                                    if (mounted) {
-                                      setState(() => _batteryDateError = false);
-                                    }
-                                  }
-                                },
-                                icon: const Icon(Icons.calendar_month_rounded, size: 18),
-                                label: Text(strings.calendarLabel),
                               ),
                             ],
                           ),
+                        ],
+                        const Gap(20),
+                        _TrackingToggle(
+                          label: strings.platformCleaningTrackingLabel,
+                          subtitle: strings.platformCleaningTrackingSubtitle,
+                          value: _trackCleanliness,
+                          onChanged: (val) => setState(() => _trackCleanliness = val),
                         ),
+                        if (_trackCleanliness) ...[
+                          const Gap(8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(strings.cleaningThresholdShotsLabel,
+                                    style: textStyles.bodyMedium
+                                        ?.copyWith(color: colors.secondary)),
+                              ),
+                              const Gap(16),
+                              SizedBox(
+                                width: 108,
+                                child: TextField(
+                                  controller: _cleaningRoundsThresholdController,
+                                  textAlign: TextAlign.end,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.outline,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    suffix: Text(strings.sessionLabelShots,
+                                        style: textStyles.bodySmall
+                                            ?.copyWith(color: colors.secondary)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const Gap(20),
+                        _TrackingToggle(
+                          label: strings.platformRoundCounterLabel,
+                          subtitle: strings.platformRoundCounterSubtitle,
+                          value: _trackRounds,
+                          onChanged: (val) => setState(() => _trackRounds = val),
+                        ),
+                        if (_trackRounds) ...[
+                          const Gap(8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(strings.initialRoundCounterLabel,
+                                  style: textStyles.bodyMedium
+                                      ?.copyWith(color: colors.secondary)),
+                              SizedBox(
+                                width: 96,
+                                child: TextField(
+                                  controller: _initialRoundsController,
+                                  textAlign: TextAlign.end,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.outline,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    suffix: Text(
+                                      strings.sessionLabelShots,
+                                      style: textStyles.bodySmall
+                                          ?.copyWith(color: colors.secondary),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
-                    ],
 
-                    // Accessory maintenance tracking (weapon-like)
-                    if (_selectedCategory == 'ACCESSOIRE' &&
-                        {
-                          'Modérateurs',
-                          'Réducteur de son',
-                          'Compensateurs',
-                          'Détentes',
-                          'Pièces internes',
-                        }.contains(_isAccessoryTypeCustom ? _typeController.text.trim() : _selectedAccessoryType)) ...[
-                      _TrackingToggle(
-                        label: strings.accessoryWearTrackingLabel,
-                        subtitle: strings.accessoryWearTrackingSubtitle,
-                        value: _trackWear,
-                        onChanged: (val) => setState(() => _trackWear = val),
-                      ),
-                      if (_trackWear) ...[
-                        const Gap(16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                strings.revisionThresholdShotsLabel,
-                                style: textStyles.bodyMedium
-                                    ?.copyWith(color: colors.secondary),
+                      // Ammo-specific tracking
+                      if (_selectedCategory == 'CONSOMMABLE') ...[
+                        _TrackingToggle(
+                          label: strings.stockTrackingLabel,
+                          subtitle: strings.stockTrackingSubtitle,
+                          value: _trackStock,
+                          onChanged: (val) => setState(() => _trackStock = val),
+                        ),
+                        if (_trackStock) ...[
+                          const Gap(8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(strings.stockAlertThresholdLabel,
+                                    style: textStyles.bodyMedium
+                                        ?.copyWith(color: colors.secondary)),
                               ),
-                            ),
-                            SizedBox(
-                              width: 132,
-                              child: TextField(
-                                controller: _wearRoundsThresholdController,
-                                textAlign: TextAlign.end,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.sm),
+                              const Gap(16),
+                              SizedBox(
+                                width: 108,
+                                child: TextField(
+                                  controller: _lowStockThresholdController,
+                                  textAlign: TextAlign.end,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.outline,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 8,
+                                    ),
+                                    suffix: Text(
+                                      strings.sessionLabelShots,
+                                      style: textStyles.bodySmall
+                                          ?.copyWith(color: colors.secondary),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ],
-                      const Gap(12),
-                      _TrackingToggle(
-                        label: strings.accessoryCleaningTrackingLabel,
-                        subtitle: strings.accessoryCleaningTrackingSubtitle,
-                        value: _trackCleanliness,
-                        onChanged: (val) =>
-                            setState(() => _trackCleanliness = val),
-                      ),
-                      if (_trackCleanliness) ...[
-                        const Gap(16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                strings.cleaningThresholdShotsLabel,
-                                style: textStyles.bodyMedium
-                                    ?.copyWith(color: colors.secondary),
-                              ),
+
+                      // Accessory-specific tracking
+                      if (_selectedCategory == 'ACCESSOIRE' &&
+                          _canTrackAccessoryBattery(_trackingAccessoryType)) ...[
+                        _TrackingToggle(
+                          label: strings.batteryChangeDateLabel,
+                          subtitle: strings.batteryChangeDateSubtitle,
+                          value: _trackBattery,
+                          onChanged: (val) => setState(() {
+                            _trackBattery = val;
+                            if (!_trackBattery) {
+                              _batteryChangedAt = null;
+                              _batteryDateError = false;
+                            } else {
+                              // Keep existing value (edit mode) but don't auto-fill on first enable.
+                              // The date becomes required and will be requested on save.
+                              _batteryChangedAt = _batteryChangedAt;
+                            }
+                          }),
+                        ),
+                        if (_trackBattery) ...[
+                          const Gap(8),
+                          InkWell(
+                            onTap: () async {
+                              await _pickBatteryChangedDate();
+                              if (_batteryDateError && _batteryChangedAt != null) {
+                                if (mounted) {
+                                  setState(() => _batteryDateError = false);
+                                }
+                              }
+                            },
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_month_rounded, size: 18, color: colors.primary),
+                                const Gap(8),
+                                _batteryChangedAt == null
+                                    ? Text(
+                                        strings.selectDateLabel,
+                                        style: textStyles.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      )
+                                    : Row(
+                                        children: [
+                                          Text(
+                                            strings.batteryChangedLabel,
+                                            style: textStyles.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const Gap(4),
+                                          Text(
+                                            AppDateFormats.formatDateShort(
+                                                context, _batteryChangedAt!),
+                                            style: textStyles.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ],
                             ),
-                            SizedBox(
-                              width: 132,
-                              child: TextField(
-                                controller: _cleaningRoundsThresholdController,
-                                textAlign: TextAlign.end,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.sm),
+                          ),
+                          const Gap(16),
+                        ],
+                      ],
+
+                      // Accessory maintenance tracking (platform-like)
+                      if (_selectedCategory == 'ACCESSOIRE' &&
+                          _canTrackAccessoryWear(_trackingAccessoryType)) ...[
+                        _TrackingToggle(
+                          label: strings.accessoryWearTrackingLabel,
+                          subtitle: strings.accessoryWearTrackingSubtitle,
+                          value: _trackWear,
+                          onChanged: (val) => setState(() => _trackWear = val),
+                        ),
+                        if (_trackWear) ...[
+                          const Gap(8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  strings.revisionThresholdShotsLabel,
+                                  style: textStyles.bodyMedium
+                                      ?.copyWith(color: colors.secondary),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 92,
+                                child: TextField(
+                                  controller: _wearRoundsThresholdController,
+                                  textAlign: TextAlign.end,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.outline,
+                                        width: 2,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ],
+                      ],
+                    if (_selectedCategory == 'ACCESSOIRE' &&
+                        _canTrackAccessoryWear(_trackingAccessoryType) &&
+                        _canTrackAccessoryCleanliness(_trackingAccessoryType)) ...[
+                      const Gap(12),
+                    ],
+                    if (_selectedCategory == 'ACCESSOIRE' &&
+                        _canTrackAccessoryCleanliness(_trackingAccessoryType)) ...[
+                        _TrackingToggle(
+                          label: strings.accessoryCleaningTrackingLabel,
+                          subtitle: strings.accessoryCleaningTrackingSubtitle,
+                          value: _trackCleanliness,
+                          onChanged: (val) =>
+                              setState(() => _trackCleanliness = val),
                         ),
+                        if (_trackCleanliness) ...[
+                          const Gap(16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  strings.cleaningThresholdShotsLabel,
+                                  style: textStyles.bodyMedium
+                                      ?.copyWith(color: colors.secondary),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 92,
+                                child: TextField(
+                                  controller: _cleaningRoundsThresholdController,
+                                  textAlign: TextAlign.end,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    filled: true,
+                                    fillColor: colors.surface,
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide:
+                                          BorderSide(color: colors.outline),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(
+                                        color: colors.outline,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const Gap(AppSpacing.lg),
+                const Gap(AppSpacing.lg),
+              ],
 
               // Actions
-              SizedBox(
-                height: 50,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    boxShadow: AppShadows.cardPremium,
-                  ),
-                  child: FilledButton.icon(
-                    onPressed: _saveItem,
-                    icon: Icon(
-                        _isEditMode ? Icons.check_rounded : Icons.save_rounded),
-                    label: Text(_isEditMode
-                        ? strings.saveChangesButton
-                        : strings.saveItemButton),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.pop(),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                        side: BorderSide(color: colors.outline),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(strings.cancel.toUpperCase(), style: TextStyle(color: colors.secondary)),
                       ),
                     ),
                   ),
-                ),
-              ),
-              const Gap(8),
-              TextButton(
-                onPressed: () => context.pop(),
-                child: Text(strings.cancel.toUpperCase(), style: TextStyle(color: colors.secondary)),
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                ),
+                  const Gap(AppSpacing.md),
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        boxShadow: AppShadows.cardPremium,
+                      ),
+                      child: FilledButton(
+                        onPressed: _saveItem,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _isEditMode ? Icons.check_rounded : Icons.save_rounded,
+                              size: 20,
+                            ),
+                            const Gap(6),
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _isEditMode
+                                      ? strings.saveChangesButton
+                                      : strings.saveItemButton,
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
 const Gap(AppSpacing.xl),
             ],           // ← ferme children: [] de Column intérieur (7)
@@ -2067,29 +2428,25 @@ const Gap(AppSpacing.xl),
       ],                 // ← ferme children: [] de Column extérieur (4)
       ),                 // ← ferme Column (4)
       ),                 // ← ferme SafeArea (3)
+      ),                 // ← ferme GestureDetector (body)
       ),                 // ← ferme Scaffold (2)
     );                   // ← ferme AnnotatedRegion (1)
   }
 
   Future<void> _pickPhoto() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-    );
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery);
     
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
+    if (file != null) {
+      final bytes = kIsWeb ? await file.readAsBytes() : null;
       setState(() {
         if (kIsWeb) {
-          // On web, store the bytes and create a data URL
-          _photoBytes = file.bytes;
+          _photoBytes = bytes;
           if (_photoBytes != null) {
-            // Create a data URL for web
             final base64 = base64Encode(_photoBytes!);
-            _photoPath = 'data:image/${file.extension ?? "png"};base64,$base64';
+            _photoPath = 'data:image/${file.name.split('.').last};base64,$base64';
           }
         } else {
-          // On mobile, use the file path
           _photoPath = file.path;
           _photoBytes = null;
         }
@@ -2101,13 +2458,16 @@ const Gap(AppSpacing.xl),
     final provider = Provider.of<ThotProvider>(context, listen: false);
     if (!provider.canAddDocumentToItem(currentDocumentsCount: _documents.length)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.of(context).itemFreePdfLimitSingle)),
+        SnackBar(
+          content: Text(AppStrings.of(context).itemFreePdfLimitSingle),
+          duration: const Duration(seconds: 3),
+        ),
       );
       context.push('/pro');
       return;
     }
 
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
       allowMultiple: true,
@@ -2120,7 +2480,10 @@ const Gap(AppSpacing.xl),
       if (!provider.canAddDocumentToItem(currentDocumentsCount: _documents.length)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).itemFreePdfLimitReached)),
+          SnackBar(
+            content: Text(AppStrings.of(context).itemFreePdfLimitReached),
+            duration: const Duration(seconds: 3),
+          ),
         );
         context.push('/pro');
         return;
@@ -2232,7 +2595,10 @@ const Gap(AppSpacing.xl),
       if (!mounted) return;
       final strings = AppStrings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.settingsOpenDocumentFailed)),
+        SnackBar(
+          content: Text(strings.settingsOpenDocumentFailed),
+          duration: const Duration(seconds: 3),
+        ),
       );
     }
   }
@@ -2265,7 +2631,10 @@ const Gap(AppSpacing.xl),
   } catch (_) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppStrings.of(context).settingsPickFileError('share'))),
+      SnackBar(
+        content: Text(AppStrings.of(context).settingsPickFileError('share')),
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 }
@@ -2287,13 +2656,17 @@ final details = await _askDocumentDetails(initialName: doc.name, initialType: do
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(strings.settingsDocumentUpdatedSuccess)),
+      SnackBar(
+        content: Text(strings.settingsDocumentUpdatedSuccess),
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 Future<_DocumentDetails?> _askDocumentDetails({required String initialName, String? initialType}) async {
   final colors = Theme.of(context).colorScheme;
   final textStyles = Theme.of(context).textTheme;
   final strings = AppStrings.of(context);
+  final provider = Provider.of<ThotProvider>(context, listen: false);
   final nameController = TextEditingController(
     text: initialName.isEmpty ? strings.itemDefaultDocumentName : initialName,
   );
@@ -2361,7 +2734,7 @@ Text(
                         onPressed: () async {
                           final pickedDate = await showDatePicker(
                             context: context,
-                            initialDate: DateTime.now().add(const Duration(days: 365)),
+                            initialDate: DateTime.now(),
                             firstDate: DateTime.now(),
                             lastDate: DateTime.now().add(const Duration(days: 365 * 20)),
                           );
@@ -2404,6 +2777,7 @@ Text(
                 strings.docExpiryNotifyLabel,
                 style: textStyles.labelMedium?.copyWith(color: colors.secondary),
               ),
+              const Gap(8),
               DropdownButtonFormField<int>(
                 value: selectedNotifyDays > 0 ? selectedNotifyDays : 0,
                 style: textStyles.bodyMedium?.copyWith(
@@ -2411,13 +2785,18 @@ Text(
                   fontWeight: FontWeight.w400,
                 ),
                 decoration: const InputDecoration(),
-                items: const [
-                  DropdownMenuItem<int>(value: 0, child: Text('Aucune notification')),
-                  DropdownMenuItem<int>(value: 7, child: Text('1 semaine avant')),
-                  DropdownMenuItem<int>(value: 30, child: Text('1 mois avant')),
-                  DropdownMenuItem<int>(value: 90, child: Text('3 mois avant')),
+                items: [
+                  DropdownMenuItem<int>(value: 0, child: Text(strings.docExpiryNotifyNone)),
+                  DropdownMenuItem<int>(value: 7, child: Text(strings.docExpiryNotifyOneWeek)),
+                  DropdownMenuItem<int>(value: 30, child: Text(strings.docExpiryNotifyOneMonth)),
+                  DropdownMenuItem<int>(value: 90, child: Text(strings.docExpiryNotifyThreeMonths)),
                 ],
                 onChanged: (v) => setState(() => selectedNotifyDays = v ?? 0),
+              ),
+              const Gap(8),
+              Text(
+                strings.docExpiryNotifyHint,
+                style: textStyles.bodySmall?.copyWith(color: colors.secondary),
               ),
             ],
           ],
@@ -2428,7 +2807,22 @@ Text(
             child: Text(strings.cancel),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
+              final remindersReady = await provider.ensureDocumentReminderEnabled(
+                notifyBeforeDays: selectedNotifyDays,
+              );
+              if (!remindersReady) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(strings.documentPushPermissionDenied),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+                return;
+              }
+
               final name = nameController.text.trim();
               Navigator.pop(
                 context,
@@ -2476,17 +2870,17 @@ Text(
     setState(() {
       _primaryNameError = _nameController.text.trim().isEmpty;
 
-      if (_selectedCategory == 'ARME') {
+      if (_selectedCategory == 'PLATEFORME') {
         _caliberError = _caliberController.text.trim().isEmpty;
-        _weaponTypeError = _selectedWeaponType.trim().isEmpty;
+        _platformTypeError = _selectedPlatformType.trim().isEmpty;
         _ammoQuantityError = false;
         _accessoryTypeError = false;
         _batteryDateError = false;
-      } else if (_selectedCategory == 'MUNITION') {
+      } else if (_selectedCategory == 'CONSOMMABLE') {
         _caliberError = _caliberController.text.trim().isEmpty;
         final qty = int.tryParse(_quantityController.text.trim()) ?? 0;
         _ammoQuantityError = qty <= 0;
-        _weaponTypeError = false;
+        _platformTypeError = false;
         _accessoryTypeError = false;
         _batteryDateError = false;
       } else {
@@ -2494,11 +2888,14 @@ Text(
         final typeValue = _isAccessoryTypeCustom
             ? _typeController.text.trim()
             : _selectedAccessoryType.trim();
+        final trackingType = _trackingAccessoryType;
+        final batteryTrackingEnabled = _canTrackAccessoryBattery(trackingType);
         _accessoryTypeError = typeValue.isEmpty;
         _caliberError = false;
-        _weaponTypeError = false;
+        _platformTypeError = false;
         _ammoQuantityError = false;
-        _batteryDateError = _trackBattery && _batteryChangedAt == null;
+        _batteryDateError =
+            batteryTrackingEnabled && _trackBattery && _batteryChangedAt == null;
       }
     });
 
@@ -2521,8 +2918,8 @@ Text(
       scrollTo(_caliberFieldKey);
       return;
     }
-    if (_weaponTypeError) {
-      scrollTo(_weaponTypeFieldKey);
+    if (_platformTypeError) {
+      scrollTo(_platformTypeFieldKey);
       return;
     }
     if (_ammoQuantityError) {
@@ -2538,15 +2935,15 @@ Text(
       return;
     }
     
-    if (_selectedCategory == 'ARME') {
-      final existing = _isEditMode && widget.itemId != null ? provider.getWeaponById(widget.itemId!) : null;
+    if (_selectedCategory == 'PLATEFORME') {
+      final existing = _isEditMode && widget.itemId != null ? provider.getPlatformById(widget.itemId!) : null;
       final initialRounds = int.tryParse(_initialRoundsController.text) ?? 0;
-      final weapon = Weapon(
+      final platform = Platform(
         id: _isEditMode ? widget.itemId! : DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text,
         model: _brandController.text.isEmpty ? _nameController.text : _brandController.text,
         comment: _commentController.text.trim(),
-        type: _selectedWeaponType,
+        type: _selectedPlatformType,
         caliber: _caliberController.text,
         serialNumber: _serialController.text,
         weight: double.tryParse(_weightController.text) ?? 0.0,
@@ -2567,24 +2964,27 @@ Text(
       );
       
       if (_isEditMode) {
-        provider.updateWeapon(weapon);
+        provider.updatePlatform(platform);
       } else {
-        if (!provider.canAddWeapon()) {
+        if (!provider.canAddPlatform()) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(provider.getLimitMessage('weapon'))),
+            SnackBar(
+              content: Text(provider.getLimitMessage('platform')),
+              duration: const Duration(seconds: 3),
+            ),
           );
           context.push('/pro');
           return;
         }
-        provider.addWeapon(weapon);
+        provider.addPlatform(platform);
       }
 
-      _syncWeaponAccessoryLinks(
+      _syncPlatformAccessoryLinks(
         provider: provider,
-        weaponId: weapon.id,
+        platformId: platform.id,
         desiredAccessoryIds: _linkedAccessoryIds,
       );
-    } else if (_selectedCategory == 'MUNITION') {
+    } else if (_selectedCategory == 'CONSOMMABLE') {
       final ammoType = _isAmmoProjectileTypeCustom
           ? _ammoTypeController.text.trim()
           : _selectedAmmoProjectileType;
@@ -2614,14 +3014,24 @@ Text(
         lowStockThreshold: int.tryParse(_lowStockThresholdController.text) ?? 50,
         photoPath: _photoPath,
         documents: documents,
+        unitPrice: double.tryParse(_unitPriceController.text.trim()),
+        currency: _selectedCurrency,
       );
       
       if (_isEditMode) {
-        provider.updateAmmo(ammo);
+        final existingAmmo = provider.ammos
+            .where((a) => a.id == widget.itemId)
+            .firstOrNull;
+        provider.updateAmmo(ammo.copyWith(
+          history: existingAmmo?.history ?? const [],
+        ));
       } else {
         if (!provider.canAddAmmo()) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(provider.getLimitMessage('ammo'))),
+            SnackBar(
+              content: Text(provider.getLimitMessage('ammo')),
+              duration: const Duration(seconds: 3),
+            ),
           );
           context.push('/pro');
           return;
@@ -2629,6 +3039,7 @@ Text(
         provider.addAmmo(ammo);
       }
     } else {
+      // ACCESSOIRE
       final existing = _isEditMode
           ? provider.accessories.where((a) => a.id == widget.itemId).firstOrNull
           : null;
@@ -2638,14 +3049,10 @@ Text(
           ? (_typeController.text.trim().isEmpty ? strings.settingsDocumentTypeOther : _typeController.text.trim())
           : _selectedAccessoryType;
 
-      final maintenanceEnabledTypes = {
-        'Modérateurs',
-        'Réducteur de son',
-        'Compensateurs',
-        'Détentes',
-        'Pièces internes',
-      };
-      final maintenanceEnabled = maintenanceEnabledTypes.contains(type);
+      final trackingType = _isAccessoryTypeCustom ? '__custom__' : type;
+      final wearEnabled = _canTrackAccessoryWear(trackingType);
+      final cleanlinessEnabled = _canTrackAccessoryCleanliness(trackingType);
+      final batteryEnabled = _canTrackAccessoryBattery(trackingType);
 
       final displayName = [brand, model].where((s) => s.isNotEmpty).join(' ').trim();
 
@@ -2661,25 +3068,25 @@ Text(
         lastCleaned: existing?.lastCleaned ?? DateTime.now(),
         lastRevised:
             existing?.lastRevised ?? (existing?.lastCleaned ?? DateTime.now()),
-        trackWear: maintenanceEnabled ? _trackWear : false,
-        trackCleanliness: maintenanceEnabled ? _trackCleanliness : false,
-        cleaningRoundsThreshold: maintenanceEnabled
+        trackWear: wearEnabled ? _trackWear : false,
+        trackCleanliness: cleanlinessEnabled ? _trackCleanliness : false,
+        cleaningRoundsThreshold: cleanlinessEnabled
             ? (int.tryParse(_cleaningRoundsThresholdController.text) ?? 500)
             : 500,
-        wearRoundsThreshold: maintenanceEnabled
+        wearRoundsThreshold: wearEnabled
             ? (int.tryParse(_wearRoundsThresholdController.text) ?? 10000)
             : 10000,
         roundsAtLastCleaning:
             existing?.roundsAtLastCleaning ?? (existing?.totalRounds ?? 0),
         roundsAtLastRevision:
             existing?.roundsAtLastRevision ?? (existing?.totalRounds ?? 0),
-        batteryChangedAt: _trackBattery
+        batteryChangedAt: batteryEnabled && _trackBattery
             ? (_batteryChangedAt ?? existing?.batteryChangedAt ?? DateTime.now())
             : null,
-        trackBattery: _trackBattery,
+        trackBattery: batteryEnabled ? _trackBattery : false,
         photoPath: _photoPath,
         documents: documents,
-        linkedWeaponIds: _linkedWeaponIds.toList(growable: false),
+        linkedPlatformIds: _linkedPlatformIds.toList(growable: false),
       );
       
       if (_isEditMode) {
@@ -2687,7 +3094,10 @@ Text(
       } else {
         if (!provider.canAddAccessory()) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(provider.getLimitMessage('accessory'))),
+            SnackBar(
+              content: Text(provider.getLimitMessage('accessory')),
+              duration: const Duration(seconds: 3),
+            ),
           );
           context.push('/pro');
           return;
@@ -2695,21 +3105,18 @@ Text(
         provider.addAccessory(accessory);
       }
 
-      _syncAccessoryWeaponLinks(
+      _syncAccessoryPlatformLinks(
         provider: provider,
         accessoryId: accessory.id,
-        desiredWeaponIds: _linkedWeaponIds,
+        desiredPlatformIds: _linkedPlatformIds,
       );
     }
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_isEditMode ? strings.itemSavedSuccess : strings.itemAddedSuccess)),
-    );
     context.pop();
   }
 }
 
-class _ItemLinkMultiSelectSheet<T> extends StatefulWidget {
+class ItemLinkMultiSelectSheet<T> extends StatefulWidget {
   final String title;
   final List<T> items;
   final Set<String> initialSelection;
@@ -2718,7 +3125,7 @@ class _ItemLinkMultiSelectSheet<T> extends StatefulWidget {
   final String Function(T item) subtitleOf;
   final IconData icon;
 
-  const _ItemLinkMultiSelectSheet({
+  const ItemLinkMultiSelectSheet({
     required this.title,
     required this.items,
     required this.initialSelection,
@@ -2729,12 +3136,12 @@ class _ItemLinkMultiSelectSheet<T> extends StatefulWidget {
   });
 
   @override
-  State<_ItemLinkMultiSelectSheet<T>> createState() =>
+  State<ItemLinkMultiSelectSheet<T>> createState() =>
       _ItemLinkMultiSelectSheetState<T>();
 }
 
 class _ItemLinkMultiSelectSheetState<T>
-    extends State<_ItemLinkMultiSelectSheet<T>> {
+    extends State<ItemLinkMultiSelectSheet<T>> {
   late final Set<String> _selectedIds;
 
   @override
@@ -2760,15 +3167,16 @@ class _ItemLinkMultiSelectSheetState<T>
           ),
           child: Column(
             children: [
-              const Gap(12),
+              const SizedBox(height: 12),
               Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colors.outline,
-                  borderRadius: BorderRadius.circular(999),
+                  color: LightColors.iconInactive.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
+              const Gap(AppSpacing.md),
               Padding(
                 padding: AppSpacing.paddingLg,
                 child: Row(
@@ -2787,7 +3195,10 @@ class _ItemLinkMultiSelectSheetState<T>
                   ],
                 ),
               ),
-              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Divider(color: colors.outline),
+              ),
               Expanded(
                 child: widget.items.isEmpty
                     ? Center(
@@ -2824,25 +3235,34 @@ class _ItemLinkMultiSelectSheetState<T>
                             contentPadding: AppSpacing.paddingSm,
                           );
                         },
-                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        separatorBuilder: (_, __) => Divider(color: colors.outline, height: 1),
                         itemCount: widget.items.length,
                       ),
               ),
-              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Divider(color: colors.outline),
+              ),
               Padding(
                 padding: AppSpacing.paddingLg,
                 child: Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () {
+                          FocusScope.of(context).unfocus(); // Fermer le clavier
+                          Navigator.of(context).pop();
+                        },
                         child: Text(strings.cancel),
                       ),
                     ),
                     const Gap(12),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () => Navigator.of(context).pop(_selectedIds),
+                        onPressed: () {
+                          FocusScope.of(context).unfocus(); // Fermer le clavier
+                          Navigator.of(context).pop(_selectedIds);
+                        },
                         child: Text(strings.validate),
                       ),
                     ),
@@ -2893,7 +3313,7 @@ class _TrackingToggle extends StatelessWidget {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: colors.primary,
+          activeThumbColor: colors.primary,
         ),
       ],
     );

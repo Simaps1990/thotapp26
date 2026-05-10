@@ -22,26 +22,28 @@
 
     <section>
       <h2>1. Résumé</h2>
-      <p>
-        THOT est un carnet de tir numérique. Les données de l’application sont principalement stockées localement sur votre appareil.
-        THOT ne met pas en place de compte utilisateur obligatoire.
-      </p>
+<p>
+  THOT est un carnet de tir numérique. Les données de l’application sont stockées localement sur votre appareil.
+  THOT ne nécessite pas de compte utilisateur obligatoire.
+</p>
     </section>
 
     <section>
       <h2>2. Données auxquelles l’app peut accéder</h2>
       <p>Selon les fonctionnalités que vous activez, l’application peut accéder :</p>
       <ul>
-        <li><strong>Localisation</strong> : uniquement lorsque vous appuyez sur un bouton de localisation/météo lors de la création d’une séance.</li>
+<li><strong>Ville / lieu saisi par l'utilisateur</strong> : uniquement si vous renseignez ou sélectionnez une ville dans le champ de lieu d'une session afin de récupérer des informations météo associées.</li>
         <li><strong>Microphone</strong> : uniquement si vous activez un mode de minuteur utilisant la détection sonore.</li>
-        <li><strong>Stockage local</strong> : pour enregistrer vos séances, inventaire, documents et préférences.</li>
+        <li><strong>Notifications</strong> : uniquement si vous activez les rappels de péremption de documents.</li>
+        <li><strong>Caméra</strong> : uniquement si vous choisissez "Prendre une photo" dans le sélecteur de fichiers pour ajouter une image à un setup, consommable ou cible.</li>
+        <li><strong>Stockage local</strong> : pour enregistrer vos sessions, inventaire, documents et préférences sur l’appareil.</li>
       </ul>
     </section>
 
     <section>
       <h2>3. Microphone : pourquoi, quand et comment il est utilisé</h2>
       <p>
-        <strong>Pourquoi</strong> : le microphone est utilisé pour permettre la détection d’un départ sonore (par exemple un coup de feu)
+        <strong>Pourquoi</strong> : le microphone est utilisé pour permettre la détection d’un départ sonore (par exemple un tir)
         afin de déclencher/arrêter automatiquement le minuteur quand vous activez ce mode.
       </p>
       <p>
@@ -69,28 +71,99 @@
     </section>
 
     <section>
-      <h2>5. Localisation et météo</h2>
+      <h2>5. Services tiers : RevenueCat (abonnements)</h2>
       <p>
-        Lorsque vous appuyez sur un bouton de localisation/météo, l’application peut utiliser la position pour :
+        <strong>Pourquoi</strong> : RevenueCat est utilisé pour gérer les abonnements Premium (achat, restauration, validation).
       </p>
-      <ul>
-        <li>proposer automatiquement une ville (géocodage inverse) ;</li>
-        <li>récupérer les conditions météo locales (température, humidité, pression, vent).</li>
-      </ul>
       <p>
-        Aucune localisation n’est récupérée en arrière-plan en dehors de cette action explicite.
+        <strong>Quand</strong> : uniquement si vous accédez aux fonctionnalités Premium ou restaurez un achat.
+      </p>
+      <p>
+        <strong>Données</strong> : identifiants d’abonnement et de transaction nécessaires à la gestion. RevenueCat ne reçoit pas vos données personnelles ni vos contenus (sessions, documents, images).
+      </p>
+      <p>
+        <strong>Sécurité</strong> : communications sécurisées; RevenueCat est certifié ISO 27001.
       </p>
     </section>
 
     <section>
-      <h2>6. Retrait du consentement / suppression des données</h2>
+      <h2>6. Transferts de données hors de l’appareil</h2>
+      <p>
+        THOT peut transférer des données hors de l’appareil uniquement dans les cas suivants :
+      </p>
+      <ul>
+        <li><strong>Météo</strong> : nom de ville vers API Open-Meteo.com pour récupérer données météo publiques.</li>
+        <li><strong>Abonnements</strong> : identifiants de transaction vers RevenueCat pour gestion des abonnements.</li>
+        <li><strong>Sauvegarde/Restauration</strong> : si vous utilisez explicitement la fonction de sauvegarde vers vos propres services (cloud, email, etc.).</li>
+      </ul>
+      <p>
+        THOT n’envoie aucun de vos contenus personnels (sessions, documents, images) vers nos serveurs.
+      </p>
+    </section>
+
+    <section>
+      <h2>7. Chiffrement</h2>
+      <p>
+        Les données structurées et sensibles de l’application sont chiffrées localement. Certaines pièces jointes et images peuvent rester stockées localement via les mécanismes natifs du système ou du sélecteur de fichiers.
+      </p>
+    </section>
+
+    <section>
+      <h2>8. Caméra : pourquoi, quand et comment elle est utilisée</h2>
+      <p>
+        <strong>Pourquoi</strong> : la caméra est utilisée pour photographier vos setups, consommables et cibles.
+      </p>
+      <p>
+        <strong>Quand</strong> : uniquement si vous choisissez l'option "Prendre une photo" dans le sélecteur de fichiers lors de l'ajout ou la modification d'une image.
+      </p>
+      <p>
+        <strong>Comment</strong> : le sélecteur de fichiers natif iOS est ouvert par file_picker; si vous sélectionnez l'appareil photo, iOS demande la permission caméra.
+      </p>
+      <p>
+        <strong>Données</strong> : seule l'image capturée est stockée localement dans l'application. Aucune capture vidéo ni utilisation en arrière-plan.
+      </p>
+    </section>
+
+    <section>
+      <h2>9. Notifications : rappels de péremption des documents</h2>
+      <p>
+        <strong>Pourquoi</strong> : les notifications servent uniquement à vous rappeler une date de péremption de document.
+      </p>
+      <p>
+        <strong>Quand</strong> : uniquement si vous avez défini une date de péremption sur un document et activé un rappel (par exemple 7, 30 ou 90 jours avant), puis activé le switch de notifications dans les paramètres de l’application.
+      </p>
+      <p>
+        <strong>Données</strong> : le rappel est planifié localement sur l’appareil à partir des informations déjà enregistrées dans l’application. Aucun envoi de données documentaires à des tiers n’est nécessaire pour cette fonctionnalité.
+      </p>
+    </section>
+
+<section>
+  <h2>10. Ville renseignée par l’utilisateur et météo</h2>
+  <p>
+    THOT n’accède pas à la position géographique de votre appareil.
+  </p>
+  <p>
+    Si vous renseignez ou sélectionnez une ville lors de la création d'une session, l'application peut utiliser cette information pour :
+  </p>
+  <ul>
+    <li>valider le lieu sélectionné ;</li>
+    <li>récupérer les conditions météo associées à cette ville (température, humidité, pression, vent).</li>
+  </ul>
+  <p>
+    Cette fonctionnalité repose sur la ville que vous fournissez volontairement dans l’application, et non sur la géolocalisation automatique de l’appareil.
+  </p>
+</section>
+
+    <section>
+      <h2>11. Retrait du consentement / suppression des données</h2>
       <p>
         Vous pouvez retirer votre consentement à tout moment :
       </p>
       <ul>
         <li><strong>Microphone</strong> : désactivez le mode de minuteur avec détection sonore et/ou retirez l’autorisation Micro dans les réglages iOS/Android.</li>
-        <li><strong>Localisation</strong> : retirez l’autorisation Localisation dans les réglages iOS/Android.</li>
-      </ul>
+<li><strong>Notifications</strong> : désactivez les rappels de péremption dans les paramètres THOT et/ou retirez l’autorisation Notifications dans les réglages iOS/Android.</li>
+<li><strong>Caméra</strong> : retirez l’autorisation Caméra dans les réglages iOS (pas d’accès caméra dans THOT sans action explicite via file_picker).</li>
+<li><strong>Ville / météo</strong> : vous pouvez cesser d'utiliser cette fonctionnalité à tout moment en ne renseignant plus de ville dans vos sessions.</li>      </ul>
       <p>
         Vous pouvez supprimer vos données :
       </p>
@@ -101,7 +174,7 @@
     </section>
 
     <section>
-      <h2>7. Contact</h2>
+      <h2>12. Contact</h2>
       <p>
         Pour toute question relative à la confidentialité :
         <a href="mailto:simapswebdesign@gmail.com">simapswebdesign@gmail.com</a>

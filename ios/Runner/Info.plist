@@ -27,15 +27,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>THOT utilise l'appareil photo pour photographier vos armes, munitions et cibles.</string>
+	<string>THOT utilise l'appareil photo pour ajouter des photos à vos setups, consommables et cibles. L'accès est déclenché uniquement lorsque vous choisissez "Prendre une photo" dans le sélecteur de fichiers.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>THOT utilise Face ID pour protéger l'accès à vos données.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Autoriser l'application à accéder à votre position pour renseigner automatiquement le lieu d'une séance.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>THOT utilise le microphone uniquement dans le minuteur de tir pour détecter un départ sonore (sur action explicite de l’utilisateur). Aucun enregistrement audio n’est stocké ni envoyé.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>THOT utilise la bibliothèque photo pour ajouter une image à vos armes, munitions et cibles.</string>
+	<string>THOT utilise la bibliothèque photo pour ajouter une image à vos setup, consommables et cibles.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -67,6 +65,8 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -74,6 +74,16 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>REVENUECAT_API_KEY</key>
+	<string>$(REVENUECAT_API_KEY)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>mailto</string>
 	</array>
 </dict>
 </plist>

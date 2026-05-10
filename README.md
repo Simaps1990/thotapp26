@@ -32,7 +32,7 @@ En `debug`, si la clé n'est pas fournie, l'app continue de fonctionner mais les
 
 ## Stockage des données
 
-Les données principales (inventaire, séances, diagnostics, documents utilisateur) sont stockées en local sur l'appareil dans un fichier chiffré.
+Les données principales (inventaire, sessions, diagnostics, documents utilisateur) sont stockées en local sur l'appareil dans un fichier chiffré.
 
 - Mobile : fichier chiffré avec écriture atomique + backup local (`.bak`) et compatibilité de restauration via backup système.
 - Web : fallback via `SharedPreferences`.

@@ -122,7 +122,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               ),
               const Gap(AppSpacing.sm),
               Divider(color: colors.outline),
-              const Gap(AppSpacing.md),
+              const Gap(AppSpacing.sm),
 
               // Ligne d’en-tête + tri
               Row(
@@ -147,27 +147,29 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                   ),
                 ],
               ),
-              const Gap(AppSpacing.md),
+              const Gap(AppSpacing.sm),
 
               if (unlocked.isEmpty)
                 _EmptyCard(
                   text: strings.homeTrophiesEmpty,
                 )
               else
-                ...unlocked.map((a) {
+                ...List.generate(unlocked.length, (index) {
+                  final a = unlocked[index];
                   final tierColor = _tierColor(a.tier);
                   final date = provider.achievementUnlockDate(a.id);
                   return Padding(
-                    // Espacement léger entre cartes
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
                     child: _AchievementCard(
+                      index: index,
                       title: strings.achievementTitle(a.id),
                       description: strings.achievementDescription(a.id),
                       color: tierColor,
-                      unlockedAt: date, // date seule, sans heure ni préfixe
+                      tier: a.tier,
+                      unlockedAt: date,
                     ),
                   );
-                }).toList(),
+                }),
         ],
       ),
     );
@@ -187,8 +189,8 @@ class _GradientTrophyIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final light = Color.lerp(baseColor, Colors.white, 0.35) ?? baseColor;
-    final dark = Color.lerp(baseColor, Colors.black, 0.15) ?? baseColor;
+    final light = Color.lerp(baseColor, Colors.white, 0.45) ?? baseColor;
+    final dark = Color.lerp(baseColor, Colors.black, 0.2) ?? baseColor;
 
     return ShaderMask(
       shaderCallback: (bounds) {
@@ -200,7 +202,7 @@ class _GradientTrophyIcon extends StatelessWidget {
             baseColor,
             dark,
           ],
-          stops: const [0.0, 0.55, 1.0],
+          stops: const [0.0, 0.5, 1.0],
         ).createShader(bounds);
       },
       blendMode: BlendMode.srcIn,
@@ -210,15 +212,19 @@ class _GradientTrophyIcon extends StatelessWidget {
 }
 
 class _AchievementCard extends StatelessWidget {
+  final int index;
   final String title;
   final String description;
   final Color color;
+  final String tier;
   final DateTime? unlockedAt;
 
   const _AchievementCard({
+    required this.index,
     required this.title,
     required this.description,
     required this.color,
+    required this.tier,
     this.unlockedAt,
   });
 
@@ -226,59 +232,137 @@ class _AchievementCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
-    final dateLabel =
-        unlockedAt == null ? null : AppDateFormats.formatDateShort(context, unlockedAt!);
+    final dateLabel = unlockedAt == null 
+        ? null 
+        : AppDateFormats.formatDateShort(context, unlockedAt!);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      decoration: _achievementCardDecoration(context, radius: 16),
-      child: Row(
-        children: [
-          _GradientTrophyIcon(size: 28, baseColor: color),
-          const Gap(AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textStyles.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colors.onSurface,
-                        ),
-                      ),
-                    ),
-                    if (dateLabel != null) ...[
-                      const Gap(AppSpacing.sm),
-                      Text(
-                        dateLabel,
-                        style: textStyles.labelSmall?.copyWith(
-                          color: colors.secondary,
-                        ),
-                      ),
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 100).clamp(0, 600)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutQuart,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        decoration: _achievementCardDecoration(context, radius: 20),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Background Glow behind the icon
+            Positioned(
+              left: -20,
+              top: -20,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      color.withValues(alpha: 0.15),
+                      color.withValues(alpha: 0.0),
                     ],
-                  ],
-                ),
-                const Gap(AppSpacing.xs),
-                Text(
-                  description,
-                  style: textStyles.bodySmall?.copyWith(
-                    color: colors.secondary,
-                    height: 1.3,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon Container
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: color.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: _GradientTrophyIcon(size: 28, baseColor: color),
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title.toUpperCase(),
+                                    style: textStyles.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: color,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const Gap(2),
+                                  Text(
+                                    description,
+                                    style: textStyles.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: colors.onSurface,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (dateLabel != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  dateLabel,
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: colors.secondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const Gap(8),
+                        // Tier indicator line
+                        Container(
+                          width: 40,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -295,15 +379,25 @@ class _EmptyCard extends StatelessWidget {
     final textStyles = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      decoration: _achievementCardDecoration(context, radius: 16),
-      child: Text(
-        text,
-        style: textStyles.bodyMedium?.copyWith(
-          color: colors.secondary,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: _achievementCardDecoration(context, radius: 20),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.emoji_events_outlined,
+              size: 48,
+              color: colors.outline.withValues(alpha: 0.5),
+            ),
+            const Gap(AppSpacing.md),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: textStyles.bodyMedium?.copyWith(
+                color: colors.secondary,
+              ),
+            ),
+          ],
         ),
       ),
     );

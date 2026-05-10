@@ -2,11 +2,11 @@ part of 'package:thot/l10n/app_strings.dart';
 
 extension AppStringsExerciseSteps on AppStrings {
   String get exerciseModeLabel => _pick(
-        fr: 'Mode',
-        en: 'Mode',
-        de: 'Modus',
-        it: 'Modalità',
-        es: 'Modo',
+        fr: 'Déroulé de l\'exercice',
+        en: 'Exercise sequence',
+        de: 'Übungsablauf',
+        it: 'Svolgimento dell\'esercizio',
+        es: 'Secuencia del ejercicio',
       );
 
   String get exerciseModeSimple => _pick(
@@ -186,60 +186,60 @@ String exercisePositionNarrative(ShootingPosition pos) {
         es: 'Activador',
       );
 
-String get exerciseFieldWeaponFrom => _pick(
-        fr: 'Arme de',
-        en: 'Weapon from',
-        de: 'Waffe von',
-        it: 'Arma da',
-        es: 'Arma de',
+String get exerciseFieldPlatformFrom => _pick(
+        fr: 'Plateforme de',
+        en: 'Platform from',
+        de: 'Plattform von',
+        it: 'Piattaforma da',
+        es: 'Plataforma de',
       );
 
-String get exerciseFieldWeaponTo => _pick(
-        fr: 'Arme vers',
-        en: 'Weapon to',
-        de: 'Waffe zu',
-        it: 'Arma verso',
-        es: 'Arma a',
+String get exerciseFieldPlatformTo => _pick(
+        fr: 'Plateforme vers',
+        en: 'Platform to',
+        de: 'Plattform zu',
+        it: 'Piattaforma verso',
+        es: 'Plataforma a',
       );
 
-String get exerciseWriteWeaponOption => _pick(
-        fr: 'Écrire une arme...',
-        en: 'Write a weapon...',
-        de: 'Eine Waffe schreiben...',
-        it: 'Scrivi un\'arma...',
-        es: 'Escribir un arma...',
+String get exerciseWritePlatformOption => _pick(
+        fr: 'Écrire une plateforme...',
+        en: 'Write a platform...',
+        de: 'Eine Plattform schreiben...',
+        it: 'Scrivi una piattaforma...',
+        es: 'Escribir una plataforma...',
       );
 
-String get exerciseWeaponSelectionHint => _pick(
-        fr: 'Sélectionnez une arme de votre stock pour imputer les coups',
-        en: 'Select a weapon from your inventory to assign shots',
-        de: 'Wählen Sie eine Waffe aus Ihrem Bestand, um Schüsse zuzuordnen',
-        it: 'Seleziona un\'arma dal tuo inventario per assegnare i colpi',
-        es: 'Seleccione un arma de su inventario para asignar los disparos',
+String get exercisePlatformSelectionHint => _pick(
+        fr: 'Sélectionnez une plateforme de votre stock pour imputer les coups',
+        en: 'Select a platform from your inventory to assign shots',
+        de: 'Wählen Sie eine Plattform aus Ihrem Bestand, um Schüsse zuzuordnen',
+        it: 'Seleziona una piattaforma dal tuo inventory per assegnare i colpi',
+        es: 'Seleccione una plataforma de su inventario para asignar los disparos',
       );
 
-  String get stepUsedWeaponLabel => _pick(
-        fr: 'Arme utilisée',
-        en: 'Weapon used',
-        de: 'Verwendete Waffe',
-        it: 'Arma usata',
-        es: 'Arma usada',
+  String get stepUsedPlatformLabel => _pick(
+        fr: 'Plateforme utilisée',
+        en: 'Platform used',
+        de: 'Verwendete Plattform',
+        it: 'Piattaforma usata',
+        es: 'Plataforma usada',
       );
 
   String get stepUsedAmmoLabel => _pick(
-        fr: 'Munition utilisée',
-        en: 'Ammo used',
-        de: 'Verwendete Munition',
-        it: 'Munizione usata',
-        es: 'Munición usada',
+        fr: 'Consommable utilisé',
+        en: 'Cartridge used',
+        de: 'Verbrauchsmaterial verwendet',
+        it: 'Consumabile usato',
+        es: 'Consumible usado',
       );
 
-  String get stepWeaponAmmoRequired => _pick(
-        fr: 'Sélectionnez une arme et une munition pour chaque étape de tir.',
-        en: 'Select a weapon and ammo for each firing step.',
-        de: 'Wähle für jeden Schussschritt eine Waffe und Munition aus.',
-        it: 'Seleziona arma e munizione per ogni fase di tiro.',
-        es: 'Selecciona un arma y munición para cada paso de disparo.',
+  String get stepPlatformAmmoRequired => _pick(
+        fr: 'Sélectionnez une plateforme et un consommable pour chaque étape de tir.',
+        en: 'Select a platform and cartridge for each firing step.',
+        de: 'Wähle für jeden Schussschritt eine Plattform und Verbrauchsmaterial aus.',
+        it: 'Seleziona piattaforma e consumabile per ogni fase di tiro.',
+        es: 'Selecciona una plataforma y consumible para cada paso de disparo.',
       );
 
   String get exerciseOptionalHint => _pick(
@@ -308,7 +308,7 @@ es: 'Secuencia del ejercicio:\n',
 
   // Narrative fragments for exercise summary (all languages)
 
-  /// e.g. "un déplacement " / "a movement "
+  /// e.g. "une déplacement " / "a movement "
   String get exerciseNarrativeMovementPrefix => _pick(
 fr: 'Se déplacer ',
 en: 'Move ',
@@ -449,13 +449,13 @@ String exerciseReloadTypeNarrative(ReloadType type) {
   };
 }
 
-  /// e.g. "une transition d’arme" / "a weapon transition"
+  /// e.g. "une transition de plateforme" / "a platform transition"
   String get exerciseNarrativeTransitionPrefix => _pick(
-fr: 'Effectuer une transition d\'arme',
-en: 'Transition weapon',
-de: 'Waffenwechsel',
-it: 'Effettuare una transizione d\'arma',
-es: 'Realizar una transición de arma',
+        fr: 'Effectuer une transition de plateforme',
+        en: 'Transition platform',
+        de: 'Plattformwechsel',
+        it: 'Effettuare una transizione di piattaforma',
+        es: 'Realizar una transición de plataforma',
       );
 
   /// e.g. " à " / " at "

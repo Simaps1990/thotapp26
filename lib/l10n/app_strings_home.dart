@@ -87,7 +87,7 @@ extension AppStringsHome on AppStrings {
   String get homeDiagnosticSubtitle => _pick(
         fr: 'Identifiez un incident de tir',
         en: 'Identify a firing issue',
-        de: 'Schießstörung erkennen',
+        de: 'Störung erkennen',
         it: 'Identifica un problema di tiro',
         es: 'Identifica una incidencia de tiro',
       );
@@ -98,6 +98,30 @@ extension AppStringsHome on AppStrings {
         de: 'SCHNELLZUGRIFF',
         it: 'ACCESSO RAPIDO',
         es: 'ACCESO RÁPIDO',
+      );
+
+  String get homeProgramTitle => _pick(
+        fr: 'MON SUIVI',
+        en: 'MY TRACKING',
+        de: 'MEINE VERFOLGUNG',
+        it: 'IL MIO MONITORAGGIO',
+        es: 'MI SEGUIMIENTO',
+      );
+
+  String get homeProgramCardTitle => _pick(
+fr: 'Boostez vos performances',
+en: 'Boost your performance',
+de: 'Boosten Sie Ihre Leistung',
+it: 'Potenzia le tue prestazioni',
+es: 'Impulsa tu rendimiento',
+);
+
+  String get homeProgramStartMessage => _pick(
+        fr: 'Commencez votre entraînement quotidien !',
+        en: 'Start your daily training!',
+        de: 'Starte dein tägliches Training!',
+        it: 'Inizia il tuo allenamento quotidiano!',
+        es: '¡Comienza tu entrenamiento diario!',
       );
 
   String get homeMaintenanceTitle => _pick(
@@ -114,6 +138,38 @@ extension AppStringsHome on AppStrings {
         de: 'Kein kritischer Indikator.',
         it: 'Nessun indicatore critico.',
         es: 'Ningún indicador crítico.',
+      );
+
+  String get homeMaintenanceCtaTitle => _pick(
+        fr: 'CRÉER UNE SESSION',
+        en: 'CREATE A SESSION',
+        de: 'SITZUNG ERSTELLEN',
+        it: 'CREA UNA SESSIONE',
+        es: 'CREAR UNA SESIÓN',
+      );
+
+  String get homeMaintenanceCtaSubtitle => _pick(
+        fr: 'Ajoutez votre première session pour activer les indicateurs critiques.',
+        en: 'Add your first session to enable critical indicators.',
+        de: 'Fügen Sie Ihre erste Sitzung hinzu, um kritische Indikatoren zu aktivieren.',
+        it: 'Aggiungi la tua prima sessione per attivare gli indicatori critici.',
+        es: 'Añade tu primera sesión para activar los indicadores críticos.',
+      );
+
+  String get homeIndicatorsPlaceholderTitle => _pick(
+        fr: 'SUIVEZ VOTRE MATÉRIEL',
+        en: 'TRACK YOUR EQUIPMENT',
+        de: 'VERWALTEN SIE IHRE AUSRÜSTUNG',
+        it: 'GESTISCI LA TUA ATTREZZATURA',
+        es: 'RASTREE SU EQUIPAMIENTO',
+      );
+
+  String get homeIndicatorsPlaceholderSubtitle => _pick(
+        fr: 'Activez le suivi de vos entretiens, stocks et révisions.',
+        en: 'Enable tracking for maintenance, stock and revisions.',
+        de: 'Aktivieren Sie die Verfolgung von Wartung, Bestand und Revisionen.',
+        it: 'Attiva il monitoraggio di manutenzioni, scorte e revisioni.',
+        es: 'Activa el seguimiento de mantenimiento, stock y revisiones.',
       );
 
   String get homeMaintenanceRevisionLabel => _pick(
@@ -141,7 +197,7 @@ extension AppStringsHome on AppStrings {
       );
 
   String get homeLastSessionTitle => _pick(
-        fr: 'DERNIÈRE SÉANCE',
+        fr: 'DERNIÈRE SESSION',
         en: 'LAST SESSION',
         de: 'LETZTE SITZUNG',
         it: 'ULTIMA SESSIONE',
@@ -164,28 +220,68 @@ extension AppStringsHome on AppStrings {
         es: 'MIS ESTADÍSTICAS',
       );
 
+  String get homeIndicatorsTitle => _pick(
+        fr: 'MES INDICATEURS',
+        en: 'MY INDICATORS',
+        de: 'MEINE INDIKATOREN',
+        it: 'I MIEI INDICATORI',
+        es: 'MIS INDICADORES',
+      );
+
+  String get homeStatsCtaTitle => _pick(
+        fr: 'CRÉER UNE PLATEFORME',
+        en: 'CREATE A PLATFORM',
+        de: 'KONFIGURATION ERSTELLEN',
+        it: 'CREA UNA CONFIGURAZIONE',
+        es: 'CREAR UNA CONFIGURACIÓN',
+      );
+
+  String get homeStatsCtaSubtitle => _pick(
+        fr: 'Ajoutez une plateforme pour démarrer vos statistiques.',
+        en: 'Add a platform to start tracking your statistics.',
+        de: 'Fügen Sie eine Konfiguration hinzu, um Ihre Statistiken zu starten.',
+        it: 'Aggiungi una configurazione per iniziare le tue statistiche.',
+        es: 'Añade una plataforma para iniciar tus estadísticas.',
+      );
+
+  String get homeStatsPlaceholderTitle => _pick(
+        fr: 'DES ANALYSES POUSSÉES',
+        en: 'IN-DEPTH ANALYTICS',
+        de: 'UMFASSENDE ANALYSEN',
+        it: 'ANALISI APPROFONDITE',
+        es: 'ANÁLISIS PROFUNDOS',
+      );
+
+  String get homeStatsPlaceholderSubtitle => _pick(
+fr: 'Créez vos premières sessions pour accéder à vos statistiques.',
+en: 'Create your first sessions to access your statistics.',
+de: 'Erstellen Sie Ihre ersten Sessions, um auf Ihre Statistiken zuzugreifen.',
+it: 'Crea le tue prime sessioni per accedere alle tue statistiche.',
+es: 'Crea tus primeras sesiones para acceder a tus estadísticas.',
+);
+
   String get homeStatSessions => _pick(
-        fr: 'SÉANCES',
-        en: 'SESSIONS',
-        de: 'SITZUNGEN',
-        it: 'SESSIONI',
-        es: 'SESIONES',
+        fr: 'Sessions',
+        en: 'Sessions',
+        de: 'Sitzungen',
+        it: 'Sessioni',
+        es: 'Sesiones',
       );
 
   String get homeStatShotsFired => _pick(
-        fr: 'CPS TIRES',
-        en: 'SHOTS FIRED',
-        de: 'SCHÜSSE',
-        it: 'COLPI SPARATI',
-        es: 'DISPAROS',
+        fr: 'Cps tirés',
+        en: 'Rounds',
+        de: 'Treffer',
+        it: 'Colpi',
+        es: 'Disparos',
       );
 
-  String get homeStatWeapons => _pick(
-        fr: 'ARMES',
-        en: 'WEAPONS',
-        de: 'WAFFEN',
-        it: 'ARMI',
-        es: 'ARMAS',
+  String get homeStatPlatforms => _pick(
+        fr: 'Plateformes',
+        en: 'Platforms',
+        de: 'Konfigurationen',
+        it: 'Configurazioni',
+        es: 'Configuraciones',
       );
 
   String get homeStatAvgPrecision => _pick(
@@ -213,11 +309,11 @@ extension AppStringsHome on AppStrings {
       );
 
   String get homePrecisionTitle => _pick(
-        fr: 'PRÉCISION DE TIR',
-        en: 'SHOOTING PRECISION',
-        de: 'TREFFSICHERHEIT',
-        it: 'PRECISIONE DI TIRO',
-        es: 'PRECISIÓN DE TIRO',
+        fr: 'PRÉCISION',
+        en: 'PRECISION',
+        de: 'PRÄZISION',
+        it: 'PRECISIONE',
+        es: 'PRECISIÓN',
       );
 
   String get homePrecisionFilterTooltip => _pick(
@@ -341,35 +437,35 @@ extension AppStringsHome on AppStrings {
       );
 
   String get homeTimerTitle => _pick(
-        fr: 'TIMER DE TIR',
-        en: 'SHOOTING-TIMER',
-        de: 'SCHIESS-TIMER',
-        it: 'TIMER DI TIRO',
-        es: 'TEMPORIZADOR DE TIRO',
+fr: 'TIMER',
+en: 'SHOT TIMER',          
+de: 'SCHUSS-TIMER',        
+it: 'TIMER COLPI',         
+es: 'TEMPORIZADOR DE DISPAROS', 
       );
 
   String get homeTimerSubtitle => _pick(
-        fr: 'Séquences de tir, bip, détection sonore',
-        en: 'Shooting sequences, beep and sound detection',
-        de: 'Schussserien, Signalton, Geräuscherkennung',
-        it: 'Sequenze di tiro, bip, rilevamento sonoro',
-        es: 'Secuencias de tiro, pitido, detección de sonido',
+        fr: 'Séquences, bip et détection sonore',
+        en: 'Sequences, beep and sound detection',
+        de: 'Sequenzen, Signalton und Geräuscherkennung',
+        it: 'Sequenze, bip e rilevamento sonoro',
+        es: 'Secuencias, pitido y detección de sonido',
       );
 
   String get quickActionLabelSession => _pick(
-        fr: 'Séance',
+        fr: 'Session',
         en: 'Session',
         de: 'Sitzung',
         it: 'Sessione',
         es: 'Sesión',
       );
 
-  String get quickActionLabelWeapon => _pick(
-        fr: 'Arme',
-        en: 'Weapon',
-        de: 'Waffe',
-        it: 'Arma',
-        es: 'Arma',
+  String get quickActionLabelPlatform => _pick(
+        fr: 'Plateforme',
+        en: 'Platform',
+        de: 'Konfiguration',
+        it: 'Configurazione',
+        es: 'Configuración',
       );
 
   String get quickActionLabelDiagnostic => _pick(
@@ -381,11 +477,11 @@ extension AppStringsHome on AppStrings {
       );
 
   String get quickActionLabelAmmo => _pick(
-        fr: 'Munition',
-        en: 'Ammo',
-        de: 'Munition',
-        it: 'Munizione',
-        es: 'Munición',
+        fr: 'Consommable',
+        en: 'Cartridge',
+        de: 'Verbrauchsmaterial',
+        it: 'Consumabile',
+        es: 'Consumible',
       );
 
   String get quickActionLabelAccessory => _pick(
@@ -414,11 +510,11 @@ es: 'NOTIFICACIONES',
       );
 
   String get notifPanelEmpty => _pick(
-fr: 'Votre carnet de tir est à jour',
-en: 'Your shooting logbook is up to date',
-de: 'Ihr Schießbuch ist aktuell',
-it: 'Il tuo registro di tiro è aggiornato',
-es: 'Tu cuaderno de tiro está al día',
+fr: 'Votre compte est à jour',
+en: 'Your account is up to date',
+de: 'Ihr Konto ist aktuell',
+it: 'Il tuo account è aggiornato',
+es: 'Tu cuenta está al día',
       );
 
   String get notifMarkRead => _pick(
@@ -469,7 +565,7 @@ es: 'Tu cuaderno de tiro está al día',
         es: 'Revisión',
       );
 
-  String get notifViewWeapon => _pick(
+  String get notifViewPlatform => _pick(
         fr: 'Voir la fiche',
         en: 'View details',
         de: 'Fiche anzeigen',
@@ -591,6 +687,38 @@ es: 'Tu cuaderno de tiro está al día',
         de: 'Tage vor Ablauf',
         it: 'Giorni prima della scadenza',
         es: 'Días antes del vencimiento',
+      );
+
+  String get docExpiryNotifyNone => _pick(
+        fr: 'Aucune notification',
+        en: 'No reminder',
+        de: 'Keine Erinnerung',
+        it: 'Nessun promemoria',
+        es: 'Sin recordatorio',
+      );
+
+  String get docExpiryNotifyOneWeek => _pick(
+        fr: '1 semaine avant',
+        en: '1 week before',
+        de: '1 Woche vorher',
+        it: '1 settimana prima',
+        es: '1 semana antes',
+      );
+
+  String get docExpiryNotifyOneMonth => _pick(
+        fr: '1 mois avant',
+        en: '1 month before',
+        de: '1 Monat vorher',
+        it: '1 mese prima',
+        es: '1 mes antes',
+      );
+
+  String get docExpiryNotifyThreeMonths => _pick(
+        fr: '3 mois avant',
+        en: '3 months before',
+        de: '3 Monate vorher',
+        it: '3 mesi prima',
+        es: '3 meses antes',
       );
 
   String get docExpiryRemoveDate => _pick(

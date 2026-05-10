@@ -33,6 +33,13 @@ class ThotPremiumService {
   String? get yearlyPrice => _yearlyPrice;
   String? get monthlyPrice => _monthlyPrice;
 
+  Package? _findPackageByType(Offering offering, PackageType type) {
+    for (final package in offering.availablePackages) {
+      if (package.packageType == type) return package;
+    }
+    return null;
+  }
+
   Future<void> purchaseYearly() => _purchase(PackageType.annual);
   Future<void> purchaseMonthly() => _purchase(PackageType.monthly);
 
@@ -50,13 +57,14 @@ class ThotPremiumService {
         throw StateError('No current offering');
       }
 
-      final package =
-          current.availablePackages.where((p) => p.packageType == type).firstOrNull;
+      final package = _findPackageByType(current, type);
       if (package == null) {
         throw StateError('No package found for $type');
       }
 
-      final result = await Purchases.purchasePackage(package);
+      final result = await Purchases.purchase(
+        PurchaseParams.package(package),
+      );
       // Refresh cached prices in case something changed on the store side
       await _loadCurrentOfferingPrices();
       await _updatePremiumStatus(result.customerInfo);
@@ -190,12 +198,8 @@ class ThotPremiumService {
         return;
       }
 
-      final yearlyPackage = current.availablePackages
-          .where((p) => p.packageType == PackageType.annual)
-          .firstOrNull;
-      final monthlyPackage = current.availablePackages
-          .where((p) => p.packageType == PackageType.monthly)
-          .firstOrNull;
+      final yearlyPackage = _findPackageByType(current, PackageType.annual);
+      final monthlyPackage = _findPackageByType(current, PackageType.monthly);
 
       _yearlyPrice = yearlyPackage?.storeProduct.priceString;
       _monthlyPrice = monthlyPackage?.storeProduct.priceString;
@@ -220,13 +224,5 @@ class ThotPremiumService {
     _purchasePending = false;
     _purchaseError = null;
     _onChanged();
-  }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull {
-    final iterator = this.iterator;
-    if (!iterator.moveNext()) return null;
-    return iterator.current;
   }
 }

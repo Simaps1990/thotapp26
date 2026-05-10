@@ -1,11 +1,14 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 import '../data/thot_provider.dart';
+import 'package:thot/l10n/app_strings.dart';
 
 class LockScreen extends StatefulWidget {
-  const LockScreen({Key? key}) : super(key: key);
+  const LockScreen({super.key});
 
   @override
   State<LockScreen> createState() => _LockScreenState();
@@ -43,7 +46,9 @@ class _LockScreenState extends State<LockScreen> {
       return;
     }
 
-    final authenticated = await provider.authenticateWithBiometric();
+    final authenticated = await provider.authenticateWithBiometric(
+      localizedReason: AppStrings.of(context).biometricAuthReason,
+    );
 
     if (!mounted) {
       return;
@@ -53,12 +58,11 @@ class _LockScreenState extends State<LockScreen> {
       context.go('/');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Impossible d\'utiliser l\'authentification biométrique. Vérifiez la configuration de votre empreinte ou de FaceID.',
+          SnackBar(
+            content: Text(AppStrings.of(context).biometricUnavailable),
+            duration: const Duration(seconds: 3),
           ),
-        ),
-      );
+        );
     }
   }
 
@@ -114,6 +118,8 @@ class _LockScreenState extends State<LockScreen> {
     return Scaffold(
       backgroundColor: colors.surface,
       body: SafeArea(
+        top: Platform.isIOS ? false : true,
+        bottom: Platform.isIOS ? false : true,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -133,7 +139,7 @@ class _LockScreenState extends State<LockScreen> {
               ),
               const Gap(8),
               Text(
-                'Entrez votre code PIN à 6 chiffres',
+                AppStrings.of(context).pinEntryTitle,
                 style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
               ),
               const Gap(48),
@@ -164,14 +170,14 @@ class _LockScreenState extends State<LockScreen> {
               if (_isLockedOut) ...[
                 const Gap(16),
                 Text(
-                  'Trop de tentatives. Réessayez dans 30 minutes.',
+                  AppStrings.of(context).tooManyAttempts,
                   style: textStyles.bodySmall?.copyWith(color: colors.error),
                   textAlign: TextAlign.center,
                 ),
               ] else if (_isError) ...[
                 const Gap(16),
                 Text(
-                  'Code incorrect',
+                  AppStrings.of(context).incorrectPin,
                   style: textStyles.bodySmall?.copyWith(color: colors.error),
                 ),
               ],
@@ -226,7 +232,8 @@ class _LockScreenState extends State<LockScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: numbers
-          .map((num) => _NumberButton(label: num, onPressed: () => _onNumberPressed(num)))
+          .map((digit) =>
+              _NumberButton(label: digit, onPressed: () => _onNumberPressed(digit)))
           .toList(),
     );
   }

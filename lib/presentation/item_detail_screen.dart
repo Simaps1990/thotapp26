@@ -3,14 +3,17 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thot/utils/web_document_opener.dart';
+import 'package:thot/presentation/add_item_screen.dart';
 import '../theme.dart';
 import '../data/thot_provider.dart';
 import '../data/models.dart';
@@ -30,10 +33,21 @@ class ItemDetailScreen extends StatefulWidget {
 class _ItemDetailScreenState extends State<ItemDetailScreen> {
   String _selectedPeriod = 'month'; // 'week', 'month', 'year'
 
+  String _getCurrencySymbol(String? currency) {
+    switch (currency) {
+      case 'USD':
+        return '\$';
+      case 'CAD':
+        return 'CAD';
+      case 'EUR':
+      default:
+        return '€';
+    }
+  }
+
   static const List<String> _documentTypes = [
     'Facture',
     'Révision',
-    'Entretien',
     'Manuel',
     'Garantie',
     'Autre',
@@ -44,9 +58,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
     final controller = TextEditingController();
+    int? addQty;
 
     try {
-      await showModalBottomSheet<void>(
+      addQty = await showModalBottomSheet<int>(
         context: context,
         isScrollControlled: true,
         backgroundColor: colors.surface,
@@ -90,7 +105,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
+                      onPressed: () => Navigator.of(ctx).pop<int>(null),
                       icon: const Icon(Icons.close_rounded),
                       color: colors.onSurfaceVariant,
                       style: IconButton.styleFrom(
@@ -110,21 +125,22 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   controller: controller,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     labelText: strings.quantityToAdd,
                     hintText: strings.example250,
                     filled: true,
                     fillColor: colors.surface,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                       borderSide: BorderSide(color: colors.outline),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                       borderSide: BorderSide(color: colors.outline),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      borderSide: BorderSide(color: colors.primary, width: 1.5),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide(color: colors.outline),
                     ),
                   ),
                 ),
@@ -132,40 +148,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 FilledButton.icon(
                   onPressed: () {
                     final raw = controller.text.trim();
-                    final addQty = int.tryParse(raw);
-                    if (addQty == null || addQty <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(strings.enterValidQuantity)),
+                    final qty = int.tryParse(raw);
+                    if (qty == null || qty <= 0) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: Text(strings.enterValidQuantity),
+                          duration: const Duration(seconds: 3),
+                        ),
                       );
                       return;
                     }
-
-                    final updated = Ammo(
-                      id: ammo.id,
-                      name: ammo.name,
-                      brand: ammo.brand,
-                      caliber: ammo.caliber,
-                      comment: ammo.comment,
-                      projectileType: ammo.projectileType,
-                      quantity: ammo.quantity + addQty,
-                      initialQuantity: ammo.quantity + addQty,
-                      imageUrl: ammo.imageUrl,
-                      lastUsed: ammo.lastUsed,
-                      trackStock: ammo.trackStock,
-                      lowStockThreshold: ammo.lowStockThreshold,
-                      documents: ammo.documents,
-                      photoPath: ammo.photoPath,
-                    );
-
-                    provider.updateAmmo(updated);
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          '${strings.stockUpdated}: ${updated.quantity} ${strings.cartridges}',
-                        ),
-                      ),
-                    );
+                    Navigator.of(ctx).pop<int>(qty);
                   },
                   icon: const Icon(Icons.check_rounded),
                   label: Text(strings.addToStock),
@@ -178,7 +171,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
                 const Gap(AppSpacing.sm),
                 OutlinedButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
+                  onPressed: () => Navigator.of(ctx).pop<int>(null),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
                     shape: RoundedRectangleBorder(
@@ -195,11 +188,35 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
     } catch (e) {
       debugPrint('Failed to show restock sheet: $e');
-    } finally {
-      controller.dispose();
+    }
+
+    // ── CRITICAL ─────────────────────────────────────────────────────────────
+    // await showModalBottomSheet résout dès que pop() est appelé, PAS quand
+    // l'animation de fermeture finit (~300ms). Le TextField référence encore
+    // `controller` pendant cette animation.
+    // Disposer le controller dans finally = crash RenderObject (renderObject.child).
+    //
+    // Fix : attendre la fin de l'animation AVANT de disposer le controller
+    // ET avant d'appeler notifyListeners().
+    // ─────────────────────────────────────────────────────────────────────────
+    await Future.delayed(const Duration(milliseconds: 350));
+    controller.dispose(); // TextField complètement sorti de l'arbre
+
+    if (addQty != null && addQty > 0 && mounted) {
+      final newQty = ammo.quantity + addQty;
+      final successMsg =
+          '${strings.stockUpdated}: $newQty ${strings.cartridges}';
+      provider.restockAmmo(ammoId: ammo.id, addQty: addQty);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMsg),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
-
   PlatformFile? _normalizePickedPdf(PlatformFile file) {
     if (kIsWeb) {
       if (file.bytes == null) return null;
@@ -245,6 +262,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
     final nameController = TextEditingController(
       text: initialName.isEmpty ? strings.itemDefaultDocumentName : initialName,
     );
@@ -318,9 +336,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             onPressed: () async {
                               final picked = await showDatePicker(
                                 context: context,
-                                initialDate: DateTime.now().add(
-                                  const Duration(days: 365),
-                                ),
+                                initialDate: DateTime.now(),
                                 firstDate: DateTime.now(),
                                 lastDate: DateTime.now().add(
                                   const Duration(days: 365 * 20),
@@ -388,6 +404,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   style:
                       textStyles.labelMedium?.copyWith(color: colors.secondary),
                 ),
+                const Gap(8),
                 DropdownButtonFormField<int>(
                   value: selectedNotifyDays > 0 ? selectedNotifyDays : 0,
                   style: textStyles.bodyMedium?.copyWith(
@@ -395,19 +412,32 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     fontWeight: FontWeight.w400,
                   ),
                   decoration: const InputDecoration(),
-                  items: const [
+                  items: [
                     DropdownMenuItem<int>(
-                        value: 0, child: Text('Aucune notification')),
+                      value: 0,
+                      child: Text(strings.docExpiryNotifyNone),
+                    ),
                     DropdownMenuItem<int>(
-                        value: 7, child: Text('1 semaine avant')),
+                      value: 7,
+                      child: Text(strings.docExpiryNotifyOneWeek),
+                    ),
                     DropdownMenuItem<int>(
-                        value: 30, child: Text('1 mois avant')),
+                      value: 30,
+                      child: Text(strings.docExpiryNotifyOneMonth),
+                    ),
                     DropdownMenuItem<int>(
-                        value: 90, child: Text('3 mois avant')),
+                      value: 90,
+                      child: Text(strings.docExpiryNotifyThreeMonths),
+                    ),
                   ],
                   onChanged: (v) {
                     setState(() => selectedNotifyDays = v ?? 0);
                   },
+                ),
+                const Gap(8),
+                Text(
+                  strings.docExpiryNotifyHint,
+                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
                 ),
               ],
             ],
@@ -418,7 +448,22 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               child: Text(strings.cancel),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: () async {
+                final remindersReady = await provider.ensureDocumentReminderEnabled(
+                  notifyBeforeDays: selectedNotifyDays,
+                );
+                if (!remindersReady) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(strings.documentPushPermissionDenied),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
                 final name = nameController.text.trim();
                 Navigator.pop(
                   context,
@@ -448,13 +493,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       currentDocumentsCount: currentDocumentsCount,
     )) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.itemFreePdfLimitSingle)),
+        SnackBar(
+          content: Text(strings.itemFreePdfLimitSingle),
+          duration: const Duration(seconds: 3),
+        ),
       );
       context.push('/pro');
       return null;
     }
 
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
       allowMultiple: false,
@@ -480,7 +528,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   Future<void> _addDocumentToCurrentItem({
     required List<ItemDocument> documents,
-    Weapon? weapon,
+    Platform? platform,
     Ammo? ammo,
     Accessory? accessory,
   }) async {
@@ -492,9 +540,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
     if (!mounted || document == null) return;
 
-    if (weapon != null) {
-      provider.updateWeapon(
-        weapon.copyWith(documents: [...weapon.documents, document]),
+    if (platform != null) {
+      provider.updatePlatform(
+        platform.copyWith(documents: [...platform.documents, document]),
       );
     } else if (ammo != null) {
       provider.updateAmmo(
@@ -506,15 +554,20 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(strings.settingsDocumentAddedSuccess)),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(strings.settingsDocumentAddedSuccess),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _updateDocumentToCurrentItem({
     required List<ItemDocument> documents,
     required ItemDocument document,
-    Weapon? weapon,
+    Platform? platform,
     Ammo? ammo,
     Accessory? accessory,
   }) async {
@@ -545,8 +598,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         )
         .toList();
 
-    if (weapon != null) {
-      provider.updateWeapon(weapon.copyWith(documents: updatedDocuments));
+    if (platform != null) {
+      provider.updatePlatform(platform.copyWith(documents: updatedDocuments));
     } else if (ammo != null) {
       provider.updateAmmo(ammo.copyWith(documents: updatedDocuments));
     } else if (accessory != null) {
@@ -555,15 +608,20 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(strings.settingsDocumentUpdatedSuccess)),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(strings.settingsDocumentUpdatedSuccess),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _removeDocumentFromCurrentItem({
     required List<ItemDocument> documents,
     required ItemDocument document,
-    Weapon? weapon,
+    Platform? platform,
     Ammo? ammo,
     Accessory? accessory,
   }) async {
@@ -596,8 +654,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     final updatedDocuments = documents.where((doc) => doc != document).toList();
 
-    if (weapon != null) {
-      provider.updateWeapon(weapon.copyWith(documents: updatedDocuments));
+    if (platform != null) {
+      provider.updatePlatform(platform.copyWith(documents: updatedDocuments));
     } else if (ammo != null) {
       provider.updateAmmo(ammo.copyWith(documents: updatedDocuments));
     } else if (accessory != null) {
@@ -606,8 +664,113 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(strings.settingsDocumentDeleted(document.name))),
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(strings.settingsDocumentDeleted(document.name)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _syncPlatformAccessoryLinks({
+    required ThotProvider provider,
+    required String platformId,
+    required Set<String> desiredAccessoryIds,
+  }) {
+    final currentAccessoryIds =
+        provider.linkedAccessoriesForPlatform(platformId).map((a) => a.id).toSet();
+
+    for (final accessoryId in desiredAccessoryIds) {
+      if (!currentAccessoryIds.contains(accessoryId)) {
+        provider.linkPlatformToAccessory(
+          platformId: platformId,
+          accessoryId: accessoryId,
+        );
+      }
+    }
+
+    for (final accessoryId in currentAccessoryIds.difference(desiredAccessoryIds)) {
+      provider.unlinkPlatformFromAccessory(
+        platformId: platformId,
+        accessoryId: accessoryId,
+      );
+    }
+  }
+
+  void _syncAccessoryPlatformLinks({
+    required ThotProvider provider,
+    required String accessoryId,
+    required Set<String> desiredPlatformIds,
+  }) {
+    final currentPlatformIds =
+        provider.linkedPlatformsForAccessory(accessoryId).map((w) => w.id).toSet();
+
+    for (final platformId in desiredPlatformIds) {
+      if (!currentPlatformIds.contains(platformId)) {
+        provider.linkPlatformToAccessory(
+          platformId: platformId,
+          accessoryId: accessoryId,
+        );
+      }
+    }
+
+    for (final platformId in currentPlatformIds.difference(desiredPlatformIds)) {
+      provider.unlinkPlatformFromAccessory(
+        platformId: platformId,
+        accessoryId: accessoryId,
+      );
+    }
+  }
+
+  Future<void> _editLinkedAccessories(ThotProvider provider, String platformId) async {
+    final initialSelection = provider.linkedAccessoriesForPlatform(platformId).map((a) => a.id).toSet();
+    final updated = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ItemLinkMultiSelectSheet(
+        title: AppStrings.of(context).linkAccessories,
+        items: provider.accessories,
+        initialSelection: initialSelection,
+        labelOf: (a) => a.name,
+        subtitleOf: (a) => [if (a.type.trim().isNotEmpty) a.type, if (a.brand.trim().isNotEmpty) a.brand].join(' • '),
+        idOf: (a) => a.id,
+        icon: Icons.inventory_2_rounded,
+      ),
+    );
+    if (!mounted || updated == null) return;
+
+    _syncPlatformAccessoryLinks(
+      provider: provider,
+      platformId: platformId,
+      desiredAccessoryIds: updated,
+    );
+  }
+
+  Future<void> _editLinkedPlatforms(ThotProvider provider, String accessoryId) async {
+    final initialSelection = provider.linkedPlatformsForAccessory(accessoryId).map((w) => w.id).toSet();
+    final updated = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ItemLinkMultiSelectSheet(
+        title: AppStrings.of(context).linkPlatforms,
+        items: provider.platforms,
+        initialSelection: initialSelection,
+        labelOf: (w) => w.name,
+        subtitleOf: (w) => [if (w.type.trim().isNotEmpty) w.type, if (w.caliber.trim().isNotEmpty) w.caliber].join(' • '),
+        idOf: (w) => w.id,
+        icon: Icons.link_rounded,
+      ),
+    );
+    if (!mounted || updated == null) return;
+
+    _syncAccessoryPlatformLinks(
+      provider: provider,
+      accessoryId: accessoryId,
+      desiredPlatformIds: updated,
     );
   }
 
@@ -619,7 +782,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final Map<String, int> history = {};
     final now = DateTime.now();
     final localeTag = Localizations.localeOf(context).toLanguageTag();
-
     final sessions = provider.sessions;
 
     if (_selectedPeriod == 'week') {
@@ -634,8 +796,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         if (daysDiff >= 0 && daysDiff < 7) {
           final key = DateFormat.E(localeTag).format(session.date);
           for (var exercise in session.exercises) {
-            if ((itemType == 'ARME' && exercise.weaponId == itemId) ||
-                (itemType == 'MUNITION' && exercise.ammoId == itemId)) {
+            bool isMatch = false;
+            if (itemType == 'PLATEFORME') {
+              isMatch = exercise.platformId == itemId;
+            } else if (itemType == 'CONSOMMABLE') {
+              isMatch = exercise.ammoId == itemId;
+            } else if (itemType == 'ACCESSOIRE') {
+              isMatch = exercise.equipmentIds.contains(itemId);
+            }
+
+            if (isMatch) {
               history[key] = (history[key] ?? 0) + exercise.shotsFired;
             }
           }
@@ -654,14 +824,23 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         if (monthsDiff >= 0 && monthsDiff < 6) {
           final key = DateFormat.MMM(localeTag).format(session.date);
           for (var exercise in session.exercises) {
-            if ((itemType == 'ARME' && exercise.weaponId == itemId) ||
-                (itemType == 'MUNITION' && exercise.ammoId == itemId)) {
+             bool isMatch = false;
+            if (itemType == 'PLATEFORME') {
+              isMatch = exercise.platformId == itemId;
+            } else if (itemType == 'CONSOMMABLE') {
+              isMatch = exercise.ammoId == itemId;
+            } else if (itemType == 'ACCESSOIRE') {
+              isMatch = exercise.equipmentIds.contains(itemId);
+            }
+
+            if (isMatch) {
               history[key] = (history[key] ?? 0) + exercise.shotsFired;
             }
           }
         }
       }
     } else {
+      // Year
       for (int i = 5; i >= 0; i--) {
         final year = now.year - i;
         final key = year.toString();
@@ -673,33 +852,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         if (yearsDiff >= 0 && yearsDiff < 6) {
           final key = session.date.year.toString();
           for (var exercise in session.exercises) {
-            if ((itemType == 'ARME' && exercise.weaponId == itemId) ||
-                (itemType == 'MUNITION' && exercise.ammoId == itemId)) {
-              history[key] = (history[key] ?? 0) + exercise.shotsFired;
+            bool isMatch = false;
+            if (itemType == 'PLATEFORME') {
+              isMatch = exercise.platformId == itemId;
+            } else if (itemType == 'CONSOMMABLE') {
+              isMatch = exercise.ammoId == itemId;
+            } else if (itemType == 'ACCESSOIRE') {
+              isMatch = exercise.equipmentIds.contains(itemId);
             }
-          }
-        }
-      }
-    }
 
-    if (itemType == 'ACCESSOIRE') {
-      for (int i = 6; i >= 0; i--) {
-        final date = now.subtract(Duration(days: i));
-        final key = DateFormat.E(localeTag).format(date);
-        history[key] = 0;
-      }
-      for (var session in sessions) {
-        final daysDiff = now.difference(session.date).inDays;
-        if (daysDiff >= 0 && daysDiff < 7) {
-          final key = DateFormat.E(localeTag).format(session.date);
-          for (var exercise in session.exercises) {
-            if (exercise.equipmentIds.contains(itemId)) {
+            if (isMatch) {
               history[key] = (history[key] ?? 0) + exercise.shotsFired;
             }
           }
         }
       }
-      return history;
     }
 
     return history;
@@ -712,17 +879,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final provider = Provider.of<ThotProvider>(context);
     final strings = AppStrings.of(context);
 
-    final weapon = provider.getWeaponById(widget.itemId);
+    final platform = provider.getPlatformById(widget.itemId);
     final ammo = provider.getAmmoById(widget.itemId);
-    final accessory = weapon == null && ammo == null
+    final accessory = platform == null && ammo == null
         ? provider.accessories.where((a) => a.id == widget.itemId).firstOrNull
         : null;
     final linkedAccessories =
-        weapon != null ? provider.linkedAccessoriesForWeapon(weapon.id) : const <Accessory>[];
-    final linkedWeapons =
-        accessory != null ? provider.linkedWeaponsForAccessory(accessory.id) : const <Weapon>[];
+        platform != null ? provider.linkedAccessoriesForPlatform(platform.id) : const <Accessory>[];
+    final linkedPlatforms =
+        accessory != null ? provider.linkedPlatformsForAccessory(accessory.id) : const <Platform>[];
 
-    if (weapon == null && ammo == null && accessory == null) {
+    if (platform == null && ammo == null && accessory == null) {
       return Scaffold(
         appBar: AppBar(title: Text(strings.itemNotFound)),
         body: Center(child: Text(strings.itemDoesNotExist)),
@@ -737,18 +904,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final String? photoPath;
     final String comment;
 
-    if (weapon != null) {
-      itemName = weapon.name;
+    if (platform != null) {
+      itemName = platform.name;
       headerSubtitle = null;
-      itemType = 'ARME';
-      lastUsedText = AppDateFormats.formatDateShort(context, weapon.lastUsed);
-      documents = weapon.documents;
-      photoPath = weapon.photoPath;
-      comment = weapon.comment;
+      itemType = 'PLATEFORME';
+      lastUsedText = AppDateFormats.formatDateShort(context, platform.lastUsed);
+      documents = platform.documents;
+      photoPath = platform.photoPath;
+      comment = platform.comment;
     } else if (ammo != null) {
       itemName = ammo.name;
       headerSubtitle = null;
-      itemType = 'MUNITION';
+      itemType = 'CONSOMMABLE';
       lastUsedText = AppDateFormats.formatDateShort(context, ammo.lastUsed);
       documents = ammo.documents;
       photoPath = ammo.photoPath;
@@ -764,10 +931,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       comment = acc.comment;
     }
 
-    return Scaffold(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: colors.surfaceContainerHighest,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
       // Même fond que la page d'inventaire (récap accessoires)
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -775,7 +951,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               Stack(
                 children: [
                   Container(
-                    height: 220,
+                    height: 220 + MediaQuery.paddingOf(context).top,
                     width: double.infinity,
                     color: colors.surfaceContainerHighest,
                     child: photoPath == null
@@ -794,7 +970,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           ),
                   ),
                   Positioned(
-                    top: 16,
+                    top: MediaQuery.paddingOf(context).top + 8,
                     left: 16,
                     right: 16,
                     child: Row(
@@ -814,7 +990,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           onPressed: () => context.push(
                             '/inventory/add?itemId=${widget.itemId}&itemType=$itemType',
                           ),
-                          color: colors.primary,
+                          color: colors.onSurface,
                           style: IconButton.styleFrom(
                             backgroundColor:
                                 colors.surface.withValues(alpha: 0.5),
@@ -849,7 +1025,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           if (headerSubtitle != null) ...[
                             const Gap(2),
                             Text(
-                              headerSubtitle!,
+                              headerSubtitle,
                               style: textStyles.labelSmall?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.85),
                                 fontWeight: FontWeight.w600,
@@ -867,24 +1043,28 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.build_circle_outlined,
-                          size: 18,
-                          color: colors.primary,
-                        ),
-                        const Gap(8),
-                        Text(
-                          strings.maintenanceStatus,
-                          style: textStyles.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
+                    if (ammo == null) ...[  // ── Titre maintenance (plateforme/accessoire) ──
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.build_circle_outlined,
+                            size: 18,
+                            color: colors.primary,
                           ),
-                        ),
-                      ],
-                    ),
-                    const Gap(AppSpacing.sm),
-                    if (weapon != null)
+                          const Gap(8),
+                          Text(
+                            strings.maintenanceStatus.toUpperCase(),
+                            style: textStyles.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.1,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(AppSpacing.sm),
+                    ],
+                    if (platform != null)
                       Container(
                         padding: AppSpacing.paddingLg,
                         decoration: BoxDecoration(
@@ -895,7 +1075,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             color: Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.35,
+                            width: 1.2,
                           ),
                         ),
                         child: Column(
@@ -903,15 +1083,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           children: [
                             _StatusBar(
                               label: strings.revision,
-                              percent: weapon.revisionProgress,
-                              color: weapon.revisionProgress > 0.8
+                              percent: platform.revisionProgress,
+                              color: platform.revisionProgress > 0.8
                                   ? colors.error
                                   : colors.primary,
                             ),
                             _StatusBar(
                               label: strings.cleanliness,
-                              percent: weapon.cleaningProgress,
-                              color: weapon.cleaningProgress > 0.8
+                              percent: platform.cleaningProgress,
+                              color: platform.cleaningProgress > 0.8
                                   ? colors.error
                                   : colors.primary,
                             ),
@@ -928,8 +1108,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                         color: colors.secondary,
                                       ),
                                     ),
-Text(
-                                      "${weapon.totalRounds}",
+                                    Text(
+                                      "${platform.totalRounds}",
                                       style: textStyles.bodyMedium?.copyWith(
                                         fontWeight: FontWeight.w600,
                                         color: colors.onSurface,
@@ -970,8 +1150,8 @@ Text(
                                           icon: Icons.cleaning_services_rounded,
                                           label: strings.maintenance,
                                           value:
-                                              '${weapon.roundsSinceCleaning} / ${weapon.cleaningRoundsThreshold} ${strings.shotsLower}',
-                                          color: weapon.cleaningProgress > 0.8
+                                              '${platform.roundsSinceCleaning} / ${platform.cleaningRoundsThreshold} ${strings.shotsLower}',
+                                          color: platform.cleaningProgress > 0.8
                                               ? colors.error
                                               : colors.secondary,
                                         ),
@@ -1006,7 +1186,7 @@ Text(
                                                     Text(strings.confirmation),
                                                 content: Text(
                                                   strings
-                                                      .confirmCleaningMessage,
+                                                      .confirmPlatformCleaningMessage,
                                                 ),
                                                 actions: [
                                                   TextButton(
@@ -1026,8 +1206,8 @@ Text(
                                               ),
                                             );
                                             if (confirm == true) {
-                                              provider.recordWeaponCleaning(
-                                                weapon.id,
+                                              provider.recordPlatformCleaning(
+                                                platform.id,
                                               );
                                               if (context.mounted) {
                                                 ScaffoldMessenger.of(context)
@@ -1037,6 +1217,7 @@ Text(
                                                       strings
                                                           .cleaningRecordedSuccess,
                                                     ),
+                                                    duration: const Duration(seconds: 3),
                                                   ),
                                                 );
                                               }
@@ -1059,8 +1240,8 @@ Text(
                                           icon: Icons.handyman_rounded,
                                           label: strings.revision,
                                           value:
-                                              '${weapon.roundsSinceRevision} / ${weapon.wearRoundsThreshold} ${strings.shotsLower}',
-                                          color: weapon.revisionProgress > 0.8
+                                              '${platform.roundsSinceRevision} / ${platform.wearRoundsThreshold} ${strings.shotsLower}',
+                                          color: platform.revisionProgress > 0.8
                                               ? colors.error
                                               : colors.secondary,
                                         ),
@@ -1096,7 +1277,7 @@ Text(
                                                 ),
                                                 content: Text(
                                                   strings
-                                                      .weaponConfirmRevisionMessage,
+                                                      .platformConfirmRevisionMessage,
                                                 ),
                                                 actions: [
                                                   TextButton(
@@ -1116,8 +1297,8 @@ Text(
                                               ),
                                             );
                                             if (confirm == true) {
-                                              provider.recordWeaponRevision(
-                                                weapon.id,
+                                              provider.recordPlatformRevision(
+                                                platform.id,
                                               );
                                               if (context.mounted) {
                                                 ScaffoldMessenger.of(context)
@@ -1127,6 +1308,7 @@ Text(
                                                       strings
                                                           .revisionRecordedSuccess,
                                                     ),
+                                                    duration: const Duration(seconds: 3),
                                                   ),
                                                 );
                                               }
@@ -1163,7 +1345,7 @@ Text(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.stretch,
                                                 children: [
-Text(
+                                                  Text(
                                                     strings.partNameLabel,
                                                     style: Theme.of(context)
                                                         .textTheme
@@ -1173,15 +1355,29 @@ Text(
                                                         ),
                                                   ),
                                                  
-TextField(
+                                                  TextField(
                                                     controller: partController,
                                                     decoration: InputDecoration(
+                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                                       hintText: strings.partNameHint,
                                                       filled: true,
-fillColor: Color.alphaBlend(
+                                                      fillColor: Color.alphaBlend(
                                                         Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                                                         Theme.of(context).colorScheme.surface,
-                                                      ),                                                    ),
+                                                      ),
+                                                      border: OutlineInputBorder(
+                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                                        borderSide: BorderSide(color: colors.outline),
+                                                      ),
+                                                      enabledBorder: OutlineInputBorder(
+                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                                        borderSide: BorderSide(color: colors.outline),
+                                                      ),
+                                                      focusedBorder: OutlineInputBorder(
+                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                                        borderSide: BorderSide(color: colors.outline),
+                                                      ),
+                                                    ),
                                                   ),
                                                   const Gap(16),
                                                   Text(
@@ -1266,12 +1462,26 @@ fillColor: Color.alphaBlend(
                                                         commentController,
                                                     maxLines: 3,
                                                     decoration: InputDecoration(
+                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                                       hintText: strings.partChangeCommentHint,
                                                       filled: true,
-fillColor: Color.alphaBlend(
+                                                      fillColor: Color.alphaBlend(
                                                         Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                                                         Theme.of(context).colorScheme.surface,
-                                                      ),                                                    ),
+                                                      ),
+                                                      border: OutlineInputBorder(
+                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                                        borderSide: BorderSide(color: colors.outline),
+                                                      ),
+                                                      enabledBorder: OutlineInputBorder(
+                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                                        borderSide: BorderSide(color: colors.outline),
+                                                      ),
+                                                      focusedBorder: OutlineInputBorder(
+                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                                        borderSide: BorderSide(color: colors.outline),
+                                                      ),
+                                                    ),
                                                   ),
                                                 ],
                                               ),
@@ -1300,8 +1510,8 @@ fillColor: Color.alphaBlend(
                                         ),
                                       );
                                       if (result == true) {
-                                        provider.recordWeaponPartChange(
-                                          weaponId: weapon.id,
+                                        provider.recordPlatformPartChange(
+                                          platformId: platform.id,
                                           partName: partController.text.trim(),
                                           date: selectedDate,
                                           comment:
@@ -1315,6 +1525,7 @@ fillColor: Color.alphaBlend(
                                                 strings
                                                     .partChangeRecordedSuccess,
                                               ),
+                                              duration: const Duration(seconds: 3),
                                             ),
                                           );
                                         }
@@ -1345,7 +1556,32 @@ fillColor: Color.alphaBlend(
                           ],
                         ),
                       )
-                    else if (ammo != null)
+                    else if (ammo != null) ...[                      
+                      // ── Titre stock/utilisation hors container ───────
+                      Row(
+                        children: [
+                          SvgPicture.asset(
+                            'assets/images/pointe.svg',
+                            width: 18,
+                            height: 18,
+                            colorFilter: ColorFilter.mode(
+                              colors.primary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const Gap(8),
+                          Text(
+                            strings.stockAndUsage.toUpperCase(),
+                            style: textStyles.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.1,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(AppSpacing.sm),
+                      // ── Carte stock ────────────────────────────────
                       Container(
                         padding: AppSpacing.paddingLg,
                         decoration: BoxDecoration(
@@ -1356,79 +1592,127 @@ fillColor: Color.alphaBlend(
                             color: Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.35,
+                            width: 1.2,
                           ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SvgPicture.asset(
-                                  'assets/images/bullet.svg',
-                                  width: 18,
-                                  height: 18,
-                                  colorFilter: ColorFilter.mode(
-                                    colors.primary,
-                                    BlendMode.srcIn,
+                                Text(
+                                  strings.currentStock,
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: colors.secondary,
                                   ),
                                 ),
-                                const Gap(8),
                                 Text(
-                                  strings.stockAndUsage,
-                                  style: textStyles.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                                  "${ammo.quantity}",
+                                  style: textStyles.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: ammo.quantity < 100
+                                        ? colors.error
+                                        : colors.onSurface,
                                   ),
                                 ),
                               ],
                             ),
-                            const Gap(AppSpacing.md),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      strings.currentStock,
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      "${ammo.quantity}",
-                                      style: textStyles.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                        color: ammo.quantity < 100
-                                            ? colors.error
-                                            : colors.onSurface,
-                                      ),
-                                    ),
-                                  ],
+                                Text(
+                                  strings.lastShot,
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: colors.secondary,
+                                  ),
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      strings.lastShot,
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      lastUsedText,
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: colors.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                 Text(
+                                   lastUsedText,
+                                   style: textStyles.bodyMedium?.copyWith(
+                                     fontWeight: FontWeight.w600,
+                                     color: colors.onSurface,
+                                   ),
+                                 ),
+                               ],
+                             ),
+                           ],
+                         ),
+                       ),
+                      const Gap(AppSpacing.md),
+                      // ── Bouton réapprovisionner ──────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => _showRestockSheet(ammo, provider),
+                          icon: const Icon(Icons.add_circle_outline_rounded),
+                          label: Text(strings.restock),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                            ),
+                            backgroundColor: colors.primary,
+                            foregroundColor: colors.onPrimary,
+                            elevation: 2,
+                            shadowColor: colors.primary.withValues(alpha: 0.35),
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      // ── Coût ─────────────────────────────────────────
+                      if (ammo.unitPrice != null) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.euro_rounded,
+                                size: 18, color: colors.primary),
+                            const Gap(8),
+                            Text(
+                              strings.costDashboardTitle.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1,
+                                color: colors.onSurface,
+                              ),
                             ),
                           ],
                         ),
-                      )
+                        const Gap(AppSpacing.sm),
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            boxShadow: AppShadows.cardPremium,
+                            border: Border.all(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _InfoRow(
+                                icon: Icons.euro_rounded,
+                                label: strings.ammoTotalShotCost,
+                                value: '${provider.getAmmoTotalShotCost(ammo.id)?.toStringAsFixed(2) ?? '0.00'} ${_getCurrencySymbol(ammo.currency)}',
+                              ),
+                              const Gap(8),
+                              _InfoRow(
+                                icon: Icons.euro_rounded,
+                                label: strings.ammoRemainingStockCost,
+                                value: '${provider.getAmmoRemainingStockCost(ammo.id)?.toStringAsFixed(2) ?? '0.00'} ${_getCurrencySymbol(ammo.currency)}',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ]
                     else
                       Container(
                         padding: AppSpacing.paddingLg,
@@ -1440,15 +1724,14 @@ fillColor: Color.alphaBlend(
                             color: Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.35,
+                            width: 1.2,
                           ),
                         ),
 child: Builder(
                           builder: (context) {
                             final acc = accessory!;
                             final maintenanceEnabledTypes = {
-                              'Modérateurs',
-                              'Réducteur de son',
+                              'SUPP',
                               'Compensateurs',
                               'Détentes',
                               'Pièces internes',
@@ -1613,10 +1896,11 @@ child: Builder(
                                                       ScaffoldMessenger.of(
                                                               context)
                                                           .showSnackBar(
-                                                        const SnackBar(
+                                                        SnackBar(
                                                           content: Text(
-                                                            'Entretien enregistré avec succès.',
+                                                            strings.maintenanceRecordedSuccess,
                                                           ),
+                                                          duration: Duration(seconds: 3),
                                                         ),
                                                       );
                                                     }
@@ -1714,16 +1998,17 @@ child: Builder(
                                                       ScaffoldMessenger.of(
                                                               context)
                                                           .showSnackBar(
-                                                        const SnackBar(
+                                                        SnackBar(
                                                           content: Text(
-                                                            'Révision enregistrée avec succès.',
+                                                            strings.revisionRecordedSuccess,
                                                           ),
+                                                          duration: Duration(seconds: 3),
                                                         ),
                                                       );
                                                     }
                                                   }
                                                 },
-                                                child: const Text('Réviser'),
+                                                child: Text(strings.reviseLabel),
                                               ),
                                             ),
                                           ],
@@ -1760,7 +2045,8 @@ child: Builder(
                                   label: strings.shotsFired,
                                   value: "${acc.totalRounds}",
                                 ),
-                                if (acc.batteryChangedAt != null)
+                                if (acc.batteryChangedAt != null) ...[
+                                  const Gap(12),
                                   _InfoRow(
                                     icon: Icons.battery_charging_full_rounded,
                                     label: strings.batteryChangedLabel,
@@ -1769,6 +2055,7 @@ child: Builder(
                                       acc.batteryChangedAt!,
                                     ),
                                   ),
+                                ],
                                 const Divider(height: 32),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1812,7 +2099,7 @@ child: Builder(
                     ),
                     const Gap(AppSpacing.md),
                     Container(
-                      padding: AppSpacing.paddingLg,
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -1827,33 +2114,33 @@ border: Border.all(
                      child: LayoutBuilder(
                         builder: (context, constraints) {
                           final items = <Widget>[
-                            if (weapon != null) ...[
+                            if (platform != null) ...[
                               _InfoRowSvg(
-                                assetPath: 'assets/images/bullet.svg',
+                                assetPath: 'assets/images/pointe.svg',
                                 label: strings.caliberLabel,
-                                value: weapon.caliber,
+                                value: platform.caliber,
                               ),
                               _InfoRow(
                                 icon: Icons.list_alt_rounded,
                                 label: strings.modelLabel,
-                                value: weapon.model,
+                                value: platform.model,
                               ),
                               _InfoRow(
                                 icon: Icons.numbers_rounded,
                                 label: strings.serialNumberLabel,
-                                value: weapon.serialNumber,
+                                value: platform.serialNumber,
                               ),
                               _InfoRow(
                                 icon: Icons.scale_rounded,
                                 label: strings.emptyWeightLabel,
-                                value: "${weapon.weight} g",
+                                value: "${platform.weight} g",
                               ),
                               _InfoRow(
                                 icon: Icons.cleaning_services_rounded,
                                 label: strings.lastCleaningLabel,
                                 value: AppDateFormats.formatDateShort(
                                   context,
-                                  weapon.lastCleaned,
+                                  platform.lastCleaned,
                                 ),
                               ),
                               _InfoRow(
@@ -1861,12 +2148,12 @@ border: Border.all(
                                 label: strings.lastRevisionLabel,
                                 value: AppDateFormats.formatDateShort(
                                   context,
-                                  weapon.lastRevised,
+                                  platform.lastRevised,
                                 ),
                               ),
                             ] else if (ammo != null) ...[
                               _InfoRowSvg(
-                                assetPath: 'assets/images/bullet.svg',
+                                assetPath: 'assets/images/pointe.svg',
                                 label: strings.caliberLabel,
                                 value: ammo.caliber,
                               ),
@@ -1935,33 +2222,92 @@ border: Border.all(
                                 ],
                               ),
                             );
+                            if (i + 2 < items.length) {
+                              rows.add(const Gap(12));
+                            }
                           }
-                          return Column(children: rows);
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: rows,
+                          );
                         },
                       ),
                     ),
                     const Gap(AppSpacing.lg),
-                    if (weapon != null || accessory != null) ...[
+                    if (platform != null || accessory != null) ...[
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            Icons.link_rounded,
-                            size: 18,
-                            color: colors.primary,
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.link_rounded,
+                                size: 18,
+                                color: colors.primary,
+                              ),
+                              const Gap(8),
+                              Text(
+                                strings.liaisonsLabel.toUpperCase(),
+                                style: textStyles.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.1,
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                            ],
                           ),
-                          const Gap(8),
-                          Text(
-                            'Liaisons',
-                            style: textStyles.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                          if (platform != null)
+                            FilledButton.icon(
+                              onPressed: () => _editLinkedAccessories(provider, platform.id),
+                              icon: const Icon(
+                                Icons.link_rounded,
+                                size: 18,
+                              ),
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(strings.linkToAccessory),
+                                ],
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: colors.primary,
+                                foregroundColor: colors.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                ),
+                                elevation: 2,
+                                shadowColor: colors.primary.withValues(alpha: 0.35),
+                              ),
+                            )
+                          else if (accessory != null)
+                            FilledButton.icon(
+                              onPressed: () => _editLinkedPlatforms(provider, accessory.id),
+                              icon: const Icon(
+                                Icons.link_rounded,
+                                size: 18,
+                              ),
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(strings.linkToPlatform),
+                                ],
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: colors.primary,
+                                foregroundColor: colors.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                ),
+                                elevation: 2,
+                                shadowColor: colors.primary.withValues(alpha: 0.35),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                       const Gap(AppSpacing.md),
                       Container(
                         width: double.infinity,
-                        padding: AppSpacing.paddingLg,
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                         decoration: BoxDecoration(
                           color: colors.surface,
                           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -1969,16 +2315,16 @@ border: Border.all(
                             color: Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.35,
+                            width: 1.2,
                           ),
                           boxShadow: AppShadows.cardPremium,
                         ),
-                        child: (weapon != null && linkedAccessories.isEmpty) ||
-                                (accessory != null && linkedWeapons.isEmpty)
+                        child: (platform != null && linkedAccessories.isEmpty) ||
+                                (accessory != null && linkedPlatforms.isEmpty)
                             ? Text(
-                                weapon != null
-                                    ? 'Aucun accessoire lié.'
-                                    : 'Aucune arme liée.',
+                                platform != null
+                                    ? strings.noAccessoryLinked
+                                    : strings.noPlatformLinked,
                                 style: textStyles.bodyMedium?.copyWith(
                                   color: colors.secondary,
                                 ),
@@ -1986,24 +2332,32 @@ border: Border.all(
                             : Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children: weapon != null
+                                children: platform != null
                                     ? linkedAccessories
                                         .map(
                                           (a) => Chip(
-                                            avatar: const Icon(
+                                            backgroundColor: colors.primary,
+                                            side: BorderSide.none,
+                                            labelStyle: TextStyle(color: colors.onPrimary),
+                                            avatar: Icon(
                                               Icons.inventory_2_rounded,
                                               size: 16,
+                                              color: colors.onPrimary,
                                             ),
                                             label: Text(a.name),
                                           ),
                                         )
                                         .toList()
-                                    : linkedWeapons
+                                    : linkedPlatforms
                                         .map(
                                           (w) => Chip(
-                                            avatar: const Icon(
-                                              Icons.sports_martial_arts_rounded,
+                                            backgroundColor: colors.primary,
+                                            side: BorderSide.none,
+                                            labelStyle: TextStyle(color: colors.onPrimary),
+                                            avatar: Icon(
+                                              Icons.link_rounded,
                                               size: 16,
+                                              color: colors.onPrimary,
                                             ),
                                             label: Text(w.name),
                                           ),
@@ -2023,9 +2377,11 @@ border: Border.all(
                           ),
                           const Gap(8),
                           Text(
-                            strings.commentLabel,
-                            style: textStyles.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                            strings.commentLabel.toUpperCase(),
+                            style: textStyles.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.1,
+                              color: colors.onSurface,
                             ),
                           ),
                         ],
@@ -2068,9 +2424,11 @@ Icon(
                             ),
                             const Gap(8),
                             Text(
-                              strings.documentsLabel,
-                              style: textStyles.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
+                              strings.documentsLabel.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1,
+                                color: colors.onSurface,
                               ),
                             ),
                           ],
@@ -2081,7 +2439,7 @@ Icon(
                           )
                               ? () => _addDocumentToCurrentItem(
                                     documents: documents,
-                                    weapon: weapon,
+                                    platform: platform,
                                     ammo: ammo,
                                     accessory: accessory,
                                   )
@@ -2156,14 +2514,14 @@ Icon(
                           onEdit: () => _updateDocumentToCurrentItem(
                             documents: documents,
                             document: doc,
-                            weapon: weapon,
+                            platform: platform,
                             ammo: ammo,
                             accessory: accessory,
                           ),
                           onDelete: () => _removeDocumentFromCurrentItem(
                             documents: documents,
                             document: doc,
-                            weapon: weapon,
+                            platform: platform,
                             ammo: ammo,
                             accessory: accessory,
                           ),
@@ -2181,7 +2539,7 @@ Icon(
                             color: Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.35,
+                            width: 1.2,
                           ),
                           boxShadow: AppShadows.cardPremium,
                         ),
@@ -2194,7 +2552,138 @@ Icon(
                       ),
                       const Gap(AppSpacing.lg),
                     ],
-                    if (weapon != null || ammo != null) ...[
+                    if (ammo != null) ...[
+                      // ── Historique de réapprovisionnement ────────────
+                      Row(
+                        children: [
+                          Icon(Icons.history_rounded, size: 18, color: colors.primary),
+                          const Gap(8),
+                          Text(
+                            strings.fullHistoryTitle.toUpperCase(),
+                            style: textStyles.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.1,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(AppSpacing.md),
+                      Container(
+                        padding: AppSpacing.paddingLg,
+                        decoration: BoxDecoration(
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? colors.outline
+                                : LightColors.surfaceHighlight,
+                            width: 1.2,
+                          ),
+                          boxShadow: AppShadows.cardPremium,
+                        ),
+                        child: () {
+                          final sortedHistory = [...ammo.safeHistory]
+                            ..sort((a, b) => b.date.compareTo(a.date));
+                          if (sortedHistory.isEmpty) {
+                            return Text(
+                              strings.noRestockHistoryYet,
+                              style: textStyles.bodyMedium?.copyWith(
+                                color: colors.secondary,
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: sortedHistory.map((entry) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: colors.primary.withValues(alpha: 0.12),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: SvgPicture.asset(
+                                          'assets/images/pointe.svg',
+                                          width: 16,
+                                          height: 16,
+                                          colorFilter: ColorFilter.mode(
+                                            colors.primary,
+                                            BlendMode.srcIn,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const Gap(12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${entry.label} ${strings.cartridges}',
+                                            style: textStyles.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: colors.onSurface,
+                                            ),
+                                          ),
+                                          if (entry.comment != null && entry.comment!.isNotEmpty)
+                                            Text(
+                                              entry.comment!,
+                                              style: textStyles.bodySmall?.copyWith(
+                                                color: colors.secondary,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    Text(
+                                      AppDateFormats.formatDateShort(context, entry.date),
+                                      style: textStyles.labelSmall?.copyWith(
+                                        color: colors.secondary,
+                                      ),
+                                    ),
+                                    const Gap(8),
+                                    IconButton(
+                                      icon: Icon(Icons.delete_rounded, size: 18),
+                                      onPressed: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text(strings.deleteHistoryEntryTitle),
+                                            content: Text(strings.deleteHistoryEntryConfirm),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(context).pop(false),
+                                                child: Text(strings.cancelButton),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.of(context).pop(true),
+                                                style: TextButton.styleFrom(foregroundColor: colors.error),
+                                                child: Text(strings.deleteButton),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+
+                                        if (confirm == true) {
+                                          provider.deleteAmmoHistoryEntry(ammo.id, entry.id);
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }(),
+                      ),
+                      const Gap(AppSpacing.lg),
+                    ],
+                    if (platform != null || ammo != null) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -2207,9 +2696,11 @@ Icon(
                               ),
                               const Gap(8),
                               Text(
-                                strings.usageHistoryShotsTitle,
-                                style: textStyles.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                                strings.usageHistoryShotsTitle.toUpperCase(),
+                                style: textStyles.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.1,
+                                  color: colors.onSurface,
                                 ),
                               ),
                             ],
@@ -2241,16 +2732,16 @@ Icon(
                                       : _selectedPeriod == 'year'
                                           ? strings.yearLabel
                                           : strings.monthLabel,
-                                  style: textStyles.labelSmall?.copyWith(
+                                  style: textStyles.labelLarge?.copyWith(
                                     color: colors.secondary,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
                                 Icon(
-                                  Icons.chevron_right_rounded,
+                                  Icons.keyboard_arrow_down_rounded,
                                   color: colors.secondary,
-                                  size: 16,
+                                  size: 20,
                                 ),
                               ],
                             ),
@@ -2263,7 +2754,7 @@ Icon(
                           final history = _calculateUsageHistory(
                             provider,
                             widget.itemId,
-                            weapon != null ? 'ARME' : 'MUNITION',
+                            platform != null ? 'PLATEFORME' : 'CONSOMMABLE',
                           );
                           final labels = history.keys.toList();
                           final values = history.values.toList();
@@ -2390,35 +2881,45 @@ Icon(
                               ),
                             ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: colors.outline),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _selectedPeriod,
-                                isDense: true,
-                                style: textStyles.labelSmall
-                                    ?.copyWith(color: colors.onSurface),
-                                items: [
-                                  DropdownMenuItem(
-                                      value: 'week',
-                                      child: Text(strings.weekLabel)),
-                                  DropdownMenuItem(
-                                      value: 'month',
-                                      child: Text(strings.monthLabel)),
-                                  DropdownMenuItem(
-                                      value: 'year',
-                                      child: Text(strings.yearLabel)),
-                                ],
-                                onChanged: (value) {
-                                  if (value != null)
-                                    setState(() => _selectedPeriod = value);
-                                },
+                          PopupMenuButton<String>(
+                            initialValue: _selectedPeriod,
+                            tooltip: strings.usageHistoryShotsTitle,
+                            onSelected: (v) => setState(() => _selectedPeriod = v),
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'week',
+                                child: Text(strings.weekLabel),
                               ),
+                              PopupMenuItem(
+                                value: 'month',
+                                child: Text(strings.monthLabel),
+                              ),
+                              PopupMenuItem(
+                                value: 'year',
+                                child: Text(strings.yearLabel),
+                              ),
+                            ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _selectedPeriod == 'week'
+                                      ? strings.weekLabel
+                                      : _selectedPeriod == 'year'
+                                          ? strings.yearLabel
+                                          : strings.monthLabel,
+                                  style: textStyles.labelLarge?.copyWith(
+                                    color: colors.secondary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: colors.secondary,
+                                  size: 20,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -2442,7 +2943,7 @@ Icon(
                             color: Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.35,
+                            width: 1.2,
                           ),
                           boxShadow: AppShadows.cardPremium,
                           ),
@@ -2515,7 +3016,7 @@ Icon(
                       }),
                       const Gap(AppSpacing.lg),
                     ],
-                    if (weapon != null) ...[
+                    if (platform != null) ...[
                       Row(
                         children: [
                           Icon(
@@ -2525,9 +3026,11 @@ Icon(
                           ),
                           const Gap(8),
                           Text(
-                            strings.fullHistoryTitle,
-                            style: textStyles.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                            strings.fullHistoryTitle.toUpperCase(),
+                            style: textStyles.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.1,
+                              color: colors.onSurface,
                             ),
                           ),
                         ],
@@ -2542,12 +3045,12 @@ Icon(
                             color: Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.35,
+                            width: 1.2,
                           ),
                           boxShadow: AppShadows.cardPremium,
                         ),
                         child: () {
-                          final filteredHistory = weapon.history
+                          final filteredHistory = platform.history
                               .where(
                                 (h) =>
                                     h.type == 'entretien' ||
@@ -2571,7 +3074,7 @@ Icon(
                                 .map(
                                   (entry) => Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
-                                    child: _WeaponHistoryRow(entry: entry),
+                                    child: _PlatformHistoryRow(entry: entry),
                                   ),
                                 )
                                 .toList(),
@@ -2587,10 +3090,12 @@ Icon(
           ),
         ),
       ),
+      ),
     );
   }
 
   Future<void> _openPdf(String pdfPath) async {
+    final strings = AppStrings.of(context);
     try {
       if (kIsWeb && pdfPath.startsWith('data:')) {
         await WebDocumentOpener.openDataUrlInNewTab(
@@ -2620,14 +3125,19 @@ Icon(
         return;
       }
 
-      final uri = Uri.file(pdfPath);
-      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!ok) throw Exception('launchUrl failed for file');
+      // Local file path: use OpenFilex for proper file opening on Android/iOS
+      final result = await OpenFilex.open(pdfPath);
+      if (result.type != ResultType.done) {
+        throw Exception('OpenFilex failed: ${result.message}');
+      }
     } catch (e) {
       debugPrint('Failed to open PDF: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible d\'ouvrir le document')),
+          SnackBar(
+            content: Text(strings.cannotOpenDocument),
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     }
@@ -2658,8 +3168,12 @@ class _StatusBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                label,
-                style: textStyles.labelSmall?.copyWith(color: colors.secondary),
+                label.toUpperCase(),
+                style: textStyles.labelSmall?.copyWith(
+                  color: colors.secondary,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.1,
+                ),
               ),
               Text(
                 "${(percent * 100).toInt()}%",
@@ -2722,10 +3236,11 @@ class _MaintenanceChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                label,
+                label.toUpperCase(),
                 style: textStyles.labelSmall?.copyWith(
                   color: colors.secondary,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.1,
                 ),
               ),
               const Gap(2),
@@ -2761,35 +3276,34 @@ class _InfoRow extends StatelessWidget {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: colors.primary, size: 18),
-          const Gap(8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: textStyles.labelSmall?.copyWith(
-                    color: colors.secondary,
-                  ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: colors.primary, size: 18),
+        const Gap(8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: textStyles.labelSmall?.copyWith(
+                  color: colors.secondary,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.1,
                 ),
-                Text(
-                  value,
-                  style: textStyles.bodyMedium?.copyWith(
-                    color: colors.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+              Text(
+                value,
+                style: textStyles.bodyMedium?.copyWith(
+                  color: colors.onSurface,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -2811,48 +3325,47 @@ class _InfoRowSvg extends StatelessWidget {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SvgPicture.asset(
-            assetPath,
-            width: 18,
-            height: 18,
-            colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-          ),
-          const Gap(8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: textStyles.labelSmall?.copyWith(
-                    color: colors.secondary,
-                  ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SvgPicture.asset(
+          assetPath,
+          width: 18,
+          height: 18,
+          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+        ),
+        const Gap(8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: textStyles.labelSmall?.copyWith(
+                  color: colors.secondary,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.1,
                 ),
-                Text(
-                  value,
-                  style: textStyles.bodyMedium?.copyWith(
-                    color: colors.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+              Text(
+                value,
+                style: textStyles.bodyMedium?.copyWith(
+                  color: colors.onSurface,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _WeaponHistoryRow extends StatelessWidget {
-  final WeaponHistoryEntry entry;
+class _PlatformHistoryRow extends StatelessWidget {
+  final PlatformHistoryEntry entry;
 
-  const _WeaponHistoryRow({required this.entry});
+  const _PlatformHistoryRow({required this.entry});
 
   @override
   Widget build(BuildContext context) {
@@ -2876,7 +3389,7 @@ class _WeaponHistoryRow extends StatelessWidget {
         iconColor = colors.primary;
         break;
       default:
-        icon = Icons.sports_martial_arts_rounded;
+        icon = Icons.link_rounded;
         iconColor = colors.primary;
         break;
     }
@@ -2976,7 +3489,7 @@ static bool _isImagePath(String path) {
     final baseTypeLabel = type.isEmpty ? strings.documentsLabel : type;
     final expiryLabel = expiryDate == null
         ? null
-        : 'Expire le ${AppDateFormats.formatDateShort(context, expiryDate!)}';
+        : '${strings.docExpiryExpiresOn} ${AppDateFormats.formatDateShort(context, expiryDate!)}';
     final secondLine =
         expiryLabel == null ? baseTypeLabel : '$baseTypeLabel • $expiryLabel';
 

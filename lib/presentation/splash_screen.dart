@@ -4,42 +4,72 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/utils/timer_sound.dart';
+import 'package:video_player/video_player.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   double _opacity = 1.0;
   List<String> _warmupSvgs = const [];
-  double _progress = 0.0;
+  late VideoPlayerController _videoController;
+  late AnimationController _scaleController;
+  late Animation<double> _scaleAnimation;
+  
   @override
   void initState() {
     super.initState();
+    _initializeVideo();
+    _initializeScaleAnimation();
     _bootstrap();
   }
 
+  void _initializeScaleAnimation() {
+    _scaleController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..forward();
+    
+    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
+    );
+  }
+
+  void _initializeVideo() {
+    _videoController = VideoPlayerController.asset('assets/video/fumee_loading.mp4')
+      ..initialize().then((_) {
+        if (mounted) {
+          _videoController.setLooping(true);
+          _videoController.play();
+          debugPrint('Video initialized and playing');
+          setState(() {});
+        }
+      }).catchError((error) {
+        debugPrint('Video initialization error: $error');
+      });
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    _scaleController.dispose();
+    super.dispose();
+  }
+
   Future<void> _bootstrap() async {
+    final provider = context.read<ThotProvider>();
+
     try {
-      if (mounted) {
-        setState(() => _progress = 0.1);
-      }
       await _precacheAllAssets().timeout(const Duration(seconds: 8));
     } catch (_) {}
 
     try {
-      final provider = context.read<ThotProvider>();
-      if (mounted) {
-        setState(() => _progress = 0.7);
-      }
       await provider.initializeApp().timeout(const Duration(seconds: 10));
     } catch (_) {}
-    if (mounted) {
-      setState(() => _progress = 1.0);
-    }
     if (!mounted) return;
     // Léger fondu avant de naviguer
     setState(() => _opacity = 0.0);
@@ -56,22 +86,17 @@ class _SplashScreenState extends State<SplashScreen> {
     if (mounted) {
       setState(() {
         _warmupSvgs = const [];
-        _progress = 0.3;
       });
     }
 
     try {
       await TimerSound.warmUp();
-      if (mounted) {
-        setState(() => _progress = 0.5);
-      }
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: const Color(0xFF05070B),
@@ -79,17 +104,7 @@ class _SplashScreenState extends State<SplashScreen> {
         duration: const Duration(milliseconds: 220),
         opacity: _opacity,
         child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF05070B),
-                Color(0xFF0B0F14),
-                Color(0xFF151A24),
-              ],
-            ),
-          ),
+          color: Colors.black,
           child: Stack(
             children: [
               Offstage(
@@ -105,14 +120,29 @@ class _SplashScreenState extends State<SplashScreen> {
                   ],
                 ),
               ),
+              if (_videoController.value.isInitialized)
+                Positioned.fill(
+                  child: FittedBox(
+                    fit: BoxFit.fitHeight,
+                    child: SizedBox(
+                      width: _videoController.value.size.width,
+                      height: _videoController.value.size.height,
+                      child: VideoPlayer(_videoController),
+                    ),
+                  ),
+                ),
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    AnimatedScale(
-                      duration: const Duration(milliseconds: 320),
-                      curve: Curves.easeOutBack,
-                      scale: _opacity == 1.0 ? 1.0 : 0.98,
+                    AnimatedBuilder(
+                      animation: _scaleAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _scaleAnimation.value,
+                          child: child,
+                        );
+                      },
                       child: SvgPicture.asset(
                         'assets/images/LOGO.svg',
                         width: 124,

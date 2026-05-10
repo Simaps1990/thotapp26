@@ -59,7 +59,7 @@ void main() {
     test('isPrecisionCounted depends on precision and enabled flag', () {
       final e1 = Exercise(
         id: 'e',
-        weaponId: 'w',
+        platformId: 'w',
         ammoId: 'a',
         shotsFired: 1,
         distance: 1,
@@ -73,7 +73,7 @@ void main() {
 
       final e3 = Exercise(
         id: 'e',
-        weaponId: 'w',
+        platformId: 'w',
         ammoId: 'a',
         shotsFired: 1,
         distance: 1,

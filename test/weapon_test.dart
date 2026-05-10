@@ -2,9 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thot/data/models.dart';
 
 void main() {
-  group('Weapon', () {
+  group('Platform', () {
     test('roundsSinceCleaning is clamped at 0', () {
-      final w = Weapon(
+      final w = Platform(
         id: 'w',
         name: 'W',
         model: 'M',
@@ -21,7 +21,7 @@ void main() {
     });
 
     test('cleaningProgress respects threshold', () {
-      final w = Weapon(
+      final w = Platform(
         id: 'w',
         name: 'W',
         model: 'M',
@@ -40,7 +40,7 @@ void main() {
     });
 
     test('cleaningProgress is 0 when tracking disabled', () {
-      final w = Weapon(
+      final w = Platform(
         id: 'w',
         name: 'W',
         model: 'M',

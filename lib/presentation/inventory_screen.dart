@@ -8,8 +8,13 @@ import 'package:thot/data/models.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/widgets/tutorial_overlay.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-const _inventoryHeroAsset = 'assets/images/panel.webp';
+String _inventoryHeroAsset(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark ? 'assets/images/paneln.webp' : 'assets/images/panel.webp';
+}
 
 class InventoryScreen extends StatefulWidget {
   final int initialIndex;
@@ -25,6 +30,11 @@ class _InventoryScreenState extends State<InventoryScreen>
   late TabController _tabController;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  final GlobalKey _menuSearchKey = GlobalKey();
+  OverlayEntry? _tutorialOverlayEntry;
+  static const _tutorialNeverShowAgainKey =
+      'inventory_tutorial_never_show_again_v1';
+  bool _tutorialDismissedThisSession = false;
 
   @override
   void initState() {
@@ -32,12 +42,67 @@ class _InventoryScreenState extends State<InventoryScreen>
     _tabController = TabController(
         length: 3, initialIndex: widget.initialIndex, vsync: this);
     _tabController.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowTutorial();
+    });
+  }
+
+  Future<void> _checkAndShowTutorial() async {
+    if (_tutorialDismissedThisSession) return;
+    final prefs = await SharedPreferences.getInstance();
+    final neverShowAgain =
+        prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
+    if (!neverShowAgain && mounted && _tutorialOverlayEntry == null) {
+      _showTutorial();
+    }
+  }
+
+  void _showTutorial() {
+    final strings = AppStrings.of(context);
+    final steps = [
+      TutorialStep(
+        targetKey: _menuSearchKey,
+        title: strings.tutorialInventoryMenuSearchTitle,
+        description: strings.tutorialInventoryMenuSearchDescription,
+      ),
+    ];
+
+    _tutorialOverlayEntry = OverlayEntry(
+      builder: (_) => TutorialOverlay(
+        steps: steps,
+        onComplete: () {
+          _hideTutorial();
+        },
+        onSkip: () {
+          _hideTutorial();
+        },
+        onNeverShowAgain: () async {
+          _hideTutorial();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(_tutorialNeverShowAgainKey, true);
+        },
+      ),
+    );
+
+    final rootOverlay = Overlay.of(context, rootOverlay: true);
+    if (rootOverlay == null) return;
+    rootOverlay.insert(_tutorialOverlayEntry!);
+  }
+
+  void _hideTutorial() {
+    _tutorialOverlayEntry?.remove();
+    _tutorialOverlayEntry = null;
+    _tutorialDismissedThisSession = true;
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _tutorialOverlayEntry?.remove();
     super.dispose();
   }
 
@@ -45,7 +110,7 @@ class _InventoryScreenState extends State<InventoryScreen>
     final strings = AppStrings.of(context);
     switch (_tabController.index) {
       case 0:
-        return strings.addWeapon;
+        return strings.addPlatform;
       case 1:
         return strings.addAmmo;
       case 2:
@@ -58,13 +123,13 @@ class _InventoryScreenState extends State<InventoryScreen>
   String get _currentTabType {
     switch (_tabController.index) {
       case 0:
-        return "ARME";
+        return "PLATEFORME";
       case 1:
-        return "MUNITION";
+        return "CONSOMMABLE";
       case 2:
         return "ACCESSOIRE";
       default:
-        return "ARME";
+        return "PLATEFORME";
     }
   }
 
@@ -76,7 +141,6 @@ class _InventoryScreenState extends State<InventoryScreen>
     const heroHeight = 208.0;
     const panelTop = 120.0;
     const panelHeight = 140.0;
-    final subtleBorderColor = colors.outline.withValues(alpha: 0.45);
     // Fond global (même que la home) pour la page et le bandeau.
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     // Légère variation plus foncée que le fond global pour les champs de recherche.
@@ -86,8 +150,8 @@ class _InventoryScreenState extends State<InventoryScreen>
     );
 
     final canAddCurrent = switch (_currentTabType) {
-      'ARME' => provider.canAddWeapon(),
-      'MUNITION' => provider.canAddAmmo(),
+      'PLATEFORME' => provider.canAddPlatform(),
+      'CONSOMMABLE' => provider.canAddAmmo(),
       'ACCESSOIRE' => provider.canAddAccessory(),
       _ => true,
     };
@@ -97,21 +161,24 @@ class _InventoryScreenState extends State<InventoryScreen>
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           final allowed = switch (_currentTabType) {
-            'ARME' => provider.canAddWeapon(),
-            'MUNITION' => provider.canAddAmmo(),
+            'PLATEFORME' => provider.canAddPlatform(),
+            'CONSOMMABLE' => provider.canAddAmmo(),
             'ACCESSOIRE' => provider.canAddAccessory(),
             _ => true,
           };
 
           if (!allowed) {
             final typeKey = switch (_currentTabType) {
-              'ARME' => 'weapon',
-              'MUNITION' => 'ammo',
+              'PLATEFORME' => 'platform',
+              'CONSOMMABLE' => 'ammo',
               'ACCESSOIRE' => 'accessory',
-              _ => 'weapon',
+              _ => 'platform',
             };
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(provider.getLimitMessage(typeKey))),
+              SnackBar(
+                content: Text(provider.getLimitMessage(typeKey)),
+                duration: const Duration(seconds: 3),
+              ),
             );
             context.push('/pro');
             return;
@@ -184,7 +251,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                     fit: StackFit.expand,
                     children: [
                       Image.asset(
-                        _inventoryHeroAsset,
+                        _inventoryHeroAsset(context),
                         fit: BoxFit.cover,
                       ),
                       DecoratedBox(
@@ -237,82 +304,90 @@ class _InventoryScreenState extends State<InventoryScreen>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.lg,
-                            20,
-                            AppSpacing.lg,
-                            10,
-                          ),
-                          child: _SlidingSegmentedSelector(
-                            selectedIndex: _tabController.index,
-                            labels: [
-                              strings.weaponsTab,
-                              strings.ammosTab,
-                              strings.accessoriesTab,
-                            ],
-                            onSelected: (index) {
-                              _tabController.animateTo(index);
-                            },
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.lg,
-                            0,
-                            AppSpacing.lg,
-                            8,
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontSize: 14,
+                        Container(
+                          key: _menuSearchKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.lg,
+                                  20,
+                                  AppSpacing.lg,
+                                  10,
                                 ),
-                            onChanged: (value) {
-                              setState(() => _searchQuery = value);
-                            },
-                            decoration: InputDecoration(
-                              hintText: strings.searchInventoryHint,
-                              hintStyle: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    fontSize: 14,
-                                    color: colors.secondary,
+                                child: _SlidingSegmentedSelector(
+                                  selectedIndex: _tabController.index,
+                                  labels: [
+                                    strings.platformsTab,
+                                    strings.ammosTab,
+                                    strings.accessoriesTab,
+                                  ],
+                                  onSelected: (index) {
+                                    _tabController.animateTo(index);
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.lg,
+                                  0,
+                                  AppSpacing.lg,
+                                  8,
+                                ),
+                                child: TextField(
+                                  controller: _searchController,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontSize: 14,
+                                      ),
+                                  onChanged: (value) {
+                                    setState(() => _searchQuery = value);
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: strings.searchInventoryHint,
+                                    hintStyle: Theme.of(context).textTheme.bodyMedium
+                                        ?.copyWith(
+                                          fontSize: 14,
+                                          color: colors.secondary,
+                                        ),
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                    prefixIcon: const Icon(Icons.search, size: 20),
+                                    prefixIconConstraints: const BoxConstraints(
+                                      minWidth: 40,
+                                      minHeight: 40,
+                                    ),
+                                    suffixIcon: _searchQuery.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear, size: 18),
+                                            splashRadius: 18,
+                                            onPressed: () {
+                                              _searchController.clear();
+                                              setState(() => _searchQuery = '');
+                                            },
+                                          )
+                                        : null,
+                                    suffixIconConstraints: const BoxConstraints(
+                                      minWidth: 40,
+                                      minHeight: 40,
+                                    ),
+                                    filled: true,
+                                    fillColor: searchFillColor,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderSide: BorderSide(color: colors.outline),
+                                    ),
                                   ),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
+                                ),
                               ),
-                              prefixIcon: const Icon(Icons.search, size: 20),
-                              prefixIconConstraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 40,
-                              ),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 18),
-                                      splashRadius: 18,
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        setState(() => _searchQuery = '');
-                                      },
-                                    )
-                                  : null,
-                              suffixIconConstraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 40,
-                              ),
-                              filled: true,
-                              fillColor: searchFillColor,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(color: subtleBorderColor),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(color: subtleBorderColor),
-                              ),
-                            ),
+                            ],
                           ),
                         ),
                       ],
@@ -328,7 +403,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _InventoryList(type: 'weapon', provider: provider, searchQuery: _searchQuery),
+                    _InventoryList(type: 'platform', provider: provider, searchQuery: _searchQuery),
                     _InventoryList(type: 'ammo', provider: provider, searchQuery: _searchQuery),
                     _InventoryList(type: 'accessory', provider: provider, searchQuery: _searchQuery),
                   ],
@@ -459,8 +534,8 @@ class _InventoryList extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     // Determine base list based on type
-    final items = type == 'weapon'
-        ? provider.weapons
+    final items = type == 'platform'
+        ? provider.platforms
         : type == 'ammo'
             ? provider.ammos
             : provider.accessories;
@@ -470,9 +545,9 @@ class _InventoryList extends StatelessWidget {
     final filtered = q.isEmpty
         ? items
         : items.where((item) {
-            if (type == 'weapon') {
-              // Search only in weapon fields
-              final w = item as Weapon;
+            if (type == 'platform') {
+              // Search only in platform fields
+              final w = item as Platform;
               return (
                     _normalize(w.name).contains(q) ||
                     _normalize(w.model).contains(q) ||
@@ -511,18 +586,18 @@ class _InventoryList extends StatelessWidget {
       String titleText;
       String subtitleText;
 
-      if (type == 'weapon') {
+      if (type == 'platform') {
         iconWidget = SvgPicture.asset(
-          'assets/images/gun.svg',
+          'assets/images/tube.svg',
           width: 64,
           height: 64,
           colorFilter: ColorFilter.mode(colors.secondary.withValues(alpha: 0.5), BlendMode.srcIn),
         );
-        titleText = strings.noWeaponFound;
-        subtitleText = strings.addFirstWeapon;
+        titleText = strings.noPlatformFound;
+        subtitleText = strings.addFirstPlatform;
       } else if (type == 'ammo') {
         iconWidget = SvgPicture.asset(
-          'assets/images/bullet.svg',
+          'assets/images/pointe.svg',
           width: 64,
           height: 64,
           colorFilter: ColorFilter.mode(colors.secondary.withValues(alpha: 0.5), BlendMode.srcIn),
@@ -568,32 +643,35 @@ class _InventoryList extends StatelessWidget {
       itemCount: filtered.length,
       separatorBuilder: (_, __) => const Gap(16),
       itemBuilder: (context, index) {
-        if (type == 'weapon') {
-          final w = filtered[index] as Weapon;
-          final originalIndex = provider.weapons.indexOf(w);
-          final isLocked = provider.isWeaponLockedForFree(w, originalIndex);
+        if (type == 'platform') {
+          final w = filtered[index] as Platform;
+          final originalIndex = provider.platforms.indexOf(w);
+          final isLocked = provider.isPlatformLockedForFree(w, originalIndex);
           return _InventoryCard(
             itemId: w.id,
             title: w.name,
             subtitle: "${w.model} • ${w.caliber}",
             statLabel: strings.shotsFired,
             statValue: "${w.totalRounds}",
-            // Show the localized weapon type in the grey badge (top-right).
-            category: strings.itemWeaponTypeLabel(w.type),
+            // Show the localized platform type in the grey badge (top-right).
+            category: strings.itemPlatformTypeLabel(w.type),
             isLow: false,
             lastUse: strings.yesterday,
-            svgIconAsset: 'assets/images/gun.svg',
+            svgIconAsset: 'assets/images/tube.svg',
             icon: Icons.security_rounded,
             photoPath: w.photoPath,
             isLocked: isLocked,
-            onEdit: () => _showEditDialog(context, 'weapon', w),
+            onEdit: () => _showEditDialog(context, 'platform', w),
             onDelete: () =>
-                _showDeleteConfirmation(context, 'weapon', w.id, w.name),
+                _showDeleteConfirmation(context, 'platform', w.id, w.name),
             onDuplicate: () {
-              final duplicated = provider.duplicateWeapon(w);
+              final duplicated = provider.duplicatePlatform(w);
               if (!duplicated) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(provider.getLimitMessage('weapon'))),
+                  SnackBar(
+                    content: Text(provider.getLimitMessage('platform')),
+                    duration: const Duration(seconds: 3),
+                  ),
                 );
                 context.push('/pro');
               }
@@ -610,10 +688,10 @@ class _InventoryList extends StatelessWidget {
             statLabel: strings.stock,
             statValue: "${a.quantity}",
             // Show projectile type in the grey badge (top-right).
-            category: a.projectileType.isNotEmpty ? a.projectileType : 'Munition',
+            category: a.projectileType.isNotEmpty ? a.projectileType : 'Consommable',
             isLow: a.quantity < 100,
             lastUse: strings.yesterday,
-            svgIconAsset: 'assets/images/bullet.svg',
+            svgIconAsset: 'assets/images/pointe.svg',
             icon: Icons.inventory_2_rounded,
             photoPath: a.photoPath,
             isLocked: isLocked,
@@ -624,7 +702,10 @@ class _InventoryList extends StatelessWidget {
               final duplicated = provider.duplicateAmmo(a);
               if (!duplicated) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(provider.getLimitMessage('ammo'))),
+                  SnackBar(
+                    content: Text(provider.getLimitMessage('ammo')),
+                    duration: const Duration(seconds: 3),
+                  ),
                 );
                 context.push('/pro');
               }
@@ -660,7 +741,10 @@ class _InventoryList extends StatelessWidget {
               final duplicated = provider.duplicateAccessory(ac);
               if (!duplicated) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(provider.getLimitMessage('accessory'))),
+                  SnackBar(
+                    content: Text(provider.getLimitMessage('accessory')),
+                    duration: const Duration(seconds: 3),
+                  ),
                 );
                 context.push('/pro');
               }
@@ -673,8 +757,8 @@ class _InventoryList extends StatelessWidget {
 
   void _showEditDialog(BuildContext context, String type, dynamic item) {
     final typeMap = {
-      'weapon': 'ARME',
-      'ammo': 'MUNITION',
+      'platform': 'PLATEFORME',
+      'ammo': 'CONSOMMABLE',
       'accessory': 'ACCESSOIRE',
     };
     context.push('/inventory/add?itemId=${item.id}&itemType=${typeMap[type]}');
@@ -697,8 +781,8 @@ class _InventoryList extends StatelessWidget {
             onPressed: () {
               final provider =
                   Provider.of<ThotProvider>(context, listen: false);
-              if (type == 'weapon') {
-                provider.deleteWeapon(id);
+              if (type == 'platform') {
+                provider.deletePlatform(id);
               } else if (type == 'ammo') {
                 provider.deleteAmmo(id);
               } else {
@@ -706,7 +790,10 @@ class _InventoryList extends StatelessWidget {
               }
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.deletedSnack.replaceAll('{name}', name))),
+                SnackBar(
+                  content: Text(strings.deletedSnack.replaceAll('{name}', name)),
+                  duration: const Duration(seconds: 3),
+                ),
               );
             },
             style: FilledButton.styleFrom(
@@ -933,7 +1020,7 @@ class _InventoryCard extends StatelessWidget {
                             value: 'delete',
                             child: Row(
                               children: [
-                                const Icon(Icons.delete_outline_rounded,
+                                const Icon(Icons.delete_rounded,
                                     size: 20),
                                 const Gap(12),
                                 Text(strings.delete),
@@ -969,7 +1056,7 @@ class _InventoryCard extends StatelessWidget {
                           value: 'delete',
                           child: Row(
                             children: [
-                              const Icon(Icons.delete_outline_rounded,
+                              const Icon(Icons.delete_rounded,
                                   size: 20),
                               const Gap(12),
                               Text(strings.delete),

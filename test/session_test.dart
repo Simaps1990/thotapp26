@@ -4,7 +4,7 @@ import 'package:thot/data/models.dart';
 // Helpers
 Exercise _makeExercise({
   String id = 'e1',
-  String weaponId = 'w1',
+  String platformId = 'w1',
   String ammoId = 'a1',
   List<String> equipmentIds = const [],
   int shotsFired = 10,
@@ -14,7 +14,7 @@ Exercise _makeExercise({
 }) =>
     Exercise(
       id: id,
-      weaponId: weaponId,
+      platformId: platformId,
       ammoId: ammoId,
       equipmentIds: equipmentIds,
       shotsFired: shotsFired,
@@ -29,7 +29,7 @@ Session _makeSession({
 }) =>
     Session(
       id: id,
-      name: 'Séance test',
+      name: 'Session test',
       date: DateTime.parse('2026-01-01T10:00:00.000Z'),
       location: 'Stand',
       exercises: exercises,
@@ -82,19 +82,19 @@ void main() {
     });
   });
 
-  group('Session.weaponImpact', () {
-    test('sums shots per weapon, ignores none/borrowed', () {
+  group('Session.platformImpact', () {
+    test('sums shots per platform, ignores none/borrowed', () {
       final s = _makeSession(exercises: [
-        _makeExercise(id: 'e1', weaponId: 'w1', shotsFired: 10),
-        _makeExercise(id: 'e2', weaponId: 'w1', shotsFired: 5),
-        _makeExercise(id: 'e3', weaponId: 'w2', shotsFired: 20),
-        _makeExercise(id: 'e4', weaponId: 'none', shotsFired: 7),
-        _makeExercise(id: 'e5', weaponId: 'borrowed', shotsFired: 3),
+        _makeExercise(id: 'e1', platformId: 'w1', shotsFired: 10),
+        _makeExercise(id: 'e2', platformId: 'w1', shotsFired: 5),
+        _makeExercise(id: 'e3', platformId: 'w2', shotsFired: 20),
+        _makeExercise(id: 'e4', platformId: 'none', shotsFired: 7),
+        _makeExercise(id: 'e5', platformId: 'borrowed', shotsFired: 3),
       ]);
-      expect(s.weaponImpact['w1'], 15);
-      expect(s.weaponImpact['w2'], 20);
-      expect(s.weaponImpact.containsKey('none'), false);
-      expect(s.weaponImpact.containsKey('borrowed'), false);
+      expect(s.platformImpact['w1'], 15);
+      expect(s.platformImpact['w2'], 20);
+      expect(s.platformImpact.containsKey('none'), false);
+      expect(s.platformImpact.containsKey('borrowed'), false);
     });
   });
 

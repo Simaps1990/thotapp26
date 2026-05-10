@@ -42,10 +42,10 @@ class ExerciseStep {
   final int? distanceM;
   final int? shots; // uniquement si type == StepType.tir
   final String? target; // cible, texte libre
-  final String? weaponFrom; // transition : arme de départ
-  final String? weaponTo; // transition : arme d'arrivée
-  final String? usedWeaponId; // tir: arme utilisée
-  final String? usedAmmoId; // tir: munition utilisée
+  final String? platformFrom; // transition : plateforme de départ
+  final String? platformTo; // transition : plateforme d'arrivée
+  final String? usedPlatformId; // tir: plateforme utilisée
+  final String? usedAmmoId; // tir: consommable utilisé
   final ReloadType? reloadType;
   final int? durationSeconds; // attente
   final String? trigger; // attente : déclencheur
@@ -60,9 +60,9 @@ final MovementType? movementType;
     this.distanceM,
     this.shots,
     this.target,
-    this.weaponFrom,
-    this.weaponTo,
-    this.usedWeaponId,
+    this.platformFrom,
+    this.platformTo,
+    this.usedPlatformId,
     this.usedAmmoId,
     this.reloadType,
     this.durationSeconds,
@@ -72,6 +72,42 @@ final MovementType? movementType;
 
   });
 
+  ExerciseStep copyWith({
+    String? id,
+    StepType? type,
+    ShootingPosition? position,
+    int? distanceM,
+    int? shots,
+    String? target,
+    String? platformFrom,
+    String? platformTo,
+    String? usedPlatformId,
+    String? usedAmmoId,
+    ReloadType? reloadType,
+    int? durationSeconds,
+    String? trigger,
+    String? comment,
+    MovementType? movementType,
+  }) {
+    return ExerciseStep(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      position: position ?? this.position,
+      distanceM: distanceM ?? this.distanceM,
+      shots: shots ?? this.shots,
+      target: target ?? this.target,
+      platformFrom: platformFrom ?? this.platformFrom,
+      platformTo: platformTo ?? this.platformTo,
+      usedPlatformId: usedPlatformId ?? this.usedPlatformId,
+      usedAmmoId: usedAmmoId ?? this.usedAmmoId,
+      reloadType: reloadType ?? this.reloadType,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      trigger: trigger ?? this.trigger,
+      comment: comment ?? this.comment,
+      movementType: movementType ?? this.movementType,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'type': type.name,
@@ -79,9 +115,9 @@ final MovementType? movementType;
         'distanceM': distanceM,
         'shots': shots,
         'target': target,
-        'weaponFrom': weaponFrom,
-        'weaponTo': weaponTo,
-        'usedWeaponId': usedWeaponId,
+        'platformFrom': platformFrom,
+        'platformTo': platformTo,
+        'usedPlatformId': usedPlatformId,
         'usedAmmoId': usedAmmoId,
         'reloadType': reloadType?.name,
         'durationSeconds': durationSeconds,
@@ -129,9 +165,9 @@ ReloadType? parseReloadType(String? raw) {
       distanceM: json['distanceM'] as int?,
       shots: json['shots'] as int?,
       target: json['target'] as String?,
-      weaponFrom: json['weaponFrom'] as String?,
-      weaponTo: json['weaponTo'] as String?,
-      usedWeaponId: json['usedWeaponId'] as String?,
+      platformFrom: json['platformFrom'] as String?,
+      platformTo: json['platformTo'] as String?,
+      usedPlatformId: json['usedPlatformId'] as String?,
       usedAmmoId: json['usedAmmoId'] as String?,
       reloadType: parseReloadType(json['reloadType'] as String?),
       durationSeconds: json['durationSeconds'] as int?,

@@ -73,18 +73,55 @@ class ItemDocument {
 }
 
 
+/// Represents a restock / consumption event in an ammo's history.
+class AmmoHistoryEntry {
+  final String id;
+  final DateTime date;
+  /// 'restock' | 'consumption'
+  final String type;
+  final String label;
+  final int quantity;
+  final String? comment;
+
+  const AmmoHistoryEntry({
+    required this.id,
+    required this.date,
+    required this.type,
+    required this.label,
+    required this.quantity,
+    this.comment,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'date': date.toIso8601String(),
+        'type': type,
+        'label': label,
+        'quantity': quantity,
+        'comment': comment,
+      };
+
+  static AmmoHistoryEntry fromJson(Map<String, dynamic> json) {
+    return AmmoHistoryEntry(
+      id: json['id'] as String,
+      date: DateTime.parse(json['date'] as String),
+      type: json['type'] as String,
+      label: json['label'] as String,
+      quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      comment: json['comment'] as String?,
+    );
+  }
+}
 
 
-
-
-class WeaponHistoryEntry {
+class PlatformHistoryEntry {
   final String id;
   final DateTime date;
   final String type; // tir | entretien | revision
   final String label;
   final String? details;
 
-  const WeaponHistoryEntry({
+  const PlatformHistoryEntry({
     required this.id,
     required this.date,
     required this.type,
@@ -92,14 +129,14 @@ class WeaponHistoryEntry {
     this.details,
   });
 
-  WeaponHistoryEntry copyWith({
+  PlatformHistoryEntry copyWith({
     String? id,
     DateTime? date,
     String? type,
     String? label,
     String? details,
   }) {
-    return WeaponHistoryEntry(
+    return PlatformHistoryEntry(
       id: id ?? this.id,
       date: date ?? this.date,
       type: type ?? this.type,
@@ -116,8 +153,8 @@ class WeaponHistoryEntry {
         'details': details,
       };
 
-  static WeaponHistoryEntry fromJson(dynamic json) {
-    return WeaponHistoryEntry(
+  static PlatformHistoryEntry fromJson(dynamic json) {
+    return PlatformHistoryEntry(
       id: json['id'] as String,
       date: DateTime.parse(json['date'] as String),
       type: json['type'] as String,
@@ -127,13 +164,13 @@ class WeaponHistoryEntry {
   }
 }
 
-class Weapon {
+class Platform {
   final String id;
   final String name;
   final String model;
   /// Free-form user note shown in item details.
   final String comment;
-  /// Domain type shown in inventory badges (e.g. Pistolet semi-auto, Fusil d'assaut...).
+  /// Domain type shown in inventory badges (e.g. PA, FA, FM, FP...).
   final String type;
   final String caliber;
   final String serialNumber;
@@ -143,9 +180,9 @@ class Weapon {
   DateTime lastRevised;
   DateTime lastUsed;
   final String imageUrl;
-  final String category; // 'Arme'
+  final String category; // 'Plateforme'
   final List<ItemDocument> documents;
-  final List<WeaponHistoryEntry> history;
+  final List<PlatformHistoryEntry> history;
   final String? photoPath; // Path to item photo
   final bool isHidden;
   final List<String> linkedAccessoryIds;
@@ -161,17 +198,17 @@ class Weapon {
 
   /// Rounds counter snapshots to compute maintenance progress.
   ///
-  /// `totalRounds` is the weapon absolute counter (initial counter + all sessions).
+  /// `totalRounds` is the platform absolute counter (initial counter + all sessions).
   /// We compute progress between the last maintenance snapshot and the configured threshold.
   int roundsAtLastCleaning;
   int roundsAtLastRevision;
 
-  Weapon({
+  Platform({
     required this.id,
     required this.name,
     required this.model,
     this.comment = '',
-    this.type = 'Arme',
+    this.type = 'Plateforme',
     required this.caliber,
     required this.serialNumber,
     required this.weight,
@@ -180,7 +217,7 @@ class Weapon {
     DateTime? lastRevised,
     required this.lastUsed,
     this.imageUrl = '',
-    this.category = 'Arme',
+    this.category = 'Plateforme',
     this.trackWear = true,
     this.trackCleanliness = true,
     this.trackRounds = true,
@@ -215,7 +252,7 @@ class Weapon {
     return (roundsSinceRevision / wearRoundsThreshold).clamp(0.0, 1.0);
   }
 
-  Weapon copyWith({
+  Platform copyWith({
     String? id,
     String? name,
     String? model,
@@ -231,7 +268,7 @@ class Weapon {
     String? imageUrl,
     String? category,
     List<ItemDocument>? documents,
-    List<WeaponHistoryEntry>? history,
+    List<PlatformHistoryEntry>? history,
     String? photoPath,
     bool? trackWear,
     bool? trackCleanliness,
@@ -243,7 +280,7 @@ class Weapon {
     bool? isHidden,
     List<String>? linkedAccessoryIds,
   }) {
-    return Weapon(
+    return Platform(
       id: id ?? this.id,
       name: name ?? this.name,
       model: model ?? this.model,
@@ -297,11 +334,14 @@ class Ammo {
   DateTime lastUsed;
   final List<ItemDocument> documents;
   final String? photoPath; // Path to item photo
-  
+  final List<AmmoHistoryEntry>? history;
+
   // Tracking options
   final bool trackStock;
   final int lowStockThreshold; // Alert when quantity drops below this
   final bool isHidden;
+  final double? unitPrice; // Price per round
+  final String currency; // Currency code: EUR, USD, CAD
 
   Ammo({
     required this.id,
@@ -318,8 +358,15 @@ class Ammo {
     this.lowStockThreshold = 50,
     this.documents = const [],
     this.photoPath,
+    this.history,
     this.isHidden = false,
+    this.unitPrice,
+    this.currency = 'EUR',
   }) : initialQuantity = initialQuantity ?? quantity;
+
+  /// Always returns a non-null list of history entries.
+  /// Handles null from existing data / hot-reload artifacts.
+  List<AmmoHistoryEntry> get safeHistory => history ?? const [];
 
   Ammo copyWith({
     String? id,
@@ -336,7 +383,10 @@ class Ammo {
     int? lowStockThreshold,
     List<ItemDocument>? documents,
     String? photoPath,
+    List<AmmoHistoryEntry>? history,
     bool? isHidden,
+    double? unitPrice,
+    String? currency,
   }) {
     return Ammo(
       id: id ?? this.id,
@@ -353,7 +403,10 @@ class Ammo {
       lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
       documents: documents ?? this.documents,
       photoPath: photoPath ?? this.photoPath,
+      history: history ?? this.history,
       isHidden: isHidden ?? this.isHidden,
+      unitPrice: unitPrice ?? this.unitPrice,
+      currency: currency ?? this.currency,
     );
   }
 }
@@ -377,7 +430,7 @@ class Accessory {
   /// This is used for accessory follow-up (it does NOT participate in critical indicators).
   int totalRounds;
 
-  // Maintenance (weapon-like)
+  // Maintenance (platform-like)
   DateTime lastCleaned;
   DateTime lastRevised;
 
@@ -399,7 +452,7 @@ class Accessory {
   
   // Tracking options
   final bool trackBattery;
-  final List<String> linkedWeaponIds;
+  final List<String> linkedPlatformIds;
 
   Accessory({
     required this.id,
@@ -424,7 +477,7 @@ class Accessory {
     this.documents = const [],
     this.photoPath,
     this.isHidden = false,
-    this.linkedWeaponIds = const [],
+    this.linkedPlatformIds = const [],
   })  : lastCleaned = lastCleaned ?? lastUsed,
         lastRevised = lastRevised ?? (lastCleaned ?? lastUsed),
         roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
@@ -471,7 +524,7 @@ class Accessory {
     List<ItemDocument>? documents,
     String? photoPath,
     bool? isHidden,
-    List<String>? linkedWeaponIds,
+    List<String>? linkedPlatformIds,
   }) {
     return Accessory(
       id: id ?? this.id,
@@ -497,7 +550,222 @@ class Accessory {
       documents: documents ?? this.documents,
       photoPath: photoPath ?? this.photoPath,
       isHidden: isHidden ?? this.isHidden,
-      linkedWeaponIds: linkedWeaponIds ?? this.linkedWeaponIds,
+      linkedPlatformIds: linkedPlatformIds ?? this.linkedPlatformIds,
+    );
+  }
+}
+
+enum AdjustmentDistanceUnit {
+  meter,
+  yard,
+}
+
+enum AdjustmentOffsetUnit {
+  centimeter,
+  inch,
+}
+
+class ShootingAdjustmentEntry {
+  final String id;
+  final double distance;
+  final AdjustmentDistanceUnit distanceUnit;
+  final double horizontalOffset;
+  final double verticalOffset;
+  final AdjustmentOffsetUnit offsetUnit;
+  final String correction;
+  final String note;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const ShootingAdjustmentEntry({
+    required this.id,
+    required this.distance,
+    required this.distanceUnit,
+    required this.horizontalOffset,
+    required this.verticalOffset,
+    required this.offsetUnit,
+    required this.correction,
+    this.note = '',
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  ShootingAdjustmentEntry copyWith({
+    String? id,
+    double? distance,
+    AdjustmentDistanceUnit? distanceUnit,
+    double? horizontalOffset,
+    double? verticalOffset,
+    AdjustmentOffsetUnit? offsetUnit,
+    String? correction,
+    String? note,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return ShootingAdjustmentEntry(
+      id: id ?? this.id,
+      distance: distance ?? this.distance,
+      distanceUnit: distanceUnit ?? this.distanceUnit,
+      horizontalOffset: horizontalOffset ?? this.horizontalOffset,
+      verticalOffset: verticalOffset ?? this.verticalOffset,
+      offsetUnit: offsetUnit ?? this.offsetUnit,
+      correction: correction ?? this.correction,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'distance': distance,
+        'distanceUnit': distanceUnit.name,
+        'horizontalOffset': horizontalOffset,
+        'verticalOffset': verticalOffset,
+        'offsetUnit': offsetUnit.name,
+        'correction': correction,
+        'note': note,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
+
+  factory ShootingAdjustmentEntry.fromJson(Map<String, dynamic> json) {
+    final distanceUnitRaw = (json['distanceUnit'] ?? 'meter') as String;
+    final offsetUnitRaw = (json['offsetUnit'] ?? 'centimeter') as String;
+
+    return ShootingAdjustmentEntry(
+      id: (json['id'] ?? '') as String,
+      distance: (json['distance'] as num?)?.toDouble() ?? 0,
+      distanceUnit: AdjustmentDistanceUnit.values.firstWhere(
+        (u) => u.name == distanceUnitRaw,
+        orElse: () => AdjustmentDistanceUnit.meter,
+      ),
+      horizontalOffset: (json['horizontalOffset'] as num?)?.toDouble() ?? 0,
+      verticalOffset: (json['verticalOffset'] as num?)?.toDouble() ?? 0,
+      offsetUnit: AdjustmentOffsetUnit.values.firstWhere(
+        (u) => u.name == offsetUnitRaw,
+        orElse: () => AdjustmentOffsetUnit.centimeter,
+      ),
+      correction: (json['correction'] ?? '') as String,
+      note: (json['note'] ?? '') as String,
+      createdAt: DateTime.tryParse((json['createdAt'] ?? '') as String) ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse((json['updatedAt'] ?? '') as String) ??
+          DateTime.now(),
+    );
+  }
+}
+
+class ShootingAdjustmentTable {
+  final String id;
+  final String name;
+  final String platformId;
+  final String? customPlatformName;
+  final String? ammoId;
+  final String? customAmmoName;
+  final bool accessoriesCustomized;
+  final List<String> accessoryIds;
+  final List<String> customAccessoryNames;
+  final List<ShootingAdjustmentEntry> entries;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDope;
+
+  const ShootingAdjustmentTable({
+    required this.id,
+    this.name = '',
+    required this.platformId,
+    this.customPlatformName,
+    this.ammoId,
+    this.customAmmoName,
+    this.accessoriesCustomized = false,
+    this.accessoryIds = const [],
+    this.customAccessoryNames = const [],
+    this.entries = const [],
+    required this.createdAt,
+    required this.updatedAt,
+    this.isDope = false,
+  });
+
+  ShootingAdjustmentTable copyWith({
+    String? id,
+    String? name,
+    String? platformId,
+    String? customPlatformName,
+    String? ammoId,
+    String? customAmmoName,
+    bool clearAmmoId = false,
+    bool? accessoriesCustomized,
+    List<String>? accessoryIds,
+    List<String>? customAccessoryNames,
+    List<ShootingAdjustmentEntry>? entries,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isDope,
+  }) {
+    return ShootingAdjustmentTable(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      platformId: platformId ?? this.platformId,
+      customPlatformName: customPlatformName ?? this.customPlatformName,
+      ammoId: clearAmmoId ? null : (ammoId ?? this.ammoId),
+      customAmmoName: customAmmoName ?? this.customAmmoName,
+      accessoriesCustomized:
+          accessoriesCustomized ?? this.accessoriesCustomized,
+      accessoryIds: accessoryIds ?? this.accessoryIds,
+      customAccessoryNames: customAccessoryNames ?? this.customAccessoryNames,
+      entries: entries ?? this.entries,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isDope: isDope ?? this.isDope,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'platformId': platformId,
+        if (customPlatformName != null) 'customPlatformName': customPlatformName,
+        'ammoId': ammoId,
+        if (customAmmoName != null) 'customAmmoName': customAmmoName,
+        'accessoriesCustomized': accessoriesCustomized,
+        'accessoryIds': accessoryIds,
+        if (customAccessoryNames.isNotEmpty) 'customAccessoryNames': customAccessoryNames,
+        'entries': entries.map((e) => e.toJson()).toList(),
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+        'isDope': isDope,
+      };
+
+  factory ShootingAdjustmentTable.fromJson(Map<String, dynamic> json) {
+    final entriesRaw = (json['entries'] as List?) ?? const [];
+    final rawName = json['name'];
+    final rawPlatformId = json['platformId'];
+    final rawAmmoId = json['ammoId'];
+    final rawCustomPlatformName = json['customPlatformName'];
+    final rawCustomAmmoName = json['customAmmoName'];
+    final rawCustomAccessoryNames = (json['customAccessoryNames'] as List?) ?? const [];
+    return ShootingAdjustmentTable(
+      id: (json['id'] ?? '').toString(),
+      name: rawName == null ? '' : rawName.toString(),
+      platformId: rawPlatformId == null ? '' : rawPlatformId.toString(),
+      customPlatformName: rawCustomPlatformName?.toString(),
+      ammoId: rawAmmoId?.toString(),
+      customAmmoName: rawCustomAmmoName?.toString(),
+      customAccessoryNames: rawCustomAccessoryNames.map((e) => e.toString()).toList(),
+      accessoriesCustomized: (json['accessoriesCustomized'] ?? false) == true,
+      accessoryIds: ((json['accessoryIds'] as List?) ?? const [])
+          .whereType<String>()
+          .toList(),
+      entries: entriesRaw
+          .whereType<Map>()
+          .map((e) => ShootingAdjustmentEntry.fromJson(e.cast<String, dynamic>()))
+          .toList(),
+      createdAt: DateTime.tryParse((json['createdAt'] ?? '') as String) ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse((json['updatedAt'] ?? '') as String) ??
+          DateTime.now(),
+      isDope: (json['isDope'] ?? false) == true,
     );
   }
 }
@@ -540,27 +808,27 @@ class ExercisePhoto {
   }
 }
 
-class ExerciseWeaponAssignment {
-  final String weaponId;
-  final String? weaponLabel;
+class ExercisePlatformAssignment {
+  final String platformId;
+  final String? platformLabel;
   final List<String> ammoIds;
   final List<String> accessoryIds;
 
-  const ExerciseWeaponAssignment({
-    required this.weaponId,
-    this.weaponLabel,
+  const ExercisePlatformAssignment({
+    required this.platformId,
+    this.platformLabel,
     this.ammoIds = const [],
     this.accessoryIds = const [],
   });
 }
 
 class ExerciseShotAllocation {
-  final String weaponId;
+  final String platformId;
   final String ammoId;
   final int shots;
 
   const ExerciseShotAllocation({
-    required this.weaponId,
+    required this.platformId,
     required this.ammoId,
     required this.shots,
   });
@@ -569,8 +837,8 @@ class ExerciseShotAllocation {
 class Exercise {
   final String id;
   final String name;
-  final String weaponId;
-  final String? weaponLabel;
+  final String platformId;
+  final String? platformLabel;
   final String ammoId;
   final String? ammoLabel;
   final List<String> equipmentIds;
@@ -583,14 +851,14 @@ class Exercise {
   final String observations;
   // null = mode simple (comportement actuel), non-null = mode détaillé par étapes.
   final List<ExerciseStep>? steps;
-  final List<ExerciseWeaponAssignment> weaponAssignments;
+  final List<ExercisePlatformAssignment> platformAssignments;
   final List<ExerciseShotAllocation> shotAllocations;
 
   Exercise({
     required this.id,
     this.name = '',
-    required this.weaponId,
-    this.weaponLabel,
+    required this.platformId,
+    this.platformLabel,
     required this.ammoId,
     this.ammoLabel,
     this.equipmentIds = const [],
@@ -602,7 +870,7 @@ class Exercise {
     this.precisionEnabled = true,
     this.observations = '',
     this.steps,
-    this.weaponAssignments = const [],
+    this.platformAssignments = const [],
     this.shotAllocations = const [],
   });
 
@@ -626,7 +894,7 @@ class Exercise {
     return distances.reduce((a, b) => a > b ? a : b);
   }
 
-  Map<String, int> get weaponShotImpact {
+  Map<String, int> get platformShotImpact {
     final impact = <String, int>{};
 
     if (steps != null && steps!.isNotEmpty) {
@@ -634,7 +902,7 @@ class Exercise {
         if (step.type != StepType.tir) continue;
         final shots = step.shots ?? 0;
         if (shots <= 0) continue;
-        final wid = (step.usedWeaponId ?? '').trim();
+        final wid = (step.usedPlatformId ?? '').trim();
         if (wid.isEmpty || wid == 'none' || wid == 'borrowed') continue;
         impact[wid] = (impact[wid] ?? 0) + shots;
       }
@@ -643,7 +911,7 @@ class Exercise {
 
     if (shotAllocations.isNotEmpty) {
       for (final alloc in shotAllocations) {
-        final wid = alloc.weaponId.trim();
+        final wid = alloc.platformId.trim();
         if (wid.isEmpty || wid == 'none' || wid == 'borrowed') continue;
         if (alloc.shots <= 0) continue;
         impact[wid] = (impact[wid] ?? 0) + alloc.shots;
@@ -651,8 +919,8 @@ class Exercise {
       if (impact.isNotEmpty) return impact;
     }
 
-    if (weaponId != 'none' && weaponId != 'borrowed') {
-      impact[weaponId] = shotsFired;
+    if (platformId != 'none' && platformId != 'borrowed') {
+      impact[platformId] = shotsFired;
     }
     return impact;
   }
@@ -690,14 +958,14 @@ class Exercise {
 
   Map<String, int> get equipmentShotImpact {
     final impact = <String, int>{};
-    final weaponImpact = weaponShotImpact;
+    final platformImpact = platformShotImpact;
 
-    if (weaponAssignments.isNotEmpty && weaponImpact.isNotEmpty) {
-      for (final assignment in weaponAssignments) {
-        final weaponShots = weaponImpact[assignment.weaponId] ?? 0;
-        if (weaponShots <= 0) continue;
+    if (platformAssignments.isNotEmpty && platformImpact.isNotEmpty) {
+      for (final assignment in platformAssignments) {
+        final platformShots = platformImpact[assignment.platformId] ?? 0;
+        if (platformShots <= 0) continue;
         for (final accessoryId in assignment.accessoryIds) {
-          impact[accessoryId] = (impact[accessoryId] ?? 0) + weaponShots;
+          impact[accessoryId] = (impact[accessoryId] ?? 0) + platformShots;
         }
       }
       if (impact.isNotEmpty) return impact;
@@ -712,8 +980,8 @@ class Exercise {
   Exercise copyWith({
     String? id,
     String? name,
-    String? weaponId,
-    String? weaponLabel,
+    String? platformId,
+    String? platformLabel,
     String? ammoId,
     String? ammoLabel,
     List<String>? equipmentIds,
@@ -725,14 +993,14 @@ class Exercise {
     bool? precisionEnabled,
     String? observations,
     List<ExerciseStep>? steps,
-    List<ExerciseWeaponAssignment>? weaponAssignments,
+    List<ExercisePlatformAssignment>? platformAssignments,
     List<ExerciseShotAllocation>? shotAllocations,
   }) {
     return Exercise(
       id: id ?? this.id,
       name: name ?? this.name,
-      weaponId: weaponId ?? this.weaponId,
-      weaponLabel: weaponLabel ?? this.weaponLabel,
+      platformId: platformId ?? this.platformId,
+      platformLabel: platformLabel ?? this.platformLabel,
       ammoId: ammoId ?? this.ammoId,
       ammoLabel: ammoLabel ?? this.ammoLabel,
       equipmentIds: equipmentIds ?? this.equipmentIds,
@@ -744,7 +1012,7 @@ class Exercise {
       precisionEnabled: precisionEnabled ?? this.precisionEnabled,
       observations: observations ?? this.observations,
       steps: steps ?? this.steps,
-      weaponAssignments: weaponAssignments ?? this.weaponAssignments,
+      platformAssignments: platformAssignments ?? this.platformAssignments,
       shotAllocations: shotAllocations ?? this.shotAllocations,
     );
   }
@@ -756,6 +1024,8 @@ class Session {
   final DateTime date;
   final String location;
   final String? shootingDistance; // Pas de tir
+  final double? locationLatitude;
+  final double? locationLongitude;
   final String sessionType; // Personnel, Professionnel, Compétition
   final List<Exercise> exercises;
   
@@ -773,7 +1043,7 @@ class Session {
   final bool windEnabled;
   final bool humidityEnabled;
   final bool pressureEnabled;
-  final List<String> weaponIds;
+  final List<String> platformIds;
 
   Session({
     required this.id,
@@ -781,6 +1051,8 @@ class Session {
     required this.date,
     required this.location,
     this.shootingDistance,
+    this.locationLatitude,
+this.locationLongitude,
     this.sessionType = 'Personnel',
     this.exercises = const [],
     this.weatherEnabled = false,
@@ -792,8 +1064,52 @@ class Session {
     this.windEnabled = true,
     this.humidityEnabled = true,
     this.pressureEnabled = true,
-    this.weaponIds = const [],
+    this.platformIds = const [],
   });
+
+  Session copyWith({
+    String? id,
+    String? name,
+    DateTime? date,
+    String? location,
+    String? shootingDistance,
+    double? locationLatitude,
+    double? locationLongitude,
+    String? sessionType,
+    List<Exercise>? exercises,
+    bool? weatherEnabled,
+    String? temperature,
+    String? wind,
+    String? humidity,
+    String? pressure,
+    bool? temperatureEnabled,
+    bool? windEnabled,
+    bool? humidityEnabled,
+    bool? pressureEnabled,
+    List<String>? platformIds,
+  }) {
+    return Session(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      date: date ?? this.date,
+      location: location ?? this.location,
+      shootingDistance: shootingDistance ?? this.shootingDistance,
+      locationLatitude: locationLatitude ?? this.locationLatitude,
+      locationLongitude: locationLongitude ?? this.locationLongitude,
+      sessionType: sessionType ?? this.sessionType,
+      exercises: exercises ?? this.exercises,
+      weatherEnabled: weatherEnabled ?? this.weatherEnabled,
+      temperature: temperature ?? this.temperature,
+      wind: wind ?? this.wind,
+      humidity: humidity ?? this.humidity,
+      pressure: pressure ?? this.pressure,
+      temperatureEnabled: temperatureEnabled ?? this.temperatureEnabled,
+      windEnabled: windEnabled ?? this.windEnabled,
+      humidityEnabled: humidityEnabled ?? this.humidityEnabled,
+      pressureEnabled: pressureEnabled ?? this.pressureEnabled,
+      platformIds: platformIds ?? this.platformIds,
+    );
+  }
 
   int get totalRounds => exercises.fold(0, (sum, ex) => sum + ex.shotsFired);
 
@@ -812,12 +1128,12 @@ class Session {
     return totalScore / withPrecision.length;
   }
   
-  // Impact on weapons (count of shots per weapon)
-  Map<String, int> get weaponImpact {
+  // Impact on platforms (count of shots per platform)
+  Map<String, int> get platformImpact {
     Map<String, int> impact = {};
     for (var ex in exercises) {
-      ex.weaponShotImpact.forEach((weaponId, shots) {
-        impact[weaponId] = (impact[weaponId] ?? 0) + shots;
+      ex.platformShotImpact.forEach((platformId, shots) {
+        impact[platformId] = (impact[platformId] ?? 0) + shots;
       });
     }
     return impact;
@@ -849,16 +1165,48 @@ class Session {
 class Diagnostic {
   final String id;
   final DateTime date;
-  final String weaponId;
+  final String platformId;
+
+  /// Snapshot pour conserver un historique lisible
+  final String platformNameSnapshot;
+  final String platformTypeSnapshot;
+
   final Map<String, dynamic> responses;
+
+  /// Clé technique de l’incident principal
+  final String incidentKey;
+
+  /// Clé technique du problème supposé
+  final String suspectedIssueKey;
+
+  /// low / medium / high
+  final String riskLevelKey;
+
+  /// Ex:
+  /// {
+  ///   'ammo_defective': 80,
+  ///   'fouling_dirty': 40,
+  ///   'configuration_issue': 25,
+  ///   'component_damage': 15,
+  /// }
+  final Map<String, int> probabilities;
+
+  /// Label final affiché
   final String finalDecision;
+
   final String summary;
 
   Diagnostic({
     required this.id,
     required this.date,
-    required this.weaponId,
+    required this.platformId,
+    this.platformNameSnapshot = '',
+    this.platformTypeSnapshot = '',
     required this.responses,
+    required this.incidentKey,
+    required this.suspectedIssueKey,
+    required this.riskLevelKey,
+    required this.probabilities,
     required this.finalDecision,
     required this.summary,
   });

@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +9,7 @@ import '../data/thot_provider.dart';
 import '../theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -60,9 +62,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _finishOnboarding() async {
     final provider = Provider.of<ThotProvider>(context, listen: false);
     await provider.completeOnboarding();
-    if (context.mounted) {
-      context.go('/');
-    }
+    if (!mounted) return;
+    context.go('/');
   }
 
   @override
@@ -126,7 +127,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           // Bouton top-bar: "Ne plus afficher" (gauche)
           Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            padding: EdgeInsets.only(
+              top: Platform.isIOS ? 0 : AppSpacing.sm,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -164,7 +167,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // Indicateurs et Boutons du bas
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
+            padding: EdgeInsets.only(
+              left: AppSpacing.xl,
+              right: AppSpacing.xl,
+              bottom: Platform.isIOS ? 8 : AppSpacing.xl,
+              top: AppSpacing.xl,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
