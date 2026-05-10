@@ -662,8 +662,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   }
 
   String _headerTitle(AppStrings strings) {
-    if (_isEditMode) return _sentenceCase(_pageTitle());
-    return _pageTitle();
+    return _pageTitle().toUpperCase();
   }
 
   String _primaryNameLabel() => AppStrings.of(context).itemPrimaryNameLabel(_selectedCategory);
@@ -1572,9 +1571,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colors.primary,
                           foregroundColor: colors.onPrimary,
-                          elevation: 2,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppRadius.lg),
+                            side: BorderSide.none,
                           ),
                         ),
                       )
@@ -1586,9 +1586,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colors.primary,
                           foregroundColor: colors.onPrimary,
-                          elevation: 2,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppRadius.lg),
+                            side: BorderSide.none,
                           ),
                         ),
                       ),
@@ -1621,9 +1622,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                 .where((a) => _linkedAccessoryIds.contains(a.id))
                                 .map(
                                   (a) => InputChip(
-                                    avatar: const Icon(Icons.inventory_2_rounded,
-                                        size: 16),
-                                    label: Text(a.name),
+                                    avatar: Icon(Icons.inventory_2_rounded,
+                                        size: 16, color: colors.onPrimary),
+                                    label: Text(a.name, style: TextStyle(color: colors.onPrimary)),
+                                    backgroundColor: colors.primary,
+                                    side: BorderSide.none,
+                                    deleteIconColor: colors.onPrimary,
                                     onDeleted: () async {
                                       if (!await _confirmUnlink()) return;
                                       if (!mounted) return;
@@ -1651,11 +1655,15 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                 .where((w) => _linkedPlatformIds.contains(w.id))
                                 .map(
                                   (w) => InputChip(
-                                    avatar: const Icon(
+                                    avatar: Icon(
                                       Icons.link_rounded,
                                       size: 16,
+                                      color: colors.onPrimary,
                                     ),
-                                    label: Text(w.name),
+                                    label: Text(w.name, style: TextStyle(color: colors.onPrimary)),
+                                    backgroundColor: colors.primary,
+                                    side: BorderSide.none,
+                                    deleteIconColor: colors.onPrimary,
                                     onDeleted: () async {
                                       if (!await _confirmUnlink()) return;
                                       if (!mounted) return;

@@ -546,7 +546,7 @@ class _MilliemeTabState extends State<_MilliemeTab> {
 
     final fieldDecoration = InputDecoration(
       filled: true,
-      fillColor: Theme.of(context).scaffoldBackgroundColor,
+      fillColor: colors.surfaceContainerHighest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -1014,7 +1014,7 @@ class _HitFactorTabState extends State<_HitFactorTab> {
 
     final fieldDecoration = InputDecoration(
       filled: true,
-      fillColor: Theme.of(context).scaffoldBackgroundColor,
+      fillColor: colors.surfaceContainerHighest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -1185,9 +1185,9 @@ class _HitFactorTabState extends State<_HitFactorTab> {
           Container(
             padding: AppSpacing.paddingLg,
             decoration: BoxDecoration(
-              color: colors.primary.withValues(alpha: 0.08),
+              color: colors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
+              border: Border.all(color: colors.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1306,7 +1306,7 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
 
     final fieldDecoration = InputDecoration(
       filled: true,
-      fillColor: Theme.of(context).scaffoldBackgroundColor,
+      fillColor: colors.surfaceContainerHighest,
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       border: OutlineInputBorder(
@@ -1381,7 +1381,7 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                             if (Theme.of(context).brightness == Brightness.dark) {
                               return Theme.of(context).scaffoldBackgroundColor;
                             }
-                            return colors.surface;
+                            return Theme.of(context).scaffoldBackgroundColor;
                           }),
                           foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
                             if (states.contains(WidgetState.selected)) {
@@ -1442,7 +1442,7 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                             if (Theme.of(context).brightness == Brightness.dark) {
                               return Theme.of(context).scaffoldBackgroundColor;
                             }
-                            return colors.surface;
+                            return Theme.of(context).scaffoldBackgroundColor;
                           }),
                           foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
                             if (states.contains(WidgetState.selected)) {
@@ -1473,9 +1473,9 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
           Container(
             padding: AppSpacing.paddingLg,
             decoration: BoxDecoration(
-              color: colors.primary.withValues(alpha: 0.08),
+              color: colors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
+              border: Border.all(color: colors.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1495,7 +1495,7 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                   child: LinearProgressIndicator(
                     minHeight: 8,
                     value: (_powerFactor / 170).clamp(0.0, 1.0).toDouble(),
-                    backgroundColor: colors.surfaceContainerHighest,
+                    backgroundColor: colors.primary.withValues(alpha: 0.12),
                     valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
                   ),
                 ),

@@ -21,9 +21,13 @@ coverage/
 
 # macOS
 .DS_Store
+**/.DS_Store
 
 # Local iOS secrets
 ios/Flutter/Secrets.xcconfig
+
+# Android signing
+android/key.properties
 
 # Local env files
 .env

@@ -24,6 +24,7 @@ import 'package:thot/utils/pdf_exporter.dart';
 import 'package:thot/utils/pdf_export_options.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/widgets/tutorial_overlay.dart';
+import 'package:thot/utils/native_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:thot/utils/crash_logger.dart';
@@ -194,37 +195,153 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final strings = AppStrings.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(strings.contactMeLabel),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.handshake_outlined),
-              title: Text(strings.contactPartnership),
-              onTap: () {
-                Navigator.pop(ctx);
-                _launchEmail(subject: strings.contactSubjectPartnership);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.support_agent_outlined),
-              title: Text(strings.contactSupport),
-              onTap: () {
-                Navigator.pop(ctx);
-                _launchEmail(subject: strings.contactSubjectSupport);
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(strings.settingsDialogCancel),
+      builder: (ctx) => _SettingsActionDialog(
+        title: strings.supportAndContactLabel,
+        items: [
+          _SettingsActionItem(
+            icon: Icons.handshake_outlined,
+            title: strings.contactPartnership,
+            onTap: () {
+              Navigator.pop(ctx);
+              _launchEmail(subject: strings.contactSubjectPartnership);
+            },
+          ),
+          _SettingsActionItem(
+            icon: Icons.support_agent_outlined,
+            title: strings.contactSupport,
+            onTap: () {
+              Navigator.pop(ctx);
+              _launchEmail(subject: strings.contactSubjectSupport);
+            },
+          ),
+          _SettingsActionItem(
+            icon: Icons.bug_report_outlined,
+            title: strings.exportCrashLogLabel,
+            onTap: () {
+              Navigator.pop(ctx);
+              _handleExportCrashLog();
+            },
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _handleExportCrashLog() async {
+    final strings = AppStrings.of(context);
+    final path = await CrashLogger.logFilePath;
+    if (path == null || !mounted) return;
+    final file = File(path);
+    if (!await file.exists() || (await file.length()) == 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.exportCrashLogEmpty)),
+      );
+      return;
+    }
+    await Share.shareXFiles([XFile(path)], text: 'THOT crash log');
+  }
+
+  Future<void> _showDataManagementDialog(
+      BuildContext context, ThotProvider provider) async {
+    final strings = AppStrings.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) => _SettingsActionDialog(
+        title: strings.dataManagementLabel,
+        items: [
+          _SettingsActionItem(
+            icon: Icons.upload_file_rounded,
+            title: strings.jsonExportLabel,
+            subtitle: strings.jsonExportSubtitle,
+            onTap: () {
+              Navigator.pop(ctx);
+              _handleJsonExport(provider);
+            },
+          ),
+          _SettingsActionItem(
+            icon: Icons.download_rounded,
+            title: strings.jsonImportLabel,
+            subtitle: strings.jsonImportSubtitle,
+            onTap: () {
+              Navigator.pop(ctx);
+              _handleJsonImport(provider);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleJsonExport(ThotProvider provider) async {
+    final strings = AppStrings.of(context);
+    try {
+      final data = provider.exportDomainAsJson();
+      final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
+      final dir = await getApplicationSupportDirectory();
+      final file = File('${dir.path}/thot_backup.json');
+      await file.writeAsString(jsonStr, flush: true);
+      await Share.shareXFiles([XFile(file.path)], text: 'THOT backup');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.settingsExportError(e))),
+      );
+    }
+  }
+
+  Future<void> _handleJsonImport(ThotProvider provider) async {
+    final strings = AppStrings.of(context);
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      if (!mounted) return;
+
+      // Confirm before overwriting
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(strings.jsonImportConfirmTitle),
+          content: Text(strings.jsonImportConfirmMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(strings.settingsDialogCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(strings.jsonImportConfirmAction),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+
+      final picked = result.files.single;
+      String raw;
+      if (picked.path != null) {
+        raw = await File(picked.path!).readAsString();
+      } else if (picked.bytes != null) {
+        raw = utf8.decode(picked.bytes!);
+      } else {
+        return;
+      }
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      await provider.importDomainFromJson(decoded);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.jsonImportSuccessSnack)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.jsonImportErrorSnack(e))),
+      );
+    }
   }
 
   Future<void> _launchEmail({required String subject}) async {
@@ -1021,19 +1138,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const Divider(indent: 48, height: 1),
         _SettingsItem(
-          icon: Icons.lock_outline_rounded,
-          label: strings.dataPrivacyLabel,
-          subtitle: strings.dataPrivacySubtitle,
-          onTap: () => context.push('/legal'),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
           icon: Icons.info_outline_rounded,
-          label: strings.aboutLabel,
+          label: strings.legalAndPrivacyLabel,
           subtitle: strings.aboutSubtitle,
           onTap: () => context.push('/legal'),
           trailing: Icon(
@@ -1043,8 +1149,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const Divider(indent: 48, height: 1),
         _SettingsItem(
-          icon: Icons.mail_outline_rounded,
-          label: strings.contactMeLabel,
+          icon: Icons.contact_support_outlined,
+          label: strings.supportAndContactLabel,
           subtitle: strings.contactMeSubtitle,
           onTap: () => _showContactDialog(context),
           trailing: Icon(
@@ -1054,107 +1160,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const Divider(indent: 48, height: 1),
         _SettingsItem(
-          icon: Icons.upload_file_rounded,
-          label: strings.jsonExportLabel,
-          subtitle: strings.jsonExportSubtitle,
-          onTap: () async {
-            try {
-              final data = provider.exportDomainAsJson();
-              final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
-              final dir = await getApplicationSupportDirectory();
-              final file = File('${dir.path}/thot_backup.json');
-              await file.writeAsString(jsonStr, flush: true);
-              await Share.shareXFiles([XFile(file.path)], text: 'THOT backup');
-            } catch (e) {
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.settingsExportError(e))),
-              );
-            }
-          },
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.download_rounded,
-          label: strings.jsonImportLabel,
-          subtitle: strings.jsonImportSubtitle,
-          onTap: () async {
-            try {
-              final result = await FilePicker.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['json'],
-                withData: true,
-              );
-              if (result == null || result.files.isEmpty) return;
-              if (!context.mounted) return;
-              // Confirm before overwriting
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text(strings.jsonImportConfirmTitle),
-                  content: Text(strings.jsonImportConfirmMessage),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(strings.settingsDialogCancel),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(strings.jsonImportConfirmAction),
-                    ),
-                  ],
-                ),
-              );
-              if (confirmed != true || !context.mounted) return;
-              final picked = result.files.single;
-              String raw;
-              if (picked.path != null) {
-                raw = await File(picked.path!).readAsString();
-              } else if (picked.bytes != null) {
-                raw = utf8.decode(picked.bytes!);
-              } else {
-                return;
-              }
-              final decoded = jsonDecode(raw) as Map<String, dynamic>;
-              await provider.importDomainFromJson(decoded);
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.jsonImportSuccessSnack)),
-              );
-            } catch (e) {
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.jsonImportErrorSnack(e))),
-              );
-            }
-          },
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.bug_report_outlined,
-          label: strings.exportCrashLogLabel,
-          subtitle: strings.exportCrashLogSubtitle,
-          onTap: () async {
-            final path = await CrashLogger.logFilePath;
-            if (path == null || !context.mounted) return;
-            final file = File(path);
-            if (!await file.exists() || (await file.length()) == 0) {
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(strings.exportCrashLogEmpty)),
-              );
-              return;
-            }
-            await Share.shareXFiles([XFile(path)], text: 'THOT crash log');
-          },
+          icon: Icons.settings_backup_restore_rounded,
+          label: strings.dataManagementLabel,
+          subtitle: strings.dataManagementSubtitle,
+          onTap: () => _showDataManagementDialog(context, provider),
           trailing: Icon(
             Icons.chevron_right_rounded,
             color: colors.onSurface.withValues(alpha: 0.5),
@@ -1872,35 +1881,40 @@ Future<void> _handleExportPdf(
 
   Future<void> _pickDocument(BuildContext context, ThotProvider provider) async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-        allowMultiple: false,
-        withData: true,
-        withReadStream: !kIsWeb,
+      final picked = await NativePicker.pick(
+        context,
+        mode: PickerMode.photoOrDocument,
       );
-
-      if (result == null || result.files.isEmpty) return;
-      final file = result.files.single;
+      if (!context.mounted || picked.isCancelled) return;
 
       final String resolvedPathOrDataUrl;
+      final String fileName = picked.name ?? 'document';
+
       if (kIsWeb) {
-        final bytes = file.bytes;
-        if (bytes == null || bytes.isEmpty) {
-          throw Exception('No bytes returned by FilePicker (web)');
-        }
-        final ext = (file.extension ?? '').toLowerCase();
+        if (picked.bytes == null) return;
+        final ext = fileName.contains('.')
+            ? fileName.split('.').last.toLowerCase()
+            : 'bin';
         final isPdf = ext == 'pdf';
         final mime = isPdf
             ? 'application/pdf'
             : (ext == 'png'
                 ? 'image/png'
-                : (ext == 'jpg' || ext == 'jpeg')
+                : (ext == 'jpg' || ext == 'jpeg' || ext == 'heic')
                     ? 'image/jpeg'
                     : 'application/octet-stream');
-        resolvedPathOrDataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
+        resolvedPathOrDataUrl =
+            'data:$mime;base64,${base64Encode(picked.bytes!)}';
       } else {
-        resolvedPathOrDataUrl = await _persistPickedDocument(file);
+        if (picked.path == null) return;
+        // Images are already persisted by NativePicker in Documents/photos/.
+        // Non-image documents (PDFs) need to be copied to user_documents/.
+        if (picked.isImage) {
+          resolvedPathOrDataUrl = picked.path!;
+        } else {
+          resolvedPathOrDataUrl =
+              await _persistPickedDocumentFromPath(picked.path!, fileName);
+        }
       }
 
       if (resolvedPathOrDataUrl.trim().isEmpty) {
@@ -1912,7 +1926,7 @@ Future<void> _handleExportPdf(
           context,
           provider,
           resolvedPathOrDataUrl,
-          file.name,
+          fileName,
         );
       }
     } catch (e) {
@@ -1926,6 +1940,27 @@ Future<void> _handleExportPdf(
         );
       }
     }
+  }
+
+  /// Copies a non-image document (e.g. PDF) into the sandbox
+  /// `Documents/user_documents/` directory so it persists across app updates.
+  Future<String> _persistPickedDocumentFromPath(
+    String sourcePath,
+    String fileName,
+  ) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final docsDir = Directory('${appDir.path}/user_documents');
+    if (!await docsDir.exists()) {
+      await docsDir.create(recursive: true);
+    }
+    final safeName = fileName.trim().isEmpty
+        ? 'document'
+        : fileName.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final targetPath =
+        '${docsDir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+    final source = File(sourcePath);
+    final target = await source.copy(targetPath);
+    return target.path;
   }
 
   void _showAddDocumentDetailsDialog(
@@ -2244,6 +2279,186 @@ class _SettingsGroup extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SettingsActionDialog extends StatelessWidget {
+  final String title;
+  final List<_SettingsActionItem> items;
+
+  const _SettingsActionDialog({
+    required this.title,
+    required this.items,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    return Dialog(
+      backgroundColor: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: colors.outline.withValues(alpha: 0.1)),
+      ),
+      elevation: 8,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: colors.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: textStyles.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Gap(24),
+            ...items.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              final isLast = index == items.length - 1;
+
+              return Column(
+                children: [
+                  _SettingsActionTile(item: item),
+                  if (!isLast)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 64, right: 24),
+                      child: Divider(
+                        height: 1,
+                        color: colors.outline.withValues(alpha: 0.08),
+                      ),
+                    ),
+                ],
+              );
+            }),
+            const Gap(12),
+            Center(
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context),
+                style: FilledButton.styleFrom(
+                  backgroundColor: colors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  elevation: 0,
+                ),
+                child: Text(
+                  AppStrings.of(context).settingsDialogCancel.toUpperCase(),
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsActionItem {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsActionItem({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+  });
+}
+
+class _SettingsActionTile extends StatelessWidget {
+  final _SettingsActionItem item;
+
+  const _SettingsActionTile({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    return InkWell(
+      onTap: item.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                item.icon,
+                color: colors.primary,
+                size: 24,
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: textStyles.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                  if (item.subtitle != null) ...[
+                    const Gap(2),
+                    Text(
+                      item.subtitle!,
+                      style: textStyles.bodySmall?.copyWith(
+                        color: colors.secondary,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colors.outline,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

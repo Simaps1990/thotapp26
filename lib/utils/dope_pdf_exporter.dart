@@ -50,7 +50,7 @@ class DopePdfExporter {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      table.name.trim().isEmpty ? 'Table sans nom' : table.name,
+                      table.name.trim().isEmpty ? _label('untitled_table', localeTag) : table.name,
                       style: pw.TextStyle(
                         fontSize: 18,
                         fontWeight: pw.FontWeight.bold,
@@ -59,7 +59,7 @@ class DopePdfExporter {
                     ),
                     pw.SizedBox(height: 8),
                     pw.Text(
-                      '${_platformName(provider, table.platformId, customPlatformName: table.customPlatformName)} / ${_ammoName(provider, table.ammoId, strings)}',
+                      '${_platformName(provider, table.platformId, localeTag, customPlatformName: table.customPlatformName)} / ${_ammoName(provider, table.ammoId, strings, localeTag)}',
                       style: pw.TextStyle(
                         fontSize: 12,
                         color: PdfColors.grey700,
@@ -90,9 +90,9 @@ class DopePdfExporter {
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                     children: [
-                      _tableCell('Distance', isHeader: true),
-                      _tableCell('Drop', isHeader: true),
-                      _tableCell('Dérive', isHeader: true),
+                      _tableCell(_label('distance', localeTag), isHeader: true),
+                      _tableCell(_label('drop', localeTag), isHeader: true),
+                      _tableCell(_label('wind', localeTag), isHeader: true),
                     ],
                   ),
                   // Data rows
@@ -174,7 +174,8 @@ class DopePdfExporter {
 
   static String _platformName(
     ThotProvider provider,
-    String platformId, {
+    String platformId,
+    String localeTag, {
     String? customPlatformName,
   }) {
     if (customPlatformName != null && customPlatformName.trim().isNotEmpty) {
@@ -184,7 +185,7 @@ class DopePdfExporter {
       (p) => p.id == platformId,
       orElse: () => Platform(
         id: '',
-        name: 'Inconnu',
+        name: _label('unknown', localeTag),
         type: '',
         model: '',
         caliber: '',
@@ -199,13 +200,13 @@ class DopePdfExporter {
     return platform.name;
   }
 
-  static String _ammoName(ThotProvider provider, String? ammoId, AppStrings strings) {
+  static String _ammoName(ThotProvider provider, String? ammoId, AppStrings strings, String localeTag) {
     if (ammoId == null) return strings.shootingTableNoAmmo;
     final ammo = provider.ammos.firstWhere(
       (a) => a.id == ammoId,
       orElse: () => Ammo(
         id: '',
-        name: 'Inconnu',
+        name: _label('unknown', localeTag),
         brand: '',
         caliber: '',
         projectileType: '',
@@ -226,4 +227,52 @@ class DopePdfExporter {
   }
 
   static final DateFormat _dfFile = DateFormat('yyyyMMdd_HHmmss');
+
+  static String _label(String key, String localeTag) {
+    final lang = localeTag.split('-').first.split('_').first;
+    switch (key) {
+      case 'untitled_table':
+        switch (lang) {
+          case 'en': return 'Untitled table';
+          case 'de': return 'Unbenannte Tabelle';
+          case 'it': return 'Tabella senza nome';
+          case 'es': return 'Tabla sin nombre';
+          default: return 'Table sans nom';
+        }
+      case 'distance':
+        switch (lang) {
+          case 'en': return 'Distance';
+          case 'de': return 'Entfernung';
+          case 'it': return 'Distanza';
+          case 'es': return 'Distancia';
+          default: return 'Distance';
+        }
+      case 'drop':
+        switch (lang) {
+          case 'en': return 'Drop';
+          case 'de': return 'Abfall';
+          case 'it': return 'Caduta';
+          case 'es': return 'Caída';
+          default: return 'Drop';
+        }
+      case 'wind':
+        switch (lang) {
+          case 'en': return 'Wind';
+          case 'de': return 'Drift';
+          case 'it': return 'Deriva';
+          case 'es': return 'Deriva';
+          default: return 'Dérive';
+        }
+      case 'unknown':
+        switch (lang) {
+          case 'en': return 'Unknown';
+          case 'de': return 'Unbekannt';
+          case 'it': return 'Sconosciuto';
+          case 'es': return 'Desconocido';
+          default: return 'Inconnu';
+        }
+      default:
+        return key;
+    }
+  }
 }

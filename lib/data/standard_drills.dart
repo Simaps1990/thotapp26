@@ -15,8 +15,6 @@ class StandardDrills {
     ];
   }
 
-  static bool isStandard(String templateId) => templateId.startsWith('std_');
-
   static ExerciseTemplate _billDrill(AppStrings s) {
     final now = DateTime.now();
     return ExerciseTemplate(

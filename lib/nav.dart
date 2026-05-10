@@ -245,7 +245,7 @@ class _UnknownRouteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Page introuvable')),
+      appBar: AppBar(title: Text(strings.routeNotFoundTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

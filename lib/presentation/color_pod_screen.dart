@@ -15,6 +15,7 @@ import 'package:thot/data/training_history.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/widgets/pro_badge.dart';
 import 'package:thot/presentation/pro_screen.dart';
+import 'package:thot/widgets/exercise_countdown_background.dart';
 
 // ─── Couleurs disponibles ─────────────────────────────────────────────────────
 
@@ -25,15 +26,15 @@ class _PodColor {
 }
 
 const _kColors = <_PodColor>[
-  _PodColor(id: 'red',    color: Color(0xFFE53935)),
-  _PodColor(id: 'blue',   color: Color(0xFF1E88E5)),
-  _PodColor(id: 'green',  color: Color(0xFF43A047)),
+  _PodColor(id: 'red', color: Color(0xFFE53935)),
+  _PodColor(id: 'blue', color: Color(0xFF1E88E5)),
+  _PodColor(id: 'green', color: Color(0xFF43A047)),
   _PodColor(id: 'yellow', color: Color(0xFFFDD835)),
   _PodColor(id: 'orange', color: Color(0xFFFB8C00)),
   _PodColor(id: 'purple', color: Color(0xFF8E24AA)),
-  _PodColor(id: 'pink',   color: Color(0xFFEC407A)),
+  _PodColor(id: 'pink', color: Color(0xFFEC407A)),
   _PodColor(id: 'mediumGray', color: Color(0xFF9E9E9E)),
-  _PodColor(id: 'white',  color: Color(0xFFF5F5F5)),
+  _PodColor(id: 'white', color: Color(0xFFF5F5F5)),
 ];
 
 // ─── Formes disponibles ───────────────────────────────────────────────────────
@@ -45,11 +46,11 @@ class _PodShape {
 }
 
 const _kShapes = <_PodShape>[
-  _PodShape(id: 'square',   icon: Icons.square),
-  _PodShape(id: 'heart',    icon: Icons.favorite),
-  _PodShape(id: 'circle',   icon: Icons.circle),
+  _PodShape(id: 'square', icon: Icons.square),
+  _PodShape(id: 'heart', icon: Icons.favorite),
+  _PodShape(id: 'circle', icon: Icons.circle),
   _PodShape(id: 'triangle', icon: Icons.play_arrow_rounded),
-  _PodShape(id: 'star',     icon: Icons.star),
+  _PodShape(id: 'star', icon: Icons.star),
 ];
 
 class _PodDirection {
@@ -69,28 +70,150 @@ const _kDirections = <_PodDirection>[
 // ─── Lettres et chiffres ──────────────────────────────────────────────────────
 
 const _kLettersFR = [
-  'A','B','C','D','E','F','G','H','I','J','K','L','M',
-  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
 ];
 
 const _kLettersEN = [
-  'A','B','C','D','E','F','G','H','I','J','K','L','M',
-  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
 ];
 
 const _kLettersDE = [
-  'A','B','C','D','E','F','G','H','I','J','K','L','M',
-  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z','ß',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
+  'ß',
 ];
 
 const _kLettersIT = [
-  'A','B','C','D','E','F','G','H','I','J','K','L','M',
-  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
 ];
 
 const _kLettersES = [
-  'A','B','C','D','E','F','G','H','I','J','K','L','M',
-  'N','Ñ','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'Ñ',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
 ];
 
 List<String> _getLettersForLanguage(String languageCode) {
@@ -110,7 +233,7 @@ List<String> _getLettersForLanguage(String languageCode) {
   }
 }
 
-const _kDigits = ['0','1','2','3','4','5','6','7','8','9'];
+const _kDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 enum _Phase { countdown, running }
 
@@ -140,7 +263,6 @@ class ColorPodScreen extends StatefulWidget {
 }
 
 class _ColorPodScreenState extends State<ColorPodScreen> {
-
   List<TextSpan> _parseBoldText(String text, TextStyle baseStyle) {
     final spans = <TextSpan>[];
     final regex = RegExp(r'\*\*(.*?)\*\*');
@@ -148,12 +270,19 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
 
     for (final match in regex.allMatches(text)) {
       if (match.start > lastIndex) {
-        spans.add(TextSpan(text: text.substring(lastIndex, match.start), style: baseStyle));
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
       }
-      spans.add(TextSpan(
-        text: match.group(1),
-        style: baseStyle.copyWith(fontWeight: FontWeight.bold),
-      ));
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+        ),
+      );
       lastIndex = match.end;
     }
 
@@ -171,7 +300,7 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
   final Set<String> _selectedLetters = {};
   final Set<String> _selectedDigits = {};
   double _colorDuration = 2.0;
-  double _colorDelay    = 1.0;
+  double _colorDelay = 1.0;
   double _totalDuration = 30.0;
 
   // ── Results ───────────────────────────────────────────────────────────────────
@@ -180,21 +309,33 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  List<String> get _currentLetters => _getLettersForLanguage(AppStrings.of(context).languageCode);
+  List<String> get _currentLetters =>
+      _getLettersForLanguage(AppStrings.of(context).languageCode);
 
   String _colorLabel(AppStrings s, String id) {
     switch (id) {
-      case 'red':    return s.colorPodRed;
-      case 'blue':   return s.colorPodBlue;
-      case 'green':  return s.colorPodGreen;
-      case 'yellow': return s.colorPodYellow;
-      case 'orange': return s.colorPodOrange;
-      case 'purple': return s.colorPodPurple;
-      case 'pink': return s.colorPodPink;
-      case 'mediumGray': return s.colorPodMediumGray;
-      case 'white':  return s.colorPodWhite;
-      case 'black':  return s.colorPodBlack;
-      default:       return id;
+      case 'red':
+        return s.colorPodRed;
+      case 'blue':
+        return s.colorPodBlue;
+      case 'green':
+        return s.colorPodGreen;
+      case 'yellow':
+        return s.colorPodYellow;
+      case 'orange':
+        return s.colorPodOrange;
+      case 'purple':
+        return s.colorPodPurple;
+      case 'pink':
+        return s.colorPodPink;
+      case 'mediumGray':
+        return s.colorPodMediumGray;
+      case 'white':
+        return s.colorPodWhite;
+      case 'black':
+        return s.colorPodBlack;
+      default:
+        return id;
     }
   }
 
@@ -217,23 +358,35 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
 
   String _shapeLabel(AppStrings s, String id) {
     switch (id) {
-      case 'circle':   return s.colorPodShapeCircle;
-      case 'square':   return s.colorPodShapeSquare;
-      case 'heart':    return s.colorPodShapeHeart;
-      case 'triangle': return s.colorPodShapeTriangle;
-      case 'star':     return s.colorPodShapeStar;
-      default:         return id;
+      case 'circle':
+        return s.colorPodShapeCircle;
+      case 'square':
+        return s.colorPodShapeSquare;
+      case 'heart':
+        return s.colorPodShapeHeart;
+      case 'triangle':
+        return s.colorPodShapeTriangle;
+      case 'star':
+        return s.colorPodShapeStar;
+      default:
+        return id;
     }
   }
 
   IconData _shapeIcon(String id) {
     switch (id) {
-      case 'circle':   return Icons.circle;
-      case 'square':   return Icons.square;
-      case 'heart':    return Icons.favorite;
-      case 'triangle': return Icons.play_arrow_rounded;
-      case 'star':     return Icons.star;
-      default:         return Icons.circle;
+      case 'circle':
+        return Icons.circle;
+      case 'square':
+        return Icons.square;
+      case 'heart':
+        return Icons.favorite;
+      case 'triangle':
+        return Icons.play_arrow_rounded;
+      case 'star':
+        return Icons.star;
+      default:
+        return Icons.circle;
     }
   }
 
@@ -249,66 +402,63 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
       size: isTriangle ? size * 1.35 : size,
     );
     if (!isTriangle) return icon;
-    return Transform.rotate(
-      angle: -pi / 2,
-      child: icon,
-    );
+    return Transform.rotate(angle: -pi / 2, child: icon);
   }
 
   // ── Logique ──────────────────────────────────────────────────────────────────
 
   Future<void> _start() async {
-  if (_selected.isEmpty) return;
+    if (_selected.isEmpty) return;
 
-  final result = await Navigator.of(context, rootNavigator: true)
-      .push<_ColorPodExerciseResult>(
-    MaterialPageRoute(
-      builder: (_) => _ColorPodExerciseScreen(
-        selected: Set<String>.from(_selected),
-        selectedShapes: Set<String>.from(_selectedShapes),
-        selectedDirections: Set<String>.from(_selectedDirections),
-        selectedLetters: Set<String>.from(_selectedLetters),
-        selectedDigits: Set<String>.from(_selectedDigits),
-        colorDuration: _colorDuration,
-        colorDelay: _colorDelay,
-        totalDuration: _totalDuration,
-      ),
-    ),
-  );
+    final result = await Navigator.of(context, rootNavigator: true)
+        .push<_ColorPodExerciseResult>(
+          MaterialPageRoute(
+            builder: (_) => _ColorPodExerciseScreen(
+              selected: Set<String>.from(_selected),
+              selectedShapes: Set<String>.from(_selectedShapes),
+              selectedDirections: Set<String>.from(_selectedDirections),
+              selectedLetters: Set<String>.from(_selectedLetters),
+              selectedDigits: Set<String>.from(_selectedDigits),
+              colorDuration: _colorDuration,
+              colorDelay: _colorDelay,
+              totalDuration: _totalDuration,
+            ),
+          ),
+        );
 
-  if (!mounted || result == null) return;
+    if (!mounted || result == null) return;
 
-  await TrainingHistory.recordExerciseCompletion('color_pod');
-  if (!mounted) return;
+    await TrainingHistory.recordExerciseCompletion('color_pod');
+    if (!mounted) return;
 
-  setState(() {
-    _currentResult = result;
-    _showingResults = true;
-  });
-}
+    setState(() {
+      _currentResult = result;
+      _showingResults = true;
+    });
+  }
 
   // ── Build ─────────────────────────────────────────────────────────────────────
 
   @override
-Widget build(BuildContext context) {
-  final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+  Widget build(BuildContext context) {
+    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
 
-  return AnimatedContainer(
-    duration: const Duration(milliseconds: 250),
-    height: MediaQuery.of(context).size.height * 0.8,
-    decoration: BoxDecoration(
-      color: baseBackground,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    child: _showingResults ? _buildResultsView() : _buildConfig(),
-  );
-}
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: baseBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: _showingResults ? _buildResultsView() : _buildConfig(),
+    );
+  }
 
   // ── Config ────────────────────────────────────────────────────────────────────
 
   Widget _buildConfig() {
-    final colors  = Theme.of(context).colorScheme;
-    final texts   = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+    final texts = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
     final provider = context.read<ThotProvider>();
     const selectorTileSize = 52.0;
@@ -323,7 +473,9 @@ Widget build(BuildContext context) {
     Widget sectionLabel(String title) => Text(
       title,
       style: texts.labelLarge?.copyWith(
-        fontWeight: FontWeight.w800, color: colors.secondary),
+        fontWeight: FontWeight.w800,
+        color: colors.secondary,
+      ),
     );
 
     Widget sectionHeader({
@@ -346,22 +498,24 @@ Widget build(BuildContext context) {
             ],
           ),
           if (!isLocked)
-            Row(children: [
-              TextButton(
-                onPressed: onActivateAll,
-                child: Text(
-                  strings.colorPodActivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.primary),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: onActivateAll,
+                  child: Text(
+                    strings.colorPodActivateAll,
+                    style: texts.labelSmall?.copyWith(color: colors.primary),
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: onDeactivateAll,
-                child: Text(
-                  strings.colorPodDeactivateAll,
-                  style: texts.labelSmall?.copyWith(color: colors.secondary),
+                TextButton(
+                  onPressed: onDeactivateAll,
+                  child: Text(
+                    strings.colorPodDeactivateAll,
+                    style: texts.labelSmall?.copyWith(color: colors.secondary),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
         ],
       );
     }
@@ -369,380 +523,473 @@ Widget build(BuildContext context) {
     Widget toggleGrid({required List<Widget> children}) =>
         Wrap(spacing: 6, runSpacing: 6, children: children);
 
-    return Column(children: [
-      const SizedBox(height: 12),
-      Container(
-        width: 40,
-        height: 4,
-        decoration: BoxDecoration(
-          color: LightColors.iconInactive.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(2),
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: LightColors.iconInactive.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
-      ),
-      const Gap(AppSpacing.md),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: Row(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      strings.colorPodToolTitle,
-                      style: texts.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colors.onSurface,
+        const Gap(AppSpacing.md),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        strings.colorPodToolTitle,
+                        style: texts.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
+                        ),
                       ),
                     ),
-                  ),
-                  const Gap(6),
-                  Tooltip(
-                    richMessage: TextSpan(
-                      children: _parseBoldText(strings.colorPodToolTooltip, texts.bodySmall?.copyWith(color: colors.surface) ?? const TextStyle(color: Colors.white, fontSize: 12)),
+                    const Gap(6),
+                    Tooltip(
+                      richMessage: TextSpan(
+                        children: _parseBoldText(
+                          strings.colorPodToolTooltip,
+                          texts.bodySmall?.copyWith(color: colors.surface) ??
+                              const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                        ),
+                      ),
+                      triggerMode: TooltipTriggerMode.tap,
+                      showDuration: const Duration(seconds: 6),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.onSurface.withValues(alpha: 0.88),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        size: 18,
+                        color: colors.onSurface.withValues(alpha: 0.45),
+                      ),
                     ),
-                    triggerMode: TooltipTriggerMode.tap,
-                    showDuration: const Duration(seconds: 6),
-                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: colors.onSurface.withValues(alpha: 0.88),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      color: colors.onSurface.withValues(alpha: 0.45),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Gap(AppSpacing.xs),
-            // Icône en forme de V pour fermer
-            GestureDetector(
-              onTap: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 28,
-                  color: colors.onSurface.withValues(alpha: 0.7),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: Divider(color: colors.outline),
-      ),
-      Expanded(child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.lg),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-
-          // ── COULEURS ─────────────────────────────────────────────────────────
-          sectionHeader(
-            title: strings.colorPodColors,
-            onActivateAll: () => setState(
-              () => _selected.addAll(_kColors.map((c) => c.id)),
-            ),
-            onDeactivateAll: () => setState(() => _selected.clear()),
-          ),
-          const Gap(sectionBottomGap),
-          toggleGrid(children: _kColors.map((c) {
-            final sel = _selected.contains(c.id);
-            final isWhite = c.id == 'white';
-            return GestureDetector(
-              onTap: () => setState(() {
-                if (sel) _selected.remove(c.id); else _selected.add(c.id);
-              }),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: sel ? 1.0 : 0.6,
-                child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: selectorTileSize,
-                height: selectorTileSize,
-                decoration: BoxDecoration(
-                  color: c.color,
-                  borderRadius: BorderRadius.circular(selectorTileRadius),
-                  border: Border.all(
-                    color: sel
-                        ? colors.primary
-                        : (isWhite ? colors.outline : Colors.transparent),
-                    width: sel ? 2 : 1,
-                  ),
-                ),
-                child: sel
-                    ? Icon(Icons.check_rounded,
-                        color: (c.id == 'white' || c.id == 'yellow')
-                            ? Colors.black
-                            : Colors.white,
-                        size: 24)
-                    : null,
-              ),
-              ),
-            );
-          }).toList()),
-          const Gap(sectionGap),
-
-          sectionHeader(
-            title: strings.colorPodDirections,
-            onActivateAll: () => setState(
-              () => _selectedDirections.addAll(_kDirections.map((d) => d.id)),
-            ),
-            onDeactivateAll: () => setState(() => _selectedDirections.clear()),
-          ),
-          const Gap(sectionBottomGap),
-          toggleGrid(children: _kDirections.map((d) {
-            final sel = _selectedDirections.contains(d.id);
-            return GestureDetector(
-              onTap: () => setState(() {
-                if (sel) {
-                  _selectedDirections.remove(d.id);
-                } else {
-                  _selectedDirections.add(d.id);
-                }
-              }),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: sel ? 1.0 : 0.6,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: selectorTileSize,
-                  height: selectorTileSize,
-                  decoration: BoxDecoration(
-                    color: sel
-                        ? colors.primary.withValues(alpha: 0.12)
-                        : colors.surface,
-                    borderRadius: BorderRadius.circular(selectorTileRadius),
-                    border: Border.all(
-                      color: sel ? colors.primary : colors.outline,
-                      width: sel ? 2 : 1,
-                    ),
-                  ),
+              const Gap(AppSpacing.xs),
+              // Icône en forme de V pour fermer
+              GestureDetector(
+                onTap: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
-                    d.icon,
-                    color: sel ? colors.primary : colors.secondary,
+                    Icons.keyboard_arrow_down_rounded,
                     size: 28,
+                    color: colors.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ),
-            );
-          }).toList()),
-          const Gap(sectionGap),
-
-          // ── FORMES ───────────────────────────────────────────────────────────
-          sectionHeader(
-            title: strings.colorPodShapes,
-            isLocked: shapesLocked,
-            onActivateAll: () => setState(
-              () => _selectedShapes.addAll(_kShapes.map((s) => s.id)),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Divider(color: colors.outline),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.lg,
             ),
-            onDeactivateAll: () => setState(() => _selectedShapes.clear()),
-          ),
-          const Gap(sectionBottomGap),
-          GestureDetector(
-            onTap: shapesLocked ? () => showProModal(context) : null,
-            child: Opacity(
-              opacity: shapesLocked ? 0.4 : 1.0,
-              child: IgnorePointer(
-                ignoring: shapesLocked,
-                child: toggleGrid(children: _kShapes.map((s) {
-                  final sel = _selectedShapes.contains(s.id);
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      if (sel) _selectedShapes.remove(s.id);
-                      else _selectedShapes.add(s.id);
-                    }),
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 150),
-                      opacity: sel ? 1.0 : 0.6,
-                      child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: selectorTileSize,
-                      height: selectorTileSize,
-                      decoration: BoxDecoration(
-                        color: sel
-                            ? colors.primary.withValues(alpha: 0.12)
-                            : colors.surface,
-                        borderRadius: BorderRadius.circular(selectorTileRadius),
-                        border: Border.all(
-                          color: sel ? colors.primary : colors.outline,
-                          width: sel ? 2 : 1,
-                        ),
-                      ),
-                      child: _shapeGlyph(
-                        id: s.id,
-                        color: sel ? colors.primary : colors.secondary,
-                        size: 28,
-                      ),
-                    ),
-                    ),
-                  );
-                }).toList()),
-              ),
-            ),
-          ),
-          const Gap(sectionGap),
-
-          // ── LETTRES ──────────────────────────────────────────────────────────
-          sectionHeader(
-            title: strings.colorPodLetters,
-            isLocked: lettersLocked,
-            onActivateAll: () => setState(() => _selectedLetters.addAll(_currentLetters)),
-            onDeactivateAll: () => setState(() => _selectedLetters.clear()),
-          ),
-          const Gap(sectionBottomGap),
-          GestureDetector(
-            onTap: lettersLocked ? () => showProModal(context) : null,
-            child: Opacity(
-              opacity: lettersLocked ? 0.4 : 1.0,
-              child: IgnorePointer(
-                ignoring: lettersLocked,
-                child: toggleGrid(children: _currentLetters.map((l) {
-                  final sel = _selectedLetters.contains(l);
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      if (sel) _selectedLetters.remove(l);
-                      else _selectedLetters.add(l);
-                    }),
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 150),
-                      opacity: sel ? 1.0 : 0.6,
-                      child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      width: selectorTileSize,
-                      height: selectorTileSize,
-                      decoration: BoxDecoration(
-                        color: sel
-                            ? colors.primary.withValues(alpha: 0.12)
-                            : colors.surface,
-                        borderRadius: BorderRadius.circular(selectorTileRadius),
-                        border: Border.all(
-                          color: sel ? colors.primary : colors.outline,
-                          width: sel ? 2 : 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(l,
-                          style: texts.labelLarge?.copyWith(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: sel ? colors.primary : colors.secondary)),
-                      ),
-                    ),
-                    ),
-                  );
-                }).toList()),
-              ),
-            ),
-          ),
-          const Gap(sectionGap),
-
-          // ── CHIFFRES ─────────────────────────────────────────────────────────
-          sectionHeader(
-            title: strings.colorPodDigits,
-            isLocked: numbersLocked,
-            onActivateAll: () => setState(() => _selectedDigits.addAll(_kDigits)),
-            onDeactivateAll: () => setState(() => _selectedDigits.clear()),
-          ),
-          const Gap(sectionBottomGap),
-          GestureDetector(
-            onTap: numbersLocked ? () => showProModal(context) : null,
-            child: Opacity(
-              opacity: numbersLocked ? 0.4 : 1.0,
-              child: IgnorePointer(
-                ignoring: numbersLocked,
-                child: toggleGrid(children: _kDigits.map((d) {
-                  final sel = _selectedDigits.contains(d);
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      if (sel) _selectedDigits.remove(d);
-                      else _selectedDigits.add(d);
-                    }),
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 150),
-                      opacity: sel ? 1.0 : 0.6,
-                      child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      width: selectorTileSize,
-                      height: selectorTileSize,
-                      decoration: BoxDecoration(
-                        color: sel
-                            ? colors.primary.withValues(alpha: 0.12)
-                            : colors.surface,
-                        borderRadius: BorderRadius.circular(selectorTileRadius),
-                        border: Border.all(
-                          color: sel ? colors.primary : colors.outline,
-                          width: sel ? 2 : 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(d,
-                          style: texts.labelLarge?.copyWith(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: sel ? colors.primary : colors.secondary)),
-                      ),
-                    ),
-                    ),
-                  );
-                }).toList()),
-              ),
-            ),
-          ),
-          const Gap(sectionGap),
-
-          // ── Sliders ──────────────────────────────────────────────────────────
-          _SliderField(
-            label: strings.colorPodColorDuration,
-            value: _colorDuration,
-            min: 0.5, max: 10.0, divisions: 19, unit: 's',
-            onChanged: (v) => setState(() => _colorDuration = v),
-            colors: colors, texts: texts,
-          ),
-          const Gap(AppSpacing.md),
-          _SliderField(
-            label: strings.colorPodDelay,
-            value: _colorDelay,
-            min: 0.0, max: 5.0, divisions: 20, unit: 's',
-            onChanged: (v) => setState(() => _colorDelay = v),
-            colors: colors, texts: texts,
-          ),
-          const Gap(AppSpacing.md),
-          _SliderField(
-            label: strings.colorPodTotalDuration,
-            value: _totalDuration,
-            min: 10.0, max: 300.0, divisions: 29, unit: 's',
-            onChanged: (v) => setState(() => _totalDuration = v),
-            colors: colors, texts: texts,
-          ),
-          const Gap(AppSpacing.xl),
-
-          SizedBox(
-            height: 52,
-            child: FilledButton(
-              onPressed: _selected.isEmpty ? null : _start,
-              style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── COULEURS ─────────────────────────────────────────────────────────
+                sectionHeader(
+                  title: strings.colorPodColors,
+                  onActivateAll: () => setState(
+                    () => _selected.addAll(_kColors.map((c) => c.id)),
+                  ),
+                  onDeactivateAll: () => setState(() => _selected.clear()),
                 ),
-              ),
-              child: Text(strings.colorPodLaunch.toUpperCase()),
+                const Gap(sectionBottomGap),
+                toggleGrid(
+                  children: _kColors.map((c) {
+                    final sel = _selected.contains(c.id);
+                    final isWhite = c.id == 'white';
+                    return GestureDetector(
+                      onTap: () => setState(() {
+                        if (sel)
+                          _selected.remove(c.id);
+                        else
+                          _selected.add(c.id);
+                      }),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 150),
+                        opacity: sel ? 1.0 : 0.6,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: selectorTileSize,
+                          height: selectorTileSize,
+                          decoration: BoxDecoration(
+                            color: c.color,
+                            borderRadius: BorderRadius.circular(
+                              selectorTileRadius,
+                            ),
+                            border: Border.all(
+                              color: sel
+                                  ? colors.primary
+                                  : (isWhite
+                                        ? colors.outline
+                                        : Colors.transparent),
+                              width: sel ? 2 : 1,
+                            ),
+                          ),
+                          child: sel
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: (c.id == 'white' || c.id == 'yellow')
+                                      ? Colors.black
+                                      : Colors.white,
+                                  size: 24,
+                                )
+                              : null,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const Gap(sectionGap),
+
+                sectionHeader(
+                  title: strings.colorPodDirections,
+                  onActivateAll: () => setState(
+                    () => _selectedDirections.addAll(
+                      _kDirections.map((d) => d.id),
+                    ),
+                  ),
+                  onDeactivateAll: () =>
+                      setState(() => _selectedDirections.clear()),
+                ),
+                const Gap(sectionBottomGap),
+                toggleGrid(
+                  children: _kDirections.map((d) {
+                    final sel = _selectedDirections.contains(d.id);
+                    return GestureDetector(
+                      onTap: () => setState(() {
+                        if (sel) {
+                          _selectedDirections.remove(d.id);
+                        } else {
+                          _selectedDirections.add(d.id);
+                        }
+                      }),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 150),
+                        opacity: sel ? 1.0 : 0.6,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: selectorTileSize,
+                          height: selectorTileSize,
+                          decoration: BoxDecoration(
+                            color: sel
+                                ? colors.primary.withValues(alpha: 0.12)
+                                : colors.surface,
+                            borderRadius: BorderRadius.circular(
+                              selectorTileRadius,
+                            ),
+                            border: Border.all(
+                              color: sel ? colors.primary : colors.outline,
+                              width: sel ? 2 : 1,
+                            ),
+                          ),
+                          child: Icon(
+                            d.icon,
+                            color: sel ? colors.primary : colors.secondary,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const Gap(sectionGap),
+
+                // ── FORMES ───────────────────────────────────────────────────────────
+                sectionHeader(
+                  title: strings.colorPodShapes,
+                  isLocked: shapesLocked,
+                  onActivateAll: () => setState(
+                    () => _selectedShapes.addAll(_kShapes.map((s) => s.id)),
+                  ),
+                  onDeactivateAll: () =>
+                      setState(() => _selectedShapes.clear()),
+                ),
+                const Gap(sectionBottomGap),
+                GestureDetector(
+                  onTap: shapesLocked ? () => showProModal(context) : null,
+                  child: Opacity(
+                    opacity: shapesLocked ? 0.4 : 1.0,
+                    child: IgnorePointer(
+                      ignoring: shapesLocked,
+                      child: toggleGrid(
+                        children: _kShapes.map((s) {
+                          final sel = _selectedShapes.contains(s.id);
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              if (sel)
+                                _selectedShapes.remove(s.id);
+                              else
+                                _selectedShapes.add(s.id);
+                            }),
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 150),
+                              opacity: sel ? 1.0 : 0.6,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                width: selectorTileSize,
+                                height: selectorTileSize,
+                                decoration: BoxDecoration(
+                                  color: sel
+                                      ? colors.primary.withValues(alpha: 0.12)
+                                      : colors.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    selectorTileRadius,
+                                  ),
+                                  border: Border.all(
+                                    color: sel
+                                        ? colors.primary
+                                        : colors.outline,
+                                    width: sel ? 2 : 1,
+                                  ),
+                                ),
+                                child: _shapeGlyph(
+                                  id: s.id,
+                                  color: sel
+                                      ? colors.primary
+                                      : colors.secondary,
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+                const Gap(sectionGap),
+
+                // ── LETTRES ──────────────────────────────────────────────────────────
+                sectionHeader(
+                  title: strings.colorPodLetters,
+                  isLocked: lettersLocked,
+                  onActivateAll: () =>
+                      setState(() => _selectedLetters.addAll(_currentLetters)),
+                  onDeactivateAll: () =>
+                      setState(() => _selectedLetters.clear()),
+                ),
+                const Gap(sectionBottomGap),
+                GestureDetector(
+                  onTap: lettersLocked ? () => showProModal(context) : null,
+                  child: Opacity(
+                    opacity: lettersLocked ? 0.4 : 1.0,
+                    child: IgnorePointer(
+                      ignoring: lettersLocked,
+                      child: toggleGrid(
+                        children: _currentLetters.map((l) {
+                          final sel = _selectedLetters.contains(l);
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              if (sel)
+                                _selectedLetters.remove(l);
+                              else
+                                _selectedLetters.add(l);
+                            }),
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 150),
+                              opacity: sel ? 1.0 : 0.6,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 120),
+                                width: selectorTileSize,
+                                height: selectorTileSize,
+                                decoration: BoxDecoration(
+                                  color: sel
+                                      ? colors.primary.withValues(alpha: 0.12)
+                                      : colors.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    selectorTileRadius,
+                                  ),
+                                  border: Border.all(
+                                    color: sel
+                                        ? colors.primary
+                                        : colors.outline,
+                                    width: sel ? 2 : 1,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    l,
+                                    style: texts.labelLarge?.copyWith(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w800,
+                                      color: sel
+                                          ? colors.primary
+                                          : colors.secondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+                const Gap(sectionGap),
+
+                // ── CHIFFRES ─────────────────────────────────────────────────────────
+                sectionHeader(
+                  title: strings.colorPodDigits,
+                  isLocked: numbersLocked,
+                  onActivateAll: () =>
+                      setState(() => _selectedDigits.addAll(_kDigits)),
+                  onDeactivateAll: () =>
+                      setState(() => _selectedDigits.clear()),
+                ),
+                const Gap(sectionBottomGap),
+                GestureDetector(
+                  onTap: numbersLocked ? () => showProModal(context) : null,
+                  child: Opacity(
+                    opacity: numbersLocked ? 0.4 : 1.0,
+                    child: IgnorePointer(
+                      ignoring: numbersLocked,
+                      child: toggleGrid(
+                        children: _kDigits.map((d) {
+                          final sel = _selectedDigits.contains(d);
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              if (sel)
+                                _selectedDigits.remove(d);
+                              else
+                                _selectedDigits.add(d);
+                            }),
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 150),
+                              opacity: sel ? 1.0 : 0.6,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 120),
+                                width: selectorTileSize,
+                                height: selectorTileSize,
+                                decoration: BoxDecoration(
+                                  color: sel
+                                      ? colors.primary.withValues(alpha: 0.12)
+                                      : colors.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    selectorTileRadius,
+                                  ),
+                                  border: Border.all(
+                                    color: sel
+                                        ? colors.primary
+                                        : colors.outline,
+                                    width: sel ? 2 : 1,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    d,
+                                    style: texts.labelLarge?.copyWith(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w800,
+                                      color: sel
+                                          ? colors.primary
+                                          : colors.secondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+                const Gap(sectionGap),
+
+                // ── Sliders ──────────────────────────────────────────────────────────
+                _SliderField(
+                  label: strings.colorPodColorDuration,
+                  value: _colorDuration,
+                  min: 0.5,
+                  max: 10.0,
+                  divisions: 19,
+                  unit: 's',
+                  onChanged: (v) => setState(() => _colorDuration = v),
+                  colors: colors,
+                  texts: texts,
+                ),
+                const Gap(AppSpacing.md),
+                _SliderField(
+                  label: strings.colorPodDelay,
+                  value: _colorDelay,
+                  min: 0.0,
+                  max: 5.0,
+                  divisions: 20,
+                  unit: 's',
+                  onChanged: (v) => setState(() => _colorDelay = v),
+                  colors: colors,
+                  texts: texts,
+                ),
+                const Gap(AppSpacing.md),
+                _SliderField(
+                  label: strings.colorPodTotalDuration,
+                  value: _totalDuration,
+                  min: 10.0,
+                  max: 300.0,
+                  divisions: 29,
+                  unit: 's',
+                  onChanged: (v) => setState(() => _totalDuration = v),
+                  colors: colors,
+                  texts: texts,
+                ),
+                const Gap(AppSpacing.xl),
+
+                SizedBox(
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: _selected.isEmpty ? null : _start,
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(strings.colorPodLaunch.toUpperCase()),
+                  ),
+                ),
+                const Gap(AppSpacing.lg),
+              ],
             ),
           ),
-          const Gap(AppSpacing.lg),
-        ]),
-      )),
-    ]);
+        ),
+      ],
+    );
   }
 
   // ── Results View ────────────────────────────────────────────────────────────────
@@ -755,19 +1002,27 @@ Widget build(BuildContext context) {
 
     final totalColors = result.counts.values.fold(0, (a, b) => a + b);
     final totalShapes = result.shapeCounts.values.fold(0, (a, b) => a + b);
-    final totalDirections = result.directionCounts.values.fold(0, (a, b) => a + b);
+    final totalDirections = result.directionCounts.values.fold(
+      0,
+      (a, b) => a + b,
+    );
     final totalLetters = result.letterCounts.values.fold(0, (a, b) => a + b);
     final totalDigits = result.digitCounts.values.fold(0, (a, b) => a + b);
-    final appearedColors =
-        _kColors.where((c) => (result.counts[c.id] ?? 0) > 0).toList();
-    final appearedShapes =
-        _kShapes.where((s) => (result.shapeCounts[s.id] ?? 0) > 0).toList();
-    final appearedDirections =
-        _kDirections.where((d) => (result.directionCounts[d.id] ?? 0) > 0).toList();
-    final appearedLetters =
-        _currentLetters.where((l) => (result.letterCounts[l] ?? 0) > 0).toList();
-    final appearedDigits =
-        _kDigits.where((d) => (result.digitCounts[d] ?? 0) > 0).toList();
+    final appearedColors = _kColors
+        .where((c) => (result.counts[c.id] ?? 0) > 0)
+        .toList();
+    final appearedShapes = _kShapes
+        .where((s) => (result.shapeCounts[s.id] ?? 0) > 0)
+        .toList();
+    final appearedDirections = _kDirections
+        .where((d) => (result.directionCounts[d.id] ?? 0) > 0)
+        .toList();
+    final appearedLetters = _currentLetters
+        .where((l) => (result.letterCounts[l] ?? 0) > 0)
+        .toList();
+    final appearedDigits = _kDigits
+        .where((d) => (result.digitCounts[d] ?? 0) > 0)
+        .toList();
 
     Widget shapeGlyph({
       required String id,
@@ -803,10 +1058,7 @@ Widget build(BuildContext context) {
       );
 
       if (!isTriangle) return widget;
-      return Transform.rotate(
-        angle: -pi / 2,
-        child: widget,
-      );
+      return Transform.rotate(angle: -pi / 2, child: widget);
     }
 
     Widget statCard(String title, List<Widget> rows) {
@@ -869,7 +1121,9 @@ Widget build(BuildContext context) {
                       ),
                       Text(
                         '$count × (${(pct * 100).toStringAsFixed(0)}%)',
-                        style: texts.bodySmall?.copyWith(color: colors.secondary),
+                        style: texts.bodySmall?.copyWith(
+                          color: colors.secondary,
+                        ),
                       ),
                     ],
                   ),
@@ -889,264 +1143,264 @@ Widget build(BuildContext context) {
       );
     }
 
-    return Column(children: [
-      const SizedBox(height: 12),
-      Container(
-        width: 40,
-        height: 4,
-        decoration: BoxDecoration(
-          color: LightColors.iconInactive.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(2),
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: LightColors.iconInactive.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
-      ),
-      const Gap(AppSpacing.md),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _showingResults = false;
-                  _currentResult = null;
-                });
-              },
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey.shade300
-                      : LightColors.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.arrow_back_rounded,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black
-                      : Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-            const Gap(AppSpacing.sm),
-            Expanded(
-              child: Text(
-                strings.colorPodResults,
-                textAlign: TextAlign.center,
-                style: texts.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface,
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 28,
-                  color: colors.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: Divider(color: colors.outline),
-      ),
-      Expanded(
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        const Gap(AppSpacing.md),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
             children: [
-              statCard(
-                strings.colorPodColors,
-                appearedColors.map((c) {
-                  final count = result.counts[c.id] ?? 0;
-                  final pct = totalColors == 0 ? 0.0 : count / totalColors;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: c.color,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: colors.outline),
-                          ),
-                        ),
-                        const Gap(AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _colorLabel(strings, c.id),
-                                    style: texts.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    '$count × (${(pct * 100).toStringAsFixed(0)}%)',
-                                    style: texts.bodySmall?.copyWith(
-                                      color: colors.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(4),
-                              LinearProgressIndicator(
-                                value: pct,
-                                backgroundColor:
-                                    colors.outline.withValues(alpha: 0.2),
-                                color: c.id == 'white'
-                                    ? colors.secondary
-                                    : c.color,
-                                minHeight: 6,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-              if (appearedShapes.isNotEmpty)
-                statCard(
-                  strings.colorPodShapes,
-                  appearedShapes.map((s) {
-                    final count = result.shapeCounts[s.id] ?? 0;
-                    return distributionRow(
-                      leading: shapeGlyph(
-                        id: s.id,
-                        size: 20,
-                        color: colors.primary,
-                      ),
-                      label: _shapeLabel(strings, s.id),
-                      count: count,
-                      total: totalShapes,
-                      progressColor: colors.primary,
-                    );
-                  }).toList(),
-                ),
-              if (appearedDirections.isNotEmpty)
-                statCard(
-                  strings.colorPodDirections,
-                  appearedDirections.map((d) {
-                    final count = result.directionCounts[d.id] ?? 0;
-                    return distributionRow(
-                      leading: Icon(
-                        d.icon,
-                        size: 22,
-                        color: colors.primary,
-                      ),
-                      label: _directionLabel(strings, d.id),
-                      count: count,
-                      total: totalDirections,
-                      progressColor: colors.primary,
-                    );
-                  }).toList(),
-                ),
-              if (appearedLetters.isNotEmpty)
-                statCard(
-                  strings.colorPodLetters,
-                  appearedLetters.map((l) {
-                    final count = result.letterCounts[l] ?? 0;
-                    return distributionRow(
-                      label: l,
-                      count: count,
-                      total: totalLetters,
-                      progressColor: colors.primary,
-                    );
-                  }).toList(),
-                ),
-              if (appearedDigits.isNotEmpty)
-                statCard(
-                  strings.colorPodDigits,
-                  appearedDigits.map((d) {
-                    final count = result.digitCounts[d] ?? 0;
-                    return distributionRow(
-                      label: d,
-                      count: count,
-                      total: totalDigits,
-                      progressColor: colors.primary,
-                    );
-                  }).toList(),
-                ),
-              const Gap(AppSpacing.md),
-              SizedBox(
-                height: 52,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.tonal(
-                        onPressed: () {
-                          setState(() {
-                            _showingResults = false;
-                            _currentResult = null;
-                          });
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: colors.primary.withValues(alpha: 0.72),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: Text(
-                          strings.colorPodConfig.toUpperCase(),
-                          style: texts.labelLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Gap(AppSpacing.md),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () {
-                          setState(() {
-                            _showingResults = false;
-                            _currentResult = null;
-                          });
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) _start();
-                          });
-                        },
-                        style: FilledButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: Text(strings.colorPodRestart.toUpperCase()),
-                      ),
-                    ),
-                  ],
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showingResults = false;
+                    _currentResult = null;
+                  });
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade300
+                        : LightColors.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.black
+                        : Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
-              const Gap(AppSpacing.xl),
+              const Gap(AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  strings.colorPodResults,
+                  textAlign: TextAlign.center,
+                  style: texts.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 28,
+                    color: colors.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-      ),
-    ]);
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Divider(color: colors.outline),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: AppSpacing.paddingLg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                statCard(
+                  strings.colorPodColors,
+                  appearedColors.map((c) {
+                    final count = result.counts[c.id] ?? 0;
+                    final pct = totalColors == 0 ? 0.0 : count / totalColors;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: c.color,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: colors.outline),
+                            ),
+                          ),
+                          const Gap(AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _colorLabel(strings, c.id),
+                                      style: texts.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      '$count × (${(pct * 100).toStringAsFixed(0)}%)',
+                                      style: texts.bodySmall?.copyWith(
+                                        color: colors.secondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Gap(4),
+                                LinearProgressIndicator(
+                                  value: pct,
+                                  backgroundColor: colors.outline.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  color: c.id == 'white'
+                                      ? colors.secondary
+                                      : c.color,
+                                  minHeight: 6,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                if (appearedShapes.isNotEmpty)
+                  statCard(
+                    strings.colorPodShapes,
+                    appearedShapes.map((s) {
+                      final count = result.shapeCounts[s.id] ?? 0;
+                      return distributionRow(
+                        leading: shapeGlyph(
+                          id: s.id,
+                          size: 20,
+                          color: colors.primary,
+                        ),
+                        label: _shapeLabel(strings, s.id),
+                        count: count,
+                        total: totalShapes,
+                        progressColor: colors.primary,
+                      );
+                    }).toList(),
+                  ),
+                if (appearedDirections.isNotEmpty)
+                  statCard(
+                    strings.colorPodDirections,
+                    appearedDirections.map((d) {
+                      final count = result.directionCounts[d.id] ?? 0;
+                      return distributionRow(
+                        leading: Icon(d.icon, size: 22, color: colors.primary),
+                        label: _directionLabel(strings, d.id),
+                        count: count,
+                        total: totalDirections,
+                        progressColor: colors.primary,
+                      );
+                    }).toList(),
+                  ),
+                if (appearedLetters.isNotEmpty)
+                  statCard(
+                    strings.colorPodLetters,
+                    appearedLetters.map((l) {
+                      final count = result.letterCounts[l] ?? 0;
+                      return distributionRow(
+                        label: l,
+                        count: count,
+                        total: totalLetters,
+                        progressColor: colors.primary,
+                      );
+                    }).toList(),
+                  ),
+                if (appearedDigits.isNotEmpty)
+                  statCard(
+                    strings.colorPodDigits,
+                    appearedDigits.map((d) {
+                      final count = result.digitCounts[d] ?? 0;
+                      return distributionRow(
+                        label: d,
+                        count: count,
+                        total: totalDigits,
+                        progressColor: colors.primary,
+                      );
+                    }).toList(),
+                  ),
+                const Gap(AppSpacing.md),
+                SizedBox(
+                  height: 52,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.tonal(
+                          onPressed: () {
+                            setState(() {
+                              _showingResults = false;
+                              _currentResult = null;
+                            });
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: colors.primary.withValues(
+                              alpha: 0.72,
+                            ),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            strings.colorPodConfig.toUpperCase(),
+                            style: texts.labelLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _showingResults = false;
+                              _currentResult = null;
+                            });
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) _start();
+                            });
+                          },
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(strings.colorPodRestart.toUpperCase()),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(AppSpacing.xl),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
-
 }
 
 // ─── Wrapper paysage ──────────────────────────────────────────────────────────
@@ -1177,7 +1431,8 @@ class _ColorPodExerciseScreen extends StatefulWidget {
       _ColorPodExerciseScreenState();
 }
 
-class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with WidgetsBindingObserver {
+class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen>
+    with WidgetsBindingObserver {
   _Phase _phase = _Phase.countdown;
   int _countdown = 3;
   Timer? _timer;
@@ -1255,10 +1510,7 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
       size: isTriangle ? size * 1.35 : size,
     );
     if (!isTriangle) return icon;
-    return Transform.rotate(
-      angle: -pi / 2,
-      child: icon,
-    );
+    return Transform.rotate(angle: -pi / 2, child: icon);
   }
 
   @override
@@ -1559,8 +1811,9 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
         minY + rng.nextDouble() * (maxY - minY),
       );
       if (inForbidden(candidate)) continue;
-      final collides =
-          occupied.any((o) => (candidate - o).distance < minDistance);
+      final collides = occupied.any(
+        (o) => (candidate - o).distance < minDistance,
+      );
       if (!collides) return candidate;
     }
 
@@ -1570,54 +1823,56 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
   Widget _buildCountdown() {
     final strings = AppStrings.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedScale(
-              key: ValueKey(_countdown),
-              scale: 1.0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.elasticOut,
-              onEnd: () {
-                if (mounted) {
-                  setState(() {});
-                }
-              },
-              child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0.5, end: 1.0),
+    return ExerciseCountdownBackground(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedScale(
+                key: ValueKey(_countdown),
+                scale: 1.0,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.elasticOut,
-                builder: (context, scale, child) {
-                  return Transform.scale(
-                    scale: scale,
-                    child: Text(
-                      _countdown > 0 ? '$_countdown' : 'GO !',
-                      style: TextStyle(
-                        fontSize: _countdown > 0 ? 160 : 120,
-                        fontWeight: FontWeight.w900,
-                        color: _countdown > 0 ? Colors.white : Colors.greenAccent,
-                        letterSpacing: -4,
-                      ),
-                    ),
-                  );
+                onEnd: () {
+                  if (mounted) {
+                    setState(() {});
+                  }
                 },
-              ),
-            ),
-            if (_countdown > 0) ...[
-              const Gap(16),
-              Text(
-                strings.colorPodPrepare,
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w600,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.5, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.elasticOut,
+                  builder: (context, scale, child) {
+                    return Transform.scale(
+                      scale: scale,
+                      child: Text(
+                        _countdown > 0 ? '$_countdown' : 'GO !',
+                        style: const TextStyle(
+                          fontSize: 160,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -4,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
+              if (_countdown > 0) ...[
+                const Gap(16),
+                Text(
+                  strings.colorPodPrepare,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -1632,8 +1887,12 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
     final isBlack = _currentColor == null;
     final isYellow = _currentColorId == 'yellow';
     final isGray = _currentColorId == 'mediumGray';
-    final textColor = isBlack ? Colors.white : (isYellow || isGray ? Colors.black : _contrastColor(_currentColor!));
-    final shapeColor = isYellow || isGray || _currentColorId == 'white' ? Colors.black : Colors.white;
+    final textColor = isBlack
+        ? Colors.white
+        : (isYellow || isGray ? Colors.black : _contrastColor(_currentColor!));
+    final shapeColor = isYellow || isGray || _currentColorId == 'white'
+        ? Colors.black
+        : Colors.white;
 
     return SizedBox.expand(
       child: LayoutBuilder(
@@ -1647,14 +1906,22 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
             required Widget child,
           }) {
             final margin = 8.0;
-            final safeMaxLeft =
-                (constraints.maxWidth - box - margin).clamp(0.0, double.infinity);
-            final safeMaxTop =
-                (constraints.maxHeight - box - margin).clamp(0.0, double.infinity);
-            final left =
-                (anchor.dx * constraints.maxWidth - box / 2).clamp(margin, safeMaxLeft);
-            final top =
-                (anchor.dy * constraints.maxHeight - box / 2).clamp(margin, safeMaxTop);
+            final safeMaxLeft = (constraints.maxWidth - box - margin).clamp(
+              0.0,
+              double.infinity,
+            );
+            final safeMaxTop = (constraints.maxHeight - box - margin).clamp(
+              0.0,
+              double.infinity,
+            );
+            final left = (anchor.dx * constraints.maxWidth - box / 2).clamp(
+              margin,
+              safeMaxLeft,
+            );
+            final top = (anchor.dy * constraints.maxHeight - box / 2).clamp(
+              margin,
+              safeMaxTop,
+            );
 
             return Positioned(
               left: left,
@@ -1769,8 +2036,9 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor =
-        _phase == _Phase.running ? (_currentColor ?? Colors.black) : Colors.black;
+    final Color bgColor = _phase == _Phase.running
+        ? (_currentColor ?? Colors.black)
+        : Colors.black;
 
     Widget body;
     switch (_phase) {
@@ -1794,10 +2062,7 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
         removeLeft: true,
         removeRight: true,
         child: SizedBox.expand(
-          child: _LandscapeWrapper(
-            color: bgColor,
-            child: body,
-          ),
+          child: _LandscapeWrapper(color: bgColor, child: body),
         ),
       ),
     );
@@ -1826,7 +2091,6 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen> with W
   }
 }
 
-
 class _LandscapeWrapper extends StatefulWidget {
   final Color color;
   final Widget child;
@@ -1854,10 +2118,7 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
 
   @override
   Widget build(BuildContext context) => SizedBox.expand(
-    child: ColoredBox(
-      color: widget.color,
-      child: widget.child,
-    ),
+    child: ColoredBox(color: widget.color, child: widget.child),
   );
 }
 
@@ -1888,33 +2149,54 @@ class _SliderField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label,
-          style: texts.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: colors.primary.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '${value % 1 == 0 ? value.toInt() : value.toStringAsFixed(1)} $unit',
-            style: texts.labelLarge?.copyWith(
-              fontWeight: FontWeight.w800, color: colors.primary)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: texts.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${value % 1 == 0 ? value.toInt() : value.toStringAsFixed(1)} $unit',
+                style: texts.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colors.primary,
+                ),
+              ),
+            ),
+          ],
         ),
-      ]),
-      Slider(
-        value: value, min: min, max: max, divisions: divisions,
-        onChanged: onChanged,
-        activeColor: colors.primary,
-      ),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text('$min $unit',
-          style: texts.labelSmall?.copyWith(color: colors.secondary)),
-        Text('$max $unit',
-          style: texts.labelSmall?.copyWith(color: colors.secondary)),
-      ]),
-    ]);
+        Slider(
+          value: value,
+          min: min,
+          max: max,
+          divisions: divisions,
+          onChanged: onChanged,
+          activeColor: colors.primary,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '$min $unit',
+              style: texts.labelSmall?.copyWith(color: colors.secondary),
+            ),
+            Text(
+              '$max $unit',
+              style: texts.labelSmall?.copyWith(color: colors.secondary),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }

@@ -79,6 +79,12 @@ ndkVersion = "28.2.13676358"
 
             // If key.properties exists, use the release keystore. If not, the release build will fail above.
             signingConfig signingConfigs.release
+
+            // R8 / ProGuard — minify and shrink release builds
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                          'proguard-rules.pro'
         }
     }
 }

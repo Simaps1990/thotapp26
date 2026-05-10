@@ -29,6 +29,32 @@ class ThotProvider extends ChangeNotifier {
 
   Future<void>? _initializeFuture;
   Timer? _saveDebounce;
+  Timer? _widgetSyncDebounce;
+
+  /// Schedule a debounced sync of Android home-screen widgets.
+  /// Only fires after domain data has been loaded (to avoid empty syncs)
+  /// and ignores errors silently (e.g. in test environment).
+  void _scheduleWidgetSync() {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    if (!_domainDataLoadCompleted) return;
+    _widgetSyncDebounce?.cancel();
+    _widgetSyncDebounce = Timer(const Duration(milliseconds: 600), () {
+      try {
+        unawaited(
+          DashboardWidgetService.sync(
+            sessions: _sessions,
+            platforms: platforms,
+            ammos: ammos,
+            accessories: accessories,
+            userDocuments: _userDocuments,
+          ),
+        );
+      } catch (_) {
+        // Silently ignore — widget sync is best-effort.
+      }
+    });
+  }
+
   
   // ============================================================
   // FREEMIUM MACHINERY
@@ -45,6 +71,15 @@ class ThotProvider extends ChangeNotifier {
   // ============================================================
 
   static const bool _kFreeLimitsDisabled = true;
+  bool get isFreeLimitsDisabled => _kFreeLimitsDisabled;
+
+  /// Bump this when the JSON layout of `_buildDomainDataMap()` changes in a
+  /// way that requires migration. The previous version is preserved for one
+  /// release, then migration code can be retired.
+  // schemaVersion 2: dropped redundant 'pdfPaths' key (always present
+  // alongside 'documents' since v1). Reading still falls back to
+  // 'pdfPaths' for older data files.
+  static const int kCurrentSchemaVersion = 2;
 
   // ----- Premium status -----
   bool get isPremium {
@@ -1782,7 +1817,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
 
 Map<String, dynamic> _buildDomainDataMap() {
   return {
-    'schemaVersion': 1,
+    'schemaVersion': kCurrentSchemaVersion,
     'exerciseTemplates': _exerciseTemplates.map((t) => t.toJson()).toList(),
 'userDocuments': _userDocuments.map((d) => {
   'id': d.id,
@@ -1815,7 +1850,6 @@ Map<String, dynamic> _buildDomainDataMap() {
       'roundsAtLastRevision': w.roundsAtLastRevision,
       'documents': w.documents.map((d) => d.toJson()).toList(),
       'history': w.history.map((h) => h.toJson()).toList(),
-      'pdfPaths': w.documents.map((d) => d.path).toList(),
       'photoPath': w.photoPath,
       'isHidden': w.isHidden,
       'linkedAccessoryIds': w.linkedAccessoryIds,
@@ -1833,7 +1867,6 @@ Map<String, dynamic> _buildDomainDataMap() {
       'trackStock': a.trackStock,
       'lowStockThreshold': a.lowStockThreshold,
       'documents': a.documents.map((d) => d.toJson()).toList(),
-      'pdfPaths': a.documents.map((d) => d.path).toList(),
       'photoPath': a.photoPath,
       'isHidden': a.isHidden,
       if (a.unitPrice != null) 'unitPrice': a.unitPrice,
@@ -1937,6 +1970,18 @@ Map<String, dynamic> _buildDomainDataMap() {
 
 void _loadDomainDataFromMap(Map<String, dynamic> data) {
   try {
+    final readVersion = (data['schemaVersion'] as int?) ?? 0;
+    if (readVersion > kCurrentSchemaVersion) {
+      // Data was written by a newer version of the app — best effort: load
+      // anyway but log a warning.
+      debugPrint(
+        '[ThotProvider] WARNING: data file schema version $readVersion is '
+        'newer than current $kCurrentSchemaVersion. Some fields may be lost.',
+      );
+    }
+    // Future migration code goes here:
+    // final data2 = readVersion < 2 ? _migrateV1ToV2(data) : data;
+
     final templatesList = (data['exerciseTemplates'] as List?) ?? const [];
     _exerciseTemplates = templatesList
         .whereType<Map>()
@@ -2610,10 +2655,6 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
     if (raw == _platformTypePistolSemiAutomatiqueLegacy) return _platformTypePistolSemiAuto;
     return raw;
   }
-
-Future<void> restoreFromCloud() async {
-  // Désactivé : pas de restauration cloud applicative dans THOT.
-}
 
   Future<void> lockSession() async {
     await _securityService.lockSession();

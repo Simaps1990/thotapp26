@@ -171,6 +171,14 @@ es: 'Temporizador de disparos',
         es: 'SOPORTE Y SEGURIDAD',
       );
 
+  String get supportAndContactLabel => _pick(
+        fr: 'Assistance & Contact',
+        en: 'Support & Contact',
+        de: 'Support & Kontakt',
+        it: 'Assistenza & Contatti',
+        es: 'Soporte y Contacto',
+      );
+
   // Contact / Support
   String get contactMeLabel => _pick(
         fr: 'Nous contacter',

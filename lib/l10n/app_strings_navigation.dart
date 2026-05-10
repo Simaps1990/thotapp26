@@ -43,6 +43,14 @@ extension AppStringsNavigation on AppStrings {
         es: 'Ajustes',
       );
 
+  String get routeNotFoundTitle => _pick(
+      fr: 'Page introuvable',
+      en: 'Page not found',
+      de: 'Seite nicht gefunden',
+      it: 'Pagina non trovata',
+      es: 'Página no encontrada',
+    );
+
   String get routeNotFoundMessage => _pick(
       fr: "La page demandée n'existe pas.",
       en: 'The requested page does not exist.',

@@ -47,7 +47,6 @@ dependencies:
   timezone: ^0.11.0
   flutter_timezone: ^5.0.2
   wakelock_plus: ^1.4.0
-  reorderable_list: ^0.0.1
   in_app_update: ^4.2.2
   connectivity_plus: ^6.1.4
   home_widget: ^0.8.0

@@ -22,11 +22,25 @@ import 'package:thot/widgets/pro_badge.dart';
 import 'package:thot/presentation/pro_screen.dart';
 
 enum _ReflexesMode { visual, auditory, math, memory, stroop, mot }
+
 enum _ReactionDifficulty { easy, medium, hard }
+
 enum _MathDifficulty { easy, medium, hard }
-enum _MathOperator { addition, subtraction, multiplication, division, mixed, addSubOnly, addSubMul }
+
+enum _MathOperator {
+  addition,
+  subtraction,
+  multiplication,
+  division,
+  mixed,
+  addSubOnly,
+  addSubMul,
+}
+
 enum _MemoryDifficulty { easy, medium, hard }
+
 enum _StroopDifficulty { easy, medium, hard }
+
 enum _MotDifficulty { easy, medium, hard }
 
 class ReflexesScreen extends StatefulWidget {
@@ -41,11 +55,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
   static const _historyKey = 'reflexes_benchmark_history_v1';
 
   late final TabController _tabController =
-      TabController(length: 6, vsync: this)
-        ..addListener(() {
-          if (_tabController.indexIsChanging) return;
-          setState(() => _mode = _ReflexesMode.values[_tabController.index]);
-        });
+      TabController(length: 6, vsync: this)..addListener(() {
+        if (_tabController.indexIsChanging) return;
+        setState(() => _mode = _ReflexesMode.values[_tabController.index]);
+      });
 
   _ReflexesMode? _mode;
   bool _showModePanel = false;
@@ -138,12 +151,19 @@ class _ReflexesScreenState extends State<ReflexesScreen>
 
     for (final match in regex.allMatches(text)) {
       if (match.start > lastIndex) {
-        spans.add(TextSpan(text: text.substring(lastIndex, match.start), style: baseStyle));
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
       }
-      spans.add(TextSpan(
-        text: match.group(1),
-        style: baseStyle.copyWith(fontWeight: FontWeight.bold),
-      ));
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+        ),
+      );
       lastIndex = match.end;
     }
 
@@ -161,7 +181,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     required Color bgColor,
     required double borderRadius,
   }) {
-    final effectiveStyle = textStyle ?? const TextStyle(color: Colors.white, fontSize: 12);
+    final effectiveStyle =
+        textStyle ?? const TextStyle(color: Colors.white, fontSize: 12);
     return Tooltip(
       richMessage: TextSpan(children: _parseBoldText(message, effectiveStyle)),
       triggerMode: TooltipTriggerMode.tap,
@@ -297,7 +318,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
 
   List<_ReflexSessionRecord> _topModeRecords() {
     if (_mode == null) return const <_ReflexSessionRecord>[];
-    var records = [...(_historyByMode[_mode!.name] ?? const <_ReflexSessionRecord>[])];
+    var records = [
+      ...(_historyByMode[_mode!.name] ?? const <_ReflexSessionRecord>[]),
+    ];
 
     if (_mode == _ReflexesMode.stroop) {
       records = records
@@ -305,7 +328,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           .toList();
     }
 
-    if (_mode == _ReflexesMode.visual || _mode == _ReflexesMode.auditory || _mode == _ReflexesMode.stroop) {
+    if (_mode == _ReflexesMode.visual ||
+        _mode == _ReflexesMode.auditory ||
+        _mode == _ReflexesMode.stroop) {
       records.sort((a, b) => a.primaryScore.compareTo(b.primaryScore));
     } else {
       records.sort((a, b) => b.primaryScore.compareTo(a.primaryScore));
@@ -422,10 +447,12 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     );
   }
 
-
   /// Launches the actual exercise for a given mode + level.
   /// Returns the primary score and navigation flags.
-  Future<({double? score, bool closeAll, bool nextLevel})> _startLevel(_ReflexesMode mode, int level) async {
+  Future<({double? score, bool closeAll, bool nextLevel})> _startLevel(
+    _ReflexesMode mode,
+    int level,
+  ) async {
     _ReflexSessionRecord? result;
     switch (mode) {
       case _ReflexesMode.visual:
@@ -436,7 +463,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
             barrierColor: Colors.transparent,
             pageBuilder: (_, __, ___) => _ReactionRunScreen(
               mode: _ReflexesMode.visual,
-              history: _historyByMode[_ReflexesMode.visual.name] ?? const <_ReflexSessionRecord>[],
+              history:
+                  _historyByMode[_ReflexesMode.visual.name] ??
+                  const <_ReflexSessionRecord>[],
               stimuliCount: p.stimuliCount,
               minDelayMs: p.minDelayMs,
               maxDelayMs: p.maxDelayMs,
@@ -444,7 +473,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               level: level,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -458,7 +490,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
             barrierColor: Colors.transparent,
             pageBuilder: (_, __, ___) => _ReactionRunScreen(
               mode: _ReflexesMode.auditory,
-              history: _historyByMode[_ReflexesMode.auditory.name] ?? const <_ReflexSessionRecord>[],
+              history:
+                  _historyByMode[_ReflexesMode.auditory.name] ??
+                  const <_ReflexSessionRecord>[],
               stimuliCount: p.stimuliCount,
               minDelayMs: p.minDelayMs,
               maxDelayMs: p.maxDelayMs,
@@ -466,7 +500,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               level: level,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -477,8 +514,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         final opMode = p.operatorMode == 0
             ? _MathOperator.addSubOnly
             : p.operatorMode == 1
-                ? _MathOperator.addSubMul
-                : _MathOperator.mixed;
+            ? _MathOperator.addSubMul
+            : _MathOperator.mixed;
         result = await Navigator.of(context).push<_ReflexSessionRecord>(
           PageRouteBuilder<_ReflexSessionRecord>(
             opaque: false,
@@ -488,15 +525,18 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               difficulty: p.operatorMode == 0
                   ? _MathDifficulty.easy
                   : p.operatorMode == 1
-                      ? _MathDifficulty.medium
-                      : _MathDifficulty.hard,
+                  ? _MathDifficulty.medium
+                  : _MathDifficulty.hard,
               operatorMode: opMode,
               operandMax: p.operandMax,
               onResultSaved: _appendHistory,
               level: level,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -517,7 +557,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               level: level,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -544,12 +587,17 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               trials: p.trials,
               circleDiameter: p.circleDiameter,
               highlightDurationMs: p.highlightDurationMs,
-              history: _historyByMode[_ReflexesMode.mot.name] ?? const <_ReflexSessionRecord>[],
+              history:
+                  _historyByMode[_ReflexesMode.mot.name] ??
+                  const <_ReflexSessionRecord>[],
               onResultSaved: _appendHistory,
               level: level,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -568,10 +616,17 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         await _appendHistory(result);
       }
     }
-    return (score: result.primaryScore, closeAll: closeAll, nextLevel: nextLevel);
+    return (
+      score: result.primaryScore,
+      closeAll: closeAll,
+      nextLevel: nextLevel,
+    );
   }
 
-  Future<void> _showStroopDifficultyDialog(BuildContext context, AppStrings strings) async {
+  Future<void> _showStroopDifficultyDialog(
+    BuildContext context,
+    AppStrings strings,
+  ) async {
     final result = await showDifficultyPicker(
       context: context,
       title: strings.reflexesDifficultyLabel,
@@ -599,7 +654,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     }
   }
 
-  Future<void> _showMotDifficultyDialog(BuildContext context, AppStrings strings) async {
+  Future<void> _showMotDifficultyDialog(
+    BuildContext context,
+    AppStrings strings,
+  ) async {
     final result = await showDifficultyPicker(
       context: context,
       title: strings.reflexesDifficultyLabel,
@@ -685,7 +743,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     TextTheme textStyles,
   ) {
     final records = _topModeRecords();
-    final descriptionStyle = textStyles.bodyMedium?.copyWith(
+    final descriptionStyle =
+        textStyles.bodyMedium?.copyWith(
           color: colors.onSurface,
           height: 1.35,
           fontWeight: FontWeight.w500,
@@ -709,7 +768,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         const Gap(AppSpacing.xs),
         RichText(
           text: TextSpan(
-            children: _parseBoldText(_selectedModeDescription(strings), descriptionStyle),
+            children: _parseBoldText(
+              _selectedModeDescription(strings),
+              descriptionStyle,
+            ),
           ),
         ),
         const Gap(AppSpacing.md),
@@ -772,7 +834,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: Text(strings.reflexesTopThree),
-                            content: Text(strings.reflexesMathScoringExplanation),
+                            content: Text(
+                              strings.reflexesMathScoringExplanation,
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(ctx).pop(),
@@ -796,7 +860,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               if (records.isEmpty)
                 Text(
                   strings.reflexesNoSessions,
-                  style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
+                  style: textStyles.bodyMedium?.copyWith(
+                    color: colors.secondary,
+                  ),
                 )
               else
                 ...records.take(3).toList().asMap().entries.map((entry) {
@@ -805,10 +871,11 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                   final medalColor = index == 0
                       ? const Color(0xFFFFC107)
                       : index == 1
-                          ? const Color(0xFFB0BEC5)
-                          : const Color(0xFFCD7F32);
+                      ? const Color(0xFFB0BEC5)
+                      : const Color(0xFFCD7F32);
 
-                  final avgTime = record.stats[strings.reflexesAvgAnswerTime] ?? '';
+                  final avgTime =
+                      record.stats[strings.reflexesAvgAnswerTime] ?? '';
                   final difficulty = record.stats['difficulty'] ?? '';
 
                   return Padding(
@@ -823,7 +890,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                         const Gap(AppSpacing.sm),
                         Expanded(
                           child: Text(
-                            difficulty.isNotEmpty ? '$avgTime ($difficulty)' : avgTime,
+                            difficulty.isNotEmpty
+                                ? '$avgTime ($difficulty)'
+                                : avgTime,
                             style: textStyles.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -869,6 +938,11 @@ class _ReflexesScreenState extends State<ReflexesScreen>
   }
 
   Future<void> _openStroopTest() async {
+    final provider = context.read<ThotProvider>();
+    if (provider.isToolLockedForFree('cognitive_drills')) {
+      showProModal(context);
+      return;
+    }
     final result = await Navigator.of(context).push<Map<String, String>>(
       PageRouteBuilder<Map<String, String>>(
         opaque: false,
@@ -906,12 +980,17 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         final list = (entry.value as List?) ?? const [];
         map[entry.key] = list
             .whereType<Map>()
-            .map((e) => _ReflexSessionRecord.fromJson(Map<String, dynamic>.from(e)))
+            .map(
+              (e) =>
+                  _ReflexSessionRecord.fromJson(Map<String, dynamic>.from(e)),
+            )
             .toList();
       }
 
       // Load Stroop data from cognitive_drill_score_history
-      final stroopHistoryJson = prefs.getString('cognitive_drill_score_history');
+      final stroopHistoryJson = prefs.getString(
+        'cognitive_drill_score_history',
+      );
       if (stroopHistoryJson != null) {
         try {
           final List<dynamic> stroopDecoded = jsonDecode(stroopHistoryJson);
@@ -920,9 +999,12 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               .whereType<Map>()
               .where((e) => e['_modeKey'] == 'stroop')
               .map((e) {
-                final avgStr = (e[strings.reflexesAvgReactionTime] ?? '').toString();
+                final avgStr = (e[strings.reflexesAvgReactionTime] ?? '')
+                    .toString();
                 final primaryFromAvg = _parseFirstNumberValue(avgStr);
-                final primaryFromStored = double.tryParse((e['_primary'] ?? '').toString()) ?? double.nan;
+                final primaryFromStored =
+                    double.tryParse((e['_primary'] ?? '').toString()) ??
+                    double.nan;
                 final primary = primaryFromStored.isFinite
                     ? primaryFromStored
                     : (primaryFromAvg.isFinite ? primaryFromAvg : double.nan);
@@ -933,7 +1015,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                   stats: Map<String, String>.from(e),
                 );
               })
-              .where((record) => record.primaryScore.isFinite && record.primaryScore > 50)
+              .where(
+                (record) =>
+                    record.primaryScore.isFinite && record.primaryScore > 50,
+              )
               .toList();
           map['stroop'] = stroopRecords;
         } catch (_) {}
@@ -948,9 +1033,11 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _historyKey,
-      jsonEncode(_historyByMode.map(
-        (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
-      )),
+      jsonEncode(
+        _historyByMode.map(
+          (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
+        ),
+      ),
     );
   }
 
@@ -1007,26 +1094,62 @@ class _ReflexesScreenState extends State<ReflexesScreen>
   (int, int) _getMemoryParams() {
     switch (_memoryDifficulty) {
       case _MemoryDifficulty.easy:
-        return (5, 5000);
+        return (5, 1500);
       case _MemoryDifficulty.medium:
-        return (7, 7000);
+        return (7, 2500);
       case _MemoryDifficulty.hard:
-        return (9, 9000);
+        return (9, 3500);
     }
   }
 
-  ({int totalCircles, int targetCount, int trackingDurationMs, double speedPxPerSec, int trials, double circleDiameter, int highlightDurationMs}) _getMotParams() {
+  ({
+    int totalCircles,
+    int targetCount,
+    int trackingDurationMs,
+    double speedPxPerSec,
+    int trials,
+    double circleDiameter,
+    int highlightDurationMs,
+  })
+  _getMotParams() {
     switch (_motDifficulty) {
       case _MotDifficulty.easy:
-        return (totalCircles: 10, targetCount: 1, trackingDurationMs: 7000, speedPxPerSec: 100, trials: 6, circleDiameter: 42, highlightDurationMs: 2500);
+        return (
+          totalCircles: 10,
+          targetCount: 1,
+          trackingDurationMs: 7000,
+          speedPxPerSec: 100,
+          trials: 6,
+          circleDiameter: 42,
+          highlightDurationMs: 1200,
+        );
       case _MotDifficulty.medium:
-        return (totalCircles: 10, targetCount: 3, trackingDurationMs: 8000, speedPxPerSec: 140, trials: 8, circleDiameter: 42, highlightDurationMs: 2000);
+        return (
+          totalCircles: 10,
+          targetCount: 3,
+          trackingDurationMs: 8000,
+          speedPxPerSec: 140,
+          trials: 8,
+          circleDiameter: 42,
+          highlightDurationMs: 1000,
+        );
       case _MotDifficulty.hard:
-        return (totalCircles: 10, targetCount: 5, trackingDurationMs: 10000, speedPxPerSec: 180, trials: 10, circleDiameter: 42, highlightDurationMs: 1500);
+        return (
+          totalCircles: 10,
+          targetCount: 5,
+          trackingDurationMs: 10000,
+          speedPxPerSec: 180,
+          trials: 10,
+          circleDiameter: 42,
+          highlightDurationMs: 700,
+        );
     }
   }
 
-  Future<void> _showReactionDifficultyDialog(BuildContext context, AppStrings strings) async {
+  Future<void> _showReactionDifficultyDialog(
+    BuildContext context,
+    AppStrings strings,
+  ) async {
     final result = await showDifficultyPicker(
       context: context,
       title: strings.reflexesDifficultyLabel,
@@ -1050,11 +1173,16 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       ],
     );
     if (result != null && mounted) {
-      setState(() => _reactionDifficulty = _ReactionDifficulty.values[result - 1]);
+      setState(
+        () => _reactionDifficulty = _ReactionDifficulty.values[result - 1],
+      );
     }
   }
 
-  Future<void> _showMathDifficultyDialog(BuildContext context, AppStrings strings) async {
+  Future<void> _showMathDifficultyDialog(
+    BuildContext context,
+    AppStrings strings,
+  ) async {
     final result = await showDifficultyPicker(
       context: context,
       title: strings.reflexesDifficultyLabel,
@@ -1082,7 +1210,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     }
   }
 
-  Future<void> _showMemoryDifficultyDialog(BuildContext context, AppStrings strings) async {
+  Future<void> _showMemoryDifficultyDialog(
+    BuildContext context,
+    AppStrings strings,
+  ) async {
     final result = await showDifficultyPicker(
       context: context,
       title: strings.reflexesDifficultyLabel,
@@ -1122,13 +1253,18 @@ class _ReflexesScreenState extends State<ReflexesScreen>
             barrierColor: Colors.transparent,
             pageBuilder: (_, __, ___) => _ReactionRunScreen(
               mode: _ReflexesMode.visual,
-              history: _historyByMode[_ReflexesMode.visual.name] ?? const <_ReflexSessionRecord>[],
+              history:
+                  _historyByMode[_ReflexesMode.visual.name] ??
+                  const <_ReflexSessionRecord>[],
               stimuliCount: stimuliCount,
               minDelayMs: minDelayMs,
               maxDelayMs: maxDelayMs,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -1142,13 +1278,18 @@ class _ReflexesScreenState extends State<ReflexesScreen>
             barrierColor: Colors.transparent,
             pageBuilder: (_, __, ___) => _ReactionRunScreen(
               mode: _ReflexesMode.auditory,
-              history: _historyByMode[_ReflexesMode.auditory.name] ?? const <_ReflexSessionRecord>[],
+              history:
+                  _historyByMode[_ReflexesMode.auditory.name] ??
+                  const <_ReflexSessionRecord>[],
               stimuliCount: stimuliCount,
               minDelayMs: minDelayMs,
               maxDelayMs: maxDelayMs,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -1157,7 +1298,11 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       case _ReflexesMode.math:
         final operatorMode = _getMathOperator();
         final (operandMax, _) = _getMathOperandRange();
-        final mathDurationSeconds = _mathDifficulty == _MathDifficulty.easy ? 60 : _mathDifficulty == _MathDifficulty.medium ? 90 : 120;
+        final mathDurationSeconds = _mathDifficulty == _MathDifficulty.easy
+            ? 60
+            : _mathDifficulty == _MathDifficulty.medium
+            ? 90
+            : 120;
         result = await Navigator.of(context).push<_ReflexSessionRecord>(
           PageRouteBuilder<_ReflexSessionRecord>(
             opaque: false,
@@ -1169,7 +1314,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               operandMax: operandMax,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -1188,7 +1336,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               rounds: _memoryRounds,
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -1209,10 +1360,15 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               trials: motParams.trials,
               circleDiameter: motParams.circleDiameter,
               highlightDurationMs: motParams.highlightDurationMs,
-              history: _historyByMode[_ReflexesMode.mot.name] ?? const <_ReflexSessionRecord>[],
+              history:
+                  _historyByMode[_ReflexesMode.mot.name] ??
+                  const <_ReflexSessionRecord>[],
             ),
             transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
               child: child,
             ),
           ),
@@ -1224,7 +1380,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     }
     if (result != null) {
       final closeToTools = result.stats['_close_tools'] == '1';
-      final cleanStats = Map<String, String>.from(result.stats)..remove('_close_tools');
+      final cleanStats = Map<String, String>.from(result.stats)
+        ..remove('_close_tools');
       final cleanResult = _ReflexSessionRecord(
         mode: result.mode,
         date: result.date,
@@ -1288,26 +1445,31 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                   children: [
                     if (_showModePanel || _showLevelsPanel)
                       GestureDetector(
-                        onTap: _showLevelsPanel ? _closeLevelsPanel : _closeModePanel,
+                        onTap: _showLevelsPanel
+                            ? _closeLevelsPanel
+                            : _closeModePanel,
                         child: Container(
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? Colors.grey.shade300
                                 : LightColors.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             Icons.arrow_back_rounded,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? Colors.black
                                 : Colors.white,
                             size: 22,
                           ),
                         ),
                       ),
-                    if (_showModePanel || _showLevelsPanel) const Gap(AppSpacing.sm),
+                    if (_showModePanel || _showLevelsPanel)
+                      const Gap(AppSpacing.sm),
                     Expanded(
                       child: Row(
                         mainAxisAlignment: (_showModePanel || _showLevelsPanel)
@@ -1319,8 +1481,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                               _showLevelsPanel
                                   ? _levelsPanelTitle(strings)
                                   : _showModePanel
-                                      ? _selectedModeTitle(strings)
-                                      : strings.reflexesAndCognitionTitle,
+                                  ? _selectedModeTitle(strings)
+                                  : strings.reflexesAndCognitionTitle,
                               style: textStyles.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: colors.onSurface,
@@ -1401,11 +1563,17 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                           AppSpacing.lg,
                           AppSpacing.md,
                           AppSpacing.lg,
-                          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
+                          AppSpacing.lg +
+                              MediaQuery.viewInsetsOf(context).bottom,
                         ),
                         child: _showModePanel
                             ? _buildModePanel(strings, colors, textStyles)
-                            : _buildSelectionPanel(strings, colors, textStyles, isDark),
+                            : _buildSelectionPanel(
+                                strings,
+                                colors,
+                                textStyles,
+                                isDark,
+                              ),
                       ),
               ),
             ),
@@ -1442,80 +1610,112 @@ class _MemoryInputBoxesDisplay extends StatelessWidget {
         final chars = input.characters.toList();
         final correct = correctSequence?.characters.toList() ?? [];
 
+        Widget buildRow(List<String> digits, {bool isAnswer = false}) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(count, (index) {
+              final char = index < digits.length ? digits[index] : '';
+
+              Color boxBg;
+              Color borderColor;
+              Color textColor;
+
+              if (isAnswer) {
+                // Always green for the reference answer row
+                boxBg = const Color(0xFF0D3A28);
+                borderColor = const Color(0xFF00C853);
+                textColor = const Color(0xFF00E676);
+              } else if (showResult && char.isNotEmpty) {
+                final expectedChar =
+                    index < correct.length ? correct[index] : '';
+                if (char == expectedChar) {
+                  boxBg = const Color(0xFF0D3A28);
+                  borderColor = const Color(0xFF00C853);
+                  textColor = const Color(0xFF00E676);
+                } else {
+                  boxBg = const Color(0xFF4A1620);
+                  borderColor = const Color(0xFFD32F2F);
+                  textColor = const Color(0xFFFF5252);
+                }
+              } else {
+                boxBg = const Color(0xFF1F1F1F);
+                borderColor = const Color(0xFF4F4F4F);
+                textColor = const Color(0xFFF2F2F2);
+              }
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: spacing),
+                child: Container(
+                  width: blockWidth,
+                  height: blockHeight,
+                  decoration: BoxDecoration(
+                    color: boxBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: borderColor, width: isAnswer ? 2.0 : 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isAnswer
+                            ? const Color(0xFF00C853).withValues(alpha: 0.22)
+                            : Colors.black.withValues(alpha: 0.34),
+                        blurRadius: isAnswer ? 10 : 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      char,
+                      style: TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w900,
+                        color: textColor,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          );
+        }
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (showResult && correctSequence != null) ...[
+              // --- Reference answer boxes (always green) ---
+              buildRow(correct, isAnswer: true),
+              const SizedBox(height: 32),
+              // --- Divider between answer and user input ---
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Divider(
+                  height: 1.5,
+                  thickness: 1.5,
+                  color: const Color(0xFF4F4F4F).withValues(alpha: 0.5),
+                ),
+              ),
+              const SizedBox(height: 14),
+              // --- User input label ---
               Text(
-                'Réponse : $correctSequence',
-                style: const TextStyle(
-                  color: Color(0xFF00E676),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
+                'VOTRE RÉPONSE',
+                style: TextStyle(
+                  color: const Color(0xFFF2F2F2).withValues(alpha: 0.45),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                  letterSpacing: 1.4,
                 ),
               ),
               const SizedBox(height: 8),
             ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(count, (index) {
-                final char = index < chars.length ? chars[index] : '';
-                Color boxBg = const Color(0xFF1F1F1F);
-                Color borderColor = const Color(0xFF4F4F4F);
-                Color textColor = const Color(0xFFF2F2F2);
-
-                if (showResult && char.isNotEmpty) {
-                  final expectedChar = index < correct.length ? correct[index] : '';
-                  if (char == expectedChar) {
-                    boxBg = const Color(0xFF0D3A28);
-                    borderColor = const Color(0xFF00C853);
-                    textColor = const Color(0xFF00E676);
-                  } else {
-                    boxBg = const Color(0xFF4A1620);
-                    borderColor = const Color(0xFFD32F2F);
-                    textColor = const Color(0xFFFF5252);
-                  }
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: spacing),
-                  child: Container(
-                    width: blockWidth,
-                    height: blockHeight,
-                    decoration: BoxDecoration(
-                      color: boxBg,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: borderColor, width: 1.2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.34),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        char,
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w900,
-                          color: textColor,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
+            // --- User input boxes ---
+            buildRow(chars),
           ],
         );
       },
     );
   }
 }
-
 
 class _DrillCard extends StatefulWidget {
   const _DrillCard({
@@ -1548,7 +1748,8 @@ class _DrillCard extends StatefulWidget {
   State<_DrillCard> createState() => _DrillCardState();
 }
 
-class _DrillCardState extends State<_DrillCard> with SingleTickerProviderStateMixin {
+class _DrillCardState extends State<_DrillCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _shimmerController;
   late Animation<double> _shimmerAnimation;
 
@@ -1562,7 +1763,7 @@ class _DrillCardState extends State<_DrillCard> with SingleTickerProviderStateMi
     _shimmerAnimation = Tween<double>(begin: -1.0, end: 1.0).animate(
       CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
     );
-    
+
     if (widget.isSelected) {
       _shimmerController.forward(from: 0.0);
     }
@@ -1587,170 +1788,184 @@ class _DrillCardState extends State<_DrillCard> with SingleTickerProviderStateMi
     return Opacity(
       opacity: widget.isLocked ? 0.5 : 1.0,
       child: InkWell(
-      onTap: widget.onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: widget.backgroundImage == null
-              ? (widget.isSelected ? LightColors.primary : widget.colors.surface)
-              : null,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: widget.isDark
-                ? widget.colors.outline.withValues(alpha: 0.3)
-                : LightColors.surfaceHighlight,
-            width: 1,
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: widget.backgroundImage == null
+                ? (widget.isSelected
+                      ? LightColors.primary
+                      : widget.colors.surface)
+                : null,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: widget.isDark
+                  ? widget.colors.outline.withValues(alpha: 0.3)
+                  : LightColors.surfaceHighlight,
+              width: 1,
+            ),
+            boxShadow: AppShadows.cardPremium,
+            image: widget.backgroundImage != null
+                ? DecorationImage(
+                    image: AssetImage(widget.backgroundImage!),
+                    fit: BoxFit.fitWidth,
+                    alignment: Alignment.center,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withValues(
+                        alpha: widget.isSelected ? 0.18 : 0.38,
+                      ),
+                      BlendMode.darken,
+                    ),
+                  )
+                : null,
           ),
-          boxShadow: AppShadows.cardPremium,
-          image: widget.backgroundImage != null
-              ? DecorationImage(
-                  image: AssetImage(widget.backgroundImage!),
-                  fit: BoxFit.fitWidth,
-                  alignment: Alignment.center,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: widget.isSelected ? 0.18 : 0.38),
-                    BlendMode.darken,
-                  ),
-                )
-              : null,
-        ),
-        child: Stack(
-          children: [
-            if (widget.isSelected && widget.backgroundImage != null)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: AnimatedBuilder(
-                      animation: _shimmerAnimation,
-                      builder: (context, child) {
-                        return LayoutBuilder(
-                          builder: (context, constraints) {
-                            final progress = (_shimmerAnimation.value + 1) / 2;
-                            final travel = constraints.maxWidth + 180;
-                            final dx = (progress * travel) - 90;
+          child: Stack(
+            children: [
+              if (widget.isSelected && widget.backgroundImage != null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: AnimatedBuilder(
+                        animation: _shimmerAnimation,
+                        builder: (context, child) {
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              final progress =
+                                  (_shimmerAnimation.value + 1) / 2;
+                              final travel = constraints.maxWidth + 180;
+                              final dx = (progress * travel) - 90;
 
-                            return Transform.translate(
-                              offset: Offset(dx, 0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  width: 180,
-                                  height: constraints.maxHeight,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                      colors: [
-                                        Colors.transparent,
-                                        Colors.white.withValues(alpha: 0.18),
-                                        Colors.white.withValues(alpha: 0.06),
-                                        Colors.transparent,
-                                      ],
-                                      stops: const [0.0, 0.35, 0.65, 1.0],
+                              return Transform.translate(
+                                offset: Offset(dx, 0),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    width: 180,
+                                    height: constraints.maxHeight,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.white.withValues(alpha: 0.18),
+                                          Colors.white.withValues(alpha: 0.06),
+                                          Colors.transparent,
+                                        ],
+                                        stops: const [0.0, 0.35, 0.65, 1.0],
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      },
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(12),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(widget.icon, color: Colors.white, size: 22),
                     ),
-                    child: Icon(
-                      widget.icon,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  const Gap(AppSpacing.lg),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: widget.textStyles.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: widget.backgroundImage != null ? Colors.white : (widget.isSelected ? Colors.white : widget.colors.onSurface),
+                    const Gap(AppSpacing.lg),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: widget.textStyles.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: widget.backgroundImage != null
+                                  ? Colors.white
+                                  : (widget.isSelected
+                                        ? Colors.white
+                                        : widget.colors.onSurface),
+                            ),
                           ),
-                        ),
-                        if (widget.isLocked) ...[
-                          const Gap(8),
-                          const ProBadge(compact: true),
+                          if (widget.isLocked) ...[
+                            const Gap(8),
+                            const ProBadge(compact: true),
+                          ],
+                          const Gap(4),
+                          Text(
+                            widget.description,
+                            style: widget.textStyles.bodySmall?.copyWith(
+                              color: widget.backgroundImage != null
+                                  ? Colors.white
+                                  : (widget.isSelected
+                                        ? Colors.white.withValues(alpha: 0.8)
+                                        : widget.colors.secondary),
+                              shadows: widget.backgroundImage != null
+                                  ? [
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.85,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: Offset.zero,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                          ),
                         ],
-                        const Gap(4),
-                        Text(
-                          widget.description,
-                          style: widget.textStyles.bodySmall?.copyWith(
-                            color: widget.backgroundImage != null ? Colors.white : (widget.isSelected ? Colors.white.withValues(alpha: 0.8) : widget.colors.secondary),
-                            shadows: widget.backgroundImage != null ? [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.85),
-                                blurRadius: 8,
-                                offset: Offset.zero,
-                              ),
-                            ] : null,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (widget.mode != null && TrainingHistory.hasExerciseToday(widget.mode!.name))
-              Positioned(
-                top: 0,
-                right: 0,
-                child: ClipPath(
-                  clipper: _DiagonalCornerClipper(),
-                  child: Container(
-                    width: 54,
-                    height: 54,
-                    color: LightColors.primary,
-                    alignment: Alignment.topRight,
-                    padding: const EdgeInsets.only(top: 8, right: 8),
-                    child: const Icon(
-                      Icons.assignment_turned_in,
-                      color: Colors.white,
-                      size: 19,
+              if (widget.mode != null &&
+                  TrainingHistory.hasExerciseToday(widget.mode!.name))
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: ClipPath(
+                    clipper: _DiagonalCornerClipper(),
+                    child: Container(
+                      width: 54,
+                      height: 54,
+                      color: LightColors.primary,
+                      alignment: Alignment.topRight,
+                      padding: const EdgeInsets.only(top: 8, right: 8),
+                      child: const Icon(
+                        Icons.assignment_turned_in,
+                        color: Colors.white,
+                        size: 19,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            if (widget.isSelected)
-              Positioned(
-                top: AppSpacing.sm,
-                right: AppSpacing.sm,
-                child: Icon(
-                  Icons.check_circle,
-                  color: Colors.white,
-                  size: 24,
+              if (widget.isSelected)
+                Positioned(
+                  top: AppSpacing.sm,
+                  right: AppSpacing.sm,
+                  child: Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
@@ -1791,9 +2006,7 @@ class _SettingsGroup extends StatelessWidget {
             boxShadow: AppShadows.cardPremium,
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -1880,7 +2093,8 @@ class _ReactionRunScreen extends StatefulWidget {
   State<_ReactionRunScreen> createState() => _ReactionRunScreenState();
 }
 
-class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _ReactionRunScreenState extends State<_ReactionRunScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _random = Random();
   final _stopwatch = Stopwatch();
   final _timesMs = <int>[];
@@ -1896,10 +2110,11 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
   Color? _feedbackAccentColor;
   Timer? _timer;
   Timer? _feedbackTimer;
-  late final AnimationController _feedbackAnimationController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  );
+  late final AnimationController _feedbackAnimationController =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 900),
+      );
   int _countdown = 3;
   bool _isCountingDown = true;
   bool _showResults = false;
@@ -1916,7 +2131,10 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
   List<_ReflexSessionRecord> _topRecords() {
     final current = _currentResult;
     final levelStr = widget.level?.toString();
-    var records = <_ReflexSessionRecord>[...widget.history, if (current != null) current];
+    var records = <_ReflexSessionRecord>[
+      ...widget.history,
+      if (current != null) current,
+    ];
     if (levelStr != null) {
       records = records.where((r) => r.stats['_level'] == levelStr).toList();
     }
@@ -1978,7 +2196,10 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
     _visualSignalColor = null;
     if (mounted) setState(() {});
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) { timer.cancel(); return; }
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       if (_countdown > 0) {
         _countdown--;
         setState(() {});
@@ -1998,7 +2219,8 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
       ..reset();
     if (mounted) setState(() {});
     final spread = widget.maxDelayMs - widget.minDelayMs;
-    final delay = widget.minDelayMs + (spread <= 0 ? 0 : _random.nextInt(spread));
+    final delay =
+        widget.minDelayMs + (spread <= 0 ? 0 : _random.nextInt(spread));
     _timer?.cancel();
     _timer = Timer(Duration(milliseconds: delay), () async {
       if (!mounted) return;
@@ -2057,14 +2279,24 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
     if (_handlingTap) return;
     _handlingTap = true;
     if (!_armed) {
-      _falseStarts++; _timer?.cancel(); _showFalseFeedback(); setState(() {}); _scheduleNext(); _handlingTap = false; return;
+      _falseStarts++;
+      _timer?.cancel();
+      _showFalseFeedback();
+      setState(() {});
+      _scheduleNext();
+      _handlingTap = false;
+      return;
     }
     _stopwatch.stop();
     final ms = _stopwatch.elapsedMilliseconds;
     _timesMs.add(ms);
     _index++;
     _showSpeedFeedback(ms);
-    if (_index >= widget.stimuliCount) { _finish(); } else { _scheduleNext(); }
+    if (_index >= widget.stimuliCount) {
+      _finish();
+    } else {
+      _scheduleNext();
+    }
     _handlingTap = false;
   }
 
@@ -2134,18 +2366,32 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
   }
 
   void _finish() {
-    final avg = _timesMs.isEmpty ? 0.0 : _timesMs.reduce((a, b) => a + b) / _timesMs.length;
-    final variance = _timesMs.isEmpty ? 0.0 : _timesMs.map((v) => pow(v - avg, 2).toDouble()).reduce((a, b) => a + b) / _timesMs.length;
+    final avg = _timesMs.isEmpty
+        ? 0.0
+        : _timesMs.reduce((a, b) => a + b) / _timesMs.length;
+    final variance = _timesMs.isEmpty
+        ? 0.0
+        : _timesMs
+                  .map((v) => pow(v - avg, 2).toDouble())
+                  .reduce((a, b) => a + b) /
+              _timesMs.length;
     final strings = AppStrings.of(context);
-    final result = _ReflexSessionRecord(mode: widget.mode, date: DateTime.now(), primaryScore: avg, stats: {
-      strings.reflexesStimuliCountLabel: _index.toString(),
-      strings.reflexesAvgReactionTime: avg.toStringAsFixed(1),
-      strings.reflexesStdDevReactionTime: sqrt(variance).toStringAsFixed(1),
-      strings.reflexesMinReactionTime: (_timesMs.isEmpty ? 0 : _timesMs.reduce(min)).toString(),
-      strings.reflexesMaxReactionTime: (_timesMs.isEmpty ? 0 : _timesMs.reduce(max)).toString(),
-      strings.reflexesFalseStarts: _falseStarts.toString(),
-      if (widget.level != null) '_level': widget.level.toString(),
-    });
+    final result = _ReflexSessionRecord(
+      mode: widget.mode,
+      date: DateTime.now(),
+      primaryScore: avg,
+      stats: {
+        strings.reflexesStimuliCountLabel: _index.toString(),
+        strings.reflexesAvgReactionTime: avg.toStringAsFixed(1),
+        strings.reflexesStdDevReactionTime: sqrt(variance).toStringAsFixed(1),
+        strings.reflexesMinReactionTime:
+            (_timesMs.isEmpty ? 0 : _timesMs.reduce(min)).toString(),
+        strings.reflexesMaxReactionTime:
+            (_timesMs.isEmpty ? 0 : _timesMs.reduce(max)).toString(),
+        strings.reflexesFalseStarts: _falseStarts.toString(),
+        if (widget.level != null) '_level': widget.level.toString(),
+      },
+    );
     setState(() {
       _currentResult = result;
       _showResults = true;
@@ -2157,9 +2403,10 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
     _stopwatch.stop();
     if (_timesMs.isNotEmpty) {
       final avg = _timesMs.reduce((a, b) => a + b) / _timesMs.length;
-      final variance = _timesMs
-          .map((v) => pow(v - avg, 2).toDouble())
-          .reduce((a, b) => a + b) /
+      final variance =
+          _timesMs
+              .map((v) => pow(v - avg, 2).toDouble())
+              .reduce((a, b) => a + b) /
           _timesMs.length;
       final strings = AppStrings.of(context);
       final result = _ReflexSessionRecord(
@@ -2195,6 +2442,7 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
       _stopwatch.stop();
     }
   }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -2211,7 +2459,7 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
     final strings = AppStrings.of(context);
     final colors = Theme.of(context).colorScheme;
     final texts = Theme.of(context).textTheme;
-    
+
     if (_showResults && _currentResult != null) {
       final baseBackground = Theme.of(context).scaffoldBackgroundColor;
       final topRecords = _topRecords();
@@ -2223,400 +2471,533 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
             height: MediaQuery.of(context).size.height * 0.90,
             decoration: BoxDecoration(
               color: baseBackground,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: LightColors.iconInactive.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Gap(AppSpacing.md),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(_currentResult),
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey.shade300
-                              : LightColors.primary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.black
-                              : Colors.white,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                    const Gap(AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        strings.reflexesResultsTitle,
-                        textAlign: TextAlign.center,
-                        style: texts.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.onSurface,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _closeToTools,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 32,
-                          color: colors.onSurface.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Divider(color: colors.outline),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: AppSpacing.paddingLg,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: colors.outline),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              strings.reflexesPerformance,
-                              style: texts.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: colors.secondary,
-                              ),
-                            ),
-                            const Gap(AppSpacing.md),
-                            _buildStatRow(texts, colors, strings.reflexesStimuliCountLabel, _currentResult!.stats[strings.reflexesStimuliCountLabel] ?? ''),
-                            _buildStatRow(texts, colors, strings.reflexesAvgReactionTime, '${_currentResult!.stats[strings.reflexesAvgReactionTime] ?? ''} ms'),
-                            _buildStatRow(texts, colors, strings.reflexesStdDevReactionTime, '${_currentResult!.stats[strings.reflexesStdDevReactionTime] ?? ''} ms'),
-                            _buildStatRow(texts, colors, strings.reflexesMinReactionTime, '${_currentResult!.stats[strings.reflexesMinReactionTime] ?? ''} ms'),
-                            _buildStatRow(texts, colors, strings.reflexesMaxReactionTime, '${_currentResult!.stats[strings.reflexesMaxReactionTime] ?? ''} ms'),
-                            _buildStatRow(texts, colors, strings.reflexesFalseStarts, _currentResult!.stats[strings.reflexesFalseStarts] ?? ''),
-                          ],
-                        ),
-                      ),
-                      const Gap(AppSpacing.lg),
-                      SizedBox(
-                        height: 52,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: () {
-                                  widget.onResultSaved?.call(_currentResult!);
-                                  setState(() {
-                                    _showResults = false;
-                                    _currentResult = null;
-                                  });
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    if (mounted) _startCountdown();
-                                  });
-                                },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: colors.surfaceContainerHighest,
-                                  foregroundColor: colors.onSurfaceVariant,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                ),
-                                icon: const Icon(Icons.refresh_rounded, size: 20),
-                                label: Text(strings.colorPodRestart.toUpperCase(), overflow: TextOverflow.ellipsis),
-                              ),
-                            ),
-                            const Gap(AppSpacing.sm),
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: _nextLevel,
-                                style: FilledButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                ),
-                                icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                                label: Text(strings.colorPodNext.toUpperCase()),
-                                iconAlignment: IconAlignment.end,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Gap(AppSpacing.lg),
-                      Container(
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: colors.outline),
-                          boxShadow: AppShadows.cardPremium,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.emoji_events_rounded, color: colors.primary),
-                                const Gap(AppSpacing.sm),
-                                Text(
-                                  strings.reflexesTopThree,
-                                  style: texts.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: colors.secondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Gap(AppSpacing.md),
-                            if (topRecords.isEmpty)
-                              Text(
-                                strings.reflexesNoSessions,
-                                style: texts.bodyMedium?.copyWith(color: colors.secondary),
-                              )
-                            else
-                              ...topRecords.take(3).toList().asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final record = entry.value;
-                                final medalColor = index == 0
-                                    ? const Color(0xFFFFC107)
-                                    : index == 1
-                                        ? const Color(0xFFB0BEC5)
-                                        : const Color(0xFFCD7F32);
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.workspace_premium_rounded, color: medalColor, size: 20),
-                                      const Gap(AppSpacing.sm),
-                                      Expanded(
-                                        child: Text(
-                                          '${record.primaryScore.toStringAsFixed(1)} ms',
-                                          style: texts.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                                        ),
-                                      ),
-                                      Text(
-                                        _formatDate(record.date),
-                                        style: texts.bodySmall?.copyWith(color: colors.secondary),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                          ],
-                        ),
-                      ),
-                    ],
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: LightColors.iconInactive.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-            ],
+                const Gap(AppSpacing.md),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: SizedBox(
+                    height: 44,
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(_currentResult),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey.shade300
+                                  : LightColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.arrow_back_rounded,
+                              color:
+                                  Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.black
+                                  : Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            strings.reflexesResultsTitle,
+                            textAlign: TextAlign.center,
+                            style: texts.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _closeToTools,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 32,
+                              color: colors.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: Divider(color: colors.outline),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: AppSpacing.paddingLg,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: colors.outline),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                strings.reflexesPerformance,
+                                style: texts.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.secondary,
+                                ),
+                              ),
+                              const Gap(AppSpacing.md),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesStimuliCountLabel,
+                                _currentResult!.stats[strings
+                                        .reflexesStimuliCountLabel] ??
+                                    '',
+                              ),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesAvgReactionTime,
+                                '${_currentResult!.stats[strings.reflexesAvgReactionTime] ?? ''} ms',
+                              ),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesStdDevReactionTime,
+                                '${_currentResult!.stats[strings.reflexesStdDevReactionTime] ?? ''} ms',
+                              ),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesMinReactionTime,
+                                '${_currentResult!.stats[strings.reflexesMinReactionTime] ?? ''} ms',
+                              ),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesMaxReactionTime,
+                                '${_currentResult!.stats[strings.reflexesMaxReactionTime] ?? ''} ms',
+                              ),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesFalseStarts,
+                                _currentResult!.stats[strings
+                                        .reflexesFalseStarts] ??
+                                    '',
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                        SizedBox(
+                          height: 52,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    widget.onResultSaved?.call(_currentResult!);
+                                    setState(() {
+                                      _showResults = false;
+                                      _currentResult = null;
+                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (mounted) _startCountdown();
+                                        });
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        colors.surfaceContainerHighest,
+                                    foregroundColor: colors.onSurfaceVariant,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.refresh_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodRestart.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              const Gap(AppSpacing.sm),
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: _nextLevel,
+                                  style: FilledButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodNext.toUpperCase(),
+                                  ),
+                                  iconAlignment: IconAlignment.end,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: colors.outline),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.emoji_events_rounded,
+                                    color: colors.primary,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  Text(
+                                    strings.reflexesTopThree,
+                                    style: texts.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(AppSpacing.md),
+                              if (topRecords.isEmpty)
+                                Text(
+                                  strings.reflexesNoSessions,
+                                  style: texts.bodyMedium?.copyWith(
+                                    color: colors.secondary,
+                                  ),
+                                )
+                              else
+                                ...topRecords.take(3).toList().asMap().entries.map((
+                                  entry,
+                                ) {
+                                  final index = entry.key;
+                                  final record = entry.value;
+                                  final medalColor = index == 0
+                                      ? const Color(0xFFFFC107)
+                                      : index == 1
+                                      ? const Color(0xFFB0BEC5)
+                                      : const Color(0xFFCD7F32);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.md,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.workspace_premium_rounded,
+                                          color: medalColor,
+                                          size: 20,
+                                        ),
+                                        const Gap(AppSpacing.sm),
+                                        Expanded(
+                                          child: Text(
+                                            '${record.primaryScore.toStringAsFixed(1)} ms',
+                                            style: texts.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          _formatDate(record.date),
+                                          style: texts.bodySmall?.copyWith(
+                                            color: colors.secondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
     }
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A1F2E),
-      body: Stack(children: [
-        // Background gradient
-        Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment.center,
-              radius: 1.5,
-              colors: [Color(0xFF2A3550), Color(0xFF1A1F2E)],
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 1.5,
+                colors: [Color(0xFF2A3550), Color(0xFF1A1F2E)],
+              ),
             ),
           ),
-        ),
-        // Smoke blobs
-        const _ReflexSmokeBlob(top: -120, left: -100, size: 380, color: Color(0xFF3D2A55), delay: 0),
-        const _ReflexSmokeBlob(top: 150, right: -140, size: 320, color: Color(0xFF2D3A50), delay: 800),
-        const _ReflexSmokeBlob(bottom: -120, left: 50, size: 400, color: Color(0xFF1F3F50), delay: 1600),
-        SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$_index/${widget.stimuliCount}',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
-                      ),
-                      const Gap(2),
-                      Text(
-                        '${strings.reflexesFalseStart}: $_falseStarts',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
-                      ),
-                    ],
+          // Smoke blobs
+          const _ReflexSmokeBlob(
+            top: -120,
+            left: -100,
+            size: 380,
+            color: Color(0xFF3D2A55),
+            delay: 0,
+          ),
+          const _ReflexSmokeBlob(
+            top: 150,
+            right: -140,
+            size: 320,
+            color: Color(0xFF2D3A50),
+            delay: 800,
+          ),
+          const _ReflexSmokeBlob(
+            bottom: -120,
+            left: 50,
+            size: 400,
+            color: Color(0xFF1F3F50),
+            delay: 1600,
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$_index/${widget.stimuliCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Gap(2),
+                        Text(
+                          '${strings.reflexesFalseStart}: $_falseStarts',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: _isCountingDown
-                      ? AnimatedScale(
-                          key: ValueKey(_countdown),
-                          scale: 1.0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.elasticOut,
-                          onEnd: () {
-                            if (mounted) {
-                              setState(() {});
-                            }
-                          },
-                          child: TweenAnimationBuilder<double>(
-                            tween: Tween<double>(begin: 0.5, end: 1.0),
+                Expanded(
+                  child: Center(
+                    child: _isCountingDown
+                        ? AnimatedScale(
+                            key: ValueKey(_countdown),
+                            scale: 1.0,
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.elasticOut,
-                            builder: (context, scale, child) {
-                              return Transform.scale(
-                                scale: scale,
-                                child: Text(
-                                  _countdown > 0 ? '$_countdown' : 'GO !',
-                                  style: TextStyle(
-                                    fontSize: _countdown > 0 ? 160 : 120,
-                                    fontWeight: FontWeight.w900,
-                                    color: _countdown > 0 ? Colors.white : Colors.greenAccent,
-                                    letterSpacing: -4,
-                                  ),
-                                ),
-                              );
+                            onEnd: () {
+                              if (mounted) {
+                                setState(() {});
+                              }
                             },
-                          ),
-                        )
-                      : (widget.mode == _ReflexesMode.visual
-                          ? _buildReactionTapButton(isVisual: true)
-                          : (widget.mode == _ReflexesMode.auditory
-                              ? _buildReactionTapButton(isVisual: false)
-                              : Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.xl),
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween<double>(begin: 0.5, end: 1.0),
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.elasticOut,
+                              builder: (context, scale, child) {
+                                return Transform.scale(
+                                  scale: scale,
                                   child: Text(
-                                    strings.reflexesTapWhenReady,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700, fontSize: 22),
+                                    _countdown > 0 ? '$_countdown' : 'GO !',
+                                    style: TextStyle(
+                                      fontSize: _countdown > 0 ? 160 : 120,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: -4,
+                                    ),
                                   ),
-                                ))),
+                                );
+                              },
+                            ),
+                          )
+                        : (widget.mode == _ReflexesMode.visual
+                              ? _buildReactionTapButton(isVisual: true)
+                              : (widget.mode == _ReflexesMode.auditory
+                                    ? _buildReactionTapButton(isVisual: false)
+                                    : Padding(
+                                        padding: const EdgeInsets.all(
+                                          AppSpacing.xl,
+                                        ),
+                                        child: Text(
+                                          strings.reflexesTapWhenReady,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 22,
+                                          ),
+                                        ),
+                                      ))),
+                  ),
                 ),
-              ),
-              const Gap(60),
-            ],
+                const Gap(60),
+              ],
+            ),
           ),
-        ),
-        if (_feedbackText != null)
-          Positioned(
-            top: 210,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: AnimatedBuilder(
-                animation: _feedbackAnimationController,
-                builder: (_, __) {
-                  final t = _feedbackAnimationController.value;
-                  final appear = Curves.easeOutBack.transform((t / 0.32).clamp(0.0, 1.0));
-                  final vanish = ((t - 0.65) / 0.35).clamp(0.0, 1.0);
-                  final scale = 0.72 + (appear * 0.28) - (vanish * 0.08);
-                  final opacity = ((1.0 - vanish) * (0.65 + 0.35 * appear)).clamp(0.0, 1.0).toDouble();
-                  final y = (16 * (1.0 - appear)) - (22 * vanish);
-                  return Transform.scale(
-                    scale: scale,
-                    child: Transform.translate(
-                      offset: Offset(0, y),
-                      child: Opacity(
-                        opacity: opacity,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                (_feedbackBgColor ?? const Color(0xFF1E2432)).withValues(alpha: 0.98),
-                                (_feedbackAccentColor ?? const Color(0xFF00E676)).withValues(alpha: 0.26),
+          if (_feedbackText != null)
+            Positioned(
+              top: 210,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _feedbackAnimationController,
+                  builder: (_, __) {
+                    final t = _feedbackAnimationController.value;
+                    final appear = Curves.easeOutBack.transform(
+                      (t / 0.32).clamp(0.0, 1.0),
+                    );
+                    final vanish = ((t - 0.65) / 0.35).clamp(0.0, 1.0);
+                    final scale = 0.72 + (appear * 0.28) - (vanish * 0.08);
+                    final opacity = ((1.0 - vanish) * (0.65 + 0.35 * appear))
+                        .clamp(0.0, 1.0)
+                        .toDouble();
+                    final y = (16 * (1.0 - appear)) - (22 * vanish);
+                    return Transform.scale(
+                      scale: scale,
+                      child: Transform.translate(
+                        offset: Offset(0, y),
+                        child: Opacity(
+                          opacity: opacity,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  (_feedbackBgColor ?? const Color(0xFF1E2432))
+                                      .withValues(alpha: 0.98),
+                                  (_feedbackAccentColor ??
+                                          const Color(0xFF00E676))
+                                      .withValues(alpha: 0.26),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                color: (_feedbackAccentColor ?? Colors.white)
+                                    .withValues(alpha: 0.55),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (_feedbackAccentColor ?? Colors.black)
+                                      .withValues(alpha: 0.45),
+                                  blurRadius: 22,
+                                  spreadRadius: 2,
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 6),
+                                ),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(
-                              color: (_feedbackAccentColor ?? Colors.white).withValues(alpha: 0.55),
-                              width: 1.2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (_feedbackAccentColor ?? Colors.black).withValues(alpha: 0.45),
-                                blurRadius: 22,
-                                spreadRadius: 2,
-                              ),
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.flash_on_rounded, color: _feedbackAccentColor, size: 22),
-                              const Gap(8),
-                              Text(
-                                _feedbackText!,
-                                style: TextStyle(
-                                  color: _feedbackTextColor,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 19,
-                                  letterSpacing: 0.8,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.flash_on_rounded,
+                                  color: _feedbackAccentColor,
+                                  size: 22,
                                 ),
-                              ),
-                            ],
+                                const Gap(8),
+                                Text(
+                                  _feedbackText!,
+                                  style: TextStyle(
+                                    color: _feedbackTextColor,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 19,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
+              ),
+            ),
+          Positioned(
+            top: 20,
+            right: 12,
+            child: SafeArea(
+              child: TextButton(
+                onPressed: _stop,
+                child: Text(
+                  strings.colorPodStop,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
           ),
-        Positioned(
-          top: 20,
-          right: 12,
-          child: SafeArea(
-            child: TextButton(
-              onPressed: _stop,
-              child: Text(
-                strings.colorPodStop,
-                style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 14),
-              ),
-            ),
-          ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -2632,20 +3013,20 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
         : const Color(0xFF1976D2);
     final topGradient = isVisual
         ? (visualSignal != null
-            ? [
-                visualSignal.withValues(alpha: 0.8),
-                visualSignal,
-                visualSignal.withValues(alpha: 0.75),
-              ]
-            : const [Color(0xFF616161), Color(0xFF424242), Color(0xFF2E2E2E)])
+              ? [
+                  visualSignal.withValues(alpha: 0.8),
+                  visualSignal,
+                  visualSignal.withValues(alpha: 0.75),
+                ]
+              : const [Color(0xFF616161), Color(0xFF424242), Color(0xFF2E2E2E)])
         : const [Color(0xFF64B5F6), Color(0xFF1976D2), Color(0xFF1565C0)];
     final pressedGradient = isVisual
         ? (visualSignal != null
-            ? [
-                visualSignal.withValues(alpha: 0.75),
-                visualSignal.withValues(alpha: 0.55),
-              ]
-            : const [Color(0xFF2E2E2E), Color(0xFF1F1F1F)])
+              ? [
+                  visualSignal.withValues(alpha: 0.75),
+                  visualSignal.withValues(alpha: 0.55),
+                ]
+              : const [Color(0xFF2E2E2E), Color(0xFF1F1F1F)])
         : const [Color(0xFF1565C0), Color(0xFF0D47A1)];
 
     return Column(
@@ -2698,7 +3079,9 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: glowColor.withValues(alpha: _buttonPressed ? 0.18 : 0.28),
+                          color: glowColor.withValues(
+                            alpha: _buttonPressed ? 0.18 : 0.28,
+                          ),
                           blurRadius: _buttonPressed ? 12 : 24,
                           offset: const Offset(0, 4),
                         ),
@@ -2752,7 +3135,12 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
     );
   }
 
-  Widget _buildStatRow(TextTheme texts, ColorScheme colors, String label, String value) {
+  Widget _buildStatRow(
+    TextTheme texts,
+    ColorScheme colors,
+    String label,
+    String value,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
@@ -2777,16 +3165,38 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen> with SingleTicke
 }
 
 class _MathRunScreen extends StatefulWidget {
-  _MathRunScreen({this.onResultSaved, required this.durationSeconds, required this.difficulty, required this.operatorMode, required this.operandMax, this.level});
-  final int durationSeconds; final _MathDifficulty difficulty; final _MathOperator operatorMode; final int operandMax;
+  _MathRunScreen({
+    this.onResultSaved,
+    required this.durationSeconds,
+    required this.difficulty,
+    required this.operatorMode,
+    required this.operandMax,
+    this.level,
+  });
+  final int durationSeconds;
+  final _MathDifficulty difficulty;
+  final _MathOperator operatorMode;
+  final int operandMax;
   final void Function(_ReflexSessionRecord)? onResultSaved;
   final int? level;
-  @override State<_MathRunScreen> createState() => _MathRunScreenState();
+  @override
+  State<_MathRunScreen> createState() => _MathRunScreenState();
 }
 
-class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  final _random = Random(); final _questionStopwatch = Stopwatch(); final _answerTimes = <int>[];
-  Timer? _ticker; int _remaining = 0; int _left = 0; int _right = 0; String _operator = '+'; int _expected = 0; String _input = ''; int _correct = 0; int _wrong = 0;
+class _MathRunScreenState extends State<_MathRunScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  final _random = Random();
+  final _questionStopwatch = Stopwatch();
+  final _answerTimes = <int>[];
+  Timer? _ticker;
+  int _remaining = 0;
+  int _left = 0;
+  int _right = 0;
+  String _operator = '+';
+  int _expected = 0;
+  String _input = '';
+  int _correct = 0;
+  int _wrong = 0;
   final Map<String, int> _operatorCounts = {'+': 0, '−': 0, '×': 0, '÷': 0};
   final Map<String, int> _operatorAnswered = {'+': 0, '−': 0, '×': 0, '÷': 0};
   final Map<String, int> _operatorCorrect = {'+': 0, '−': 0, '×': 0, '÷': 0};
@@ -2794,10 +3204,11 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
   _ReflexSessionRecord? _currentResult;
   String? _mathFeedback;
   Timer? _mathFeedbackTimer;
-  late final AnimationController _mathFeedbackAnimationController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 600),
-  );
+  late final AnimationController _mathFeedbackAnimationController =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 600),
+      );
 
   void _startTicker() {
     _ticker?.cancel();
@@ -2873,8 +3284,9 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       ),
     );
   }
-  
-  @override void initState() {
+
+  @override
+  void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
@@ -2882,29 +3294,32 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
     _nextQuestion();
     _startTicker();
   }
+
   void _nextQuestion() {
     final _MathOperator op;
     switch (widget.operatorMode) {
       case _MathOperator.addSubOnly:
-        op = _random.nextBool() ? _MathOperator.addition : _MathOperator.subtraction;
+        op = _random.nextBool()
+            ? _MathOperator.addition
+            : _MathOperator.subtraction;
         break;
       case _MathOperator.addSubMul:
         final r = _random.nextInt(3);
         op = r == 0
             ? _MathOperator.addition
             : r == 1
-                ? _MathOperator.subtraction
-                : _MathOperator.multiplication;
+            ? _MathOperator.subtraction
+            : _MathOperator.multiplication;
         break;
       case _MathOperator.mixed:
         final r = _random.nextInt(4);
         op = r == 0
             ? _MathOperator.addition
             : r == 1
-                ? _MathOperator.subtraction
-                : r == 2
-                    ? _MathOperator.multiplication
-                    : _MathOperator.division;
+            ? _MathOperator.subtraction
+            : r == 2
+            ? _MathOperator.multiplication
+            : _MathOperator.division;
         break;
       default:
         op = widget.operatorMode;
@@ -2959,6 +3374,7 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       ..start();
     if (mounted) setState(() {});
   }
+
   void _submit() {
     if (_input.isEmpty) return;
     _questionStopwatch.stop();
@@ -2982,27 +3398,32 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
     });
     _nextQuestion();
   }
+
   void _finish() {
-    final avg = _answerTimes.isEmpty ? 0.0 : _answerTimes.reduce((a, b) => a + b) / _answerTimes.length;
+    final avg = _answerTimes.isEmpty
+        ? 0.0
+        : _answerTimes.reduce((a, b) => a + b) / _answerTimes.length;
     final strings = AppStrings.of(context);
     final avgSeconds = (avg / 1000).floor();
     final avgMs = (avg % 1000).toInt();
-    
+
     final difficultyCoefficient = switch (widget.difficulty) {
       _MathDifficulty.easy => 1.0,
       _MathDifficulty.medium => 1.5,
       _MathDifficulty.hard => 2.0,
     };
-    
+
     final timeFactor = avg > 0 ? 10000.0 / avg : 0.0;
-    final weightedScore = (_correct * difficultyCoefficient * timeFactor) - (_wrong * difficultyCoefficient * 500);
-    
+    final weightedScore =
+        (_correct * difficultyCoefficient * timeFactor) -
+        (_wrong * difficultyCoefficient * 500);
+
     final difficultyLabel = switch (widget.difficulty) {
       _MathDifficulty.easy => strings.reflexesDifficultyEasy,
       _MathDifficulty.medium => strings.reflexesDifficultyMedium,
       _MathDifficulty.hard => strings.reflexesDifficultyHard,
     };
-    
+
     final result = _ReflexSessionRecord(
       mode: _ReflexesMode.math,
       date: DateTime.now(),
@@ -3010,7 +3431,8 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       stats: {
         strings.reflexesMathCorrectAnswers: '$_correct',
         strings.reflexesMathWrongAnswers: '$_wrong',
-        strings.reflexesAvgAnswerTime: '${avgSeconds}s ${avgMs.toString().padLeft(3, '0')}ms',
+        strings.reflexesAvgAnswerTime:
+            '${avgSeconds}s ${avgMs.toString().padLeft(3, '0')}ms',
         '_op_add_total': '${_operatorAnswered['+']}',
         '_op_add_correct': '${_operatorCorrect['+']}',
         '_op_sub_total': '${_operatorAnswered['−']}',
@@ -3029,6 +3451,7 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       _showResults = true;
     });
   }
+
   void _stop() {
     _ticker?.cancel();
     _questionStopwatch.stop();
@@ -3088,6 +3511,7 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       Navigator.of(context).pop();
     }
   }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
@@ -3098,7 +3522,9 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       }
     }
   }
-  @override void dispose() {
+
+  @override
+  void dispose() {
     _ticker?.cancel();
     _mathFeedbackTimer?.cancel();
     _mathFeedbackAnimationController.dispose();
@@ -3107,11 +3533,13 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
     WakelockPlus.disable();
     super.dispose();
   }
-  @override Widget build(BuildContext context) {
+
+  @override
+  Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final texts = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
-    
+
     if (_showResults && _currentResult != null) {
       final baseBackground = Theme.of(context).scaffoldBackgroundColor;
       return Scaffold(
@@ -3122,7 +3550,9 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
             height: MediaQuery.of(context).size.height * 0.90,
             decoration: BoxDecoration(
               color: baseBackground,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: Column(
               children: [
@@ -3137,56 +3567,65 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                 ),
                 const Gap(AppSpacing.md),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(_currentResult),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.grey.shade300
-                                : LightColors.primary,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.arrow_back_rounded,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.black
-                                : Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      const Gap(AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          strings.reflexesResultsTitle,
-                          textAlign: TextAlign.center,
-                          style: texts.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: SizedBox(
+                    height: 44,
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(_currentResult),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey.shade300
+                                  : LightColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.arrow_back_rounded,
+                              color:
+                                  Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.black
+                                  : Colors.white,
+                              size: 22,
+                            ),
                           ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: _closeToTools,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 32,
-                            color: colors.onSurface.withValues(alpha: 0.7),
+                        const Gap(AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            strings.reflexesResultsTitle,
+                            textAlign: TextAlign.center,
+                            style: texts.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        GestureDetector(
+                          onTap: _closeToTools,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 32,
+                              color: colors.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: Divider(color: colors.outline),
                 ),
                 Expanded(
@@ -3207,19 +3646,25 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                           texts,
                           colors,
                           strings.reflexesMathCorrectAnswers,
-                          _currentResult!.stats[strings.reflexesMathCorrectAnswers] ?? '',
+                          _currentResult!.stats[strings
+                                  .reflexesMathCorrectAnswers] ??
+                              '',
                         ),
                         _buildStatRow(
                           texts,
                           colors,
                           strings.reflexesMathWrongAnswers,
-                          _currentResult!.stats[strings.reflexesMathWrongAnswers] ?? '',
+                          _currentResult!.stats[strings
+                                  .reflexesMathWrongAnswers] ??
+                              '',
                         ),
                         _buildStatRow(
                           texts,
                           colors,
                           strings.reflexesAvgAnswerTime,
-                          _currentResult!.stats[strings.reflexesAvgAnswerTime] ?? '',
+                          _currentResult!.stats[strings
+                                  .reflexesAvgAnswerTime] ??
+                              '',
                         ),
                         const Gap(AppSpacing.lg),
                         Text(
@@ -3235,8 +3680,18 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                             Expanded(
                               child: Column(
                                 children: [
-                                  _buildOperationRow(texts, colors, '+', _currentResult!.stats),
-                                  _buildOperationRow(texts, colors, '−', _currentResult!.stats),
+                                  _buildOperationRow(
+                                    texts,
+                                    colors,
+                                    '+',
+                                    _currentResult!.stats,
+                                  ),
+                                  _buildOperationRow(
+                                    texts,
+                                    colors,
+                                    '−',
+                                    _currentResult!.stats,
+                                  ),
                                 ],
                               ),
                             ),
@@ -3244,13 +3699,25 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                               width: 1,
                               height: 80,
                               color: colors.outline,
-                              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
                             ),
                             Expanded(
                               child: Column(
                                 children: [
-                                  _buildOperationRow(texts, colors, '×', _currentResult!.stats),
-                                  _buildOperationRow(texts, colors, '÷', _currentResult!.stats),
+                                  _buildOperationRow(
+                                    texts,
+                                    colors,
+                                    '×',
+                                    _currentResult!.stats,
+                                  ),
+                                  _buildOperationRow(
+                                    texts,
+                                    colors,
+                                    '÷',
+                                    _currentResult!.stats,
+                                  ),
                                 ],
                               ),
                             ),
@@ -3269,17 +3736,27 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                                       _showResults = false;
                                       _currentResult = null;
                                     });
-                                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                                      if (mounted) _restartRun();
-                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (mounted) _restartRun();
+                                        });
                                   },
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: colors.surfaceContainerHighest,
+                                    backgroundColor:
+                                        colors.surfaceContainerHighest,
                                     foregroundColor: colors.onSurfaceVariant,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.refresh_rounded, size: 20),
-                                  label: Text(strings.colorPodRestart.toUpperCase(), overflow: TextOverflow.ellipsis),
+                                  icon: const Icon(
+                                    Icons.refresh_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodRestart.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
                               const Gap(AppSpacing.sm),
@@ -3287,10 +3764,17 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                                 child: FilledButton.icon(
                                   onPressed: _nextLevel,
                                   style: FilledButton.styleFrom(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                                  label: Text(strings.colorPodNext.toUpperCase()),
+                                  icon: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodNext.toUpperCase(),
+                                  ),
                                   iconAlignment: IconAlignment.end,
                                 ),
                               ),
@@ -3307,9 +3791,9 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
         ),
       );
     }
-    
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor, 
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           SafeArea(
@@ -3320,20 +3804,43 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                 children: [
                   Row(
                     children: [
-                      Text('${strings.reflexesTimerLabel}: ${_remaining}s', style: texts.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(
+                        '${strings.reflexesTimerLabel}: ${_remaining}s',
+                        style: texts.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       const Spacer(),
                       TextButton(
-                        onPressed: _stop, 
-                        style: TextButton.styleFrom(foregroundColor: colors.onSurface.withValues(alpha: 0.7)),
-                        child: Text(strings.colorPodStop, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14))
+                        onPressed: _stop,
+                        style: TextButton.styleFrom(
+                          foregroundColor: colors.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                        child: Text(
+                          strings.colorPodStop,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const Gap(2),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-                    child: Text('${strings.hitFactorScoreLabel}: ${_correct - _wrong}', style: texts.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: colors.primary), key: ValueKey('score_$_correct-$_wrong')),
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: Text(
+                      '${strings.hitFactorScoreLabel}: ${_correct - _wrong}',
+                      style: texts.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colors.primary,
+                      ),
+                      key: ValueKey('score_$_correct-$_wrong'),
+                    ),
                   ),
                   const Gap(AppSpacing.xl),
                   SizedBox(
@@ -3347,7 +3854,10 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                           offset: const Offset(0, 70),
                           child: Text(
                             '$_left $_operator $_right = ?',
-                            style: const TextStyle(fontSize: 64, fontWeight: FontWeight.w900),
+                            style: const TextStyle(
+                              fontSize: 64,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
                         if (_mathFeedback != null)
@@ -3356,16 +3866,32 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                             child: AnimatedBuilder(
                               animation: _mathFeedbackAnimationController,
                               builder: (_, __) {
-                                final t = _mathFeedbackAnimationController.value;
-                                final appear = Curves.easeOutBack.transform((t / 0.32).clamp(0.0, 1.0));
-                                final vanish = ((t - 0.65) / 0.35).clamp(0.0, 1.0);
-                                final scale = 0.72 + (appear * 0.28) - (vanish * 0.08);
+                                final t =
+                                    _mathFeedbackAnimationController.value;
+                                final appear = Curves.easeOutBack.transform(
+                                  (t / 0.32).clamp(0.0, 1.0),
+                                );
+                                final vanish = ((t - 0.65) / 0.35).clamp(
+                                  0.0,
+                                  1.0,
+                                );
+                                final scale =
+                                    0.72 + (appear * 0.28) - (vanish * 0.08);
                                 final y = (16 * (1.0 - appear)) - (22 * vanish);
-                                final opacity = ((1.0 - vanish) * (0.65 + 0.35 * appear)).clamp(0.0, 1.0).toDouble();
+                                final opacity =
+                                    ((1.0 - vanish) * (0.65 + 0.35 * appear))
+                                        .clamp(0.0, 1.0)
+                                        .toDouble();
                                 final isOk = _mathFeedback == 'ok';
-                                final accent = isOk ? const Color(0xFF00E676) : const Color(0xFFFF5252);
-                                final bg = isOk ? const Color(0xFF0D3A28) : const Color(0xFF4A1620);
-                                final textColor = isOk ? const Color(0xFFE8FFF4) : const Color(0xFFFFECEF);
+                                final accent = isOk
+                                    ? const Color(0xFF00E676)
+                                    : const Color(0xFFFF5252);
+                                final bg = isOk
+                                    ? const Color(0xFF0D3A28)
+                                    : const Color(0xFF4A1620);
+                                final textColor = isOk
+                                    ? const Color(0xFFE8FFF4)
+                                    : const Color(0xFFFFECEF);
 
                                 return Transform.scale(
                                   scale: scale,
@@ -3374,7 +3900,10 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                                     child: Opacity(
                                       opacity: opacity,
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 14,
+                                        ),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             begin: Alignment.topLeft,
@@ -3384,19 +3913,27 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                                               accent.withValues(alpha: 0.26),
                                             ],
                                           ),
-                                          borderRadius: BorderRadius.circular(26),
+                                          borderRadius: BorderRadius.circular(
+                                            26,
+                                          ),
                                           border: Border.all(
-                                            color: accent.withValues(alpha: 0.55),
+                                            color: accent.withValues(
+                                              alpha: 0.55,
+                                            ),
                                             width: 1.2,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: accent.withValues(alpha: 0.25),
+                                              color: accent.withValues(
+                                                alpha: 0.25,
+                                              ),
                                               blurRadius: 22,
                                               spreadRadius: 2,
                                             ),
                                             BoxShadow(
-                                              color: Colors.black.withValues(alpha: 0.15),
+                                              color: Colors.black.withValues(
+                                                alpha: 0.15,
+                                              ),
                                               blurRadius: 14,
                                               offset: const Offset(0, 6),
                                             ),
@@ -3406,13 +3943,21 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
-                                              isOk ? Icons.flash_on_rounded : Icons.close_rounded,
+                                              isOk
+                                                  ? Icons.flash_on_rounded
+                                                  : Icons.close_rounded,
                                               color: accent,
                                               size: 22,
                                             ),
                                             const Gap(8),
                                             Text(
-                                              isOk ? strings.reflexesMathFeedbackOk.toUpperCase() : strings.reflexesMathFeedbackWrong.toUpperCase(),
+                                              isOk
+                                                  ? strings
+                                                        .reflexesMathFeedbackOk
+                                                        .toUpperCase()
+                                                  : strings
+                                                        .reflexesMathFeedbackWrong
+                                                        .toUpperCase(),
                                               style: TextStyle(
                                                 color: textColor,
                                                 fontWeight: FontWeight.w900,
@@ -3445,13 +3990,15 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                   ),
                   const Spacer(),
                   _NumericPad(
-                    onDigit: (d) => setState(() => _input += d), 
-                    onBackspace: () { 
-                      if (_input.isEmpty) return; 
-                      setState(() => _input = _input.substring(0, _input.length - 1)); 
-                    }, 
-                    onOk: _submit, 
-                    okLabel: 'OK'
+                    onDigit: (d) => setState(() => _input += d),
+                    onBackspace: () {
+                      if (_input.isEmpty) return;
+                      setState(
+                        () => _input = _input.substring(0, _input.length - 1),
+                      );
+                    },
+                    onOk: _submit,
+                    okLabel: 'OK',
                   ),
                   const Gap(AppSpacing.lg),
                 ],
@@ -3463,8 +4010,13 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       ),
     );
   }
-  
-  Widget _buildStatRow(TextTheme texts, ColorScheme colors, String label, String value) {
+
+  Widget _buildStatRow(
+    TextTheme texts,
+    ColorScheme colors,
+    String label,
+    String value,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
@@ -3486,23 +4038,28 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
       ),
     );
   }
-  
-  Widget _buildOperationRow(TextTheme texts, ColorScheme colors, String operator, Map<String, String> stats) {
+
+  Widget _buildOperationRow(
+    TextTheme texts,
+    ColorScheme colors,
+    String operator,
+    Map<String, String> stats,
+  ) {
     final strings = AppStrings.of(context);
     final totalKey = operator == '+'
         ? '_op_add_total'
         : operator == '−'
-            ? '_op_sub_total'
-            : operator == '×'
-                ? '_op_mul_total'
-                : '_op_div_total';
+        ? '_op_sub_total'
+        : operator == '×'
+        ? '_op_mul_total'
+        : '_op_div_total';
     final correctKey = operator == '+'
         ? '_op_add_correct'
         : operator == '−'
-            ? '_op_sub_correct'
-            : operator == '×'
-                ? '_op_mul_correct'
-                : '_op_div_correct';
+        ? '_op_sub_correct'
+        : operator == '×'
+        ? '_op_mul_correct'
+        : '_op_div_correct';
     final correct = int.tryParse(stats[correctKey] ?? '0') ?? 0;
     final answered = int.tryParse(stats[totalKey] ?? '0') ?? 0;
     final ratioText = '$correct / $answered';
@@ -3536,11 +4093,13 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
                   operator == '+'
                       ? strings.reflexesMathOpAddition
                       : operator == '−'
-                          ? strings.reflexesMathOpSubtraction
-                          : operator == '×'
-                              ? strings.reflexesMathOpMultiplication
-                              : strings.reflexesMathOpDivision,
-                  style: texts.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ? strings.reflexesMathOpSubtraction
+                      : operator == '×'
+                      ? strings.reflexesMathOpMultiplication
+                      : strings.reflexesMathOpDivision,
+                  style: texts.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   ratioText,
@@ -3557,33 +4116,46 @@ class _MathRunScreenState extends State<_MathRunScreen> with SingleTickerProvide
 
 class _MemoryRunScreen extends StatefulWidget {
   _MemoryRunScreen({
-    this.onResultSaved, 
+    this.onResultSaved,
     required this.difficulty,
     required this.sequenceLength,
     required this.displayMs,
     required this.rounds,
     this.level,
   });
-  final _MemoryDifficulty difficulty; final int sequenceLength; final int displayMs; final int rounds;
+  final _MemoryDifficulty difficulty;
+  final int sequenceLength;
+  final int displayMs;
+  final int rounds;
   final void Function(_ReflexSessionRecord)? onResultSaved;
   final int? level;
-  @override State<_MemoryRunScreen> createState() => _MemoryRunScreenState();
+  @override
+  State<_MemoryRunScreen> createState() => _MemoryRunScreenState();
 }
 
-class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  final _random = Random(); List<int> _sequence = []; String _input = ''; int _round = 1; int _correct = 0; int _maxLength = 0; bool _showSequence = true; String? _feedback;
+class _MemoryRunScreenState extends State<_MemoryRunScreen>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  final _random = Random();
+  List<int> _sequence = [];
+  String _input = '';
+  int _round = 1;
+  int _correct = 0;
+  int _maxLength = 0;
+  bool _showSequence = true;
+  String? _feedback;
   String? _memoryFeedback;
   Timer? _memoryFeedbackTimer;
-  late final AnimationController _memoryFeedbackAnimationController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 600),
-  );
+  late final AnimationController _memoryFeedbackAnimationController =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 600),
+      );
   bool _showResults = false;
   _ReflexSessionRecord? _currentResult;
   // For color-coded box feedback
   bool _showInputResult = false;
   String? _expectedSequenceStr;
-  
+
   @override
   void initState() {
     super.initState();
@@ -3593,7 +4165,10 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
   }
 
   Future<void> _startRound() async {
-    _sequence = List.generate(widget.sequenceLength, (_) => _random.nextInt(10));
+    _sequence = List.generate(
+      widget.sequenceLength,
+      (_) => _random.nextInt(10),
+    );
     _input = '';
     _feedback = null;
     _showSequence = true;
@@ -3624,7 +4199,9 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
       _memoryFeedback = 'ok';
     } else {
       var idx = 0;
-      while (idx < _input.length && idx < expected.length && _input[idx] == expected[idx]) {
+      while (idx < _input.length &&
+          idx < expected.length &&
+          _input[idx] == expected[idx]) {
         idx++;
       }
       _feedback = '${strings.reflexesMemoryIncorrect} ${idx + 1}';
@@ -3764,7 +4341,9 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
             height: MediaQuery.of(context).size.height * 0.90,
             decoration: BoxDecoration(
               color: baseBackground,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3782,23 +4361,29 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                 ),
                 const Gap(AppSpacing.md),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(_currentResult),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: SizedBox(
+                    height: 44,
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(_currentResult),
                         child: Container(
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? Colors.grey.shade300
                                 : LightColors.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             Icons.arrow_back_rounded,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? Colors.black
                                 : Colors.white,
                             size: 22,
@@ -3827,11 +4412,14 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                           ),
                         ),
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: Divider(color: colors.outline),
                 ),
                 Expanded(
@@ -3858,26 +4446,34 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                                 ),
                               ),
                               const Gap(AppSpacing.md),
-                              ..._currentResult!.stats.entries.map((e) => Padding(
-                                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        e.key,
-                                        style: texts.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                              ..._currentResult!.stats.entries
+                                  .where((e) => !e.key.startsWith('_'))
+                                  .map(
+                                (e) => Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.md,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          e.key,
+                                          style: texts.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      e.value,
-                                      style: texts.titleMedium?.copyWith(
-                                        color: colors.primary,
-                                        fontWeight: FontWeight.w800,
+                                      Text(
+                                        e.value,
+                                        style: texts.titleMedium?.copyWith(
+                                          color: colors.primary,
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              )),
+                              ),
                             ],
                           ),
                         ),
@@ -3894,17 +4490,27 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                                       _showResults = false;
                                       _currentResult = null;
                                     });
-                                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                                      if (mounted) _restartRun();
-                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (mounted) _restartRun();
+                                        });
                                   },
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: colors.surfaceContainerHighest,
+                                    backgroundColor:
+                                        colors.surfaceContainerHighest,
                                     foregroundColor: colors.onSurfaceVariant,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.refresh_rounded, size: 20),
-                                  label: Text(strings.colorPodRestart.toUpperCase(), overflow: TextOverflow.ellipsis),
+                                  icon: const Icon(
+                                    Icons.refresh_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodRestart.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
                               const Gap(AppSpacing.sm),
@@ -3912,10 +4518,17 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                                 child: FilledButton.icon(
                                   onPressed: _nextLevel,
                                   style: FilledButton.styleFrom(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                                  label: Text(strings.colorPodNext.toUpperCase()),
+                                  icon: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodNext.toUpperCase(),
+                                  ),
                                   iconAlignment: IconAlignment.end,
                                 ),
                               ),
@@ -3946,17 +4559,24 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                     children: [
                       Text(
                         '${strings.reflexesMemoryRounds}: $_round/${widget.rounds}',
-                        style: texts.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                        style: texts.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const Spacer(),
                       TextButton(
                         onPressed: _stop,
                         style: TextButton.styleFrom(
-                          foregroundColor: colors.onSurface.withValues(alpha: 0.7),
+                          foregroundColor: colors.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                         child: Text(
                           strings.colorPodStop,
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
@@ -3980,16 +4600,36 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                                 child: AnimatedBuilder(
                                   animation: _memoryFeedbackAnimationController,
                                   builder: (_, __) {
-                                    final t = _memoryFeedbackAnimationController.value;
-                                    final appear = Curves.easeOutBack.transform((t / 0.32).clamp(0.0, 1.0));
-                                    final vanish = ((t - 0.65) / 0.35).clamp(0.0, 1.0);
-                                    final scale = 0.72 + (appear * 0.28) - (vanish * 0.08);
-                                    final y = (16 * (1.0 - appear)) - (22 * vanish);
-                                    final opacity = ((1.0 - vanish) * (0.65 + 0.35 * appear)).clamp(0.0, 1.0).toDouble();
+                                    final t = _memoryFeedbackAnimationController
+                                        .value;
+                                    final appear = Curves.easeOutBack.transform(
+                                      (t / 0.32).clamp(0.0, 1.0),
+                                    );
+                                    final vanish = ((t - 0.65) / 0.35).clamp(
+                                      0.0,
+                                      1.0,
+                                    );
+                                    final scale =
+                                        0.72 +
+                                        (appear * 0.28) -
+                                        (vanish * 0.08);
+                                    final y =
+                                        (16 * (1.0 - appear)) - (22 * vanish);
+                                    final opacity =
+                                        ((1.0 - vanish) *
+                                                (0.65 + 0.35 * appear))
+                                            .clamp(0.0, 1.0)
+                                            .toDouble();
                                     final isOk = _memoryFeedback == 'ok';
-                                    final accent = isOk ? const Color(0xFF00E676) : const Color(0xFFFF5252);
-                                    final bg = isOk ? const Color(0xFF0D3A28) : const Color(0xFF4A1620);
-                                    final textColor = isOk ? const Color(0xFFE8FFF4) : const Color(0xFFFFECEF);
+                                    final accent = isOk
+                                        ? const Color(0xFF00E676)
+                                        : const Color(0xFFFF5252);
+                                    final bg = isOk
+                                        ? const Color(0xFF0D3A28)
+                                        : const Color(0xFF4A1620);
+                                    final textColor = isOk
+                                        ? const Color(0xFFE8FFF4)
+                                        : const Color(0xFFFFECEF);
 
                                     return Transform.scale(
                                       scale: scale,
@@ -3998,29 +4638,40 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                                         child: Opacity(
                                           opacity: opacity,
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 14,
+                                            ),
                                             decoration: BoxDecoration(
                                               gradient: LinearGradient(
                                                 begin: Alignment.topLeft,
                                                 end: Alignment.bottomRight,
                                                 colors: [
                                                   bg.withValues(alpha: 0.98),
-                                                  accent.withValues(alpha: 0.26),
+                                                  accent.withValues(
+                                                    alpha: 0.26,
+                                                  ),
                                                 ],
                                               ),
-                                              borderRadius: BorderRadius.circular(26),
+                                              borderRadius:
+                                                  BorderRadius.circular(26),
                                               border: Border.all(
-                                                color: accent.withValues(alpha: 0.55),
+                                                color: accent.withValues(
+                                                  alpha: 0.55,
+                                                ),
                                                 width: 1.2,
                                               ),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: accent.withValues(alpha: 0.25),
+                                                  color: accent.withValues(
+                                                    alpha: 0.25,
+                                                  ),
                                                   blurRadius: 22,
                                                   spreadRadius: 2,
                                                 ),
                                                 BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.15),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.15),
                                                   blurRadius: 14,
                                                   offset: const Offset(0, 6),
                                                 ),
@@ -4030,13 +4681,21 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Icon(
-                                                  isOk ? Icons.flash_on_rounded : Icons.close_rounded,
+                                                  isOk
+                                                      ? Icons.flash_on_rounded
+                                                      : Icons.close_rounded,
                                                   color: accent,
                                                   size: 22,
                                                 ),
                                                 const Gap(8),
                                                 Text(
-                                                  isOk ? strings.reflexesMathFeedbackOk.toUpperCase() : strings.reflexesMathFeedbackWrong.toUpperCase(),
+                                                  isOk
+                                                      ? strings
+                                                            .reflexesMathFeedbackOk
+                                                            .toUpperCase()
+                                                      : strings
+                                                            .reflexesMathFeedbackWrong
+                                                            .toUpperCase(),
                                                   style: TextStyle(
                                                     color: textColor,
                                                     fontWeight: FontWeight.w900,
@@ -4063,7 +4722,9 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen> with WidgetsBindingO
                     },
                     onBackspace: () {
                       if (_showSequence || _input.isEmpty) return;
-                      setState(() => _input = _input.substring(0, _input.length - 1));
+                      setState(
+                        () => _input = _input.substring(0, _input.length - 1),
+                      );
                     },
                     onOk: () {
                       if (_showSequence) return;
@@ -4086,10 +4747,12 @@ class _MemorySequenceFlipDisplay extends StatefulWidget {
   final List<int> sequence;
 
   @override
-  State<_MemorySequenceFlipDisplay> createState() => _MemorySequenceFlipDisplayState();
+  State<_MemorySequenceFlipDisplay> createState() =>
+      _MemorySequenceFlipDisplayState();
 }
 
-class _MemorySequenceFlipDisplayState extends State<_MemorySequenceFlipDisplay> with SingleTickerProviderStateMixin {
+class _MemorySequenceFlipDisplayState extends State<_MemorySequenceFlipDisplay>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 620),
@@ -4139,7 +4802,11 @@ class _MemorySequenceFlipDisplayState extends State<_MemorySequenceFlipDisplay> 
                     final count = sequence.length <= 1 ? 1 : sequence.length;
                     final start = (index / count) * 0.55;
                     final end = (start + 0.45).clamp(0.0, 1.0);
-                    final segment = Interval(start, end, curve: Curves.easeOutCubic).transform(_ctrl.value);
+                    final segment = Interval(
+                      start,
+                      end,
+                      curve: Curves.easeOutCubic,
+                    ).transform(_ctrl.value);
                     return Padding(
                       padding: EdgeInsets.symmetric(horizontal: spacing),
                       child: Opacity(
@@ -4191,12 +4858,74 @@ class _MemorySequenceFlipDisplayState extends State<_MemorySequenceFlipDisplay> 
 }
 
 class _NumericPad extends StatelessWidget {
-  const _NumericPad({required this.onDigit, required this.onBackspace, required this.onOk, required this.okLabel});
-  final ValueChanged<String> onDigit; final VoidCallback onBackspace; final VoidCallback onOk; final String okLabel;
-  @override Widget build(BuildContext context) {
+  const _NumericPad({
+    required this.onDigit,
+    required this.onBackspace,
+    required this.onOk,
+    required this.okLabel,
+  });
+  final ValueChanged<String> onDigit;
+  final VoidCallback onBackspace;
+  final VoidCallback onOk;
+  final String okLabel;
+  @override
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    Widget key(String label, VoidCallback onTap, {Color? bg, Color? textColor}) { return Expanded(child: Padding(padding: const EdgeInsets.all(4), child: Material(color: bg ?? colors.surface, borderRadius: BorderRadius.circular(14), child: InkWell(borderRadius: BorderRadius.circular(14), onTap: onTap, child: SizedBox(height: 60, child: Center(child: Text(label, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: textColor)))))))); }
-    return Column(children: [for (final row in const [['1','2','3'],['4','5','6'],['7','8','9']]) Row(children: row.map((v) => key(v, () => onDigit(v))).toList()), Row(children: [key('⌫', onBackspace), key('0', () => onDigit('0')), key(okLabel, onOk, bg: colors.primaryContainer, textColor: colors.onPrimaryContainer)])]);
+    Widget key(
+      String label,
+      VoidCallback onTap, {
+      Color? bg,
+      Color? textColor,
+    }) {
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Material(
+            color: bg ?? colors.surface,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onTap,
+              child: SizedBox(
+                height: 60,
+                child: Center(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (final row in const [
+          ['1', '2', '3'],
+          ['4', '5', '6'],
+          ['7', '8', '9'],
+        ])
+          Row(children: row.map((v) => key(v, () => onDigit(v))).toList()),
+        Row(
+          children: [
+            key('⌫', onBackspace),
+            key('0', () => onDigit('0')),
+            key(
+              okLabel,
+              onOk,
+              bg: colors.primaryContainer,
+              textColor: colors.onPrimaryContainer,
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -4236,9 +4965,17 @@ class _MotRunScreen extends StatefulWidget {
   State<_MotRunScreen> createState() => _MotRunScreenState();
 }
 
-enum _MotPhase { countdown, memorize, tracking, identification, feedback, results }
+enum _MotPhase {
+  countdown,
+  memorize,
+  tracking,
+  identification,
+  feedback,
+  results,
+}
 
-class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
+class _MotRunScreenState extends State<_MotRunScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final _random = Random();
   int _countdown = 3;
   bool _isCountingDown = true;
@@ -4259,10 +4996,11 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
   Color? _feedbackBgColor;
   Color? _feedbackAccentColor;
   bool _isFeedbackSuccess = false;
-  late final AnimationController _feedbackAnimationController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  );
+  late final AnimationController _feedbackAnimationController =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 900),
+      );
   Size? _gameZoneSize;
   bool _retryStartTrialScheduled = false;
   final _repaintNotifier = ValueNotifier<int>(0);
@@ -4278,7 +5016,10 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
   List<_ReflexSessionRecord> _topRecords() {
     final current = _currentResult;
     final levelStr = widget.level?.toString();
-    var records = <_ReflexSessionRecord>[...widget.history, if (current != null) current];
+    var records = <_ReflexSessionRecord>[
+      ...widget.history,
+      if (current != null) current,
+    ];
     if (levelStr != null) {
       records = records.where((r) => r.stats['_level'] == levelStr).toList();
     }
@@ -4359,7 +5100,10 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
     _phase = _MotPhase.countdown;
     if (mounted) setState(() {});
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) { timer.cancel(); return; }
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       if (_countdown > 0) {
         _countdown--;
         setState(() {});
@@ -4432,8 +5176,14 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
       Offset? pos;
       int attempts = 0;
       while (pos == null && attempts < 200) {
-        final x = padding + radius + _random.nextDouble() * (gameWidth - widget.circleDiameter);
-        final y = padding + radius + _random.nextDouble() * (gameHeight - widget.circleDiameter);
+        final x =
+            padding +
+            radius +
+            _random.nextDouble() * (gameWidth - widget.circleDiameter);
+        final y =
+            padding +
+            radius +
+            _random.nextDouble() * (gameHeight - widget.circleDiameter);
         final candidate = Offset(x, y);
         bool valid = true;
         for (final circle in _circles) {
@@ -4455,7 +5205,8 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
       _circles.add(_MotCircle(position: pos, velocity: Offset.zero));
     }
 
-    final allIndices = List.generate(widget.totalCircles, (i) => i)..shuffle(_random);
+    final allIndices = List.generate(widget.totalCircles, (i) => i)
+      ..shuffle(_random);
     _targetIndices = allIndices.take(widget.targetCount).toSet();
 
     if (mounted) setState(() {});
@@ -4505,7 +5256,10 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
           circle.velocity = Offset(-circle.velocity.dx, circle.velocity.dy);
         }
         if (circle.position.dx + radius > padding + gameWidth) {
-          circle.position = Offset(padding + gameWidth - radius, circle.position.dy);
+          circle.position = Offset(
+            padding + gameWidth - radius,
+            circle.position.dy,
+          );
           circle.velocity = Offset(-circle.velocity.dx, circle.velocity.dy);
         }
         if (circle.position.dy - radius < padding) {
@@ -4513,7 +5267,10 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
           circle.velocity = Offset(circle.velocity.dx, -circle.velocity.dy);
         }
         if (circle.position.dy + radius > padding + gameHeight) {
-          circle.position = Offset(circle.position.dx, padding + gameHeight - radius);
+          circle.position = Offset(
+            circle.position.dx,
+            padding + gameHeight - radius,
+          );
           circle.velocity = Offset(circle.velocity.dx, -circle.velocity.dy);
         }
       }
@@ -4530,7 +5287,8 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
             _circles[j].position -= normal * (overlap / 2);
 
             final relativeVel = _circles[i].velocity - _circles[j].velocity;
-            final velAlongNormal = relativeVel.dx * normal.dx + relativeVel.dy * normal.dy;
+            final velAlongNormal =
+                relativeVel.dx * normal.dx + relativeVel.dy * normal.dy;
 
             if (velAlongNormal > 0) continue;
 
@@ -4621,8 +5379,12 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
     final strings = AppStrings.of(context);
     final totalPossible = widget.trials * widget.targetCount;
     final totalCorrect = _trialScores.fold<int>(0, (a, b) => a + b);
-    final avgScore = _trialScores.isEmpty ? 0.0 : totalCorrect / _trialScores.length;
-    final successRate = totalPossible == 0 ? 0.0 : (totalCorrect / totalPossible) * 100;
+    final avgScore = _trialScores.isEmpty
+        ? 0.0
+        : totalCorrect / _trialScores.length;
+    final successRate = totalPossible == 0
+        ? 0.0
+        : (totalCorrect / totalPossible) * 100;
 
     final result = _ReflexSessionRecord(
       mode: _ReflexesMode.mot,
@@ -4648,9 +5410,13 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
     if (_phase == _MotPhase.memorize) {
       final isTarget = _targetIndices.contains(index);
       final blinkOn = (_blinkTimer?.tick ?? 0) % 2 == 0;
-      return isTarget && blinkOn ? const Color(0xFFFF9800) : const Color(0xFFE0E0E0);
+      return isTarget && blinkOn
+          ? const Color(0xFFFF9800)
+          : const Color(0xFFE0E0E0);
     } else if (_phase == _MotPhase.identification) {
-      return _selectedIndices.contains(index) ? const Color(0xFF1E88E5) : const Color(0xFFE0E0E0);
+      return _selectedIndices.contains(index)
+          ? const Color(0xFF1E88E5)
+          : const Color(0xFFE0E0E0);
     } else if (_phase == _MotPhase.feedback) {
       final isTarget = _targetIndices.contains(index);
       final isSelected = _selectedIndices.contains(index);
@@ -4676,192 +5442,251 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
     return _buildGameScaffold(context, strings, colors, textStyles);
   }
 
-  Widget _buildGameScaffold(BuildContext context, AppStrings strings, ColorScheme colors, TextTheme textStyles) {
+  Widget _buildGameScaffold(
+    BuildContext context,
+    AppStrings strings,
+    ColorScheme colors,
+    TextTheme textStyles,
+  ) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0.5, 0.5),
-              radius: 1.2,
-              colors: [Color(0xFF2A3550), Color(0xFF1A1F2E)],
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0.5, 0.5),
+                radius: 1.2,
+                colors: [Color(0xFF2A3550), Color(0xFF1A1F2E)],
+              ),
             ),
           ),
-        ),
-        const _ReflexSmokeBlob(top: -120, left: -100, size: 380, color: Color(0xFF3D2A55), delay: 0),
-        const _ReflexSmokeBlob(top: 150, right: -140, size: 320, color: Color(0xFF2D3A50), delay: 800),
-        const _ReflexSmokeBlob(bottom: -120, left: 50, size: 400, color: Color(0xFF1F3F50), delay: 1600),
-        SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${strings.reflexesMotTrialLabel} ${(_trial + 1)}/${widget.trials}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
+          const _ReflexSmokeBlob(
+            top: -120,
+            left: -100,
+            size: 380,
+            color: Color(0xFF3D2A55),
+            delay: 0,
+          ),
+          const _ReflexSmokeBlob(
+            top: 150,
+            right: -140,
+            size: 320,
+            color: Color(0xFF2D3A50),
+            delay: 800,
+          ),
+          const _ReflexSmokeBlob(
+            bottom: -120,
+            left: 50,
+            size: 400,
+            color: Color(0xFF1F3F50),
+            delay: 1600,
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${strings.reflexesMotTrialLabel} ${(_trial + 1)}/${widget.trials}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final zoneSize = constraints.biggest;
-                    if (_gameZoneSize == null ||
-                        (_gameZoneSize!.width - zoneSize.width).abs() > 0.5 ||
-                        (_gameZoneSize!.height - zoneSize.height).abs() > 0.5) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted) return;
-                        setState(() {
-                          _gameZoneSize = zoneSize;
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final zoneSize = constraints.biggest;
+                      if (_gameZoneSize == null ||
+                          (_gameZoneSize!.width - zoneSize.width).abs() > 0.5 ||
+                          (_gameZoneSize!.height - zoneSize.height).abs() >
+                              0.5) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!mounted) return;
+                          setState(() {
+                            _gameZoneSize = zoneSize;
+                          });
                         });
-                      });
-                    }
+                      }
 
-                    return _isCountingDown
-                        ? Center(
-                            child: AnimatedScale(
-                              key: ValueKey(_countdown),
-                              scale: 1.0,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.elasticOut,
-                              child: TweenAnimationBuilder<double>(
-                                tween: Tween<double>(begin: 0.5, end: 1.0),
+                      return _isCountingDown
+                          ? Center(
+                              child: AnimatedScale(
+                                key: ValueKey(_countdown),
+                                scale: 1.0,
                                 duration: const Duration(milliseconds: 300),
                                 curve: Curves.elasticOut,
-                                builder: (context, scale, child) {
-                                  return Transform.scale(
-                                    scale: scale,
-                                    child: Text(
-                                      _countdown > 0 ? '$_countdown' : 'GO !',
-                                      style: TextStyle(
-                                        fontSize: _countdown > 0 ? 160 : 120,
-                                        fontWeight: FontWeight.w900,
-                                        color: _countdown > 0 ? Colors.white : Colors.greenAccent,
-                                        letterSpacing: -4,
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween<double>(begin: 0.5, end: 1.0),
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.elasticOut,
+                                  builder: (context, scale, child) {
+                                    return Transform.scale(
+                                      scale: scale,
+                                      child: Text(
+                                        _countdown > 0 ? '$_countdown' : 'GO !',
+                                        style: TextStyle(
+                                          fontSize: _countdown > 0 ? 160 : 120,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: -4,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          )
-                        : GestureDetector(
-                            onTapDown: (details) => _handleCircleTap(details.localPosition),
-                            child: CustomPaint(
-                              size: Size.infinite,
-                              painter: _MotPainter(
-                                repaint: _repaintNotifier,
-                                circles: _circles,
-                                getCircleColor: _getCircleColor,
-                                circleDiameter: widget.circleDiameter,
-                                phase: _phase,
-                                selectedIndices: _selectedIndices,
-                                isFailureFeedback: _phase == _MotPhase.feedback && !_isFeedbackSuccess,
-                                feedbackAnimValue: _feedbackAnimationController.value,
-                              ),
-                            ),
-                          );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (_feedbackText != null)
-          Positioned(
-            top: 210,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: AnimatedBuilder(
-                animation: _feedbackAnimationController,
-                builder: (_, __) {
-                  final t = _feedbackAnimationController.value;
-                  final appear = Curves.easeOutBack.transform((t / 0.32).clamp(0.0, 1.0));
-                  final vanish = ((t - 0.65) / 0.35).clamp(0.0, 1.0);
-                  final scale = 0.72 + (appear * 0.28) - (vanish * 0.08);
-                  final opacity = ((1.0 - vanish) * (0.65 + 0.35 * appear)).clamp(0.0, 1.0).toDouble();
-                  final y = (16 * (1.0 - appear)) - (22 * vanish);
-                  return Transform.scale(
-                    scale: scale,
-                    child: Transform.translate(
-                      offset: Offset(0, y),
-                      child: Opacity(
-                        opacity: opacity,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                (_feedbackBgColor ?? const Color(0xFF1E2432)).withValues(alpha: 0.98),
-                                (_feedbackAccentColor ?? const Color(0xFF00E676)).withValues(alpha: 0.26),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(
-                              color: (_feedbackAccentColor ?? Colors.white).withValues(alpha: 0.55),
-                              width: 1.2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (_feedbackAccentColor ?? Colors.black).withValues(alpha: 0.45),
-                                blurRadius: 22,
-                                spreadRadius: 2,
-                              ),
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.flash_on_rounded, color: _feedbackAccentColor, size: 22),
-                              const Gap(8),
-                              Text(
-                                _feedbackText!,
-                                style: TextStyle(
-                                  color: _feedbackTextColor,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 19,
-                                  letterSpacing: 0.8,
+                                    );
+                                  },
                                 ),
                               ),
-                            ],
+                            )
+                          : GestureDetector(
+                              onTapDown: (details) =>
+                                  _handleCircleTap(details.localPosition),
+                              child: CustomPaint(
+                                size: Size.infinite,
+                                painter: _MotPainter(
+                                  repaint: _repaintNotifier,
+                                  circles: _circles,
+                                  getCircleColor: _getCircleColor,
+                                  circleDiameter: widget.circleDiameter,
+                                  phase: _phase,
+                                  selectedIndices: _selectedIndices,
+                                  isFailureFeedback:
+                                      _phase == _MotPhase.feedback &&
+                                      !_isFeedbackSuccess,
+                                  feedbackAnimValue:
+                                      _feedbackAnimationController.value,
+                                ),
+                              ),
+                            );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_feedbackText != null)
+            Positioned(
+              top: 210,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _feedbackAnimationController,
+                  builder: (_, __) {
+                    final t = _feedbackAnimationController.value;
+                    final appear = Curves.easeOutBack.transform(
+                      (t / 0.32).clamp(0.0, 1.0),
+                    );
+                    final vanish = ((t - 0.65) / 0.35).clamp(0.0, 1.0);
+                    final scale = 0.72 + (appear * 0.28) - (vanish * 0.08);
+                    final opacity = ((1.0 - vanish) * (0.65 + 0.35 * appear))
+                        .clamp(0.0, 1.0)
+                        .toDouble();
+                    final y = (16 * (1.0 - appear)) - (22 * vanish);
+                    return Transform.scale(
+                      scale: scale,
+                      child: Transform.translate(
+                        offset: Offset(0, y),
+                        child: Opacity(
+                          opacity: opacity,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  (_feedbackBgColor ?? const Color(0xFF1E2432))
+                                      .withValues(alpha: 0.98),
+                                  (_feedbackAccentColor ??
+                                          const Color(0xFF00E676))
+                                      .withValues(alpha: 0.26),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                color: (_feedbackAccentColor ?? Colors.white)
+                                    .withValues(alpha: 0.55),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (_feedbackAccentColor ?? Colors.black)
+                                      .withValues(alpha: 0.45),
+                                  blurRadius: 22,
+                                  spreadRadius: 2,
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.flash_on_rounded,
+                                  color: _feedbackAccentColor,
+                                  size: 22,
+                                ),
+                                const Gap(8),
+                                Text(
+                                  _feedbackText!,
+                                  style: TextStyle(
+                                    color: _feedbackTextColor,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 19,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
+              ),
+            ),
+          Positioned(
+            top: 20,
+            right: 12,
+            child: SafeArea(
+              child: TextButton(
+                onPressed: _stop,
+                child: Text(
+                  strings.colorPodStop,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
           ),
-        Positioned(
-          top: 20,
-          right: 12,
-          child: SafeArea(
-            child: TextButton(
-              onPressed: _stop,
-              child: Text(
-                strings.colorPodStop,
-                style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 14),
-              ),
-            ),
-          ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
-  Widget _buildResultsScaffold(BuildContext context, AppStrings strings, ColorScheme colors, TextTheme textStyles) {
+  Widget _buildResultsScaffold(
+    BuildContext context,
+    AppStrings strings,
+    ColorScheme colors,
+    TextTheme textStyles,
+  ) {
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     final topRecords = _topRecords();
     return Scaffold(
@@ -4888,51 +5713,54 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
               const Gap(AppSpacing.md),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(_currentResult),
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey.shade300
-                              : LightColors.primary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.black
-                              : Colors.white,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                    const Gap(AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        strings.reflexesResultsTitle,
-                        textAlign: TextAlign.center,
-                        style: textStyles.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.onSurface,
+                child: SizedBox(
+                  height: 44,
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(_currentResult),
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey.shade300
+                                : LightColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_rounded,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            size: 22,
+                          ),
                         ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: _closeToTools,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 32,
-                          color: colors.onSurface.withValues(alpha: 0.7),
+                      const Gap(AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          strings.reflexesResultsTitle,
+                          textAlign: TextAlign.center,
+                          style: textStyles.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      GestureDetector(
+                        onTap: _closeToTools,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 32,
+                            color: colors.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Padding(
@@ -4963,11 +5791,16 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
                               ),
                             ),
                             const Gap(AppSpacing.md),
-                            ..._currentResult!.stats.entries.map(
+                            ..._currentResult!.stats.entries
+                                .where((e) => !e.key.startsWith('_'))
+                                .map(
                               (e) => Padding(
-                                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.md,
+                                ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Text(
@@ -5005,23 +5838,36 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
                                     DeviceOrientation.landscapeLeft,
                                     DeviceOrientation.landscapeRight,
                                   ]);
-                                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                                  SystemChrome.setEnabledSystemUIMode(
+                                    SystemUiMode.immersiveSticky,
+                                  );
                                   setState(() {
                                     _showResults = false;
                                     _currentResult = null;
                                     _gameZoneSize = null;
                                   });
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
                                     if (mounted) _startCountdown();
                                   });
                                 },
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: colors.surfaceContainerHighest,
+                                  backgroundColor:
+                                      colors.surfaceContainerHighest,
                                   foregroundColor: colors.onSurfaceVariant,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
                                 ),
-                                icon: const Icon(Icons.refresh_rounded, size: 20),
-                                label: Text(strings.colorPodRestart.toUpperCase(), overflow: TextOverflow.ellipsis),
+                                icon: const Icon(
+                                  Icons.refresh_rounded,
+                                  size: 20,
+                                ),
+                                label: Text(
+                                  strings.colorPodRestart.toUpperCase(),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ),
                             const Gap(AppSpacing.sm),
@@ -5029,9 +5875,14 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
                               child: FilledButton.icon(
                                 onPressed: _nextLevel,
                                 style: FilledButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
                                 ),
-                                icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                                icon: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 20,
+                                ),
                                 label: Text(strings.colorPodNext.toUpperCase()),
                                 iconAlignment: IconAlignment.end,
                               ),
@@ -5053,7 +5904,10 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.emoji_events_rounded, color: colors.primary),
+                                Icon(
+                                  Icons.emoji_events_rounded,
+                                  color: colors.primary,
+                                ),
                                 const Gap(AppSpacing.sm),
                                 Text(
                                   strings.reflexesTopThree,
@@ -5068,37 +5922,57 @@ class _MotRunScreenState extends State<_MotRunScreen> with TickerProviderStateMi
                             if (topRecords.isEmpty)
                               Text(
                                 strings.reflexesNoSessions,
-                                style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
+                                style: textStyles.bodyMedium?.copyWith(
+                                  color: colors.secondary,
+                                ),
                               )
                             else
-                              ...topRecords.take(3).toList().asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final record = entry.value;
-                                final medalColor = index == 0
-                                    ? const Color(0xFFFFC107)
-                                    : index == 1
+                              ...topRecords
+                                  .take(3)
+                                  .toList()
+                                  .asMap()
+                                  .entries
+                                  .map((entry) {
+                                    final index = entry.key;
+                                    final record = entry.value;
+                                    final medalColor = index == 0
+                                        ? const Color(0xFFFFC107)
+                                        : index == 1
                                         ? const Color(0xFFB0BEC5)
                                         : const Color(0xFFCD7F32);
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.workspace_premium_rounded, color: medalColor, size: 20),
-                                      const Gap(AppSpacing.sm),
-                                      Expanded(
-                                        child: Text(
-                                          record.primaryScore.toStringAsFixed(2),
-                                          style: textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                                        ),
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: AppSpacing.md,
                                       ),
-                                      Text(
-                                        _formatDate(record.date),
-                                        style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.workspace_premium_rounded,
+                                            color: medalColor,
+                                            size: 20,
+                                          ),
+                                          const Gap(AppSpacing.sm),
+                                          Expanded(
+                                            child: Text(
+                                              record.primaryScore
+                                                  .toStringAsFixed(2),
+                                              style: textStyles.bodyMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                          ),
+                                          Text(
+                                            _formatDate(record.date),
+                                            style: textStyles.bodySmall
+                                                ?.copyWith(
+                                                  color: colors.secondary,
+                                                ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                );
-                              }),
+                                    );
+                                  }),
                           ],
                         ),
                       ),
@@ -5159,21 +6033,59 @@ class _MotPainter extends CustomPainter {
 }
 
 class _ReflexSessionRecord {
-  _ReflexSessionRecord({required this.mode, required this.date, required this.primaryScore, required this.stats});
+  _ReflexSessionRecord({
+    required this.mode,
+    required this.date,
+    required this.primaryScore,
+    required this.stats,
+  });
   final _ReflexesMode mode;
   final DateTime date;
   final double primaryScore;
   final Map<String, String> stats;
 
-  Map<String, dynamic> toJson() => {'mode': mode.name, 'date': date.toIso8601String(), 'primaryScore': primaryScore, 'stats': stats};
-  factory _ReflexSessionRecord.fromJson(Map<String, dynamic> json) => _ReflexSessionRecord(mode: _ReflexesMode.values.firstWhere((e) => e.name == (json['mode'] ?? 'visual'), orElse: () => _ReflexesMode.visual), date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(), primaryScore: (json['primaryScore'] as num?)?.toDouble() ?? 0, stats: Map<String, String>.from(json['stats'] ?? const {}));
-  String primaryLabel(AppStrings strings) { switch (mode) { case _ReflexesMode.visual: case _ReflexesMode.auditory: return '${strings.reflexesAvgReactionTime}: ${stats['avg'] ?? '0'} ms'; case _ReflexesMode.math: return '${strings.reflexesMathCorrectAnswers}: ${stats['correct'] ?? '0'}'; case _ReflexesMode.memory: return '${strings.reflexesMemoryMaxLength}: ${stats['maxLength'] ?? '0'}'; case _ReflexesMode.stroop: return '${strings.hitFactorScoreLabel}: ${primaryScore.toStringAsFixed(1)}'; case _ReflexesMode.mot: return '${strings.reflexesMotSuccessRate}: ${primaryScore.toStringAsFixed(1)} %'; } }
+  Map<String, dynamic> toJson() => {
+    'mode': mode.name,
+    'date': date.toIso8601String(),
+    'primaryScore': primaryScore,
+    'stats': stats,
+  };
+  factory _ReflexSessionRecord.fromJson(Map<String, dynamic> json) =>
+      _ReflexSessionRecord(
+        mode: _ReflexesMode.values.firstWhere(
+          (e) => e.name == (json['mode'] ?? 'visual'),
+          orElse: () => _ReflexesMode.visual,
+        ),
+        date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+        primaryScore: (json['primaryScore'] as num?)?.toDouble() ?? 0,
+        stats: Map<String, String>.from(json['stats'] ?? const {}),
+      );
+  String primaryLabel(AppStrings strings) {
+    switch (mode) {
+      case _ReflexesMode.visual:
+      case _ReflexesMode.auditory:
+        return '${strings.reflexesAvgReactionTime}: ${stats['avg'] ?? '0'} ms';
+      case _ReflexesMode.math:
+        return '${strings.reflexesMathCorrectAnswers}: ${stats['correct'] ?? '0'}';
+      case _ReflexesMode.memory:
+        return '${strings.reflexesMemoryMaxLength}: ${stats['maxLength'] ?? '0'}';
+      case _ReflexesMode.stroop:
+        return '${strings.hitFactorScoreLabel}: ${primaryScore.toStringAsFixed(1)}';
+      case _ReflexesMode.mot:
+        return '${strings.reflexesMotSuccessRate}: ${primaryScore.toStringAsFixed(1)} %';
+    }
+  }
 }
 
 class _ReflexSmokeBlob extends StatefulWidget {
   const _ReflexSmokeBlob({
-    this.top, this.left, this.right, this.bottom,
-    required this.size, required this.color, this.delay = 0,
+    this.top,
+    this.left,
+    this.right,
+    this.bottom,
+    required this.size,
+    required this.color,
+    this.delay = 0,
   });
   final double? top, left, right, bottom;
   final double size;
@@ -5183,12 +6095,13 @@ class _ReflexSmokeBlob extends StatefulWidget {
   State<_ReflexSmokeBlob> createState() => _ReflexSmokeBlobState();
 }
 
-class _ReflexSmokeBlobState extends State<_ReflexSmokeBlob> with SingleTickerProviderStateMixin {
+class _ReflexSmokeBlobState extends State<_ReflexSmokeBlob>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 8),
   );
-  
+
   @override
   void initState() {
     super.initState();
@@ -5196,13 +6109,13 @@ class _ReflexSmokeBlobState extends State<_ReflexSmokeBlob> with SingleTickerPro
       if (mounted) _ctrl.repeat(reverse: true);
     });
   }
-  
+
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -5332,12 +6245,19 @@ class _DifficultyPickerSheet extends StatelessWidget {
                     onTap: () => Navigator.of(context).pop(opt.level),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.md,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected ? LightColors.primary.withValues(alpha: 0.08) : colors.surface,
+                        color: isSelected
+                            ? LightColors.primary.withValues(alpha: 0.08)
+                            : colors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? LightColors.primary : colors.outline.withValues(alpha: 0.2),
+                          color: isSelected
+                              ? LightColors.primary
+                              : colors.outline.withValues(alpha: 0.2),
                           width: 1.5,
                         ),
                       ),
@@ -5348,9 +6268,13 @@ class _DifficultyPickerSheet extends StatelessWidget {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 2),
                                 child: Icon(
-                                  i < opt.level ? Icons.star_rounded : Icons.star_border_rounded,
+                                  i < opt.level
+                                      ? Icons.star_rounded
+                                      : Icons.star_border_rounded,
                                   size: 20,
-                                  color: isSelected ? LightColors.primary : colors.secondary,
+                                  color: isSelected
+                                      ? LightColors.primary
+                                      : colors.secondary,
                                 ),
                               );
                             }),
@@ -5404,7 +6328,7 @@ class _DiagonalCornerClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
     final cornerRadius = 16.0;
-    
+
     path.moveTo(0, 0);
     path.lineTo(size.width - cornerRadius, 0);
     path.arcToPoint(
@@ -5422,24 +6346,91 @@ class _DiagonalCornerClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-extension on _ReactionDifficulty { String label(AppStrings s) { switch (this) { case _ReactionDifficulty.easy: return s.reflexesDifficultyEasy; case _ReactionDifficulty.medium: return s.reflexesDifficultyMedium; case _ReactionDifficulty.hard: return s.reflexesDifficultyHard; } } }
-extension on _MathOperator {
+extension on _ReactionDifficulty {
   String label(AppStrings s) {
     switch (this) {
-      case _MathOperator.addition: return '+';
-      case _MathOperator.subtraction: return '−';
-      case _MathOperator.multiplication: return '×';
-      case _MathOperator.division: return '÷';
-      case _MathOperator.mixed: return s.reflexesModeMixed;
-      case _MathOperator.addSubOnly: return '+ −';
-      case _MathOperator.addSubMul: return '+ − ×';
+      case _ReactionDifficulty.easy:
+        return s.reflexesDifficultyEasy;
+      case _ReactionDifficulty.medium:
+        return s.reflexesDifficultyMedium;
+      case _ReactionDifficulty.hard:
+        return s.reflexesDifficultyHard;
     }
   }
 }
-extension on _MathDifficulty { String label(AppStrings s) { switch (this) { case _MathDifficulty.easy: return s.reflexesDifficultyEasy; case _MathDifficulty.medium: return s.reflexesDifficultyMedium; case _MathDifficulty.hard: return s.reflexesDifficultyHard; } } }
-extension on _MemoryDifficulty { String label(AppStrings s) { switch (this) { case _MemoryDifficulty.easy: return s.reflexesDifficultyEasy; case _MemoryDifficulty.medium: return s.reflexesDifficultyMedium; case _MemoryDifficulty.hard: return s.reflexesDifficultyHard; } } }
-extension on _StroopDifficulty { String label(AppStrings s) { switch (this) { case _StroopDifficulty.easy: return s.reflexesDifficultyEasy; case _StroopDifficulty.medium: return s.reflexesDifficultyMedium; case _StroopDifficulty.hard: return s.reflexesDifficultyHard; } } }
-extension on _MotDifficulty { String label(AppStrings s) { switch (this) { case _MotDifficulty.easy: return s.reflexesDifficultyEasy; case _MotDifficulty.medium: return s.reflexesDifficultyMedium; case _MotDifficulty.hard: return s.reflexesDifficultyHard; } } }
+
+extension on _MathOperator {
+  String label(AppStrings s) {
+    switch (this) {
+      case _MathOperator.addition:
+        return '+';
+      case _MathOperator.subtraction:
+        return '−';
+      case _MathOperator.multiplication:
+        return '×';
+      case _MathOperator.division:
+        return '÷';
+      case _MathOperator.mixed:
+        return s.reflexesModeMixed;
+      case _MathOperator.addSubOnly:
+        return '+ −';
+      case _MathOperator.addSubMul:
+        return '+ − ×';
+    }
+  }
+}
+
+extension on _MathDifficulty {
+  String label(AppStrings s) {
+    switch (this) {
+      case _MathDifficulty.easy:
+        return s.reflexesDifficultyEasy;
+      case _MathDifficulty.medium:
+        return s.reflexesDifficultyMedium;
+      case _MathDifficulty.hard:
+        return s.reflexesDifficultyHard;
+    }
+  }
+}
+
+extension on _MemoryDifficulty {
+  String label(AppStrings s) {
+    switch (this) {
+      case _MemoryDifficulty.easy:
+        return s.reflexesDifficultyEasy;
+      case _MemoryDifficulty.medium:
+        return s.reflexesDifficultyMedium;
+      case _MemoryDifficulty.hard:
+        return s.reflexesDifficultyHard;
+    }
+  }
+}
+
+extension on _StroopDifficulty {
+  String label(AppStrings s) {
+    switch (this) {
+      case _StroopDifficulty.easy:
+        return s.reflexesDifficultyEasy;
+      case _StroopDifficulty.medium:
+        return s.reflexesDifficultyMedium;
+      case _StroopDifficulty.hard:
+        return s.reflexesDifficultyHard;
+    }
+  }
+}
+
+extension on _MotDifficulty {
+  String label(AppStrings s) {
+    switch (this) {
+      case _MotDifficulty.easy:
+        return s.reflexesDifficultyEasy;
+      case _MotDifficulty.medium:
+        return s.reflexesDifficultyMedium;
+      case _MotDifficulty.hard:
+        return s.reflexesDifficultyHard;
+    }
+  }
+}
 
 // ─────────────────────────────────────────────────────────────
 //  _LevelsPanelBody — grille 50 niveaux intégrée au bottom sheet
@@ -5464,7 +6455,10 @@ class _LevelsPanelBody extends StatefulWidget {
   final String infoTooltip;
   final ColorScheme colors;
   final TextTheme textStyles;
-  final Future<({double? score, bool closeAll, bool nextLevel})> Function(int level) onStartLevel;
+  final Future<({double? score, bool closeAll, bool nextLevel})> Function(
+    int level,
+  )
+  onStartLevel;
   final int Function(double score) starsCalculator;
   final String Function(double score) scoreLabel;
 
@@ -5495,8 +6489,12 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final records = await loadLevelRecords(widget.modeKey);
-    if (mounted) setState(() { _records = records; _loading = false; });
-    
+    if (mounted)
+      setState(() {
+        _records = records;
+        _loading = false;
+      });
+
     // Auto-scroll to the current unlocked level after render
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
@@ -5508,11 +6506,11 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
         final itemWidth = (gridWidth - 32) / 5; // 4 * crossAxisSpacing(8)
         final itemHeight = itemWidth / 0.82; // childAspectRatio
         final rowHeight = itemHeight + 8; // mainAxisSpacing
-        
+
         // Target offset to show the row somewhat in the middle or top
         final targetOffset = (row - 1) * rowHeight;
         final maxScroll = _scrollController.position.maxScrollExtent;
-        
+
         _scrollController.animateTo(
           targetOffset.clamp(0.0, maxScroll),
           duration: const Duration(milliseconds: 300),
@@ -5550,7 +6548,11 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
     if (!mounted) return;
     setState(() => _runningLevel = null);
     if (result.score != null && result.score! >= 0) {
-      final record = ExerciseLevelRecord(level: level, score: result.score!, date: DateTime.now());
+      final record = ExerciseLevelRecord(
+        level: level,
+        score: result.score!,
+        date: DateTime.now(),
+      );
       await saveLevelRecord(widget.modeKey, record, _records);
       if (mounted) {
         await _load();
@@ -5575,16 +6577,24 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
     final regex = RegExp(r'\*\*(.*?)\*\*');
     int last = 0;
     for (final m in regex.allMatches(text)) {
-      if (m.start > last) spans.add(TextSpan(text: text.substring(last, m.start), style: base));
-      spans.add(TextSpan(text: m.group(1), style: base.copyWith(fontWeight: FontWeight.bold)));
+      if (m.start > last)
+        spans.add(TextSpan(text: text.substring(last, m.start), style: base));
+      spans.add(
+        TextSpan(
+          text: m.group(1),
+          style: base.copyWith(fontWeight: FontWeight.bold),
+        ),
+      );
       last = m.end;
     }
-    if (last < text.length) spans.add(TextSpan(text: text.substring(last), style: base));
+    if (last < text.length)
+      spans.add(TextSpan(text: text.substring(last), style: base));
     return spans;
   }
 
   Widget _buildDescription() {
-    final base = widget.textStyles.bodyMedium?.copyWith(
+    final base =
+        widget.textStyles.bodyMedium?.copyWith(
           color: widget.colors.onSurface,
           height: 1.4,
           fontWeight: FontWeight.w500,
@@ -5595,7 +6605,9 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
       decoration: BoxDecoration(
         color: widget.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: widget.colors.outline.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: widget.colors.outline.withValues(alpha: 0.35),
+        ),
       ),
       child: RichText(
         text: TextSpan(children: _parseBold(widget.description, base)),
@@ -5619,14 +6631,20 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.lg,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Progress header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xs,
+            ),
             child: Row(
               children: [
                 Text(
@@ -5643,8 +6661,12 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
                     child: LinearProgressIndicator(
                       value: _records.length / _kTotal,
                       minHeight: 4,
-                      backgroundColor: widget.colors.outline.withValues(alpha: 0.2),
-                      valueColor: const AlwaysStoppedAnimation<Color>(LightColors.primary),
+                      backgroundColor: widget.colors.outline.withValues(
+                        alpha: 0.2,
+                      ),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        LightColors.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -5692,14 +6714,18 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
                 final level = index + 1;
                 final isUnlocked = level <= unlocked;
                 final record = _records[level];
-                final stars = record != null ? widget.starsCalculator(record.score) : 0;
+                final stars = record != null
+                    ? widget.starsCalculator(record.score)
+                    : 0;
                 final isRunning = _runningLevel == level;
 
                 return _LevelCell(
                   level: level,
                   isUnlocked: isUnlocked,
                   stars: stars,
-                  bestScore: record != null ? widget.scoreLabel(record.score) : null,
+                  bestScore: record != null
+                      ? widget.scoreLabel(record.score)
+                      : null,
                   isRunning: isRunning,
                   onTap: isUnlocked ? () => _play(level) : null,
                   colors: widget.colors,
@@ -5795,76 +6821,80 @@ class _LevelCell extends StatelessWidget {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(LightColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      LightColors.primary,
+                    ),
                   ),
                 ),
               )
             : !isUnlocked
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.lock_rounded,
-                        size: 16,
-                        color: colors.onSurface.withValues(alpha: 0.22),
-                      ),
-                      const Gap(2),
-                      Text(
-                        '$level',
-                        style: textStyles.labelSmall?.copyWith(
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(3, (i) {
-                            final filled = i < stars;
-                            return Icon(
-                              filled ? Icons.star_rounded : Icons.star_outline_rounded,
-                              size: 11,
-                              color: filled
-                                  ? const Color(0xFFFFC107)
-                                  : colors.onSurface.withValues(alpha: 0.18),
-                            );
-                          }),
-                        ),
-                        const Gap(3),
-                        Text(
-                          '$level',
-                          style: textStyles.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: textColor,
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (bestScore != null) ...[
-                          const Gap(2),
-                          Text(
-                            bestScore!,
-                            style: textStyles.labelSmall?.copyWith(
-                              color: isPerfect
-                                  ? const Color(0xFF00E676)
-                                  : colors.secondary,
-                              fontSize: 8,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lock_rounded,
+                    size: 16,
+                    color: colors.onSurface.withValues(alpha: 0.22),
+                  ),
+                  const Gap(2),
+                  Text(
+                    '$level',
+                    style: textStyles.labelSmall?.copyWith(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
                     ),
                   ),
+                ],
+              )
+            : Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(3, (i) {
+                        final filled = i < stars;
+                        return Icon(
+                          filled
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          size: 11,
+                          color: filled
+                              ? const Color(0xFFFFC107)
+                              : colors.onSurface.withValues(alpha: 0.18),
+                        );
+                      }),
+                    ),
+                    const Gap(3),
+                    Text(
+                      '$level',
+                      style: textStyles.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: textColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (bestScore != null) ...[
+                      const Gap(2),
+                      Text(
+                        bestScore!,
+                        style: textStyles.labelSmall?.copyWith(
+                          color: isPerfect
+                              ? const Color(0xFF00E676)
+                              : colors.secondary,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
       ),
     );
   }

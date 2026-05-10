@@ -26,27 +26,6 @@ class UnitConverter {
     return value;
   }
 
-  // Weight conversions
-  String formatWeight(double grams) {
-    if (useMetric) {
-      return '${grams.toInt()}g';
-    } else {
-      // Convert grams to ounces
-      final ounces = (grams * 0.035274).toStringAsFixed(2);
-      return '${ounces}oz';
-    }
-  }
-
-  double parseWeight(String weightStr) {
-    final numStr = weightStr.replaceAll(RegExp(r'[^0-9.]'), '');
-    final value = double.tryParse(numStr) ?? 0;
-    
-    if (weightStr.toLowerCase().contains('oz')) {
-      // Convert ounces to grams
-      return value / 0.035274;
-    }
-    return value;
-  }
 
   // Temperature conversions
   String formatTemperature(double celsius) {

@@ -712,6 +712,14 @@ es: 'El registro de tiro diseñado para profesionales.',
         es: 'Política de privacidad',
       );
 
+  String get legalAndPrivacyLabel => _pick(
+        fr: 'Informations légales & confidentialité',
+        en: 'Legal information & privacy',
+        de: 'Rechtliche Informationen & Datenschutz',
+        it: 'Informazioni legali & privacy',
+        es: 'Información legal y privacidad',
+      );
+
   String get settingsAboutCopyright => _pick(
         fr: '© 2026-2027 THOT. Tous droits réservés.',
         en: '© 2026-2027 THOT. All rights reserved.',
@@ -947,7 +955,23 @@ es: 'Nuevo',
         en: 'Full backup of your logbook',
         de: 'Vollständige Sicherung Ihres Hefts',
         it: 'Backup completo del tuo registro',
-        es: 'Copia de seguridad completa de tu cuaderno',
+        es: 'Copia de seguridad complète de tu cuaderno',
+      );
+
+  String get dataManagementLabel => _pick(
+        fr: 'Import & Export (JSON)',
+        en: 'Import & Export (JSON)',
+        de: 'Import & Export (JSON)',
+        it: 'Importa & Esporta (JSON)',
+        es: 'Importar y Exportar (JSON)',
+      );
+
+  String get dataManagementSubtitle => _pick(
+        fr: 'Sauvegarde et restauration manuelle',
+        en: 'Manual backup and restore',
+        de: 'Manuelle Sicherung und Wiederherstellung',
+        it: 'Backup e ripristino manuale',
+        es: 'Copia de seguridad y restauración manual',
       );
 
   String get jsonImportLabel => _pick(

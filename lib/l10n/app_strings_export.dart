@@ -213,4 +213,133 @@ extension AppStringsExport on AppStrings {
         it: 'Generato da THOT - Registro di Tiro',
         es: 'Generado por THOT - Cuaderno de Tiro',
       );
+
+  // --- Exercise Share Text ---
+
+  String get exerciseShareSimpleHeader => _pick(
+        fr: '⚡ EXERCICE',
+        en: '⚡ EXERCISE',
+        de: '⚡ ÜBUNG',
+        it: '⚡ ESERCIZIO',
+        es: '⚡ EJERCICIO',
+      );
+
+  String get exerciseShareDetailedHeader => _pick(
+        fr: '📋 EXERCICE',
+        en: '📋 EXERCISE',
+        de: '📋 ÜBUNG',
+        it: '📋 ESERCIZIO',
+        es: '📋 EJERCICIO',
+      );
+
+  String get exerciseShareUnnamed => _pick(
+        fr: 'Sans nom',
+        en: 'Untitled',
+        de: 'Unbenannt',
+        it: 'Senza nome',
+        es: 'Sin nombre',
+      );
+
+  String get exerciseShareSimpleMode => _pick(
+        fr: 'Mode simple',
+        en: 'Simple mode',
+        de: 'Einfacher Modus',
+        it: 'Modalità semplice',
+        es: 'Modo simple',
+      );
+
+  String exerciseShareShots(int n) => _pick(
+        fr: '$n coups',
+        en: '$n shots',
+        de: '$n Schüsse',
+        it: '$n colpi',
+        es: '$n disparos',
+      );
+
+  String get exerciseShareSteps => _pick(
+        fr: 'Étapes :',
+        en: 'Steps:',
+        de: 'Schritte:',
+        it: 'Passi:',
+        es: 'Pasos:',
+      );
+
+  String get exerciseShareTotalShots => _pick(
+        fr: 'Total',
+        en: 'Total',
+        de: 'Gesamt',
+        it: 'Totale',
+        es: 'Total',
+      );
+
+  String exerciseShareTotalSteps(int n) => _pick(
+        fr: '$n étapes',
+        en: '$n steps',
+        de: '$n Schritte',
+        it: '$n passi',
+        es: '$n pasos',
+      );
+
+  String get exerciseShareSharedVia => _pick(
+        fr: '✅ Partagé via THOT',
+        en: '✅ Shared via THOT',
+        de: '✅ Geteilt mit THOT',
+        it: '✅ Condiviso tramite THOT',
+        es: '✅ Compartido vía THOT',
+      );
+
+  String exerciseShareTarget(String name) => _pick(
+        fr: 'cible $name',
+        en: 'target $name',
+        de: 'Ziel $name',
+        it: 'bersaglio $name',
+        es: 'objetivo $name',
+      );
+
+  String exerciseShareReload(String type) => _pick(
+        fr: 'rechargement $type',
+        en: 'reload $type',
+        de: 'Nachladen $type',
+        it: 'ricarica $type',
+        es: 'recarga $type',
+      );
+
+  String exerciseSharePlatformTransfer(String from, String to) => _pick(
+        fr: 'de $from vers $to',
+        en: 'from $from to $to',
+        de: 'von $from nach $to',
+        it: 'da $from a $to',
+        es: 'de $from a $to',
+      );
+
+  String exerciseShareTrigger(String label) => _pick(
+        fr: 'déclencheur: $label',
+        en: 'trigger: $label',
+        de: 'Auslöser: $label',
+        it: 'innesco: $label',
+        es: 'disparador: $label',
+      );
+
+  /// Step type label in upper case for the share text.
+  String exerciseShareStepTypeLabel(String stepKey) {
+    switch (stepKey) {
+      case 'tir':
+        return _pick(fr: 'TIR', en: 'SHOT', de: 'SCHUSS', it: 'TIRO', es: 'TIRO');
+      case 'deplacement':
+        return _pick(fr: 'DÉPLACEMENT', en: 'MOVEMENT', de: 'BEWEGUNG', it: 'SPOSTAMENTO', es: 'DESPLAZAMIENTO');
+      case 'rechargement':
+        return _pick(fr: 'RECHARGEMENT', en: 'RELOAD', de: 'NACHLADEN', it: 'RICARICA', es: 'RECARGA');
+      case 'transition':
+        return _pick(fr: 'TRANSITION', en: 'TRANSITION', de: 'ÜBERGANG', it: 'TRANSIZIONE', es: 'TRANSICIÓN');
+      case 'miseEnJoue':
+        return _pick(fr: 'MISE EN JOUE', en: 'AIM', de: 'ANSCHLAG', it: 'MIRA', es: 'APUNTAR');
+      case 'attente':
+        return _pick(fr: 'ATTENTE', en: 'WAIT', de: 'WARTEN', it: 'ATTESA', es: 'ESPERA');
+      case 'securite':
+        return _pick(fr: 'SÉCURITÉ', en: 'SAFETY', de: 'SICHERHEIT', it: 'SICUREZZA', es: 'SEGURIDAD');
+      case 'autre':
+      default:
+        return _pick(fr: 'AUTRE', en: 'OTHER', de: 'ANDERE', it: 'ALTRO', es: 'OTRO');
+    }
+  }
 }

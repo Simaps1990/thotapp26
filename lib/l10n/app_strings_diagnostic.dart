@@ -3,8 +3,16 @@ import 'package:flutter/widgets.dart';
 class AppStringsDiagnostic {
   const AppStringsDiagnostic._();
 
+  // TECH DEBT: This class uses a global mutable _overrideLanguageCode instead
+  // of receiving locale via BuildContext like the rest of the i18n layer.
+  // The single call site is in AppStrings() constructor (app_strings.dart:63).
+  // Refactoring to a proper instance-based approach would require updating
+  // 94+ call sites in diagnostic_screen.dart — deferred to a future cleanup.
+  // ignore: unused_field
   static String? _overrideLanguageCode;
 
+  /// Called once from [AppStrings] constructor to sync this static class with
+  /// the resolved locale. Must NOT be called from anywhere else.
   static void setLanguageCode(String code) {
     _overrideLanguageCode = code;
   }

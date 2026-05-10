@@ -111,7 +111,9 @@ class _DrillResultsScreenState extends State<DrillResultsScreen> {
                     title: widget.mode,
                     rows: [
                       if (widget.difficulty.isNotEmpty) _StatRow(label: strings.reflexesDifficultyLabel, value: widget.difficulty),
-                      ...widget.stats.entries.map((e) => _StatRow(label: e.key, value: e.value)),
+                      ...widget.stats.entries
+                          .where((e) => !e.key.startsWith('_'))
+                          .map((e) => _StatRow(label: e.key, value: e.value)),
                     ],
                   ),
                 ],

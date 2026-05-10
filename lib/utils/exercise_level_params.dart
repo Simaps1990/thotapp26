@@ -70,8 +70,8 @@ library exercise_level_params;
   // Sequence length: 3 → 12
   final seqLen = (3 + (t * 9)).round().clamp(3, 12);
 
-  // Display time: 6000ms → 1500ms (shorter = harder)
-  final displayMs = (6000 - t * 4500).round().clamp(1500, 6000);
+  // Display time: 2500ms → 1000ms (shorter = harder)
+  final displayMs = (2500 - t * 1500).round().clamp(1000, 2500);
 
   // Rounds: 4 → 12
   final rounds = (4 + (t * 8)).round().clamp(4, 12);
@@ -126,8 +126,8 @@ int stroopLevelDifficulty(int level) {
   // Circle diameter: 50 → 36 (smaller = harder)
   final diameter = 50.0 - t * 14.0;
 
-  // Highlight duration: 3000 → 1000ms
-  final highlightMs = (3000 - t * 2000).round().clamp(1000, 3000);
+  // Highlight duration: 1500 → 600ms
+  final highlightMs = (1500 - t * 900).round().clamp(600, 1500);
 
   return (
     totalCircles: totalCircles,

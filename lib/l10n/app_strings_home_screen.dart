@@ -483,6 +483,30 @@ es: 'Disp. / sesión',
         es: 'Diagnóstico y seguridad',
       );
 
+  String get legalPrivacyTitle => _pick(
+        fr: 'Politique de confidentialité',
+        en: 'Privacy Policy',
+        de: 'Datenschutzrichtlinie',
+        it: 'Informativa sulla privacy',
+        es: 'Política de privacidad',
+      );
+
+  String get legalMentionsTitle => _pick(
+        fr: 'Mentions légales',
+        en: 'Legal notice',
+        de: 'Impressum',
+        it: 'Note legali',
+        es: 'Aviso legal',
+      );
+
+  String get legalChaptersLabel => _pick(
+        fr: 'Chapitres',
+        en: 'Chapters',
+        de: 'Kapitel',
+        it: 'Capitoli',
+        es: 'Capítulos',
+      );
+
   String get quickActionLabelMillieme => _pick(
 fr: 'Formule du millième',
 en: 'Mil formula',

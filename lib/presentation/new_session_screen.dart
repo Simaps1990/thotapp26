@@ -858,6 +858,7 @@ void _loadSession() {
               ),
               child: Column(
                 children: [
+                  // ── poignée ──
                   const SizedBox(height: 12),
                   Container(
                     width: 40,
@@ -868,79 +869,190 @@ void _loadSession() {
                     ),
                   ),
                   const Gap(AppSpacing.md),
+                  // ── header : titre + bulle ⓘ ──
                   Padding(
-                    padding: AppSpacing.paddingLg,
-                    child: Text(
-                      strings.importTemplateTitle,
-                      style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            strings.importTemplateTitle,
+                            style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: ctx,
+                              builder: (_) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                title: Row(
+                                  children: [
+                                    Icon(Icons.info_outline_rounded, size: 20, color: colors.primary),
+                                    const Gap(AppSpacing.sm),
+                                    Expanded(
+                                      child: Text(strings.importTemplateTitle,
+                                          style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                content: Text(
+                                  strings.createTemplateTooltip,
+                                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: Text(strings.actionClose),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.info_outline_rounded,
+                              size: 20,
+                              color: colors.secondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  const Gap(AppSpacing.sm),
+                  // ── séparateur standard ──
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: colors.outline.withValues(alpha: 0.35),
                   ),
                   Expanded(
                     child: ListView(
                       controller: controller,
-                      padding: AppSpacing.paddingLg,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.md,
+                      ),
                       children: [
                         if (standardDrills.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                            child: Text(
-                              strings.exerciseTemplatesStandardSection,
-                              style: textStyles.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colors.primary,
-                              ),
+                          // ── titre de section ──
+                          Text(
+                            strings.exerciseTemplatesStandardSection,
+                            style: textStyles.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.onSurface,
+                              letterSpacing: 0.2,
                             ),
                           ),
-                          ...standardDrills.map((t) {
-                            final subtitle = t.detailedMode
-                                ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${t.distance} m'
-                                : '${t.shotsFired} coups · ${t.distance} m';
-                            return ListTile(
-                              title: Text(
-                                t.name,
-                                style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                subtitle,
-                                style: textStyles.bodySmall,
-                              ),
-                              trailing: Icon(Icons.add_circle_outline, color: colors.primary),
-                              onTap: () {
-                                _addTemplateAsExercise(t);
-                                Navigator.pop(ctx);
-                              },
-                            );
-                          }),
+                          const Gap(AppSpacing.sm),
+                          // ── card drills standards ──
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
+                            ),
+                            child: Column(
+                              children: standardDrills.asMap().entries.map((entry) {
+                                final i = entry.key;
+                                final t = entry.value;
+                                final subtitle = t.detailedMode
+                                    ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${t.distance} m'
+                                    : '${t.shotsFired} coups · ${t.distance} m';
+                                final isLast = i == standardDrills.length - 1;
+                                return Column(
+                                  children: [
+                                    ListTile(
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.md,
+                                        vertical: 2,
+                                      ),
+                                      title: Text(
+                                        t.name,
+                                        style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text(
+                                        subtitle,
+                                        style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                                      ),
+                                      trailing: Icon(Icons.add_circle_outline, color: colors.primary),
+                                      onTap: () {
+                                        _addTemplateAsExercise(t);
+                                        Navigator.pop(ctx);
+                                      },
+                                    ),
+                                    if (!isLast)
+                                      Divider(
+                                        height: 1,
+                                        indent: AppSpacing.md,
+                                        endIndent: AppSpacing.md,
+                                        color: colors.outline.withValues(alpha: 0.3),
+                                      ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
                           const Gap(AppSpacing.xl),
                         ],
                         if (userTemplates.isNotEmpty) ...[
                           Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                             child: Text(
                               strings.exerciseTemplatesMyTemplatesSection,
                               style: textStyles.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colors.primary,
+                                fontWeight: FontWeight.w700,
+                                color: colors.onSurface,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ),
-                          ...userTemplates.map((t) {
-                            return ListTile(
-                              title: Text(
-                                t.name,
-                                style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                '${t.shotsFired} coups, ${t.distance}m',
-                                style: textStyles.bodySmall,
-                              ),
-                              trailing: Icon(Icons.add_circle_outline, color: colors.primary),
-                              onTap: () {
-                                _addTemplateAsExercise(t);
-                                if (ctx.mounted) Navigator.of(ctx).pop();
-                              },
-                            );
-                          }),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
+                            ),
+                            child: Column(
+                              children: userTemplates.asMap().entries.map((entry) {
+                                final i = entry.key;
+                                final t = entry.value;
+                                final isLast = i == userTemplates.length - 1;
+                                return Column(
+                                  children: [
+                                    ListTile(
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.md,
+                                        vertical: 2,
+                                      ),
+                                      title: Text(
+                                        t.name,
+                                        style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text(
+                                        '${t.shotsFired} coups, ${t.distance}m',
+                                        style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                                      ),
+                                      trailing: Icon(Icons.add_circle_outline, color: colors.primary),
+                                      onTap: () {
+                                        _addTemplateAsExercise(t);
+                                        if (ctx.mounted) Navigator.of(ctx).pop();
+                                      },
+                                    ),
+                                    if (!isLast)
+                                      Divider(
+                                        height: 1,
+                                        indent: AppSpacing.md,
+                                        endIndent: AppSpacing.md,
+                                        color: colors.outline.withValues(alpha: 0.3),
+                                      ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
                         ],
                         if (standardDrills.isEmpty && userTemplates.isEmpty)
                           Center(

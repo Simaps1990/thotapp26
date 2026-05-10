@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/theme.dart';
+import 'package:thot/widgets/pro_badge.dart';
 
 import 'package:thot/presentation/diagnostic_screen.dart';
 import 'package:thot/presentation/ballistic_calc_screen.dart';
@@ -99,8 +100,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
     _openToolSheet(const ColorPodScreen());
   }
 
-
-
   void _openReflexes(ThotProvider provider) {
     _openToolSheet(const ReflexesScreen());
   }
@@ -113,7 +112,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
     _openToolSheet(const ShootingTimerScreen());
   }
 
-  void _openShootingTables() {
+  void _openShootingTables(ThotProvider provider) {
+    if (provider.isToolLockedForFree('shooting_tables')) {
+      showProModal(context);
+      return;
+    }
     _openToolSheet(const ShootingTablesScreen());
   }
 
@@ -142,8 +145,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
       required String title,
       required String subtitle,
       required VoidCallback onTap,
-      Color? iconColor,
+      List<Color>? iconColors,
+      bool isLocked = false,
     }) {
+      final effectiveIconColor = iconColors != null && iconColors.isNotEmpty
+          ? iconColors.first
+          : colors.primary;
       return Material(
         color: Colors.transparent,
         child: InkWell(
@@ -164,7 +171,17 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
             child: Row(
               children: [
-                Icon(icon, color: iconColor ?? colors.primary, size: 24),
+                if (iconColors != null && iconColors.length > 1)
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
+                      colors: iconColors,
+                    ).createShader(bounds),
+                    child: Icon(icon, color: Colors.white, size: 24),
+                  )
+                else
+                  Icon(icon, color: effectiveIconColor, size: 24),
                 const Gap(12),
                 Expanded(
                   child: Column(
@@ -186,6 +203,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     ],
                   ),
                 ),
+                if (isLocked) ...[
+                  const ProBadge(compact: true),
+                  const Gap(8),
+                ],
                 Icon(Icons.chevron_right_rounded, color: colors.secondary),
               ],
             ),
@@ -207,10 +228,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.asset(
-                      _toolsHeroAsset(context),
-                      fit: BoxFit.cover,
-                    ),
+                    Image.asset(_toolsHeroAsset(context), fit: BoxFit.cover),
                     DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -268,7 +286,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         title: strings.homeTimerTitle,
                         subtitle: strings.homeTimerSubtitle,
                         onTap: _openTimer,
-                        iconColor: const Color(0xFF4A90E2),
+                        iconColors: const [Color(0xFF5B89BD), Color(0xFF4A90E2)],
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
@@ -276,7 +294,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         title: strings.visualStimulusToolTitle,
                         subtitle: strings.visualStimulusToolSubtitle,
                         onTap: () => _openVisualStimulus(provider),
-                        iconColor: const Color(0xFFE91E63),
+                        iconColors: const [Color(0xFFB84B70), Color(0xFFE91E63)],
                       ),
 
                       const Gap(AppSpacing.md),
@@ -285,7 +303,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         title: strings.reflexesToolTitle,
                         subtitle: strings.reflexesToolSubtitle,
                         onTap: () => _openReflexes(provider),
-                        iconColor: const Color(0xFFFF9800),
+                        iconColors: const [Color(0xFFD18B24), Color(0xFFFF9800)],
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
@@ -293,15 +311,16 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         title: strings.calculationsToolTitle,
                         subtitle: strings.calculationsToolSubtitle,
                         onTap: _openCalculations,
-                        iconColor: const Color(0xFF9C27B0),
+                        iconColors: const [Color(0xFF8B4D99), Color(0xFF9C27B0)],
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
                         icon: Icons.table_chart_outlined,
                         title: strings.shootingTablesToolTitle,
                         subtitle: strings.shootingTablesToolSubtitle,
-                        onTap: _openShootingTables,
-                        iconColor: const Color(0xFF4CAF50),
+                        onTap: () => _openShootingTables(provider),
+                        isLocked: provider.isToolLockedForFree('shooting_tables'),
+                        iconColors: const [Color(0xFF5F9E62), Color(0xFF4CAF50)],
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
@@ -309,7 +328,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         title: strings.homeDiagnosticTitle,
                         subtitle: strings.homeDiagnosticSubtitle,
                         onTap: () => _openDiagnostic(provider),
-                        iconColor: const Color(0xFFF44336),
+                        isLocked: provider.isToolLockedForFree('diagnostics'),
+                        iconColors: const [Color(0xFFC25048), Color(0xFFF44336)],
                       ),
                       const Gap(40),
                     ],

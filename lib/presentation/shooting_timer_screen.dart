@@ -14,6 +14,7 @@ import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/timer_sound.dart';
 import 'package:vibration/vibration.dart';
+import 'package:thot/widgets/exercise_countdown_background.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Timer tool used for training and session timing.
@@ -39,7 +40,14 @@ class ShootingTimerScreen extends StatefulWidget {
   State<ShootingTimerScreen> createState() => _ShootingTimerScreenState();
 }
 
-enum _TimerMode { simple, parTime, repeat, randomDelay, startAndMic, startAndShots }
+enum _TimerMode {
+  simple,
+  parTime,
+  repeat,
+  randomDelay,
+  startAndMic,
+  startAndShots,
+}
 
 typedef _TimerStats = ({
   Duration totalTime,
@@ -50,8 +58,12 @@ typedef _TimerStats = ({
   Duration splitStdDev,
 });
 
-class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  SwitchThemeData _buildUnifiedSwitchTheme(BuildContext context, ColorScheme colors) {
+class _ShootingTimerScreenState extends State<ShootingTimerScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  SwitchThemeData _buildUnifiedSwitchTheme(
+    BuildContext context,
+    ColorScheme colors,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SwitchThemeData(
@@ -187,7 +199,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
     // - before the beep: _remaining is a descending countdown
     // - after the beep: the main display shows locally measured elapsed time
     //   from the Stopwatch.
-    if ((_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) &&
+    if ((_mode == _TimerMode.startAndMic ||
+            _mode == _TimerMode.startAndShots) &&
         _actionStarted) {
       final elapsed = _shotStopwatch.elapsed;
       return elapsed < Duration.zero ? Duration.zero : elapsed;
@@ -335,8 +348,10 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
 
     // Apply a safety headroom so normal ambient fluctuations don't trigger.
     const headroomDb = 6.0;
-    final newThreshold = (peak + headroomDb)
-        .clamp(_dbThresholdMin + headroomDb, _dbThresholdMax - 1.0);
+    final newThreshold = (peak + headroomDb).clamp(
+      _dbThresholdMin + headroomDb,
+      _dbThresholdMax - 1.0,
+    );
 
     if (!mounted) return;
     setState(() {
@@ -366,7 +381,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           }
 
           // Microphone is used only in the two explicit mic-based modes.
-          if (_mode != _TimerMode.startAndMic && _mode != _TimerMode.startAndShots) {
+          if (_mode != _TimerMode.startAndMic &&
+              _mode != _TimerMode.startAndShots) {
             return;
           }
 
@@ -444,34 +460,35 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
   Future<bool> _showMicrophoneConfirmationDialog() async {
     final strings = AppStrings.of(context);
     final theme = Theme.of(context);
-    
+
     return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(strings.timerMicConfirmationTitle),
-          content: Text(strings.timerMicConfirmationMessage),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                strings.timerMicConfirmationCancel,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(strings.timerMicConfirmationTitle),
+              content: Text(strings.timerMicConfirmationMessage),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(strings.timerMicConfirmationContinue),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    strings.timerMicConfirmationCancel,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(strings.timerMicConfirmationContinue),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   void _startTimer() {
@@ -507,7 +524,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
         // Microphone modes:
         // - countdown before start beep
         // - after the beep, run stopwatch and optionally listen to mic locally
-        if (_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) {
+        if (_mode == _TimerMode.startAndMic ||
+            _mode == _TimerMode.startAndShots) {
           if (!_actionStarted) {
             final next = _remaining - const Duration(milliseconds: 20);
             if (!_zeroBeepFired && next <= _beepLead && next > Duration.zero) {
@@ -554,11 +572,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           if (next <= Duration.zero) {
             _remaining = Duration.zero;
             t.cancel();
-            _fireEvent(
-              playSound: !_zeroBeepFired,
-              vibrate: true,
-              flash: true,
-            );
+            _fireEvent(playSound: !_zeroBeepFired, vibrate: true, flash: true);
             _zeroBeepFired = true;
             _running = false;
             _finished = true;
@@ -587,11 +601,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           }
           if (next <= Duration.zero) {
             _remaining = Duration.zero;
-            _fireEvent(
-              playSound: !_zeroBeepFired,
-              vibrate: true,
-              flash: true,
-            );
+            _fireEvent(playSound: !_zeroBeepFired, vibrate: true, flash: true);
             _zeroBeepFired = true;
 
             if (_repeatInInitialDelay) {
@@ -683,11 +693,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           if (next <= Duration.zero) {
             _remaining = Duration.zero;
             t.cancel();
-            _fireEvent(
-              playSound: !_zeroBeepFired,
-              vibrate: true,
-              flash: true,
-            );
+            _fireEvent(playSound: !_zeroBeepFired, vibrate: true, flash: true);
             _zeroBeepFired = true;
             _running = false;
             _finished = true;
@@ -773,7 +779,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
       _running = false;
       _paused = false;
       _zeroBeepFired = false;
-      if ((_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) && _actionStarted) {
+      if ((_mode == _TimerMode.startAndMic ||
+              _mode == _TimerMode.startAndShots) &&
+          _actionStarted) {
         _finished = true;
       }
       _shotStopwatch.stop();
@@ -805,7 +813,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
 
     // In microphone modes, if the action phase had already started,
     // resume only the local stopwatch and local microphone threshold listener.
-    if ((_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) &&
+    if ((_mode == _TimerMode.startAndMic ||
+            _mode == _TimerMode.startAndShots) &&
         _actionStarted) {
       if (!_shotStopwatch.isRunning) {
         _shotStopwatch.start();
@@ -816,7 +825,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
 
     _timer = Timer.periodic(const Duration(milliseconds: 20), (t) {
       setState(() {
-        if (_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) {
+        if (_mode == _TimerMode.startAndMic ||
+            _mode == _TimerMode.startAndShots) {
           if (!_actionStarted) {
             final next = _remaining - const Duration(milliseconds: 20);
             if (!_zeroBeepFired && next <= _beepLead && next > Duration.zero) {
@@ -861,11 +871,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           if (next <= Duration.zero) {
             _remaining = Duration.zero;
             t.cancel();
-            _fireEvent(
-              playSound: !_zeroBeepFired,
-              vibrate: true,
-              flash: true,
-            );
+            _fireEvent(playSound: !_zeroBeepFired, vibrate: true, flash: true);
             _zeroBeepFired = true;
             _running = false;
             _finished = true;
@@ -893,11 +899,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           }
           if (next <= Duration.zero) {
             _remaining = Duration.zero;
-            _fireEvent(
-              playSound: !_zeroBeepFired,
-              vibrate: true,
-              flash: true,
-            );
+            _fireEvent(playSound: !_zeroBeepFired, vibrate: true, flash: true);
             _zeroBeepFired = true;
 
             if (_repeatInInitialDelay) {
@@ -983,11 +985,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           if (next <= Duration.zero) {
             _remaining = Duration.zero;
             t.cancel();
-            _fireEvent(
-              playSound: !_zeroBeepFired,
-              vibrate: true,
-              flash: true,
-            );
+            _fireEvent(playSound: !_zeroBeepFired, vibrate: true, flash: true);
             _zeroBeepFired = true;
             _running = false;
             _finished = true;
@@ -1022,7 +1020,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
 
   bool _shouldShowMinutes() {
     final durations = [_startDelay, _parTime, _cycleDuration, _randomBase];
-    final anyConfiguredOverMinute = durations.any((d) => d.inMilliseconds >= 60000);
+    final anyConfiguredOverMinute = durations.any(
+      (d) => d.inMilliseconds >= 60000,
+    );
     if (anyConfiguredOverMinute) return true;
     return _currentDisplayDuration().inMilliseconds >= 60000;
   }
@@ -1066,7 +1066,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
         .toList(growable: false);
     final meanUs = splitUs.reduce((a, b) => a + b) / splitUs.length;
     final varianceUs =
-        splitUs.map((v) => pow(v - meanUs, 2).toDouble()).reduce((a, b) => a + b) /
+        splitUs
+            .map((v) => pow(v - meanUs, 2).toDouble())
+            .reduce((a, b) => a + b) /
         splitUs.length;
     final stdUs = sqrt(varianceUs);
 
@@ -1086,28 +1088,28 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
     return _mode == _TimerMode.simple
         ? strings.timerModeSimpleDescription
         : _mode == _TimerMode.parTime
-            ? strings.timerModeParTimeDescription
-            : _mode == _TimerMode.repeat
-                ? strings.timerModeRepeatDescription
-                : _mode == _TimerMode.randomDelay
-                    ? strings.timerModeRandomDelayDescription
-                    : _mode == _TimerMode.startAndMic
-                        ? strings.timerModeStartAndMicDescription
-                        : strings.timerModeStartAndShotsDescription;
+        ? strings.timerModeParTimeDescription
+        : _mode == _TimerMode.repeat
+        ? strings.timerModeRepeatDescription
+        : _mode == _TimerMode.randomDelay
+        ? strings.timerModeRandomDelayDescription
+        : _mode == _TimerMode.startAndMic
+        ? strings.timerModeStartAndMicDescription
+        : strings.timerModeStartAndShotsDescription;
   }
 
   String _modeExample(AppStrings strings) {
     return _mode == _TimerMode.simple
         ? strings.timerModeSimpleExample
         : _mode == _TimerMode.parTime
-            ? strings.timerModeParTimeExample
-            : _mode == _TimerMode.repeat
-                ? strings.timerModeRepeatExample
-                : _mode == _TimerMode.randomDelay
-                    ? strings.timerModeRandomDelayExample
-                    : _mode == _TimerMode.startAndMic
-                        ? strings.timerModeStartAndMicExample
-                        : strings.timerModeStartAndShotsExample;
+        ? strings.timerModeParTimeExample
+        : _mode == _TimerMode.repeat
+        ? strings.timerModeRepeatExample
+        : _mode == _TimerMode.randomDelay
+        ? strings.timerModeRandomDelayExample
+        : _mode == _TimerMode.startAndMic
+        ? strings.timerModeStartAndMicExample
+        : strings.timerModeStartAndShotsExample;
   }
 
   Widget _buildBtWarningBanner({
@@ -1179,11 +1181,10 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    final isPremium = provider.isPremium;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final stats = _computeStats(_shotTimes);
 
-    if (!isPremium && provider.isTimerModeLockedForFree(_mode.name)) {
+    if (provider.isTimerModeLockedForFree(_mode.name)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _timer?.cancel();
@@ -1250,7 +1251,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
             _buildModeChip(
               label: strings.timerModeStartAndMic,
               mode: _TimerMode.startAndMic,
-              isLocked: provider.isTimerModeLockedForFree('startAndMic'),
+              isLocked: false,
               colors: colors,
               textStyles: textStyles,
             ),
@@ -1282,13 +1283,12 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
 
         // Short on-screen disclosure for microphone modes.
         // This helps make microphone usage visible and understandable to users.
-        if (_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) ...[
+        if (_mode == _TimerMode.startAndMic ||
+            _mode == _TimerMode.startAndShots) ...[
           const Gap(AppSpacing.xs),
           Text(
             strings.timerMicDisclaimerShort,
-            style: textStyles.bodySmall?.copyWith(
-              color: colors.secondary,
-            ),
+            style: textStyles.bodySmall?.copyWith(color: colors.secondary),
           ),
         ],
         const Gap(AppSpacing.lg),
@@ -1303,10 +1303,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
             borderRadius: BorderRadius.circular(16),
             border: isDark
                 ? null
-                : Border.all(
-                    color: LightColors.surfaceHighlight,
-                    width: 1.35,
-                  ),
+                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
             boxShadow: AppShadows.cardPremium,
           ),
           padding: AppSpacing.paddingLg,
@@ -1318,7 +1315,11 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                 value: _startDelay.inMilliseconds / 1000.0,
                 unitSuffix: ' s',
                 onChanged: (v) {
-                  setState(() => _startDelay = Duration(milliseconds: (v * 1000).round()));
+                  setState(
+                    () => _startDelay = Duration(
+                      milliseconds: (v * 1000).round(),
+                    ),
+                  );
                 },
                 colors: colors,
                 textStyles: textStyles,
@@ -1330,7 +1331,10 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                   value: _parTime.inMilliseconds / 1000.0,
                   unitSuffix: ' s',
                   onChanged: (v) {
-                    setState(() => _parTime = Duration(milliseconds: (v * 1000).round()));
+                    setState(
+                      () =>
+                          _parTime = Duration(milliseconds: (v * 1000).round()),
+                    );
                   },
                   colors: colors,
                   textStyles: textStyles,
@@ -1343,7 +1347,11 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                   value: _cycleDuration.inMilliseconds / 1000.0,
                   unitSuffix: ' s',
                   onChanged: (v) {
-                    setState(() => _cycleDuration = Duration(milliseconds: (v * 1000).round()));
+                    setState(
+                      () => _cycleDuration = Duration(
+                        milliseconds: (v * 1000).round(),
+                      ),
+                    );
                   },
                   colors: colors,
                   textStyles: textStyles,
@@ -1367,7 +1375,11 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                   value: _randomBase.inMilliseconds / 1000.0,
                   unitSuffix: ' s',
                   onChanged: (v) {
-                    setState(() => _randomBase = Duration(milliseconds: (v * 1000).round()));
+                    setState(
+                      () => _randomBase = Duration(
+                        milliseconds: (v * 1000).round(),
+                      ),
+                    );
                   },
                   colors: colors,
                   textStyles: textStyles,
@@ -1379,7 +1391,10 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
               Row(
                 children: [
                   Expanded(
-                    child: Text(strings.timerEnableSound, style: textStyles.bodyMedium),
+                    child: Text(
+                      strings.timerEnableSound,
+                      style: textStyles.bodyMedium,
+                    ),
                   ),
                   SwitchTheme(
                     data: _buildUnifiedSwitchTheme(context, colors),
@@ -1395,7 +1410,10 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
               Row(
                 children: [
                   Expanded(
-                    child: Text(strings.timerEnableVibration, style: textStyles.bodyMedium),
+                    child: Text(
+                      strings.timerEnableVibration,
+                      style: textStyles.bodyMedium,
+                    ),
                   ),
                   SwitchTheme(
                     data: _buildUnifiedSwitchTheme(context, colors),
@@ -1407,7 +1425,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                   ),
                 ],
               ),
-              if (_mode == _TimerMode.startAndMic || _mode == _TimerMode.startAndShots) ...[
+              if (_mode == _TimerMode.startAndMic ||
+                  _mode == _TimerMode.startAndShots) ...[
                 const Gap(AppSpacing.md),
                 const Divider(height: 1),
                 const Gap(AppSpacing.md),
@@ -1430,9 +1449,14 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                             ? const SizedBox(
                                 width: 14,
                                 height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
-                            : const Icon(Icons.settings_voice_rounded, size: 18),
+                            : const Icon(
+                                Icons.settings_voice_rounded,
+                                size: 18,
+                              ),
                         label: Text(strings.timerSensitivityAuto),
                         style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact,
@@ -1454,24 +1478,24 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     trackHeight: 6,
-                    inactiveTrackColor:
-                        colors.primary.withValues(alpha: 0.22),
+                    inactiveTrackColor: colors.primary.withValues(alpha: 0.22),
                     activeTrackColor: colors.primary,
                     thumbColor: colors.primary,
                     overlayColor: colors.primary.withValues(alpha: 0.14),
                     tickMarkShape: SliderTickMarkShape.noTickMark,
                   ),
                   child: Slider(
-                    value: (_dbThresholdMax - _dbThreshold)
-                        .clamp(0.0, _dbThresholdMax - _dbThresholdMin),
+                    value: (_dbThresholdMax - _dbThreshold).clamp(
+                      0.0,
+                      _dbThresholdMax - _dbThresholdMin,
+                    ),
                     min: 0,
                     max: _dbThresholdMax - _dbThresholdMin,
                     divisions: ((_dbThresholdMax - _dbThresholdMin) * 2)
                         .round(), // 0.5 dB steps
                     label: '${_dbThreshold.toStringAsFixed(1)} dB',
-                    onChanged: (v) => setState(
-                      () => _dbThreshold = _dbThresholdMax - v,
-                    ),
+                    onChanged: (v) =>
+                        setState(() => _dbThreshold = _dbThresholdMax - v),
                   ),
                 ),
                 Padding(
@@ -1504,7 +1528,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                 const Gap(AppSpacing.md),
                 Text(
                   strings.timerSensitivityHint,
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ],
             ],
@@ -1550,53 +1576,40 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
             children: [
               Transform.translate(
                 offset: const Offset(0, 40),
-                child: SizedBox(
-                  height: 130,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: _running && _countdown > 0
-                        ? AnimatedScale(
-                            key: ValueKey(_countdown),
-                            scale: 1.0,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.elasticOut,
-                            onEnd: () {
-                              if (mounted) {
-                                setState(() {});
-                              }
-                            },
-                            child: TweenAnimationBuilder<double>(
-                              tween: Tween<double>(begin: 0.5, end: 1.0),
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.elasticOut,
-                              builder: (context, scale, child) {
-                                return Transform.scale(
-                                  scale: scale,
-                                  child: Text(
-                                    '$_countdown',
-                                    style: (textStyles.displayLarge ?? const TextStyle())
-                                        .copyWith(
-                                      fontWeight: FontWeight.w900,
-                                      color: _flashHighlight ? colors.error : colors.onSurface,
-                                      fontSize: (textStyles.displayLarge?.fontSize ?? 48) * 2.7,
-                                    ),
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      height: 130,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 140),
+                          curve: Curves.easeOut,
+                          style:
+                              (textStyles.displayLarge ??
+                                      const TextStyle())
+                                  .copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: _flashHighlight
+                                        ? colors.error
+                                        : colors.onSurface,
+                                    fontSize:
+                                        (textStyles
+                                                .displayLarge
+                                                ?.fontSize ??
+                                            48) *
+                                        2.7,
                                   ),
-                                );
-                              },
+                          child: Text(
+                            _formatDuration(
+                              _currentDisplayDuration(),
+                              showMinutes: _shouldShowMinutes(),
                             ),
-                          )
-                        : AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 140),
-                            curve: Curves.easeOut,
-                            style: (textStyles.displayLarge ?? const TextStyle())
-                                .copyWith(
-                              fontWeight: FontWeight.w900,
-                              color: _flashHighlight ? colors.error : colors.onSurface,
-                              fontSize: (textStyles.displayLarge?.fontSize ?? 48) * 2.7,
-                            ),
-                            child: Text(_formatDuration(_currentDisplayDuration(), showMinutes: _shouldShowMinutes())),
                           ),
-                  ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1612,34 +1625,51 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
               child: AnimatedScale(
                 duration: const Duration(milliseconds: 140),
                 curve: Curves.easeOut,
-                scale: _flashHighlight
-                    ? 1.03
-                    : (_running ? 0.98 : 1.0),
+                scale: _flashHighlight ? 1.03 : (_running ? 0.98 : 1.0),
                 child: FadeTransition(
                   opacity: _blinkAnimation,
                   child: Builder(
                     builder: (context) {
                       final backColor = _paused
                           ? const Color(0xFF4B5563)
-                          : (_running ? const Color(0xFFB45309) : const Color(0xFF15803D));
-                      final topGradient = _paused
-                          ? const [Color(0xFF9CA3AF), Color(0xFF6B7280), Color(0xFF4B5563)]
                           : (_running
-                              ? const [Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFD97706)]
-                              : const [Color(0xFF5BE07B), Color(0xFF22C55E), Color(0xFF16A34A)]);
+                                ? const Color(0xFFB45309)
+                                : const Color(0xFF15803D));
+                      final topGradient = _paused
+                          ? const [
+                              Color(0xFF9CA3AF),
+                              Color(0xFF6B7280),
+                              Color(0xFF4B5563),
+                            ]
+                          : (_running
+                                ? const [
+                                    Color(0xFFFDE68A),
+                                    Color(0xFFF59E0B),
+                                    Color(0xFFD97706),
+                                  ]
+                                : const [
+                                    Color(0xFF5BE07B),
+                                    Color(0xFF22C55E),
+                                    Color(0xFF16A34A),
+                                  ]);
                       final pressedGradient = _paused
                           ? const [Color(0xFF6B7280), Color(0xFF4B5563)]
                           : (_running
-                              ? const [Color(0xFFD97706), Color(0xFFB45309)]
-                              : const [Color(0xFF16A34A), Color(0xFF15803D)]);
+                                ? const [Color(0xFFD97706), Color(0xFFB45309)]
+                                : const [Color(0xFF16A34A), Color(0xFF15803D)]);
                       final glowColor = _paused
                           ? const Color(0xFF9CA3AF)
-                          : (_running ? const Color(0xFFF59E0B) : const Color(0xFF22C55E));
+                          : (_running
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF22C55E));
 
                       return GestureDetector(
-                        onTapDown: (_) => setState(() => _mainButtonPressed = true),
-                        onTapUp: (_) => setState(() => _mainButtonPressed = false),
-                        onTapCancel: () => setState(() => _mainButtonPressed = false),
+                        onTapDown: (_) =>
+                            setState(() => _mainButtonPressed = true),
+                        onTapUp: (_) =>
+                            setState(() => _mainButtonPressed = false),
+                        onTapCancel: () =>
+                            setState(() => _mainButtonPressed = false),
                         onTap: _running
                             ? _pauseTimer
                             : (_paused ? _resumeTimer : _startTimer),
@@ -1657,13 +1687,17 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                                   color: backColor,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: glowColor.withValues(alpha: _running ? 0.12 : 0.18),
+                                      color: glowColor.withValues(
+                                        alpha: _running ? 0.12 : 0.18,
+                                      ),
                                       blurRadius: _running ? 10 : 14,
                                       spreadRadius: 1,
                                       offset: const Offset(0, 8),
                                     ),
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.12),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.12,
+                                      ),
                                       blurRadius: 14,
                                       offset: const Offset(0, 12),
                                     ),
@@ -1683,7 +1717,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
-                                    colors: _mainButtonPressed ? pressedGradient : topGradient,
+                                    colors: _mainButtonPressed
+                                        ? pressedGradient
+                                        : topGradient,
                                   ),
                                   border: Border.all(
                                     color: Colors.white.withValues(alpha: 0.26),
@@ -1704,17 +1740,29 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                                   ),
                                   child: Center(
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
                                       child: FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
-                                          strings.timerGoButton,
-                                          style: textStyles.displaySmall?.copyWith(
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 3.2,
-                                            color: Colors.white,
-                                            fontSize: (textStyles.displaySmall?.fontSize ?? 24) * 1.8,
-                                          ),
+                                          _running
+                                              ? strings.timerPauseButton
+                                              : (_paused
+                                                    ? strings.timerResumeButton
+                                                    : strings.timerGoButton),
+                                          style: textStyles.displaySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                                letterSpacing: 3.2,
+                                                color: Colors.white,
+                                                fontSize:
+                                                    (textStyles
+                                                            .displaySmall
+                                                            ?.fontSize ??
+                                                        24) *
+                                                    1.8,
+                                              ),
                                         ),
                                       ),
                                     ),
@@ -1756,7 +1804,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.full),
                     border: Border.all(
-                      color: isDark ? colors.outline : LightColors.surfaceHighlight,
+                      color: isDark
+                          ? colors.outline
+                          : LightColors.surfaceHighlight,
                       width: isDark ? 1.0 : 1.35,
                     ),
                   ),
@@ -1805,7 +1855,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                 child: GestureDetector(
                   onTapDown: (_) => setState(() => _resetButtonPressed = true),
                   onTapUp: (_) => setState(() => _resetButtonPressed = false),
-                  onTapCancel: () => setState(() => _resetButtonPressed = false),
+                  onTapCancel: () =>
+                      setState(() => _resetButtonPressed = false),
                   onTap: _resetTimer,
                   child: Stack(
                     clipBehavior: Clip.none,
@@ -1836,7 +1887,11 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                               end: Alignment.bottomRight,
                               colors: _resetButtonPressed
                                   ? const [Color(0xFF2B2B2B), Color(0xFF161616)]
-                                  : const [Color(0xFF4A4A4A), Color(0xFF2B2B2B), Color(0xFF1F1F1F)],
+                                  : const [
+                                      Color(0xFF4A4A4A),
+                                      Color(0xFF2B2B2B),
+                                      Color(0xFF1F1F1F),
+                                    ],
                             ),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.18),
@@ -1857,7 +1912,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                             ),
                             child: Center(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
                                 child: FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(
@@ -1915,18 +1972,16 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                     decoration: BoxDecoration(
                       border: i == 0
                           ? null
-                          : Border(
-                              top: BorderSide(
-                                color: colors.outline,
-                              ),
-                            ),
+                          : Border(top: BorderSide(color: colors.outline)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           '#${i + 1}',
-                          style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                          style: textStyles.bodySmall?.copyWith(
+                            color: colors.secondary,
+                          ),
                         ),
                         Text(
                           _formatDuration(_shotTimes[i]),
@@ -1944,7 +1999,10 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
           // doesn't stop flush against the bottom edge.
           const Gap(AppSpacing.xl),
 
-          if (!_running && _finished && _shotTimes.length >= 2 && stats != null) ...[
+          if (!_running &&
+              _finished &&
+              _shotTimes.length >= 2 &&
+              stats != null) ...[
             _StatsPanel(
               stats: stats,
               strings: strings,
@@ -2007,7 +2065,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
               if (_showRunPanel) const Gap(AppSpacing.sm),
               Expanded(
                 child: Row(
-                  mainAxisAlignment: _showRunPanel ? MainAxisAlignment.center : MainAxisAlignment.start,
+                  mainAxisAlignment: _showRunPanel
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
                   children: [
                     Flexible(
                       child: Text(
@@ -2023,13 +2083,20 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                       message: strings.timerToolSubtitle,
                       triggerMode: TooltipTriggerMode.tap,
                       showDuration: const Duration(seconds: 4),
-                      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: colors.onSurface.withValues(alpha: 0.88),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      textStyle: textStyles.bodySmall?.copyWith(color: colors.surface),
+                      textStyle: textStyles.bodySmall?.copyWith(
+                        color: colors.surface,
+                      ),
                       child: Icon(
                         Icons.info_outline_rounded,
                         size: 18,
@@ -2118,10 +2185,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
     );
 
     if (widget.embedded) {
-      return Container(
-        color: baseBackground,
-        child: content,
-      );
+      return Container(color: baseBackground, child: content);
     }
 
     return AnimatedContainer(
@@ -2143,7 +2207,8 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
     required TextTheme textStyles,
   }) {
     final selected = _mode == mode;
-    final showMic = mode == _TimerMode.startAndMic || mode == _TimerMode.startAndShots;
+    final showMic =
+        mode == _TimerMode.startAndMic || mode == _TimerMode.startAndShots;
     final micColor = selected ? colors.onPrimary : colors.primary;
     final labelColor = selected
         ? colors.onPrimary
@@ -2163,7 +2228,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
       // - Not requested on app launch
       // - Not requested for non-microphone modes
       // - Denial keeps the feature unavailable without blocking the rest of the app
-      if ((mode == _TimerMode.startAndMic || mode == _TimerMode.startAndShots) && _mode != mode) {
+      if ((mode == _TimerMode.startAndMic ||
+              mode == _TimerMode.startAndShots) &&
+          _mode != mode) {
         // Check current OS permission status. On iOS, permission_handler is
         // known to return a transient wrong status right after `.request()`
         // (even when the user tapped "Allow"). We therefore only use
@@ -2230,11 +2297,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (showMic) ...[
-                  Icon(
-                    Icons.mic_rounded,
-                    size: 16,
-                    color: micColor,
-                  ),
+                  Icon(Icons.mic_rounded, size: 16, color: micColor),
                   const Gap(6),
                 ],
                 Text(
@@ -2321,7 +2384,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                     if (unitSuffix.isNotEmpty)
                       Text(
                         unitSuffix,
-                        style: textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                        style: textStyles.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                   ],
                 ),
@@ -2360,19 +2425,11 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
       onChanged(clamped);
     }
 
-    const iconConstraints = BoxConstraints(
-      minWidth: 36,
-      minHeight: 36,
-    );
+    const iconConstraints = BoxConstraints(minWidth: 36, minHeight: 36);
 
     return Row(
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: textStyles.bodyMedium,
-          ),
-        ),
+        Expanded(child: Text(label, style: textStyles.bodyMedium)),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -2402,9 +2459,12 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                           textAlign: TextAlign.center,
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.done,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          style: textStyles.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          style: textStyles.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                           decoration: const InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
@@ -2420,8 +2480,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
                     if (unitSuffix.isNotEmpty)
                       Text(
                         unitSuffix,
-                        style: textStyles.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: textStyles.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                   ],
                 ),
@@ -2501,11 +2562,20 @@ class _StatsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _statRow(strings.timerStatsTotalTime, formatDuration(stats.totalTime)),
+          _statRow(
+            strings.timerStatsTotalTime,
+            formatDuration(stats.totalTime),
+          ),
           const Gap(AppSpacing.sm),
-          _statRow(strings.timerStatsFirstShot, formatDuration(stats.firstShot)),
+          _statRow(
+            strings.timerStatsFirstShot,
+            formatDuration(stats.firstShot),
+          ),
           const Gap(AppSpacing.sm),
-          _statRow(strings.timerStatsSplitAverage, formatDuration(stats.splitAverage)),
+          _statRow(
+            strings.timerStatsSplitAverage,
+            formatDuration(stats.splitAverage),
+          ),
           const Gap(AppSpacing.sm),
           _statRow(strings.timerStatsSplitMin, formatDuration(stats.splitMin)),
           const Gap(AppSpacing.sm),
@@ -2586,11 +2656,7 @@ class _HitFactorPanelState extends State<_HitFactorPanel> {
     final coefD = _isMajor ? 2 : 1;
 
     final score =
-        (_a * coefA) +
-        (_c * coefC) +
-        (_d * coefD) +
-        (_m * -10) +
-        (_ns * -10);
+        (_a * coefA) + (_c * coefC) + (_d * coefD) + (_m * -10) + (_ns * -10);
 
     final totalSeconds =
         widget.totalTime.inMicroseconds / Duration.microsecondsPerSecond;
@@ -2614,7 +2680,9 @@ class _HitFactorPanelState extends State<_HitFactorPanel> {
       children: [
         FilledButton.icon(
           onPressed: () => setState(() => _expanded = !_expanded),
-          icon: Icon(_expanded ? Icons.expand_less_rounded : Icons.calculate_rounded),
+          icon: Icon(
+            _expanded ? Icons.expand_less_rounded : Icons.calculate_rounded,
+          ),
           label: Text(widget.strings.hitFactorOpenButton),
         ),
         AnimatedSwitcher(
@@ -2622,11 +2690,18 @@ class _HitFactorPanelState extends State<_HitFactorPanel> {
           switchInCurve: Curves.easeOut,
           switchOutCurve: Curves.easeOut,
           transitionBuilder: (child, animation) {
-            final curved = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            );
             return ClipRect(
               child: Align(
                 alignment: Alignment.topCenter,
-                child: SizeTransition(sizeFactor: curved, axisAlignment: -1.0, child: child),
+                child: SizeTransition(
+                  sizeFactor: curved,
+                  axisAlignment: -1.0,
+                  child: child,
+                ),
               ),
             );
           },
@@ -2826,7 +2901,9 @@ class _DecimalFieldState extends State<_DecimalField> {
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           ],
-          style: widget.textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: widget.textStyles.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
           decoration: const InputDecoration(
             isDense: true,
             contentPadding: EdgeInsets.zero,

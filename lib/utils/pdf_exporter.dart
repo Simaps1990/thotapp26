@@ -660,13 +660,11 @@ static Future<void> exportAll(ThotProvider provider, {PdfExportOptions options =
     final localeTag = (provider.appLocale ?? const Locale('fr')).toLanguageTag();
     final exportDate = _formatDateForLocaleTag(localeTag, now);
     
-    // Compute hash and serial if authentication is enabled
+    // Compute hash if authentication is enabled
     String? hash;
-    String? serial;
     if (options.includeAuth) {
       final data = _buildExportData(provider, options);
       hash = DocumentHash.compute(data);
-      serial = now.microsecondsSinceEpoch.toString();
     }
     
     final doc = pw.Document(
@@ -677,7 +675,7 @@ static Future<void> exportAll(ThotProvider provider, {PdfExportOptions options =
     );
 
     // 1. Page de couverture
-    doc.addPage(_coverPage(provider, exportDate, localeTag, hash: hash, serial: serial));
+    doc.addPage(_coverPage(provider, exportDate, localeTag));
 
 // 2. Plateformes
     if (options.includePlatforms && provider.platforms.isNotEmpty) {
@@ -762,7 +760,7 @@ if (options.includeSessions && provider.sessions.isNotEmpty) {
 
   // ─── Cover page ─────────────────────────────────────────────────────────────
 
-  static pw.Page _coverPage(ThotProvider provider, String exportDate, String localeTag, {String? hash, String? serial}) => pw.Page(
+  static pw.Page _coverPage(ThotProvider provider, String exportDate, String localeTag) => pw.Page(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(0),
         build: (ctx) => pw.Column(

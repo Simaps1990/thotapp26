@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/data/exercise_step.dart';
 import 'package:thot/data/thot_provider.dart';
+import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/exercise_display.dart';
 import 'package:thot/utils/unit_converter.dart';
 
@@ -12,32 +13,40 @@ String generateExerciseShareText({
   required ThotProvider provider,
   required UnitConverter converter,
 }) {
+  final strings = AppStrings.of(context);
   final platformName = platformDisplayName(context, provider, exercise);
   final ammoName = ammoDisplayName(context, provider, exercise);
   final target = (exercise.targetName ?? '').trim();
+  final exerciseName = exercise.name.trim().isEmpty
+      ? strings.exerciseShareUnnamed
+      : exercise.name.trim();
 
   if (exercise.steps == null || exercise.steps!.isEmpty) {
     final buffer = StringBuffer();
-    buffer.writeln('⚡ EXERCICE — ${exercise.name.trim().isEmpty ? 'Sans nom' : exercise.name.trim()}');
+    buffer.writeln('${strings.exerciseShareSimpleHeader} — $exerciseName');
     buffer.writeln('📅 ${session.date.toLocal()} · ${session.sessionType}');
-    buffer.writeln('🔫 $platformName · $ammoName${target.isEmpty ? '' : ' · $target'}');
+    buffer.writeln(
+      '🔫 $platformName · $ammoName${target.isEmpty ? '' : ' · $target'}',
+    );
     buffer.writeln();
-    buffer.writeln('Mode simple : ${exercise.shotsFired} coups · ${converter.formatDistance(exercise.distance)}');
+    buffer.writeln(
+      '${strings.exerciseShareSimpleMode} : ${strings.exerciseShareShots(exercise.shotsFired)} · ${converter.formatDistance(exercise.distance)}',
+    );
     if (exercise.observations.trim().isNotEmpty) {
       buffer.writeln('💬 ${exercise.observations.trim()}');
     }
     buffer.writeln();
-    buffer.writeln('✅ Partagé via THOT');
+    buffer.writeln(strings.exerciseShareSharedVia);
     return buffer.toString();
   }
 
   final steps = exercise.steps!;
   final buffer = StringBuffer();
-  buffer.writeln('📋 EXERCICE — ${exercise.name.trim().isEmpty ? 'Sans nom' : exercise.name.trim()}');
+  buffer.writeln('${strings.exerciseShareDetailedHeader} — $exerciseName');
   buffer.writeln('📅 ${session.date.toLocal()} · ${session.sessionType}');
   buffer.writeln('🔫 $platformName · $ammoName');
   buffer.writeln();
-  buffer.writeln('Étapes :');
+  buffer.writeln(strings.exerciseShareSteps);
   for (int i = 0; i < steps.length; i++) {
     final st = steps[i];
     final idx = (i + 1).toString().padLeft(2, '0');
@@ -52,18 +61,31 @@ String generateExerciseShareText({
       StepType.autre => '⚙️',
     };
 
-    buffer.writeln('  $icon $idx — ${st.type.name.toUpperCase()}${st.position == null ? '' : ' · ${st.position!.name}'}');
+    final stepLabel = strings.exerciseShareStepTypeLabel(st.type.name);
+    buffer.writeln(
+      '  $icon $idx — $stepLabel${st.position == null ? '' : ' · ${st.position!.name}'}',
+    );
 
     final details = <String>[];
-    if (st.shots != null) details.add('${st.shots} coups');
+    if (st.shots != null) details.add(strings.exerciseShareShots(st.shots!));
     if (st.distanceM != null) details.add('${st.distanceM} m');
-    if ((st.target ?? '').trim().isNotEmpty) details.add('cible ${st.target!.trim()}');
-    if ((st.platformFrom ?? '').trim().isNotEmpty || (st.platformTo ?? '').trim().isNotEmpty) {
-      details.add('de ${st.platformFrom ?? '—'} vers ${st.platformTo ?? '—'}');
+    if ((st.target ?? '').trim().isNotEmpty) {
+      details.add(strings.exerciseShareTarget(st.target!.trim()));
     }
-    if (st.reloadType != null) details.add('rechargement ${st.reloadType!.name}');
+    if ((st.platformFrom ?? '').trim().isNotEmpty ||
+        (st.platformTo ?? '').trim().isNotEmpty) {
+      details.add(strings.exerciseSharePlatformTransfer(
+        st.platformFrom ?? '—',
+        st.platformTo ?? '—',
+      ));
+    }
+    if (st.reloadType != null) {
+      details.add(strings.exerciseShareReload(st.reloadType!.name));
+    }
     if (st.durationSeconds != null) details.add('${st.durationSeconds} s');
-    if ((st.trigger ?? '').trim().isNotEmpty) details.add('déclencheur: ${st.trigger!.trim()}');
+    if ((st.trigger ?? '').trim().isNotEmpty) {
+      details.add(strings.exerciseShareTrigger(st.trigger!.trim()));
+    }
 
     if (details.isNotEmpty) {
       buffer.writeln('    ${details.join(' · ')}');
@@ -75,9 +97,11 @@ String generateExerciseShareText({
 
   final maxDist = exercise.detailedMaxDistance ?? 0;
   buffer.writeln();
-  buffer.writeln('📊 Total : ${exercise.detailedTotalShots} coups · ${steps.length} étapes · $maxDist m');
+  buffer.writeln(
+    '📊 ${strings.exerciseShareTotalShots} : ${strings.exerciseShareShots(exercise.detailedTotalShots)} · ${strings.exerciseShareTotalSteps(steps.length)} · $maxDist m',
+  );
   buffer.writeln();
-  buffer.writeln('✅ Partagé via THOT');
+  buffer.writeln(strings.exerciseShareSharedVia);
 
   return buffer.toString();
 }

@@ -1,6 +1,6 @@
 # Thot
 
-Application Flutter.
+Application Flutter — carnet de tir (`fr.thotbook.app`).
 
 ## Prérequis
 
@@ -22,13 +22,60 @@ flutter test
 
 ## RevenueCat (mobile uniquement)
 
-La clé RevenueCat est fournie via une variable de compilation.
+La clé RevenueCat est injectée via la configuration native (et non via
+`--dart-define`).
 
-```bash
-flutter run --dart-define=REVENUECAT_API_KEY=YOUR_KEY
+### iOS
+
+Crée le fichier `ios/Flutter/Secrets.xcconfig` (gitignoré) :
+
+```
+REVENUECAT_API_KEY=appl_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-En `debug`, si la clé n'est pas fournie, l'app continue de fonctionner mais les achats ne seront pas configurés.
+Le fichier est lu au build par `Info.plist` qui interpole `$(REVENUECAT_API_KEY)`,
+puis exposé à Dart via le canal natif `thot/config` (méthode
+`getRevenueCatApiKey`).
+
+### Android
+
+Crée le fichier `android/key.properties` (gitignoré) avec :
+
+```
+revenueCatApiKey=goog_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+storeFile=...
+storePassword=...
+keyAlias=...
+keyPassword=...
+```
+
+La clé est exposée via `BuildConfig.REVENUECAT_API_KEY` puis lue par Dart
+via le même canal natif `thot/config`.
+
+### Comportement debug sans clé
+
+Si la clé est absente, l'app continue de fonctionner mais les achats ne sont
+pas configurés (un message d'avertissement s'affiche dans la console).
+
+## Build release
+
+### iOS
+
+```bash
+flutter build ipa --release
+```
+
+Avec deployment target iOS 17.0 minimum.
+
+### Android
+
+```bash
+flutter build appbundle --release
+```
+
+R8 / ProGuard sont activés. Si le build échoue avec une
+`ClassNotFoundException`, ajoute une règle `-keep` dans
+`android/app/proguard-rules.pro`.
 
 ## Stockage des données
 

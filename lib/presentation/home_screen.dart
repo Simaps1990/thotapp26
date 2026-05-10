@@ -36,12 +36,15 @@ enum _AlertType { wear, fouling, stock, document }
 
 class _MaintenanceAlert {
   final String id;
+
   /// platformId, ammoId, or itemId depending on type
   final String itemId;
   final String itemName;
   final _AlertType type;
+
   /// progress 0.0–1.0 for wear/fouling/stock, daysRemaining for document
   final double progress;
+
   /// Only for document alerts
   final String? documentName;
   final int? daysRemaining;
@@ -61,24 +64,27 @@ class _MaintenanceAlert {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'itemId': itemId,
-        'itemName': itemName,
-        'type': type.name,
-        'progress': progress,
-        if (documentName != null) 'documentName': documentName,
-        if (daysRemaining != null) 'daysRemaining': daysRemaining,
-        'isRead': isRead,
-        'isDeleted': isDeleted,
-      };
+    'id': id,
+    'itemId': itemId,
+    'itemName': itemName,
+    'type': type.name,
+    'progress': progress,
+    if (documentName != null) 'documentName': documentName,
+    if (daysRemaining != null) 'daysRemaining': daysRemaining,
+    'isRead': isRead,
+    'isDeleted': isDeleted,
+  };
 
   factory _MaintenanceAlert.fromJson(Map<String, dynamic> j) =>
       _MaintenanceAlert(
         id: j['id'] as String,
         itemId: j['itemId'] as String? ?? j['platformId'] as String? ?? '',
-        itemName: j['itemName'] as String? ?? j['platformName'] as String? ?? '',
-        type: _AlertType.values.firstWhere((e) => e.name == j['type'],
-            orElse: () => _AlertType.wear),
+        itemName:
+            j['itemName'] as String? ?? j['platformName'] as String? ?? '',
+        type: _AlertType.values.firstWhere(
+          (e) => e.name == j['type'],
+          orElse: () => _AlertType.wear,
+        ),
         progress: (j['progress'] as num).toDouble(),
         documentName: j['documentName'] as String?,
         daysRemaining: j['daysRemaining'] as int?,
@@ -98,9 +104,9 @@ void _showReflexesModal(BuildContext context) {
 
 void _showAudioStimuliComingSoon(BuildContext context) {
   final strings = AppStrings.of(context);
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(strings.toolComingSoon)),
-  );
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(strings.toolComingSoon)));
 }
 
 void _showCalculationToolsModal(BuildContext context) {
@@ -146,6 +152,7 @@ void _showTimerModal(BuildContext context) {
     builder: (context) => const ShootingTimerScreen(),
   );
 }
+
 void _showAchievementsModal(BuildContext context) {
   final baseBackground = Theme.of(context).scaffoldBackgroundColor;
   showModalBottomSheet(
@@ -297,8 +304,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<_MaintenanceAlert> _alerts = [];
   static const _prefKey = 'maintenance_alerts_v1';
   static const _deletedPrefKey = 'maintenance_alerts_deleted_v1';
-  static const _tutorialNeverShowAgainKey =
-      'home_tutorial_never_show_again_v1';
+  static const _tutorialNeverShowAgainKey = 'home_tutorial_never_show_again_v1';
+  static bool _hasShownDevSnackbar = false;
 
   bool _isOnline = true;
   // ignore: cancel_subscriptions
@@ -314,15 +321,35 @@ class _HomeScreenState extends State<HomeScreen> {
       _initConnectivity();
       _loadTrainingHistory();
       _checkAndShowTutorial();
+      _checkDevLimitsFlag();
     });
     TrainingHistory.updates.addListener(_onTrainingHistoryUpdate);
+  }
+
+  void _checkDevLimitsFlag() {
+    if (!mounted || _hasShownDevSnackbar) return;
+    final provider = context.read<ThotProvider>();
+    if (provider.isFreeLimitsDisabled) {
+      _hasShownDevSnackbar = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Limites d'usage désactivées (dev flag ON)",
+            style: const TextStyle(fontSize: 12),
+          ),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   Future<void> _checkAndShowTutorial() async {
     if (_tutorialDismissedThisSession) return;
     final prefs = await SharedPreferences.getInstance();
-    final neverShowAgain =
-        prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
+    final neverShowAgain = prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
     if (!neverShowAgain && mounted && _tutorialOverlayEntry == null) {
       _showTutorial();
     }
@@ -404,14 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _statsKey,
       _rewardsKey,
     ];
-    final stepAlignments = <double>[
-      0.12,
-      0.12,
-      0.12,
-      0.05,
-      0.12,
-      0.12,
-    ];
+    final stepAlignments = <double>[0.12, 0.12, 0.12, 0.05, 0.12, 0.12];
     if (stepIndex < 0 || stepIndex >= stepKeys.length) return;
 
     final contextForStep = stepKeys[stepIndex].currentContext;
@@ -472,7 +492,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isOnline = !result.contains(ConnectivityResult.none));
     }
     // Stream for subsequent changes — uses OS APIs, no network request
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      results,
+    ) {
       if (mounted) {
         setState(() => _isOnline = !results.contains(ConnectivityResult.none));
       }
@@ -533,21 +555,31 @@ class _HomeScreenState extends State<HomeScreen> {
       if (w.trackCleanliness && w.cleaningProgress >= 0.8) {
         final id = '${w.id}_fouling';
         if (!deleted.contains(id)) {
-          fresh.add(_MaintenanceAlert(
-            id: id, itemId: w.id, itemName: w.name,
-            type: _AlertType.fouling, progress: w.cleaningProgress,
-            isRead: saved[id] ?? false,
-          ));
+          fresh.add(
+            _MaintenanceAlert(
+              id: id,
+              itemId: w.id,
+              itemName: w.name,
+              type: _AlertType.fouling,
+              progress: w.cleaningProgress,
+              isRead: saved[id] ?? false,
+            ),
+          );
         }
       }
       if (w.trackWear && w.revisionProgress >= 0.8) {
         final id = '${w.id}_wear';
         if (!deleted.contains(id)) {
-          fresh.add(_MaintenanceAlert(
-            id: id, itemId: w.id, itemName: w.name,
-            type: _AlertType.wear, progress: w.revisionProgress,
-            isRead: saved[id] ?? false,
-          ));
+          fresh.add(
+            _MaintenanceAlert(
+              id: id,
+              itemId: w.id,
+              itemName: w.name,
+              type: _AlertType.wear,
+              progress: w.revisionProgress,
+              isRead: saved[id] ?? false,
+            ),
+          );
         }
       }
       // Document expiry alerts for platforms
@@ -557,12 +589,18 @@ class _HomeScreenState extends State<HomeScreen> {
           if (days <= doc.notifyBeforeDays) {
             final id = '${w.id}_doc_${doc.path.hashCode}';
             if (!deleted.contains(id)) {
-              fresh.add(_MaintenanceAlert(
-                id: id, itemId: w.id, itemName: w.name,
-                type: _AlertType.document, progress: 0,
-                documentName: doc.name, daysRemaining: days,
-                isRead: saved[id] ?? false,
-              ));
+              fresh.add(
+                _MaintenanceAlert(
+                  id: id,
+                  itemId: w.id,
+                  itemName: w.name,
+                  type: _AlertType.document,
+                  progress: 0,
+                  documentName: doc.name,
+                  daysRemaining: days,
+                  isRead: saved[id] ?? false,
+                ),
+              );
             }
           }
         }
@@ -579,16 +617,24 @@ class _HomeScreenState extends State<HomeScreen> {
         if (rawInitial <= threshold) {
           criticality = current <= threshold ? 1.0 : 0.0;
         } else {
-          criticality = (1.0 - ((current - threshold) / (rawInitial - threshold))).clamp(0.0, 1.0).clamp(0.0, 1.0);
+          criticality =
+              (1.0 - ((current - threshold) / (rawInitial - threshold)))
+                  .clamp(0.0, 1.0)
+                  .clamp(0.0, 1.0);
         }
         if (criticality >= 0.8) {
           final id = '${a.id}_stock';
           if (!deleted.contains(id)) {
-            fresh.add(_MaintenanceAlert(
-              id: id, itemId: a.id, itemName: a.name,
-              type: _AlertType.stock, progress: criticality,
-              isRead: saved[id] ?? false,
-            ));
+            fresh.add(
+              _MaintenanceAlert(
+                id: id,
+                itemId: a.id,
+                itemName: a.name,
+                type: _AlertType.stock,
+                progress: criticality,
+                isRead: saved[id] ?? false,
+              ),
+            );
           }
         }
       }
@@ -599,12 +645,18 @@ class _HomeScreenState extends State<HomeScreen> {
           if (days <= doc.notifyBeforeDays) {
             final id = '${a.id}_doc_${doc.path.hashCode}';
             if (!deleted.contains(id)) {
-              fresh.add(_MaintenanceAlert(
-                id: id, itemId: a.id, itemName: a.name,
-                type: _AlertType.document, progress: 0,
-                documentName: doc.name, daysRemaining: days,
-                isRead: saved[id] ?? false,
-              ));
+              fresh.add(
+                _MaintenanceAlert(
+                  id: id,
+                  itemId: a.id,
+                  itemName: a.name,
+                  type: _AlertType.document,
+                  progress: 0,
+                  documentName: doc.name,
+                  daysRemaining: days,
+                  isRead: saved[id] ?? false,
+                ),
+              );
             }
           }
         }
@@ -616,21 +668,31 @@ class _HomeScreenState extends State<HomeScreen> {
       if (acc.trackCleanliness && acc.cleaningProgress >= 0.8) {
         final id = '${acc.id}_fouling';
         if (!deleted.contains(id)) {
-          fresh.add(_MaintenanceAlert(
-            id: id, itemId: acc.id, itemName: acc.name,
-            type: _AlertType.fouling, progress: acc.cleaningProgress,
-            isRead: saved[id] ?? false,
-          ));
+          fresh.add(
+            _MaintenanceAlert(
+              id: id,
+              itemId: acc.id,
+              itemName: acc.name,
+              type: _AlertType.fouling,
+              progress: acc.cleaningProgress,
+              isRead: saved[id] ?? false,
+            ),
+          );
         }
       }
       if (acc.trackWear && acc.revisionProgress >= 0.8) {
         final id = '${acc.id}_wear';
         if (!deleted.contains(id)) {
-          fresh.add(_MaintenanceAlert(
-            id: id, itemId: acc.id, itemName: acc.name,
-            type: _AlertType.wear, progress: acc.revisionProgress,
-            isRead: saved[id] ?? false,
-          ));
+          fresh.add(
+            _MaintenanceAlert(
+              id: id,
+              itemId: acc.id,
+              itemName: acc.name,
+              type: _AlertType.wear,
+              progress: acc.revisionProgress,
+              isRead: saved[id] ?? false,
+            ),
+          );
         }
       }
       for (final doc in acc.documents) {
@@ -639,12 +701,18 @@ class _HomeScreenState extends State<HomeScreen> {
           if (days <= doc.notifyBeforeDays) {
             final id = '${acc.id}_doc_${doc.path.hashCode}';
             if (!deleted.contains(id)) {
-              fresh.add(_MaintenanceAlert(
-                id: id, itemId: acc.id, itemName: acc.name,
-                type: _AlertType.document, progress: 0,
-                documentName: doc.name, daysRemaining: days,
-                isRead: saved[id] ?? false,
-              ));
+              fresh.add(
+                _MaintenanceAlert(
+                  id: id,
+                  itemId: acc.id,
+                  itemName: acc.name,
+                  type: _AlertType.document,
+                  progress: 0,
+                  documentName: doc.name,
+                  daysRemaining: days,
+                  isRead: saved[id] ?? false,
+                ),
+              );
             }
           }
         }
@@ -658,16 +726,18 @@ class _HomeScreenState extends State<HomeScreen> {
         if (days <= doc.notifyBeforeDays) {
           final id = 'global_doc_${doc.id}';
           if (!deleted.contains(id)) {
-            fresh.add(_MaintenanceAlert(
-              id: id,
-              itemId: 'global',
-              itemName: doc.name,
-              type: _AlertType.document,
-              progress: 0,
-              documentName: doc.name,
-              daysRemaining: days,
-              isRead: saved[id] ?? false,
-            ));
+            fresh.add(
+              _MaintenanceAlert(
+                id: id,
+                itemId: 'global',
+                itemName: doc.name,
+                type: _AlertType.document,
+                progress: 0,
+                documentName: doc.name,
+                daysRemaining: days,
+                isRead: saved[id] ?? false,
+              ),
+            );
           }
         }
       }
@@ -679,19 +749,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _saveAlerts() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKey, jsonEncode(_alerts.map((a) => a.toJson()).toList()));
+    await prefs.setString(
+      _prefKey,
+      jsonEncode(_alerts.map((a) => a.toJson()).toList()),
+    );
   }
 
-  int get _unreadCount => _alerts.where((a) => !a.isRead && !a.isDeleted).length;
+  int get _unreadCount =>
+      _alerts.where((a) => !a.isRead && !a.isDeleted).length;
 
   void _markRead(String id) {
-    setState(() { for (final a in _alerts) { if (a.id == id) a.isRead = true; } });
+    setState(() {
+      for (final a in _alerts) {
+        if (a.id == id) a.isRead = true;
+      }
+    });
     _saveAlerts();
     _overlayEntry?.markNeedsBuild();
   }
 
   void _markAllRead() {
-    setState(() { for (final a in _alerts) { a.isRead = true; } });
+    setState(() {
+      for (final a in _alerts) {
+        a.isRead = true;
+      }
+    });
     _saveAlerts();
     _overlayEntry?.markNeedsBuild();
   }
@@ -728,7 +810,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _togglePanel() {
-    if (_overlayEntry != null) { _closePanel(); } else { _openPanel(); }
+    if (_overlayEntry != null) {
+      _closePanel();
+    } else {
+      _openPanel();
+    }
   }
 
   void _openPanel() {
@@ -770,24 +856,47 @@ class _HomeScreenState extends State<HomeScreen> {
     return BoxDecoration(
       color: colors.surface,
       borderRadius: BorderRadius.circular(radius),
-      border: isDark ? null : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
+      border: isDark
+          ? null
+          : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
       boxShadow: AppShadows.cardPremium,
     );
   }
 
-  Widget _buildSectionTitle({required String title, required TextTheme textStyles, required ColorScheme colors}) {
-    return Text(title, style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: colors.secondary));
+  Widget _buildSectionTitle({
+    required String title,
+    required TextTheme textStyles,
+    required ColorScheme colors,
+  }) {
+    return Text(
+      title,
+      style: textStyles.titleSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        color: colors.secondary,
+      ),
+    );
   }
 
-  List<Widget> _buildHeaderSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  List<Widget> _buildHeaderSection({
+    required BuildContext context,
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final brightness = Theme.of(context).brightness;
     return [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SvgPicture.asset('assets/images/LOGO.svg', height: 34,
-            colorFilter: ColorFilter.mode(brightness == Brightness.dark ? Colors.white : Colors.black, BlendMode.srcIn)),
+          SvgPicture.asset(
+            'assets/images/LOGO.svg',
+            height: 34,
+            colorFilter: ColorFilter.mode(
+              brightness == Brightness.dark ? Colors.white : Colors.black,
+              BlendMode.srcIn,
+            ),
+          ),
           _ProCornerButton(
             key: _bellKey,
             isPremium: provider.isPremium,
@@ -808,7 +917,9 @@ class _HomeScreenState extends State<HomeScreen> {
     required TextTheme textStyles,
   }) {
     final strings = AppStrings.of(context);
-    final hasTrackedPlatform = provider.platforms.any((w) => w.trackWear || w.trackCleanliness);
+    final hasTrackedPlatform = provider.platforms.any(
+      (w) => w.trackWear || w.trackCleanliness,
+    );
     final hasTrackedAmmo = provider.ammos.any((a) => a.trackStock);
     final hasTrackedAccessory = provider.accessories.any(
       (a) => a.trackWear || a.trackCleanliness,
@@ -838,8 +949,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Gap(9),
             shouldShowMaintenanceInvite
-                ? _buildIndicatorsPlaceholderCard(colors: colors, textStyles: textStyles)
-                : _buildMaintenanceIndicatorsCard(provider: provider, colors: colors, textStyles: textStyles),
+                ? _buildIndicatorsPlaceholderCard(
+                    colors: colors,
+                    textStyles: textStyles,
+                  )
+                : _buildMaintenanceIndicatorsCard(
+                    provider: provider,
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
           ],
         ),
       ),
@@ -864,10 +982,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 'assets/images/material.svg',
                 width: 24,
                 height: 24,
-                colorFilter: ColorFilter.mode(
-                  colors.primary,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
               ),
             ),
           ),
@@ -886,7 +1001,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Gap(4),
                 Text(
                   strings.homeIndicatorsPlaceholderSubtitle,
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ],
             ),
@@ -932,7 +1049,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Gap(4),
                 Text(
                   strings.homeStatsPlaceholderSubtitle,
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ],
             ),
@@ -977,7 +1096,12 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-  Widget _buildAchievementsButton({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  Widget _buildAchievementsButton({
+    required BuildContext context,
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final strings = AppStrings.of(context);
     return _HomeStandardActionCard(
       leading: ShaderMask(
@@ -985,20 +1109,35 @@ class _HomeScreenState extends State<HomeScreen> {
           const base = Color(0xFFC2A14A);
           final light = Color.lerp(base, Colors.white, 0.35) ?? base;
           final dark = Color.lerp(base, Colors.black, 0.15) ?? base;
-          return LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [light, base, dark], stops: const [0.0, 0.55, 1.0]).createShader(bounds);
+          return LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [light, base, dark],
+            stops: const [0.0, 0.55, 1.0],
+          ).createShader(bounds);
         },
         blendMode: BlendMode.srcIn,
-        child: const Icon(Icons.emoji_events_rounded, color: Colors.white, size: 24),
+        child: const Icon(
+          Icons.emoji_events_rounded,
+          color: Colors.white,
+          size: 24,
+        ),
       ),
       title: strings.homeTrophiesTitle,
-      subtitle: strings.homeTrophiesUnlocked(unlockedAchievementsCount(provider)),
+      subtitle: strings.homeTrophiesUnlocked(
+        unlockedAchievementsCount(provider),
+      ),
       onTap: () => _showAchievementsModal(context),
       colors: colors,
       textStyles: textStyles,
     );
   }
 
-  List<Widget> _buildPrecisionChartSection({required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  List<Widget> _buildPrecisionChartSection({
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final strings = AppStrings.of(context);
     if (provider.sessions.isEmpty) return const [];
     return [
@@ -1007,91 +1146,230 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-          Text(strings.homePrecisionTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
-          PopupMenuButton<_PrecisionRange>(
-            initialValue: _precisionRange,
-            tooltip: strings.homePrecisionFilterTooltip,
-            onSelected: (v) => setState(() => _precisionRange = v),
-            itemBuilder: (context) => [
-              PopupMenuItem(value: _PrecisionRange.day, child: Text(strings.precisionFilterDayLong)),
-              PopupMenuItem(value: _PrecisionRange.week, child: Text(strings.precisionFilterWeekLong)),
-              PopupMenuItem(value: _PrecisionRange.month, child: Text(strings.precisionFilterMonthLong)),
-              PopupMenuItem(value: _PrecisionRange.year, child: Text(strings.precisionFilterYearLong)),
-              PopupMenuItem(value: _PrecisionRange.total, child: Text(strings.precisionFilterTotalLong)),
-            ],
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(_precisionRange.labelForLocale(strings), style: textStyles.labelLarge?.copyWith(color: colors.secondary, fontWeight: FontWeight.w700)),
-              const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down_rounded, color: colors.secondary, size: 20),
-            ]),
-          ),
-        ],
-      ),
+            Text(
+              strings.homePrecisionTitle,
+              style: textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.secondary,
+              ),
+            ),
+            PopupMenuButton<_PrecisionRange>(
+              initialValue: _precisionRange,
+              tooltip: strings.homePrecisionFilterTooltip,
+              onSelected: (v) => setState(() => _precisionRange = v),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: _PrecisionRange.day,
+                  child: Text(strings.precisionFilterDayLong),
+                ),
+                PopupMenuItem(
+                  value: _PrecisionRange.week,
+                  child: Text(strings.precisionFilterWeekLong),
+                ),
+                PopupMenuItem(
+                  value: _PrecisionRange.month,
+                  child: Text(strings.precisionFilterMonthLong),
+                ),
+                PopupMenuItem(
+                  value: _PrecisionRange.year,
+                  child: Text(strings.precisionFilterYearLong),
+                ),
+                PopupMenuItem(
+                  value: _PrecisionRange.total,
+                  child: Text(strings.precisionFilterTotalLong),
+                ),
+              ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _precisionRange.labelForLocale(strings),
+                    style: textStyles.labelLarge?.copyWith(
+                      color: colors.secondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: colors.secondary,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       const Gap(9),
-      Builder(builder: (context) {
-        final now = DateTime.now();
-        final sessionsWithPrecision = provider.sessions.where((s) => s.exercises.any((e) => e.isPrecisionCounted)).toList()..sort((a, b) => a.date.compareTo(b.date));
-        final duration = _precisionRange.duration;
-        final filteredSessions = duration == null ? sessionsWithPrecision : sessionsWithPrecision.where((s) => s.date.isAfter(now.subtract(duration))).toList();
-        final spots = <FlSpot>[];
-        for (int i = 0; i < filteredSessions.length; i++) {
-          spots.add(FlSpot(i.toDouble(), filteredSessions[i].averagePrecision));
-        }
-        final allPrecisions = filteredSessions.map((s) => s.averagePrecision).toList();
-        final avgPrecision = allPrecisions.isEmpty ? 0 : allPrecisions.reduce((a, b) => a + b) / allPrecisions.length;
-        final maxPrecision = allPrecisions.isEmpty ? 0 : allPrecisions.reduce((a, b) => a > b ? a : b);
+      Builder(
+        builder: (context) {
+          final now = DateTime.now();
+          final sessionsWithPrecision =
+              provider.sessions
+                  .where((s) => s.exercises.any((e) => e.isPrecisionCounted))
+                  .toList()
+                ..sort((a, b) => a.date.compareTo(b.date));
+          final duration = _precisionRange.duration;
+          final filteredSessions = duration == null
+              ? sessionsWithPrecision
+              : sessionsWithPrecision
+                    .where((s) => s.date.isAfter(now.subtract(duration)))
+                    .toList();
+          final spots = <FlSpot>[];
+          for (int i = 0; i < filteredSessions.length; i++) {
+            spots.add(
+              FlSpot(i.toDouble(), filteredSessions[i].averagePrecision),
+            );
+          }
+          final allPrecisions = filteredSessions
+              .map((s) => s.averagePrecision)
+              .toList();
+          final avgPrecision = allPrecisions.isEmpty
+              ? 0
+              : allPrecisions.reduce((a, b) => a + b) / allPrecisions.length;
+          final maxPrecision = allPrecisions.isEmpty
+              ? 0
+              : allPrecisions.reduce((a, b) => a > b ? a : b);
 
-        String labelForIndex(int index) {
-          if (index < 0 || index >= filteredSessions.length) return '';
-          final d = filteredSessions[index].date;
-          if (_precisionRange == _PrecisionRange.day) return AppDateFormats.formatTimeShort(context, d);
-          if (_precisionRange == _PrecisionRange.total || _precisionRange == _PrecisionRange.year) return AppDateFormats.formatMonthYear(context, d);
-          return AppDateFormats.formatDayMonth(context, d);
-        }
+          String labelForIndex(int index) {
+            if (index < 0 || index >= filteredSessions.length) return '';
+            final d = filteredSessions[index].date;
+            if (_precisionRange == _PrecisionRange.day)
+              return AppDateFormats.formatTimeShort(context, d);
+            if (_precisionRange == _PrecisionRange.total ||
+                _precisionRange == _PrecisionRange.year)
+              return AppDateFormats.formatMonthYear(context, d);
+            return AppDateFormats.formatDayMonth(context, d);
+          }
 
-        return Container(
-          height: 220,
-          padding: AppSpacing.paddingLg,
-          decoration: _hardCardDecoration(colors, radius: 16),
-          child: spots.isEmpty
-              ? Center(child: Text(allPrecisions.isEmpty ? strings.homePrecisionEmpty : '', style: textStyles.bodyMedium?.copyWith(color: colors.secondary), textAlign: TextAlign.center))
-              : Column(children: [
-                  Expanded(child: LineChart(LineChartData(
-                    gridData: FlGridData(show: false),
-                    lineTouchData: LineTouchData(touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (s) => Colors.grey.shade700,
-                      getTooltipItems: (spots) => spots.map((spot) => LineTooltipItem('${spot.y.toStringAsFixed(1)}%\n${labelForIndex(spot.x.toInt())}', const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))).toList(),
-                    )),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1, getTitlesWidget: (value, meta) {
-                        final i = value.toInt();
-                        if (i < 0 || i >= filteredSessions.length) return const SizedBox.shrink();
-                        final count = filteredSessions.length;
-                        final step = count <= 6 ? 1 : (count / 5).ceil();
-                        if (i % step != 0 && i != count - 1) return const SizedBox.shrink();
-                        return Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(labelForIndex(i), style: textStyles.labelSmall, maxLines: 1, overflow: TextOverflow.ellipsis));
-                      })),
+          return Container(
+            height: 220,
+            padding: AppSpacing.paddingLg,
+            decoration: _hardCardDecoration(colors, radius: 16),
+            child: spots.isEmpty
+                ? Center(
+                    child: Text(
+                      allPrecisions.isEmpty ? strings.homePrecisionEmpty : '',
+                      style: textStyles.bodyMedium?.copyWith(
+                        color: colors.secondary,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    borderData: FlBorderData(show: false),
-                    lineBarsData: [LineChartBarData(spots: spots, isCurved: true, color: colors.primary, barWidth: 3, isStrokeCapRound: true, dotData: FlDotData(show: true), belowBarData: BarAreaData(show: true, color: colors.primary.withValues(alpha: 0.1)))],
-                    minY: 0, maxY: 100,
-                  ))),
-                  const Gap(AppSpacing.md),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                    Text('${strings.homePrecisionAvgLabel} ${avgPrecision.toStringAsFixed(0)}%', style: textStyles.labelSmall?.copyWith(color: colors.secondary)),
-                    Text('${strings.homePrecisionMaxLabel} ${maxPrecision.toStringAsFixed(0)}%', style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold)),
-                  ]),
-                ]),
-        );
-      }),
+                  )
+                : Column(
+                    children: [
+                      Expanded(
+                        child: LineChart(
+                          LineChartData(
+                            gridData: FlGridData(show: false),
+                            lineTouchData: LineTouchData(
+                              touchTooltipData: LineTouchTooltipData(
+                                getTooltipColor: (s) => Colors.grey.shade700,
+                                getTooltipItems: (spots) => spots
+                                    .map(
+                                      (spot) => LineTooltipItem(
+                                        '${spot.y.toStringAsFixed(1)}%\n${labelForIndex(spot.x.toInt())}',
+                                        const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 1,
+                                  getTitlesWidget: (value, meta) {
+                                    final i = value.toInt();
+                                    if (i < 0 || i >= filteredSessions.length)
+                                      return const SizedBox.shrink();
+                                    final count = filteredSessions.length;
+                                    final step = count <= 6
+                                        ? 1
+                                        : (count / 5).ceil();
+                                    if (i % step != 0 && i != count - 1)
+                                      return const SizedBox.shrink();
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Text(
+                                        labelForIndex(i),
+                                        style: textStyles.labelSmall,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            borderData: FlBorderData(show: false),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: spots,
+                                isCurved: true,
+                                color: colors.primary,
+                                barWidth: 3,
+                                isStrokeCapRound: true,
+                                dotData: FlDotData(show: true),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: colors.primary.withValues(alpha: 0.1),
+                                ),
+                              ),
+                            ],
+                            minY: 0,
+                            maxY: 100,
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Text(
+                            '${strings.homePrecisionAvgLabel} ${avgPrecision.toStringAsFixed(0)}%',
+                            style: textStyles.labelSmall?.copyWith(
+                              color: colors.secondary,
+                            ),
+                          ),
+                          Text(
+                            '${strings.homePrecisionMaxLabel} ${maxPrecision.toStringAsFixed(0)}%',
+                            style: textStyles.labelSmall?.copyWith(
+                              color: colors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+          );
+        },
+      ),
     ];
   }
 
-  List<Widget> _buildQuickAccessSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  List<Widget> _buildQuickAccessSection({
+    required BuildContext context,
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final strings = AppStrings.of(context);
     return [
       Container(
@@ -1099,325 +1377,522 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(strings.homeQuickAccessTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
+            Text(
+              strings.homeQuickAccessTitle,
+              style: textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.secondary,
+              ),
+            ),
             const Gap(9),
-            Row(children: [
-              for (int i = 0; i < provider.quickActions.length; i++) ...[
-                if (i > 0) const Gap(AppSpacing.sm),
-                Expanded(child: Builder(builder: (context) {
-                  final action = _getQuickAction(context, provider.quickActions[i], provider);
-                  final actionId = provider.quickActions[i];
-                  final key = actionId == 'new_session' ? _newSessionKey : null;
-                  return _QuickActionItem(
-                    key: key,
-                    icon: action['icon'] as Widget,
-                    label: action['label'] as String,
-                    onTap: action['onTap'] as VoidCallback,
-                  );
-                })),
+            Row(
+              children: [
+                for (int i = 0; i < provider.quickActions.length; i++) ...[
+                  if (i > 0) const Gap(AppSpacing.sm),
+                  Expanded(
+                    child: Builder(
+                      builder: (context) {
+                        final action = _getQuickAction(
+                          context,
+                          provider.quickActions[i],
+                          provider,
+                        );
+                        final actionId = provider.quickActions[i];
+                        final key = actionId == 'new_session'
+                            ? _newSessionKey
+                            : null;
+                        return _QuickActionItem(
+                          key: key,
+                          icon: action['icon'] as Widget,
+                          label: action['label'] as String,
+                          onTap: action['onTap'] as VoidCallback,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
-            ]),
+            ),
           ],
         ),
       ),
     ];
   }
 
-  List<Widget> _buildTrainingProgramSection({required BuildContext context, required ColorScheme colors, required TextTheme textStyles}) {
+  List<Widget> _buildTrainingProgramSection({
+    required BuildContext context,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final strings = AppStrings.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasTraining = TrainingHistory.hasAnyTraining();
-    
+
     return [
       Container(
         key: _trainingKey,
         child: Container(
           key: _trainingHighlightKey,
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: 24,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    strings.homeProgramTitle,
-                    style: textStyles.labelLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.secondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Gap(9),
-            GestureDetector(
-              onTap: () {
-                StatefulNavigationShell.of(context).goBranch(2);
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  if (context.mounted) {
-                    context.push('/reflexes');
-                  }
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark
-                      ? colors.outline.withValues(alpha: 0.3)
-                      : LightColors.surfaceHighlight,
-                  width: 1,
-                ),
-                boxShadow: AppShadows.cardPremium,
-                image: DecorationImage(
-                  image: AssetImage(
-                    Theme.of(context).brightness == Brightness.dark
-                        ? 'assets/images/trainn.webp'
-                        : 'assets/images/train.webp',
-                  ),
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  colorFilter: const ColorFilter.mode(
-                    Color.fromRGBO(0, 0, 0, 0.5),
-                    BlendMode.darken,
-                  ),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.md,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 24,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                strings.homeProgramCardTitle,
-                                style: textStyles.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withValues(alpha: 0.5),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (!hasTraining || true) ...[
-                                const Gap(4),
-                                Text(
-                                  strings.homeProgramStartMessage,
-                                  style: textStyles.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.92),
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withValues(alpha: 0.5),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const Gap(AppSpacing.md),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          color: Colors.white.withValues(alpha: 0.85),
-                        ),
-                      ],
-                    ),
-                    const Gap(AppSpacing.md),
-                    Row(
-                      children: List.generate(7, (index) {
-                        final weeklyTraining = TrainingHistory.getWeeklyTraining();
-                        final localeTag = Localizations.localeOf(context).toLanguageTag();
-                        final dayName = DateFormat.E(localeTag).format(
-                          DateTime.now().subtract(Duration(days: 6 - index)),
-                        );
-                        final isTrained =
-                            index < weeklyTraining.length ? weeklyTraining[index] : false;
-                        return Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              right: index < 6 ? AppSpacing.xs : 0,
-                            ),
-                            child: Column(
-                              children: [
-                                AnimatedScale(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.elasticOut,
-                                  scale: isTrained ? 1.05 : 1.0,
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 220),
-                                    curve: Curves.easeOut,
-                                    height: 30,
-                                    decoration: BoxDecoration(
-                                      gradient: isTrained
-                                          ? const LinearGradient(
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                              colors: [
-                                                LightColors.primary,
-                                                Color(0xFF7A9E6B),
-                                              ],
-                                            )
-                                          : null,
-                                      color: isTrained
-                                          ? null
-                                          : Colors.white.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: isTrained
-                                            ? Colors.white.withValues(alpha: 0.75)
-                                            : Colors.white.withValues(alpha: 0.25),
-                                        width: 1,
-                                      ),
-                                      boxShadow: isTrained
-                                          ? [
-                                              BoxShadow(
-                                                color: LightColors.primary.withValues(alpha: 0.4),
-                                                blurRadius: 8,
-                                                spreadRadius: 1,
-                                              ),
-                                            ]
-                                          : null,
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        isTrained
-                                            ? Icons.check_rounded
-                                            : Icons.remove_rounded,
-                                        size: 16,
-                                        color: Colors.white.withValues(
-                                          alpha: isTrained ? 1 : 0.65,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const Gap(4),
-                                Text(
-                                  dayName.substring(0, 2).toUpperCase(),
-                                  style: textStyles.labelSmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
+                    Text(
+                      strings.homeProgramTitle,
+                      style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colors.secondary,
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-            ),
-          ],
-        ),
+              const Gap(9),
+              GestureDetector(
+                onTap: () {
+                  // Switch to the Tools branch and ask ToolsScreen to open the
+                  // "Reflexes" panel automatically. The token forces a re-trigger if
+                  // the user taps the card again while already on /tools.
+                  context.go(
+                    '/tools?open=reflexes&t=${DateTime.now().millisecondsSinceEpoch}',
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? colors.outline.withValues(alpha: 0.3)
+                          : LightColors.surfaceHighlight,
+                      width: 1,
+                    ),
+                    boxShadow: AppShadows.cardPremium,
+                    image: DecorationImage(
+                      image: AssetImage(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? 'assets/images/trainn.webp'
+                            : 'assets/images/train.webp',
+                      ),
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                      colorFilter: const ColorFilter.mode(
+                        Color.fromRGBO(0, 0, 0, 0.5),
+                        BlendMode.darken,
+                      ),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.md,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    strings.homeProgramCardTitle,
+                                    style: textStyles.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (!hasTraining || true) ...[
+                                    const Gap(4),
+                                    Text(
+                                      strings.homeProgramStartMessage,
+                                      style: textStyles.bodySmall?.copyWith(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.92,
+                                        ),
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const Gap(AppSpacing.md),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Row(
+                          children: List.generate(7, (index) {
+                            final weeklyTraining =
+                                TrainingHistory.getWeeklyTraining();
+                            final localeTag = Localizations.localeOf(
+                              context,
+                            ).toLanguageTag();
+                            final dayName = DateFormat.E(localeTag).format(
+                              DateTime.now().subtract(
+                                Duration(days: 6 - index),
+                              ),
+                            );
+                            final isTrained = index < weeklyTraining.length
+                                ? weeklyTraining[index]
+                                : false;
+                            return Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                  right: index < 6 ? AppSpacing.xs : 0,
+                                ),
+                                child: Column(
+                                  children: [
+                                    AnimatedScale(
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      curve: Curves.elasticOut,
+                                      scale: isTrained ? 1.05 : 1.0,
+                                      child: AnimatedContainer(
+                                        duration: const Duration(
+                                          milliseconds: 220,
+                                        ),
+                                        curve: Curves.easeOut,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          gradient: isTrained
+                                              ? const LinearGradient(
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                  colors: [
+                                                    LightColors.primary,
+                                                    Color(0xFF7A9E6B),
+                                                  ],
+                                                )
+                                              : null,
+                                          color: isTrained
+                                              ? null
+                                              : Colors.white.withValues(
+                                                  alpha: 0.15,
+                                                ),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          border: Border.all(
+                                            color: isTrained
+                                                ? Colors.white.withValues(
+                                                    alpha: 0.75,
+                                                  )
+                                                : Colors.white.withValues(
+                                                    alpha: 0.25,
+                                                  ),
+                                            width: 1,
+                                          ),
+                                          boxShadow: isTrained
+                                              ? [
+                                                  BoxShadow(
+                                                    color: LightColors.primary
+                                                        .withValues(alpha: 0.4),
+                                                    blurRadius: 8,
+                                                    spreadRadius: 1,
+                                                  ),
+                                                ]
+                                              : null,
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            isTrained
+                                                ? Icons.check_rounded
+                                                : Icons.remove_rounded,
+                                            size: 16,
+                                            color: Colors.white.withValues(
+                                              alpha: isTrained ? 1 : 0.65,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const Gap(4),
+                                    Text(
+                                      dayName.substring(0, 2).toUpperCase(),
+                                      style: textStyles.labelSmall?.copyWith(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     ];
   }
 
-  Widget _buildMaintenanceIndicatorsCard({required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  Widget _buildMaintenanceIndicatorsCard({
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final strings = AppStrings.of(context);
-    final hasWear = provider.platforms.isNotEmpty && provider.platforms.any((w) => w.trackWear);
-    final hasClean = provider.platforms.isNotEmpty && provider.platforms.any((w) => w.trackCleanliness);
-    final hasAmmo = provider.ammos.isNotEmpty && provider.ammos.any((a) => a.trackStock);
-    final hasAccessoryWear = provider.accessories.isNotEmpty && provider.accessories.any((a) => a.trackWear);
-    final hasAccessoryClean = provider.accessories.isNotEmpty && provider.accessories.any((a) => a.trackCleanliness);
+    final hasWear =
+        provider.platforms.isNotEmpty &&
+        provider.platforms.any((w) => w.trackWear);
+    final hasClean =
+        provider.platforms.isNotEmpty &&
+        provider.platforms.any((w) => w.trackCleanliness);
+    final hasAmmo =
+        provider.ammos.isNotEmpty && provider.ammos.any((a) => a.trackStock);
+    final hasAccessoryWear =
+        provider.accessories.isNotEmpty &&
+        provider.accessories.any((a) => a.trackWear);
+    final hasAccessoryClean =
+        provider.accessories.isNotEmpty &&
+        provider.accessories.any((a) => a.trackCleanliness);
     final hasMaintainedData =
         hasWear || hasClean || hasAmmo || hasAccessoryWear || hasAccessoryClean;
 
     return Container(
       padding: AppSpacing.paddingLg,
       decoration: _hardCardDecoration(colors, radius: 16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        if (!hasMaintainedData)
-          Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(strings.homeMaintenanceEmpty, style: textStyles.bodyMedium?.copyWith(color: colors.secondary))))
-        else ...[
-          if (hasWear) ...[
-            Builder(builder: (context) {
-              final mostWorn = provider.platforms.where((w) => w.trackWear).reduce((a, b) => a.revisionProgress > b.revisionProgress ? a : b);
-              return _MaintenanceBar(label: '${strings.homeMaintenanceRevisionLabel}${mostWorn.name}', value: (mostWorn.revisionProgress * 100).round(), valueUnit: "%", progress: mostWorn.revisionProgress.clamp(0.0, 1.0), colors: colors);
-            }),
-            if (hasClean || hasAmmo || hasAccessoryWear || hasAccessoryClean) const Gap(AppSpacing.md),
-          ],
-          if (hasClean) ...[
-            Builder(builder: (context) {
-              final dirtiest = provider.platforms.where((w) => w.trackCleanliness).reduce((a, b) => a.cleaningProgress > b.cleaningProgress ? a : b);
-              return _MaintenanceBar(label: '${strings.homeMaintenanceCleaningLabel}${dirtiest.name}', value: (dirtiest.cleaningProgress * 100).round(), valueUnit: "%", progress: dirtiest.cleaningProgress.clamp(0.0, 1.0), colors: colors);
-            }),
-            if (hasAmmo || hasAccessoryWear || hasAccessoryClean) const Gap(AppSpacing.md),
-          ],
-          if (hasAmmo) ...[
-            Builder(builder: (context) {
-              final lowestStock = provider.ammos.where((a) => a.trackStock).reduce((a, b) => a.quantity < b.quantity ? a : b);
-              final threshold = lowestStock.lowStockThreshold.toDouble();
-              final rawInitial = lowestStock.initialQuantity.toDouble();
-              final current = lowestStock.quantity.toDouble();
-              final double criticality;
-              if (rawInitial <= threshold) {
-                criticality = current <= threshold ? 1.0 : 0.0;
-              } else {
-                criticality = (1.0 - ((current - threshold) / (rawInitial - threshold)).clamp(0.0, 1.0)).clamp(0.0, 1.0);
-              }
-              return _MaintenanceBar(label: '${strings.homeMaintenanceStockLabel}${lowestStock.name}', value: lowestStock.quantity, valueUnit: strings.homeRemainingSuffix, progress: criticality, colors: colors);
-            }),
-            if (hasAccessoryWear || hasAccessoryClean) const Gap(AppSpacing.md),
-          ],
-          if (hasAccessoryWear) ...[
-            Builder(builder: (context) {
-              final mostWornAccessory = provider.accessories.where((a) => a.trackWear).reduce((a, b) => a.revisionProgress > b.revisionProgress ? a : b);
-              return _MaintenanceBar(label: '${strings.homeMaintenanceRevisionLabel}${mostWornAccessory.name}', value: (mostWornAccessory.revisionProgress * 100).round(), valueUnit: "%", progress: mostWornAccessory.revisionProgress.clamp(0.0, 1.0), colors: colors);
-            }),
-            if (hasAccessoryClean) const Gap(AppSpacing.md),
-          ],
-          if (hasAccessoryClean) ...[
-            Builder(builder: (context) {
-              final dirtiestAccessory = provider.accessories.where((a) => a.trackCleanliness).reduce((a, b) => a.cleaningProgress > b.cleaningProgress ? a : b);
-              return _MaintenanceBar(label: '${strings.homeMaintenanceCleaningLabel}${dirtiestAccessory.name}', value: (dirtiestAccessory.cleaningProgress * 100).round(), valueUnit: "%", progress: dirtiestAccessory.cleaningProgress.clamp(0.0, 1.0), colors: colors);
-            }),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!hasMaintainedData)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  strings.homeMaintenanceEmpty,
+                  style: textStyles.bodyMedium?.copyWith(
+                    color: colors.secondary,
+                  ),
+                ),
+              ),
+            )
+          else ...[
+            if (hasWear) ...[
+              Builder(
+                builder: (context) {
+                  final mostWorn = provider.platforms
+                      .where((w) => w.trackWear)
+                      .reduce(
+                        (a, b) =>
+                            a.revisionProgress > b.revisionProgress ? a : b,
+                      );
+                  return _MaintenanceBar(
+                    label:
+                        '${strings.homeMaintenanceRevisionLabel}${mostWorn.name}',
+                    value: (mostWorn.revisionProgress * 100).round(),
+                    valueUnit: "%",
+                    progress: mostWorn.revisionProgress.clamp(0.0, 1.0),
+                    colors: colors,
+                  );
+                },
+              ),
+              if (hasClean || hasAmmo || hasAccessoryWear || hasAccessoryClean)
+                const Gap(AppSpacing.md),
+            ],
+            if (hasClean) ...[
+              Builder(
+                builder: (context) {
+                  final dirtiest = provider.platforms
+                      .where((w) => w.trackCleanliness)
+                      .reduce(
+                        (a, b) =>
+                            a.cleaningProgress > b.cleaningProgress ? a : b,
+                      );
+                  return _MaintenanceBar(
+                    label:
+                        '${strings.homeMaintenanceCleaningLabel}${dirtiest.name}',
+                    value: (dirtiest.cleaningProgress * 100).round(),
+                    valueUnit: "%",
+                    progress: dirtiest.cleaningProgress.clamp(0.0, 1.0),
+                    colors: colors,
+                  );
+                },
+              ),
+              if (hasAmmo || hasAccessoryWear || hasAccessoryClean)
+                const Gap(AppSpacing.md),
+            ],
+            if (hasAmmo) ...[
+              Builder(
+                builder: (context) {
+                  final lowestStock = provider.ammos
+                      .where((a) => a.trackStock)
+                      .reduce((a, b) => a.quantity < b.quantity ? a : b);
+                  final threshold = lowestStock.lowStockThreshold.toDouble();
+                  final rawInitial = lowestStock.initialQuantity.toDouble();
+                  final current = lowestStock.quantity.toDouble();
+                  final double criticality;
+                  if (rawInitial <= threshold) {
+                    criticality = current <= threshold ? 1.0 : 0.0;
+                  } else {
+                    criticality =
+                        (1.0 -
+                                ((current - threshold) /
+                                        (rawInitial - threshold))
+                                    .clamp(0.0, 1.0))
+                            .clamp(0.0, 1.0);
+                  }
+                  return _MaintenanceBar(
+                    label:
+                        '${strings.homeMaintenanceStockLabel}${lowestStock.name}',
+                    value: lowestStock.quantity,
+                    valueUnit: strings.homeRemainingSuffix,
+                    progress: criticality,
+                    colors: colors,
+                  );
+                },
+              ),
+              if (hasAccessoryWear || hasAccessoryClean)
+                const Gap(AppSpacing.md),
+            ],
+            if (hasAccessoryWear) ...[
+              Builder(
+                builder: (context) {
+                  final mostWornAccessory = provider.accessories
+                      .where((a) => a.trackWear)
+                      .reduce(
+                        (a, b) =>
+                            a.revisionProgress > b.revisionProgress ? a : b,
+                      );
+                  return _MaintenanceBar(
+                    label:
+                        '${strings.homeMaintenanceRevisionLabel}${mostWornAccessory.name}',
+                    value: (mostWornAccessory.revisionProgress * 100).round(),
+                    valueUnit: "%",
+                    progress: mostWornAccessory.revisionProgress.clamp(
+                      0.0,
+                      1.0,
+                    ),
+                    colors: colors,
+                  );
+                },
+              ),
+              if (hasAccessoryClean) const Gap(AppSpacing.md),
+            ],
+            if (hasAccessoryClean) ...[
+              Builder(
+                builder: (context) {
+                  final dirtiestAccessory = provider.accessories
+                      .where((a) => a.trackCleanliness)
+                      .reduce(
+                        (a, b) =>
+                            a.cleaningProgress > b.cleaningProgress ? a : b,
+                      );
+                  return _MaintenanceBar(
+                    label:
+                        '${strings.homeMaintenanceCleaningLabel}${dirtiestAccessory.name}',
+                    value: (dirtiestAccessory.cleaningProgress * 100).round(),
+                    valueUnit: "%",
+                    progress: dirtiestAccessory.cleaningProgress.clamp(
+                      0.0,
+                      1.0,
+                    ),
+                    colors: colors,
+                  );
+                },
+              ),
+            ],
           ],
         ],
-      ]),
+      ),
     );
   }
 
-  List<Widget> _buildLastSessionSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  List<Widget> _buildLastSessionSection({
+    required BuildContext context,
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     if (provider.sessions.isEmpty) return const [];
     final strings = AppStrings.of(context);
     return [
       SizedBox(
         height: 24,
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(strings.homeLastSessionTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
-          TextButton(onPressed: () => StatefulNavigationShell.of(context).goBranch(1), style: TextButton.styleFrom(padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap), child: Text(strings.homeSeeAll, style: textStyles.labelLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
-        ]),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              strings.homeLastSessionTitle,
+              style: textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.secondary,
+              ),
+            ),
+            TextButton(
+              onPressed: () => StatefulNavigationShell.of(context).goBranch(1),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                strings.homeSeeAll,
+                style: textStyles.labelSmall?.copyWith(
+                  color: colors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       const Gap(9),
-      _LastSessionCard(session: provider.sessions.first, provider: provider, colors: colors, textStyles: textStyles),
+      _LastSessionCard(
+        session: provider.sessions.first,
+        provider: provider,
+        colors: colors,
+        textStyles: textStyles,
+      ),
     ];
   }
 
-  List<Widget> _buildStatsOverviewSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  List<Widget> _buildStatsOverviewSection({
+    required BuildContext context,
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final strings = AppStrings.of(context);
-    final avgShotsPerSession = provider.totalSessions == 0 ? '0' : (provider.totalRoundsFired / provider.totalSessions).toStringAsFixed(0);
+    final avgShotsPerSession = provider.totalSessions == 0
+        ? '0'
+        : (provider.totalRoundsFired / provider.totalSessions).toStringAsFixed(
+            0,
+          );
     return [
       Container(
         key: _statsKey,
@@ -1426,48 +1901,139 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             SizedBox(
               height: 24,
-              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(strings.homeStatsTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
-                TextButton(onPressed: () => _showStatisticsModal(context), style: TextButton.styleFrom(padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap), child: Text(strings.homeSeeAll, style: textStyles.labelLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.bold))),
-              ]),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    strings.homeStatsTitle,
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.secondary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _showStatisticsModal(context),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      strings.homeSeeAll,
+                      style: textStyles.labelSmall?.copyWith(
+                        color: colors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const Gap(9),
-            Row(children: [
-              Expanded(child: _StatCard(title: strings.homeStatSessions, value: "${provider.totalSessions}", colors: colors, textStyles: textStyles)),
-              const Gap(AppSpacing.sm),
-              Expanded(child: _StatCard(title: strings.homeStatShotsFired, value: "${provider.totalRoundsFired}", colors: colors, textStyles: textStyles)),
-              const Gap(AppSpacing.sm),
-              Expanded(child: _StatCard(title: strings.homeStatPlatforms, value: "${provider.platforms.length}", colors: colors, textStyles: textStyles)),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    title: strings.homeStatSessions,
+                    value: "${provider.totalSessions}",
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+                const Gap(AppSpacing.sm),
+                Expanded(
+                  child: _StatCard(
+                    title: strings.homeStatShotsFired,
+                    value: "${provider.totalRoundsFired}",
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+                const Gap(AppSpacing.sm),
+                Expanded(
+                  child: _StatCard(
+                    title: strings.homeStatPlatforms,
+                    value: "${provider.platforms.length}",
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+              ],
+            ),
             const Gap(AppSpacing.sm),
-            Row(children: [
-              Expanded(child: _StatCard(title: strings.statisticsAmmosLabel, value: "${provider.ammos.length}", colors: colors, textStyles: textStyles)),
-              const Gap(AppSpacing.sm),
-              Expanded(child: _StatCard(title: strings.statisticsAccessoriesLabel, value: "${provider.accessories.length}", colors: colors, textStyles: textStyles)),
-              const Gap(AppSpacing.sm),
-              Expanded(child: _StatCard(title: strings.statisticsShotsPerSessionLabel, value: avgShotsPerSession, colors: colors, textStyles: textStyles)),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    title: strings.statisticsAmmosLabel,
+                    value: "${provider.ammos.length}",
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+                const Gap(AppSpacing.sm),
+                Expanded(
+                  child: _StatCard(
+                    title: strings.statisticsAccessoriesLabel,
+                    value: "${provider.accessories.length}",
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+                const Gap(AppSpacing.sm),
+                Expanded(
+                  child: _StatCard(
+                    title: strings.statisticsShotsPerSessionLabel,
+                    value: avgShotsPerSession,
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     ];
   }
 
-  List<Widget> _buildCostDashboardSection({required BuildContext context, required ThotProvider provider, required ColorScheme colors, required TextTheme textStyles}) {
+  List<Widget> _buildCostDashboardSection({
+    required BuildContext context,
+    required ThotProvider provider,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final strings = AppStrings.of(context);
     final monthlyCosts = provider.getMonthlyCosts(12);
     final topAmmos = provider.getTopAmmosByCost(12);
-    final totalYearlyCost = monthlyCosts.fold<double>(0, (sum, m) => sum + (m['cost'] as double));
+    final totalYearlyCost = monthlyCosts.fold<double>(
+      0,
+      (sum, m) => sum + (m['cost'] as double),
+    );
 
     if (totalYearlyCost == 0) return [];
 
     return [
       SizedBox(
         height: 24,
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(strings.costDashboardTitle, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary)),
-          Text('${strings.costDashboardYearlyTotal}: ${totalYearlyCost.toStringAsFixed(2)} €', style: textStyles.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.bold)),
-        ]),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              strings.costDashboardTitle,
+              style: textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.secondary,
+              ),
+            ),
+            Text(
+              '${strings.costDashboardYearlyTotal}: ${totalYearlyCost.toStringAsFixed(2)} €',
+              style: textStyles.labelSmall?.copyWith(
+                color: colors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
       const Gap(9),
       Container(
@@ -1495,22 +2061,38 @@ class _HomeScreenState extends State<HomeScreen> {
               const Gap(8),
               ...topAmmos.entries.take(5).toList().asMap().entries.map((entry) {
                 final index = entry.key;
-                final ammo = provider.ammos.firstWhere((a) => a.id == entry.value.key, orElse: () => Ammo(
-                  id: '',
-                  name: '',
-                  brand: '',
-                  caliber: '',
-                  quantity: 0,
-                  lastUsed: DateTime.now(),
-                ));
+                final ammo = provider.ammos.firstWhere(
+                  (a) => a.id == entry.value.key,
+                  orElse: () => Ammo(
+                    id: '',
+                    name: '',
+                    brand: '',
+                    caliber: '',
+                    quantity: 0,
+                    lastUsed: DateTime.now(),
+                  ),
+                );
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      Text('${index + 1}.', style: textStyles.labelMedium?.copyWith(color: colors.secondary)),
+                      Text(
+                        '${index + 1}.',
+                        style: textStyles.labelMedium?.copyWith(
+                          color: colors.secondary,
+                        ),
+                      ),
                       const Gap(8),
-                      Expanded(child: Text(ammo.name, style: textStyles.bodyMedium)),
-                      Text('${entry.value.value.toStringAsFixed(2)} €', style: textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: colors.primary)),
+                      Expanded(
+                        child: Text(ammo.name, style: textStyles.bodyMedium),
+                      ),
+                      Text(
+                        '${entry.value.value.toStringAsFixed(2)} €',
+                        style: textStyles.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.primary,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -1529,10 +2111,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: monthlyCosts.map((m) {
                   final cost = m['cost'] as double;
-                  final maxCost = monthlyCosts.fold<double>(0, (max, mc) => (mc['cost'] as double) > max ? mc['cost'] as double : max);
-                  final height = maxCost > 0 ? (cost / maxCost * 80).clamp(4.0, 80.0) : 4.0;
+                  final maxCost = monthlyCosts.fold<double>(
+                    0,
+                    (max, mc) => (mc['cost'] as double) > max
+                        ? mc['cost'] as double
+                        : max,
+                  );
+                  final height = maxCost > 0
+                      ? (cost / maxCost * 80).clamp(4.0, 80.0)
+                      : 4.0;
                   final month = m['month'] as DateTime;
-                  final localeTag = Localizations.localeOf(context).toLanguageTag();
+                  final localeTag = Localizations.localeOf(
+                    context,
+                  ).toLanguageTag();
                   final monthLabel = DateFormat.M(localeTag).format(month);
                   return Expanded(
                     child: Column(
@@ -1549,7 +2140,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Gap(4),
                         Text(
                           monthLabel,
-                          style: textStyles.labelSmall?.copyWith(fontSize: 10, color: colors.secondary),
+                          style: textStyles.labelSmall?.copyWith(
+                            fontSize: 10,
+                            color: colors.secondary,
+                          ),
                         ),
                       ],
                     ),
@@ -1570,10 +2164,29 @@ class _HomeScreenState extends State<HomeScreen> {
     final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
     _scheduleTutorialCheck();
-    final lastSessionSection = _buildLastSessionSection(context: context, provider: provider, colors: colors, textStyles: textStyles);
-    final precisionSection = _buildPrecisionChartSection(provider: provider, colors: colors, textStyles: textStyles);
-    final costDashboardSection = _buildCostDashboardSection(context: context, provider: provider, colors: colors, textStyles: textStyles);
-    final hasStatsData = provider.totalSessions > 0 || provider.totalRoundsFired > 0 || provider.platforms.isNotEmpty || provider.ammos.isNotEmpty || provider.accessories.isNotEmpty;
+    final lastSessionSection = _buildLastSessionSection(
+      context: context,
+      provider: provider,
+      colors: colors,
+      textStyles: textStyles,
+    );
+    final precisionSection = _buildPrecisionChartSection(
+      provider: provider,
+      colors: colors,
+      textStyles: textStyles,
+    );
+    final costDashboardSection = _buildCostDashboardSection(
+      context: context,
+      provider: provider,
+      colors: colors,
+      textStyles: textStyles,
+    );
+    final hasStatsData =
+        provider.totalSessions > 0 ||
+        provider.totalRoundsFired > 0 ||
+        provider.platforms.isNotEmpty ||
+        provider.ammos.isNotEmpty ||
+        provider.accessories.isNotEmpty;
 
     return Scaffold(
       body: SafeArea(
@@ -1581,40 +2194,89 @@ class _HomeScreenState extends State<HomeScreen> {
           controller: _homeScrollController,
           padding: EdgeInsets.fromLTRB(
             AppSpacing.lg,
-            defaultTargetPlatform == TargetPlatform.iOS ? (MediaQuery.paddingOf(context).top / 6) : (MediaQuery.paddingOf(context).top - 10),
+            defaultTargetPlatform == TargetPlatform.iOS
+                ? (MediaQuery.paddingOf(context).top / 6)
+                : (MediaQuery.paddingOf(context).top - 10),
             AppSpacing.lg,
             AppSpacing.lg,
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            ..._buildHeaderSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
-            ..._buildQuickAccessSection(context: context, provider: provider, colors: colors, textStyles: textStyles),
-            const Gap(26),
-            ..._buildTrainingProgramSection(context: context, colors: colors, textStyles: textStyles),
-            const Gap(26),
-            ..._buildIndicatorsSection(provider: provider, colors: colors, textStyles: textStyles),
-            if (lastSessionSection.isNotEmpty) ...[const Gap(26), ...lastSessionSection],
-            const Gap(26),
-            ...(hasStatsData
-                ? _buildStatsOverviewSection(context: context, provider: provider, colors: colors, textStyles: textStyles)
-                : _buildStatsInviteSection(provider: provider, colors: colors, textStyles: textStyles)),
-            if (costDashboardSection.isNotEmpty) ...[const Gap(26), ...costDashboardSection],
-            if (precisionSection.isNotEmpty) ...[const Gap(26), ...precisionSection],
-            const Gap(26),
-            Container(
-              key: _rewardsKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildSectionTitle(title: strings.homeRewardsSectionTitle, textStyles: textStyles, colors: colors),
-                  const Gap(9),
-                  _buildAchievementsButton(context: context, provider: provider, colors: colors, textStyles: textStyles),
-                ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ..._buildHeaderSection(
+                context: context,
+                provider: provider,
+                colors: colors,
+                textStyles: textStyles,
               ),
-            ),
-            if (_tutorialOverlayEntry != null)
-              const SizedBox(height: 160),
-            const Gap(AppSpacing.lg),
-          ]),
+              ..._buildQuickAccessSection(
+                context: context,
+                provider: provider,
+                colors: colors,
+                textStyles: textStyles,
+              ),
+              const Gap(26),
+              ..._buildTrainingProgramSection(
+                context: context,
+                colors: colors,
+                textStyles: textStyles,
+              ),
+              const Gap(26),
+              ..._buildIndicatorsSection(
+                provider: provider,
+                colors: colors,
+                textStyles: textStyles,
+              ),
+              if (lastSessionSection.isNotEmpty) ...[
+                const Gap(26),
+                ...lastSessionSection,
+              ],
+              const Gap(26),
+              ...(hasStatsData
+                  ? _buildStatsOverviewSection(
+                      context: context,
+                      provider: provider,
+                      colors: colors,
+                      textStyles: textStyles,
+                    )
+                  : _buildStatsInviteSection(
+                      provider: provider,
+                      colors: colors,
+                      textStyles: textStyles,
+                    )),
+              if (costDashboardSection.isNotEmpty) ...[
+                const Gap(26),
+                ...costDashboardSection,
+              ],
+              if (precisionSection.isNotEmpty) ...[
+                const Gap(26),
+                ...precisionSection,
+              ],
+              const Gap(26),
+              Container(
+                key: _rewardsKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildSectionTitle(
+                      title: strings.homeRewardsSectionTitle,
+                      textStyles: textStyles,
+                      colors: colors,
+                    ),
+                    const Gap(9),
+                    _buildAchievementsButton(
+                      context: context,
+                      provider: provider,
+                      colors: colors,
+                      textStyles: textStyles,
+                    ),
+                  ],
+                ),
+              ),
+              if (_tutorialOverlayEntry != null) const SizedBox(height: 160),
+              const Gap(AppSpacing.lg),
+            ],
+          ),
         ),
       ),
     );
@@ -1645,10 +2307,7 @@ class _HomeStandardActionCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       border: isDark
           ? null
-          : Border.all(
-              color: LightColors.surfaceHighlight,
-              width: 1.35,
-            ),
+          : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
       boxShadow: AppShadows.cardPremium,
     );
   }
@@ -1667,10 +2326,7 @@ class _HomeStandardActionCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 28,
-                  child: Center(child: leading),
-                ),
+                SizedBox(width: 28, child: Center(child: leading)),
                 const Gap(AppSpacing.md),
                 Expanded(
                   child: Column(
@@ -1836,7 +2492,7 @@ Map<String, dynamic> _getQuickAction(
           height: 24,
           colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
         ),
-        'label': 'Consommables',
+        'label': strings.quickActionLabelAmmo,
         'onTap': () => StatefulNavigationShell.of(context).goBranch(2),
       };
 
@@ -1847,14 +2503,14 @@ Map<String, dynamic> _getQuickAction(
           color: colors.primary,
           size: 24,
         ),
-        'label': 'Accessoires',
+        'label': strings.quickActionLabelAccessory,
         'onTap': () => StatefulNavigationShell.of(context).goBranch(2),
       };
 
     case 'view_sessions':
       return {
         'icon': Icon(Icons.history_rounded, color: colors.primary, size: 24),
-        'label': 'Sessions',
+        'label': strings.quickActionLabelSession,
         'onTap': () => StatefulNavigationShell.of(context).goBranch(1),
       };
 
@@ -1892,7 +2548,11 @@ Map<String, dynamic> _getQuickAction(
 
     case 'shooting_tables':
       return {
-        'icon': Icon(Icons.table_chart_outlined, color: colors.primary, size: 24),
+        'icon': Icon(
+          Icons.table_chart_outlined,
+          color: colors.primary,
+          size: 24,
+        ),
         'label': strings.quickActionLabelShootingTables,
         'onTap': () => _showShootingTablesModal(context),
       };
@@ -1927,8 +2587,11 @@ Map<String, dynamic> _getQuickAction(
 
     default:
       return {
-        'icon':
-            Icon(Icons.help_outline_rounded, color: colors.primary, size: 24),
+        'icon': Icon(
+          Icons.help_outline_rounded,
+          color: colors.primary,
+          size: 24,
+        ),
         'label': 'Action',
         'onTap': () {},
       };
@@ -1964,10 +2627,7 @@ class _QuickActionItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Theme.of(context).brightness == Brightness.dark
                 ? null
-                : Border.all(
-                    color: LightColors.surfaceHighlight,
-                    width: 1.35,
-                  ),
+                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
             boxShadow: AppShadows.cardPremium,
           ),
           child: Center(
@@ -2095,10 +2755,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Theme.of(context).brightness == Brightness.dark
             ? null
-            : Border.all(
-                color: LightColors.surfaceHighlight,
-                width: 1.35,
-              ),
+            : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
         boxShadow: AppShadows.cardPremium,
       ),
       child: DefaultTextStyle.merge(
@@ -2172,10 +2829,7 @@ class _LastSessionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Theme.of(context).brightness == Brightness.dark
                 ? null
-                : Border.all(
-                    color: LightColors.surfaceHighlight,
-                    width: 1.35,
-                  ),
+                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
             boxShadow: AppShadows.cardPremium,
           ),
           child: Column(
@@ -2264,10 +2918,7 @@ class _LastSessionCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: borderColor,
-                    width: 1.2,
-                  ),
+                  border: Border.all(color: borderColor, width: 1.2),
                 ),
                 child: DefaultTextStyle.merge(
                   style: TextStyle(color: colors.onSurface),
@@ -2293,23 +2944,22 @@ class _LastSessionCard extends StatelessWidget {
                                   const Gap(8),
                                   Text(
                                     strings.quickActionLabelPlatform,
-                                    style: (textStyles.labelSmall ??
-                                            const TextStyle())
-                                        .copyWith(
-                                      color: colors.secondary,
-                                    ),
+                                    style:
+                                        (textStyles.labelSmall ??
+                                                const TextStyle())
+                                            .copyWith(color: colors.secondary),
                                   ),
                                 ],
                               ),
                               const Gap(4),
                               Text(
                                 platformName,
-                                style: (textStyles.bodySmall ??
-                                        const TextStyle())
-                                    .copyWith(
-                                  color: colors.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style:
+                                    (textStyles.bodySmall ?? const TextStyle())
+                                        .copyWith(
+                                          color: colors.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -2317,11 +2967,7 @@ class _LastSessionCard extends StatelessWidget {
                           ),
                         ),
                         const Gap(AppSpacing.xs),
-                        Container(
-                          width: 1,
-                          height: 32,
-                          color: borderColor,
-                        ),
+                        Container(width: 1, height: 32, color: borderColor),
                         const Gap(AppSpacing.md),
                         Expanded(
                           child: Column(
@@ -2341,23 +2987,22 @@ class _LastSessionCard extends StatelessWidget {
                                   const Gap(8),
                                   Text(
                                     strings.quickActionLabelAmmo,
-                                    style: (textStyles.labelSmall ??
-                                            const TextStyle())
-                                        .copyWith(
-                                      color: colors.secondary,
-                                    ),
+                                    style:
+                                        (textStyles.labelSmall ??
+                                                const TextStyle())
+                                            .copyWith(color: colors.secondary),
                                   ),
                                 ],
                               ),
                               const Gap(4),
                               Text(
                                 ammoName,
-                                style: (textStyles.bodySmall ??
-                                        const TextStyle())
-                                    .copyWith(
-                                  color: colors.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style:
+                                    (textStyles.bodySmall ?? const TextStyle())
+                                        .copyWith(
+                                          color: colors.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -2388,11 +3033,7 @@ class _LastSessionCard extends StatelessWidget {
                     colors: colors,
                     textStyles: textStyles,
                   ),
-                  Container(
-                    width: 1,
-                    height: 32,
-                    color: borderColor,
-                  ),
+                  Container(width: 1, height: 32, color: borderColor),
                   _SessionStat(
                     icon: SvgPicture.asset(
                       'assets/images/hit.svg',
@@ -2408,11 +3049,7 @@ class _LastSessionCard extends StatelessWidget {
                     colors: colors,
                     textStyles: textStyles,
                   ),
-                  Container(
-                    width: 1,
-                    height: 32,
-                    color: borderColor,
-                  ),
+                  Container(width: 1, height: 32, color: borderColor),
                   _SessionStat(
                     icon: Icon(
                       Icons.place_rounded,
@@ -2459,8 +3096,9 @@ class _SessionStat extends StatelessWidget {
         const Gap(4),
         Text(
           label,
-          style: (textStyles.labelSmall ?? const TextStyle())
-              .copyWith(color: colors.secondary),
+          style: (textStyles.labelSmall ?? const TextStyle()).copyWith(
+            color: colors.secondary,
+          ),
           textAlign: TextAlign.center,
         ),
         Text(
@@ -2477,9 +3115,11 @@ class _SessionStat extends StatelessWidget {
 }
 
 class _ProCornerButton extends StatelessWidget {
+  // ignore: unused_field — reserved for future freemium badge toggle
   final bool isPremium;
   final bool isOnline;
   final int unreadCount;
+  // ignore: unused_field — reserved for future Pro badge tap handler
   final VoidCallback onTap;
   final VoidCallback onBellTap;
 
@@ -2518,7 +3158,11 @@ class _ProCornerButton extends StatelessWidget {
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 child: Text(
                   unreadCount > 99 ? '99+' : '$unreadCount',
-                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -2538,18 +3182,25 @@ class _ProCornerButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.full),
               border: Border.all(color: colors.onSurface, width: 1.5),
             ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.wifi_off_rounded, size: 13, color: isDark ? Colors.white : colors.onSurface),
-              const Gap(5),
-              Text(
-                strings.offlineBadgeLabel,
-                style: textStyles.labelSmall?.copyWith(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 13,
                   color: isDark ? Colors.white : colors.onSurface,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
                 ),
-              ),
-            ]),
+                const Gap(5),
+                Text(
+                  strings.offlineBadgeLabel,
+                  style: textStyles.labelSmall?.copyWith(
+                    color: isDark ? Colors.white : colors.onSurface,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         if (!isOnline) const Gap(10),
         bell,
@@ -2623,130 +3274,167 @@ class _NotificationPanelState extends State<_NotificationPanel>
     // Kaki clair pour le divider — même teinte que les séparateurs de la dernière session
     final dividerColor = const Color(0xFFC2A14A).withValues(alpha: 0.25);
 
-    return Stack(children: [
-      Positioned.fill(
-        child: GestureDetector(
-          onTap: widget.onDismiss,
-          behavior: HitTestBehavior.opaque,
-          child: const SizedBox.expand(),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: widget.onDismiss,
+            behavior: HitTestBehavior.opaque,
+            child: const SizedBox.expand(),
+          ),
         ),
-      ),
-      Positioned(
-        top: widget.topOffset,
-        left: widget.leftOffset,
-        width: widget.width,
-        child: FadeTransition(
-          opacity: _opacity,
-          child: ScaleTransition(
-            scale: _scale,
-            alignment: Alignment.topRight,
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: isDark
-                      ? null
-                      : Border.all(
-                          color: LightColors.surfaceHighlight, width: 1.35),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                          alpha: isDark ? 0.45 : 0.14),
-                      blurRadius: 28,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
-                    child: Row(children: [
-                      Icon(Icons.notifications_outlined,
-                          size: 18, color: colors.primary),
-                      const Gap(8),
-                      Expanded(
-                        child: Text(strings.notifPanelTitle,
-                            style: textStyles.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w700)),
-                      ),
-                      if (!allRead)
-                        TextButton(
-                          onPressed: widget.onMarkAllRead,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(strings.notifMarkAllRead,
-                              style: textStyles.labelSmall?.copyWith(
-                                  color: colors.primary,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      if (allRead && hasRead)
-                        TextButton(
-                          onPressed: widget.onDeleteAllRead,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(strings.notifDeleteAll,
-                              style: textStyles.labelSmall?.copyWith(
-                                  color: colors.error,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                    ]),
+        Positioned(
+          top: widget.topOffset,
+          left: widget.leftOffset,
+          width: widget.width,
+          child: FadeTransition(
+            opacity: _opacity,
+            child: ScaleTransition(
+              scale: _scale,
+              alignment: Alignment.topRight,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.6,
                   ),
-                  Divider(height: 1, color: dividerColor),
-
-                  // List
-                  if (widget.alerts.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(children: [
-                        Icon(Icons.check_circle_outline_rounded,
-                            color: colors.primary, size: 40),
-                        const Gap(8),
-                        Text(strings.notifPanelEmpty,
-                            style: textStyles.bodyMedium
-                                ?.copyWith(color: colors.secondary),
-                            textAlign: TextAlign.center),
-                      ]),
-                    )
-                  else
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        itemCount: widget.alerts.length,
-                        separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: dividerColor),
-                        itemBuilder: (context, index) {
-                          final alert = widget.alerts[index];
-                          return _AlertTile(
-                            alert: alert,
-                            onMarkRead: () => widget.onMarkRead(alert.id),
-                            onDelete: () => widget.onDelete(alert.id),
-                            onNavigate: () => widget.onNavigate(alert.itemId),
-                          );
-                        },
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: isDark
+                        ? null
+                        : Border.all(
+                            color: LightColors.surfaceHighlight,
+                            width: 1.35,
+                          ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.45 : 0.14,
+                        ),
+                        blurRadius: 28,
+                        offset: const Offset(0, 10),
                       ),
-                    ),
-                ]),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.notifications_outlined,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                            const Gap(8),
+                            Expanded(
+                              child: Text(
+                                strings.notifPanelTitle,
+                                style: textStyles.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            if (!allRead)
+                              TextButton(
+                                onPressed: widget.onMarkAllRead,
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  strings.notifMarkAllRead,
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: colors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            if (allRead && hasRead)
+                              TextButton(
+                                onPressed: widget.onDeleteAllRead,
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  strings.notifDeleteAll,
+                                  style: textStyles.labelSmall?.copyWith(
+                                    color: colors.error,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, color: dividerColor),
+
+                      // List
+                      if (widget.alerts.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.check_circle_outline_rounded,
+                                color: colors.primary,
+                                size: 40,
+                              ),
+                              const Gap(8),
+                              Text(
+                                strings.notifPanelEmpty,
+                                style: textStyles.bodyMedium?.copyWith(
+                                  color: colors.secondary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Flexible(
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: widget.alerts.length,
+                            separatorBuilder: (_, __) =>
+                                Divider(height: 1, color: dividerColor),
+                            itemBuilder: (context, index) {
+                              final alert = widget.alerts[index];
+                              return _AlertTile(
+                                alert: alert,
+                                onMarkRead: () => widget.onMarkRead(alert.id),
+                                onDelete: () => widget.onDelete(alert.id),
+                                onNavigate: () =>
+                                    widget.onNavigate(alert.itemId),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -2828,55 +3516,63 @@ class _AlertTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: barColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(7),
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: barColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Icon(icon, size: 15, color: barColor),
                 ),
-                child: Icon(icon, size: 15, color: barColor),
-              ),
-              const Gap(10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (!alert.isRead) onMarkRead();
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        alert.type == _AlertType.document
-                            ? alert.documentName ?? alert.itemName
-                            : alert.itemName,
-                        style: textStyles.bodySmall?.copyWith(
+                const Gap(10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (!alert.isRead) onMarkRead();
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          alert.type == _AlertType.document
+                              ? alert.documentName ?? alert.itemName
+                              : alert.itemName,
+                          style: textStyles.bodySmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: colors.onSurface),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        alert.type == _AlertType.document
-                            ? subtitle
-                            : '$typeLabel — $subtitle',
-                        style: textStyles.labelSmall?.copyWith(
-                            color: barColor, fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                            color: colors.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          alert.type == _AlertType.document
+                              ? subtitle
+                              : '$typeLabel — $subtitle',
+                          style: textStyles.labelSmall?.copyWith(
+                            color: barColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              GestureDetector(
-                onTap: onDelete,
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(Icons.close_rounded,
-                      size: 18, color: colors.secondary),
+                GestureDetector(
+                  onTap: onDelete,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: colors.secondary,
+                    ),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             if (alert.type != _AlertType.document) ...[
               const Gap(6),
               LinearProgressIndicator(

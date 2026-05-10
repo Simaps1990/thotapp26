@@ -26,8 +26,8 @@ class _LegalScreenState extends State<LegalScreen> {
     return Scaffold(
       backgroundColor: colors.surface,
       body: SafeArea(
-        top: Platform.isIOS ? false : true,
-        bottom: Platform.isIOS ? false : true,
+        top: true,
+        bottom: true,
         child: SingleChildScrollView(
           padding: AppSpacing.paddingLg,
           child: Column(
@@ -176,7 +176,7 @@ class _LegalScreenState extends State<LegalScreen> {
       ),
       _LegalChapter(
         id: 'privacy',
-        title: isFrench ? 'Politique de confidentialité' : 'Privacy Policy',
+        title: strings.legalPrivacyTitle,
         sections: [
           _LegalSection(
             title: isFrench ? '1. Principes' : '1. Principles',
@@ -296,7 +296,7 @@ class _LegalScreenState extends State<LegalScreen> {
       ),
       _LegalChapter(
         id: 'legal',
-        title: isFrench ? 'Mentions légales' : 'Legal notice',
+        title: strings.legalMentionsTitle,
         sections: [
           _LegalSection(
             title: isFrench ? 'Éditeur' : 'Publisher',
@@ -354,7 +354,7 @@ class _TocCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final isFrench = Localizations.localeOf(context).languageCode == 'fr';
+    final strings = AppStrings.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -367,7 +367,7 @@ class _TocCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isFrench ? 'Chapitres' : 'Chapters',
+            strings.legalChaptersLabel,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
           ),
           const Gap(12),

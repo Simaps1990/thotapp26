@@ -377,11 +377,11 @@ class _InventoryScreenState extends State<InventoryScreen>
                                     filled: true,
                                     fillColor: searchFillColor,
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(color: colors.outline),
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(color: colors.outline),
                                     ),
                                   ),

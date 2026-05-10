@@ -498,11 +498,11 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                       filled: true,
                                       fillColor: searchFillColor,
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                        borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide(color: colors.outline),
                                       ),
                                       enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                        borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide(color: colors.outline),
                                       ),
                                     ),
@@ -1450,9 +1450,12 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          floatingActionButton: _pageIndex == 0
-              ? Padding(
-                  padding: const EdgeInsets.only(bottom: 18),
+          floatingActionButton: Padding(
+              padding: const EdgeInsets.only(bottom: 0),
+              child: Opacity(
+                opacity: _pageIndex == 0 ? 1.0 : 0.0,
+                child: IgnorePointer(
+                  ignoring: _pageIndex != 0,
                   child: FloatingActionButton.extended(
                     onPressed: () => _openEditor(template: null),
                     icon: const Icon(Icons.add),
@@ -1460,8 +1463,9 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                     backgroundColor: colors.primary,
                     foregroundColor: colors.onPrimary,
                   ),
-                )
-              : null,
+                ),
+              ),
+            ),
           body: IndexedStack(
             index: _pageIndex,
             children: [
@@ -1469,32 +1473,55 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Poignée de sheet comme dans le timer
+              // Poignée de sheet
               const Gap(10),
-              Container(
-                width: 42,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: baseBackground,
-                  borderRadius: BorderRadius.circular(999),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: LightColors.iconInactive.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               const Gap(12),
-              // Header avec titre, sous-titre et flèche descendante
+              // Header avec titre, bulle info et flèche descendante
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        strings.homeTemplateTitle,
-                        style: textStyles.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.onSurface,
-                        ),
+                      child: Row(
+                        children: [
+                          Text(
+                            strings.homeTemplateTitle,
+                            style: textStyles.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                          const Gap(6),
+                          Tooltip(
+                            message: strings.homeTemplateSubtitle,
+                            triggerMode: TooltipTriggerMode.tap,
+                            showDuration: const Duration(seconds: 5),
+                            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: colors.onSurface.withValues(alpha: 0.88),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            textStyle: textStyles.bodySmall?.copyWith(color: colors.surface),
+                            child: Icon(
+                              Icons.info_outline_rounded,
+                              size: 18,
+                              color: colors.onSurface.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    // Icône en forme de V pour fermer
                     GestureDetector(
                       onTap: () {
                         if (Navigator.canPop(context)) {
@@ -1513,23 +1540,8 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    strings.homeTemplateSubtitle,
-                    style: textStyles.bodySmall?.copyWith(
-                      color: colors.secondary,
-                    ),
-                  ),
-                ),
-              ),
               const Gap(AppSpacing.xs),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Divider(color: colors.outline.withValues(alpha: 0.25)),
-              ),
+              Divider(color: colors.outline, indent: AppSpacing.lg, endIndent: AppSpacing.lg),
               const Gap(AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -1634,15 +1646,15 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                     filled: true,
                     fillColor: searchFillColor,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(color: colors.outline),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(color: colors.outline),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(color: colors.outline),
                     ),
                   ),
@@ -1657,32 +1669,39 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                       // --- DRILLS STANDARDS THOT ---
                       if (standardDrills.isNotEmpty) ...[
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                          child: FilledButton(
-                            onPressed: () => setState(() => _standardDrillsExpanded = !_standardDrillsExpanded),
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                              backgroundColor: colors.primary,
-                              foregroundColor: colors.onPrimary,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, 0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
                                   strings.exerciseTemplatesStandardSection,
                                   style: textStyles.titleMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: colors.onPrimary,
+                                    color: colors.onSurface,
                                   ),
                                 ),
-                                const Gap(8),
-                                Icon(
-                                  _standardDrillsExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                                  color: colors.onPrimary,
-                                  size: 20,
+                              ),
+                              GestureDetector(
+                                onTap: () => setState(() => _standardDrillsExpanded = !_standardDrillsExpanded),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: LightColors.primary,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    _standardDrillsExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                          child: Divider(color: Colors.transparent, height: 4),
                         ),
                         if (_standardDrillsExpanded) ...[
                           const Gap(AppSpacing.sm),
@@ -1725,6 +1744,10 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                         const Gap(AppSpacing.sm),
                       ],
                       // --- MES MODÈLES ---
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                        child: Divider(color: colors.outline),
+                      ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
                         child: Text(
@@ -1818,11 +1841,24 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
           
           // --- PAGE 2: ÉDITEUR DE MODÈLE ---
           Padding(
-            padding: AppSpacing.paddingLg,
+            padding: const EdgeInsets.only(left: AppSpacing.lg, right: AppSpacing.lg, bottom: AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const Gap(10),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: LightColors.iconInactive.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
+
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     GestureDetector(
@@ -2024,7 +2060,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                       hintText: '0',
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       filled: true,
-                                      fillColor: colors.surface,
+                                      fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.08), colors.surface),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(AppRadius.lg),
                                         borderSide: BorderSide(color: colors.outline),
@@ -2071,7 +2107,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       suffixText: provider.useMetric ? 'm' : 'yd',
                                       filled: true,
-                                      fillColor: colors.surface,
+                                      fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.08), colors.surface),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(AppRadius.lg),
                                         borderSide: BorderSide(color: colors.outline),
@@ -2262,7 +2298,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                     ],
                   ),
                 ),
-                const Gap(AppSpacing.lg),
+                const Gap(AppSpacing.sm),
 
                 // 3. SECTION OBSERVATIONS
                 Row(
@@ -2306,7 +2342,6 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                     ),
                   ),
                 ),
-                const Gap(AppSpacing.md),
                 SizedBox(
                   height: 52,
                   child: Row(
@@ -2318,7 +2353,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                             backgroundColor: colors.primary.withValues(alpha: 0.72),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.full),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: Text(
@@ -2338,7 +2373,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                           style: FilledButton.styleFrom(
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.full),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: Text(
@@ -2452,7 +2487,7 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      height: MediaQuery.of(context).size.height * 0.86,
+      height: MediaQuery.of(context).size.height * 0.90,
       decoration: BoxDecoration(
         color: baseBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -2461,11 +2496,11 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
         children: [
           const Gap(10),
           Container(
-            width: 42,
-            height: 5,
+            width: 40,
+            height: 4,
             decoration: BoxDecoration(
-              color: colors.outline.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(999),
+              color: LightColors.iconInactive.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
           const Gap(12),
@@ -2475,10 +2510,10 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.initialStep == null
+                    (widget.initialStep == null
                         ? strings.exerciseNewStepTitle
-                        : strings.exerciseEditStepTitle,
-                    style: textStyles.titleMedium
+                        : strings.exerciseEditStepTitle).toUpperCase(),
+                    style: textStyles.titleLarge
                         ?.copyWith(fontWeight: FontWeight.w900),
                   ),
                 ),
@@ -2498,6 +2533,8 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
             ),
           ),
           const Gap(8),
+          Divider(color: colors.outline, indent: AppSpacing.lg, endIndent: AppSpacing.lg),
+          const Gap(AppSpacing.sm),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
@@ -2516,7 +2553,7 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                   const Gap(8),
                   Wrap(
                     spacing: 8,
-                    runSpacing: 8,
+                    runSpacing: 4,
                     children: StepType.values.map((t) {
                       final selected = _type == t;
                       return ChoiceChip(
@@ -2525,6 +2562,8 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                         onSelected: (_) => setState(() => _type = t),
                         selectedColor: colors.primary.withValues(alpha: 0.2),
                         backgroundColor: colors.surface,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
                         shape: StadiumBorder(
                           side: BorderSide(
                             color: selected ? colors.primary : colors.outline,
@@ -2535,16 +2574,18 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       );
                     }).toList(),
                   ),
-                  const Gap(AppSpacing.md),
+                  const Gap(AppSpacing.sm),
+                  Divider(color: colors.outline),
+                  const Gap(AppSpacing.sm),
                   Text(
                     strings.exerciseStepPositionTitle,
                     style: textStyles.labelLarge
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const Gap(8),
-                  Wrap(
+                   Wrap(
                     spacing: 8,
-                    runSpacing: 8,
+                    runSpacing: 4,
                     children: [
                       ChoiceChip(
                         label: const Text('·'),
@@ -2552,6 +2593,8 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                         onSelected: (_) => setState(() => _position = null),
                         selectedColor: colors.primary.withValues(alpha: 0.2),
                         backgroundColor: colors.surface,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
                         shape: StadiumBorder(
                           side: BorderSide(
                             color: _position == null
@@ -2568,6 +2611,8 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                           onSelected: (_) => setState(() => _position = p),
                           selectedColor: colors.primary.withValues(alpha: 0.2),
                           backgroundColor: colors.surface,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
                           shape: StadiumBorder(
                             side: BorderSide(
                               color:
@@ -2578,7 +2623,9 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       }),
                     ],
                   ),
-                  const Gap(AppSpacing.md),
+                  const Gap(AppSpacing.sm),
+                  Divider(color: colors.outline),
+                  const Gap(AppSpacing.sm),
                   if (_type == StepType.tir) ...[
                     TextField(
                       controller: _shotsController,
@@ -2586,14 +2633,14 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       decoration: decoration(
                           '${strings.exerciseFieldShots}${strings.exerciseOptionalHint}'),
                     ),
-                    const Gap(10),
+                    const Gap(12),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
                           '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
                     ),
-                    const Gap(10),
+                    const Gap(12),
                     TextField(
                       controller: _targetController,
                       decoration: decoration(
@@ -2640,7 +2687,7 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                         }),
                       ],
                     ),
-                    const Gap(10),
+                    const Gap(12),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
@@ -2692,7 +2739,7 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                         }
                       },
                     ),
-                    const Gap(10),
+                    const Gap(12),
                     DropdownButtonFormField<String>(
                       initialValue: _platformToController.text.isEmpty ? null : _platformToController.text,
                       decoration: decoration(
@@ -2718,7 +2765,7 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       decoration: decoration(
                           '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}'),
                     ),
-                    const Gap(10),
+                    const Gap(12),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
@@ -2732,14 +2779,14 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       decoration: decoration(
                           '${strings.exerciseFieldDuration} (s)${strings.exerciseOptionalHint}'),
                     ),
-                    const Gap(10),
+                    const Gap(12),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
                           '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
                     ),
-                    const Gap(10),
+                    const Gap(12),
                     TextField(
                       controller: _triggerController,
                       decoration: decoration(
@@ -2753,7 +2800,7 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                           '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
                     ),
                   ],
-                  const Gap(AppSpacing.md),
+                  const Gap(12),
                   TextField(
                     controller: _commentController,
                     minLines: 2,
@@ -2817,9 +2864,9 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                           ),
                         ),
                         child: Text(
-                          widget.initialStep == null
+                          (widget.initialStep == null
                               ? strings.exerciseActionAdd
-                              : strings.exerciseActionSave,
+                              : strings.exerciseActionSave).toUpperCase(),
                         ),
                       ),
                     ),
