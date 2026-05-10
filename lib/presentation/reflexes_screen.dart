@@ -18,6 +18,8 @@ import 'package:thot/utils/timer_sound.dart';
 import 'package:thot/utils/exercise_level_params.dart';
 import 'package:thot/data/training_history.dart';
 import 'package:thot/data/thot_provider.dart';
+import 'package:thot/widgets/pro_badge.dart';
+import 'package:thot/presentation/pro_screen.dart';
 
 enum _ReflexesMode { visual, auditory, math, memory, stroop, mot }
 enum _ReactionDifficulty { easy, medium, hard }
@@ -73,6 +75,11 @@ class _ReflexesScreenState extends State<ReflexesScreen>
   }
 
   void _openLevelsPanelForMode(_ReflexesMode mode) {
+    final provider = context.read<ThotProvider>();
+    if (provider.isReflexesModeLockedForFree(mode.name)) {
+      showProModal(context);
+      return;
+    }
     setState(() {
       _mode = mode;
       _showModePanel = false;
@@ -323,6 +330,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     TextTheme textStyles,
     bool isDark,
   ) {
+    final provider = context.read<ThotProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -332,6 +340,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           icon: Icons.visibility,
           onTap: () => _openLevelsPanelForMode(_ReflexesMode.visual),
           isSelected: false,
+          isLocked: provider.isReflexesModeLockedForFree('visual'),
           colors: colors,
           textStyles: textStyles,
           isDark: isDark,
@@ -345,6 +354,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           icon: Icons.hearing,
           onTap: () => _openLevelsPanelForMode(_ReflexesMode.auditory),
           isSelected: false,
+          isLocked: provider.isReflexesModeLockedForFree('auditory'),
           colors: colors,
           textStyles: textStyles,
           isDark: isDark,
@@ -358,6 +368,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           icon: Icons.calculate,
           onTap: () => _openLevelsPanelForMode(_ReflexesMode.math),
           isSelected: false,
+          isLocked: provider.isReflexesModeLockedForFree('math'),
           colors: colors,
           textStyles: textStyles,
           isDark: isDark,
@@ -371,6 +382,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           icon: Icons.psychology,
           onTap: () => _openLevelsPanelForMode(_ReflexesMode.memory),
           isSelected: false,
+          isLocked: provider.isReflexesModeLockedForFree('memory'),
           colors: colors,
           textStyles: textStyles,
           isDark: isDark,
@@ -384,6 +396,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           icon: Icons.psychology_alt,
           onTap: () => _openLevelsPanelForMode(_ReflexesMode.stroop),
           isSelected: false,
+          isLocked: provider.isReflexesModeLockedForFree('stroop'),
           colors: colors,
           textStyles: textStyles,
           isDark: isDark,
@@ -397,6 +410,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           icon: Icons.track_changes_rounded,
           onTap: () => _openLevelsPanelForMode(_ReflexesMode.mot),
           isSelected: false,
+          isLocked: provider.isReflexesModeLockedForFree('mot'),
           colors: colors,
           textStyles: textStyles,
           isDark: isDark,
@@ -1513,6 +1527,7 @@ class _DrillCard extends StatefulWidget {
     required this.colors,
     required this.textStyles,
     required this.isDark,
+    this.isLocked = false,
     this.backgroundImage,
     this.mode,
   });
@@ -1522,6 +1537,7 @@ class _DrillCard extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool isSelected;
+  final bool isLocked;
   final ColorScheme colors;
   final TextTheme textStyles;
   final bool isDark;
@@ -1568,7 +1584,9 @@ class _DrillCardState extends State<_DrillCard> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Opacity(
+      opacity: widget.isLocked ? 0.5 : 1.0,
+      child: InkWell(
       onTap: widget.onTap,
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
@@ -1675,6 +1693,10 @@ class _DrillCardState extends State<_DrillCard> with SingleTickerProviderStateMi
                             color: widget.backgroundImage != null ? Colors.white : (widget.isSelected ? Colors.white : widget.colors.onSurface),
                           ),
                         ),
+                        if (widget.isLocked) ...[
+                          const Gap(8),
+                          const ProBadge(compact: true),
+                        ],
                         const Gap(4),
                         Text(
                           widget.description,
@@ -1728,6 +1750,7 @@ class _DrillCardState extends State<_DrillCard> with SingleTickerProviderStateMi
           ],
         ),
       ),
+    ),
     );
   }
 }

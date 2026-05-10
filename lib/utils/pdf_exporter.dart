@@ -49,10 +49,7 @@ class PdfExporter {
         child: pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            if (hashPrefix != null)
-              pw.Text('THOT — Document non-falsifiable — Hash: $hashPrefix — ${_formatDateShort(localeTag)}', style: _normal(7, color: _textMuted))
-            else
-              pw.Text('THOT — Document non-falsifiable — ${_formatDateShort(localeTag)}', style: _normal(7, color: _textMuted)),
+            pw.Text(_footerLabel(localeTag, _formatDateShort(localeTag)), style: _normal(7, color: _textMuted)),
           ],
         ),
       );
@@ -61,6 +58,22 @@ class PdfExporter {
     final now = DateTime.now();
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm', localeTag);
     return dateFormat.format(now);
+  }
+
+  static String _footerLabel(String localeTag, String dateShort) {
+    switch (localeTag) {
+      case 'en':
+        return 'THOT \u2014 Document generated on $dateShort';
+      case 'de':
+        return 'THOT \u2014 Dokument erstellt am $dateShort';
+      case 'it':
+        return 'THOT \u2014 Documento generato il $dateShort';
+      case 'es':
+        return 'THOT \u2014 Documento generado el $dateShort';
+      case 'fr':
+      default:
+        return 'THOT \u2014 Document g\u00e9n\u00e9r\u00e9 le $dateShort';
+    }
   }
 
   static pw.Widget _sectionTitle(String text) => pw.Container(
@@ -799,19 +812,7 @@ if (options.includeSessions && provider.sessions.isNotEmpty) {
                   pw.SizedBox(width: 10),
                   _statBox(_label('Plateformes', localeTag), '${provider.platforms.length}'),
                 ]),
-                if (hash != null && serial != null) ...[
-                  pw.SizedBox(height: 24),
-                  pw.Divider(color: _cardBorder, height: 1),
-                  pw.SizedBox(height: 20),
-                  // Authentication block
-                  pw.Text('AUTHENTIFICATION', style: _bold(11, color: _sectionBg)),
-                  pw.SizedBox(height: 10),
-                  _field('Numéro de série', serial),
-                  _field('Empreinte SHA-256', hash),
-                  _field('Généré le', DateTime.now().toIso8601String()),
-                  _field('Vérifiable sur', 'https://thotbook.fr/verify'),
-                ],
-              ]),
+                ]),
             ),
           ],
         ),

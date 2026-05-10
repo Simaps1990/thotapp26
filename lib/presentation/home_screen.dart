@@ -88,11 +88,6 @@ class _MaintenanceAlert {
 }
 
 void _showReflexesModal(BuildContext context) {
-  final provider = Provider.of<ThotProvider>(context, listen: false);
-  if (!provider.isPremium) {
-    showProModal(context);
-    return;
-  }
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -102,11 +97,6 @@ void _showReflexesModal(BuildContext context) {
 }
 
 void _showAudioStimuliComingSoon(BuildContext context) {
-  final provider = Provider.of<ThotProvider>(context, listen: false);
-  if (!provider.isPremium) {
-    showProModal(context);
-    return;
-  }
   final strings = AppStrings.of(context);
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(strings.toolComingSoon)),
@@ -125,7 +115,7 @@ void _showCalculationToolsModal(BuildContext context) {
 // ── Écran d'accueil ──────────────────────────────────────────────────────────
 void _showDiagnosticModal(BuildContext context) {
   final provider = Provider.of<ThotProvider>(context, listen: false);
-  if (!provider.isPremium) {
+  if (provider.isToolLockedForFree('diagnostics')) {
     showProModal(context);
     return;
   }
@@ -138,11 +128,6 @@ void _showDiagnosticModal(BuildContext context) {
 }
 
 void _showMilliemeModal(BuildContext context) {
-  final provider = Provider.of<ThotProvider>(context, listen: false);
-  if (!provider.isPremium) {
-    showProModal(context);
-    return;
-  }
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,

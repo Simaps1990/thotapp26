@@ -8,7 +8,12 @@ import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
 
 void showProModal(BuildContext context) {
-  // context.push('/pro'); // Temporarily disabled
+  // Always navigate to the Pro screen. The Pro screen itself decides
+  // whether to display the paywall or the "already Pro" state based on
+  // `provider.isPremium`. The freemium flag is enforced at the call sites
+  // (every paywall-trigger call should be guarded by an `if (!isPremium)`
+  // or an `isXLockedForFree` check).
+  context.push('/pro');
 }
 
 class ProScreen extends StatefulWidget {

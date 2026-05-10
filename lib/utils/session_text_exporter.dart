@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:thot/data/exercise_step.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/data/thot_provider.dart';
+import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/unit_converter.dart';
 import 'package:thot/utils/exercise_display.dart';
 
@@ -16,12 +17,13 @@ abstract final class SessionTextExporter {
     required ThotProvider provider,
     required UnitConverter converter,
   }) {
+    final strings = AppStrings.of(context);
     final locale = (provider.appLocale ?? const Locale('fr')).toLanguageTag();
     final dateFormat = DateFormat('d MMMM yyyy HH:mm', locale);
     final buffer = StringBuffer();
 
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('📊 RAPPORT DE SESSION DE TIR');
+    buffer.writeln(strings.textExportTitle);
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     buffer.writeln();
 
@@ -31,7 +33,7 @@ abstract final class SessionTextExporter {
     if (session.shootingDistance != null && session.shootingDistance!.trim().isNotEmpty) {
       buffer.writeln('🎯 ${session.shootingDistance}');
     }
-    buffer.writeln('🏷️  Type: ${session.sessionType}');
+    buffer.writeln(strings.textExportType(session.sessionType));
     buffer.writeln();
 
     if (session.weatherEnabled) {
@@ -42,31 +44,31 @@ abstract final class SessionTextExporter {
           (session.pressureEnabled && session.pressure.isNotEmpty);
       if (hasAnyWeatherField) {
         buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        buffer.writeln('🌤️  CONDITIONS MÉTÉOROLOGIQUES');
+        buffer.writeln(strings.textExportWeatherHeader);
         buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         if (session.temperatureEnabled && session.temperature.isNotEmpty) {
-          buffer.writeln('🌡️  Température: ${converter.parseTemperatureString(session.temperature)}');
+          buffer.writeln(strings.textExportTemperature(converter.parseTemperatureString(session.temperature)));
         }
         if (session.windEnabled && session.wind.isNotEmpty) {
-          buffer.writeln('💨 Vent: ${converter.parseWindSpeedString(session.wind)}');
+          buffer.writeln(strings.textExportWind(converter.parseWindSpeedString(session.wind)));
         }
-        if (session.humidityEnabled && session.humidity.isNotEmpty) buffer.writeln('💧 Humidité: ${session.humidity}');
-        if (session.pressureEnabled && session.pressure.isNotEmpty) buffer.writeln('🔘 Pression: ${session.pressure}');
+        if (session.humidityEnabled && session.humidity.isNotEmpty) buffer.writeln(strings.textExportHumidity(session.humidity));
+        if (session.pressureEnabled && session.pressure.isNotEmpty) buffer.writeln(strings.textExportPressure(session.pressure));
         buffer.writeln();
       }
     }
 
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('📈 STATISTIQUES GLOBALES');
+    buffer.writeln(strings.textExportStatsHeader);
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('🔫 Total de coups tirés: ${session.totalRounds}');
-    buffer.writeln('🎯 Précision moyenne: ${session.hasCountedPrecision ? '${session.averagePrecision.toStringAsFixed(1)}%' : '—'}');
-    buffer.writeln('📋 Nombre d\'exercices: ${session.exercises.length}');
+    buffer.writeln(strings.textExportTotalShots(session.totalRounds));
+    buffer.writeln(strings.textExportAvgPrecision(session.hasCountedPrecision ? '${session.averagePrecision.toStringAsFixed(1)}%' : '—'));
+    buffer.writeln(strings.textExportExerciseCount(session.exercises.length));
     buffer.writeln();
 
     if (session.exercises.isNotEmpty) {
       buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      buffer.writeln('🎯 EXERCICES DÉTAILLÉS');
+      buffer.writeln(strings.textExportExercisesHeader);
       buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       for (int i = 0; i < session.exercises.length; i++) {
@@ -77,26 +79,26 @@ abstract final class SessionTextExporter {
         final equipmentNames = _resolveEquipmentNames(ex.equipmentIds, provider);
 
         buffer.writeln();
-        buffer.writeln('▪️  EXERCICE ${i + 1}${ex.name.trim().isEmpty ? '' : ' — ${ex.name}'}');
-        buffer.writeln('   ├─ Plateforme: $platformName');
-        buffer.writeln('   ├─ Consommable: $ammoName');
-        if (equipmentNames.isNotEmpty) buffer.writeln('   ├─ Équipement: ${equipmentNames.join(', ')}');
-        if (ex.targetName != null && ex.targetName!.trim().isNotEmpty) buffer.writeln('   ├─ Cible: ${ex.targetName}');
+        buffer.writeln('${strings.textExportExerciseN(i + 1)}${ex.name.trim().isEmpty ? '' : ' — ${ex.name}'}');
+        buffer.writeln('   ├─ ${strings.textExportPlatformLabel}: $platformName');
+        buffer.writeln('   ├─ ${strings.textExportAmmoLabel}: $ammoName');
+        if (equipmentNames.isNotEmpty) buffer.writeln('   ├─ ${strings.textExportEquipmentLabel}: ${equipmentNames.join(', ')}');
+        if (ex.targetName != null && ex.targetName!.trim().isNotEmpty) buffer.writeln('   ├─ ${strings.textExportTargetLabel}: ${ex.targetName}');
 
         final hasSteps = ex.steps != null && ex.steps!.isNotEmpty;
         if (!hasSteps) {
-          buffer.writeln('   ├─ Distance: ${converter.formatDistance(ex.distance)}');
-          buffer.writeln('   ├─ Coups tirés: ${ex.shotsFired}');
-          if (ex.isPrecisionCounted) buffer.writeln('   ├─ Précision: ${ex.precision!.toStringAsFixed(1)}%');
+          buffer.writeln('   ├─ ${strings.textExportDistanceLabel}: ${converter.formatDistance(ex.distance)}');
+          buffer.writeln('   ├─ ${strings.textExportShotsFiredLabel}: ${ex.shotsFired}');
+          if (ex.isPrecisionCounted) buffer.writeln('   ├─ ${strings.textExportPrecisionLabel}: ${ex.precision!.toStringAsFixed(1)}%');
           if (ex.observations.trim().isNotEmpty) {
-            buffer.writeln('   └─ Notes: ${ex.observations}');
+            buffer.writeln('   └─ ${strings.textExportNotesLabel}: ${ex.observations}');
           } else {
-            buffer.writeln('   └─ (Sans observations)');
+            buffer.writeln('   └─ ${strings.textExportNoNotes}');
           }
           continue;
         }
 
-        buffer.writeln('   ├─ Mode: détaillé');
+        buffer.writeln('   ├─ ${strings.textExportDetailedMode}');
         for (int si = 0; si < ex.steps!.length; si++) {
           final st = ex.steps![si];
           final idx = (si + 1).toString().padLeft(2, '0');
@@ -113,14 +115,14 @@ abstract final class SessionTextExporter {
 
           final details = <String>[];
           if (st.position != null) details.add(st.position!.name);
-          if (st.shots != null) details.add('${st.shots} coups');
+          if (st.shots != null) details.add(strings.textExportStepShots(st.shots!));
           if (st.distanceM != null) details.add('${st.distanceM} m');
-          if ((st.target ?? '').trim().isNotEmpty) details.add('cible ${st.target!.trim()}');
-          if (st.reloadType != null) details.add('rechargement ${st.reloadType!.name}');
+          if ((st.target ?? '').trim().isNotEmpty) details.add(strings.textExportStepTarget(st.target!.trim()));
+          if (st.reloadType != null) details.add(strings.textExportStepReload(st.reloadType!.name));
           if (st.durationSeconds != null) details.add('${st.durationSeconds} s');
-          if ((st.trigger ?? '').trim().isNotEmpty) details.add('déclencheur ${st.trigger!.trim()}');
+          if ((st.trigger ?? '').trim().isNotEmpty) details.add(strings.textExportStepTrigger(st.trigger!.trim()));
           if ((st.platformFrom ?? '').trim().isNotEmpty || (st.platformTo ?? '').trim().isNotEmpty) {
-            details.add('de ${st.platformFrom ?? '—'} vers ${st.platformTo ?? '—'}');
+            details.add(strings.textExportStepTransition(st.platformFrom, st.platformTo));
           }
 
           buffer.writeln('   │   $icon $idx — ${st.type.name}${details.isEmpty ? '' : ' · ${details.join(' · ')}'}');
@@ -128,20 +130,20 @@ abstract final class SessionTextExporter {
             buffer.writeln('   │      💬 ${st.comment!.trim()}');
           }
         }
-        buffer.writeln('   ├─ Total (AUTO): ${ex.detailedTotalShots} coups');
-        buffer.writeln('   ├─ Distance max (AUTO): ${ex.detailedMaxDistance ?? 0} m');
-        if (ex.isPrecisionCounted) buffer.writeln('   ├─ Précision: ${ex.precision!.toStringAsFixed(1)}%');
+        buffer.writeln('   ├─ ${strings.textExportAutoTotal(ex.detailedTotalShots)}');
+        buffer.writeln('   ├─ ${strings.textExportAutoMaxDistance(ex.detailedMaxDistance ?? 0)}');
+        if (ex.isPrecisionCounted) buffer.writeln('   ├─ ${strings.textExportPrecisionLabel}: ${ex.precision!.toStringAsFixed(1)}%');
         if (ex.observations.trim().isNotEmpty) {
-          buffer.writeln('   └─ Notes: ${ex.observations}');
+          buffer.writeln('   └─ ${strings.textExportNotesLabel}: ${ex.observations}');
         } else {
-          buffer.writeln('   └─ (Sans observations)');
+          buffer.writeln('   └─ ${strings.textExportNoNotes}');
         }
       }
       buffer.writeln();
     }
 
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('Généré par THOT - Carnet de Tir');
+    buffer.writeln(strings.textExportFooter);
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return buffer.toString();

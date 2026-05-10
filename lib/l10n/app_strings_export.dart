@@ -130,4 +130,87 @@ extension AppStringsExport on AppStrings {
         it: 'Aggiunge un hash crittografico verificabile, consigliato per uso amministrativo.',
         es: 'Añade un hash criptográfico verificable, recomendado para uso administrativo.',
       );
+
+  // --- Text Export ---
+
+  String get textExportTitle => _pick(
+        fr: '📊 RAPPORT DE SESSION DE TIR',
+        en: '📊 SHOOTING SESSION REPORT',
+        de: '📊 SCHIEẞSITZUNGSBERICHT',
+        it: '📊 RAPPORTO SESSIONE DI TIRO',
+        es: '📊 INFORME DE SESIÓN DE TIRO',
+      );
+
+  String textExportType(String type) => _pick(
+        fr: '🏷️  Type: $type',
+        en: '🏷️  Type: $type',
+        de: '🏷️  Typ: $type',
+        it: '🏷️  Tipo: $type',
+        es: '🏷️  Tipo: $type',
+      );
+
+  String get textExportWeatherHeader => _pick(
+        fr: '🌤️  CONDITIONS MÉTÉOROLOGIQUES',
+        en: '🌤️  WEATHER CONDITIONS',
+        de: '🌤️  WETTERBEDINGUNGEN',
+        it: '🌤️  CONDIZIONI METEO',
+        es: '🌤️  CONDICIONES METEOROLÓGICAS',
+      );
+
+  String textExportTemperature(String v) => '🌡️  ${_pick(fr: 'Température', en: 'Temperature', de: 'Temperatur', it: 'Temperatura', es: 'Temperatura')}: $v';
+  String textExportWind(String v) => '💨 ${_pick(fr: 'Vent', en: 'Wind', de: 'Wind', it: 'Vento', es: 'Viento')}: $v';
+  String textExportHumidity(String v) => '💧 ${_pick(fr: 'Humidité', en: 'Humidity', de: 'Luftfeuchtigkeit', it: 'Umidità', es: 'Humedad')}: $v';
+  String textExportPressure(String v) => '🔘 ${_pick(fr: 'Pression', en: 'Pressure', de: 'Druck', it: 'Pressione', es: 'Presión')}: $v';
+
+  String get textExportStatsHeader => _pick(
+        fr: '📈 STATISTIQUES GLOBALES',
+        en: '📈 OVERALL STATISTICS',
+        de: '📈 GESAMTSTATISTIKEN',
+        it: '📈 STATISTICHE GLOBALI',
+        es: '📈 ESTADÍSTICAS GLOBALES',
+      );
+
+  String textExportTotalShots(int n) => '🔫 ${_pick(fr: 'Total coups tirés', en: 'Total shots fired', de: 'Schüsse gesamt', it: 'Colpi totali sparati', es: 'Disparos totales')}: $n';
+
+  String textExportAvgPrecision(String v) => '🎯 ${_pick(fr: 'Précision moyenne', en: 'Average accuracy', de: 'Durchschnittliche Genauigkeit', it: 'Precisione media', es: 'Precisión media')}: $v';
+
+  String textExportExerciseCount(int n) => '📋 ${_pick(fr: "Nombre d\'exercices", en: 'Number of exercises', de: 'Anzahl Übungen', it: 'Numero di esercizi', es: 'Número de ejercicios')}: $n';
+
+  String get textExportExercisesHeader => _pick(
+        fr: '🎯 EXERCICES DÉTAILLÉS',
+        en: '🎯 DETAILED EXERCISES',
+        de: '🎯 ÜBUNGEN IM DETAIL',
+        it: '🎯 ESERCIZI DETTAGLIATI',
+        es: '🎯 EJERCICIOS DETALLADOS',
+      );
+
+  String textExportExerciseN(int n) => '▪️  ${_pick(fr: 'EXERCICE', en: 'EXERCISE', de: 'ÜBUNG', it: 'ESERCIZIO', es: 'EJERCICIO')} $n';
+
+  String get textExportPlatformLabel => _pick(fr: 'Plateforme', en: 'Platform', de: 'Plattform', it: 'Piattaforma', es: 'Plataforma');
+  String get textExportAmmoLabel => _pick(fr: 'Consommable', en: 'Consumable', de: 'Verbrauchsmaterial', it: 'Consumabile', es: 'Consumible');
+  String get textExportEquipmentLabel => _pick(fr: 'Équipement', en: 'Equipment', de: 'Ausrüstung', it: 'Attrezzatura', es: 'Equipo');
+  String get textExportTargetLabel => _pick(fr: 'Cible', en: 'Target', de: 'Ziel', it: 'Bersaglio', es: 'Objetivo');
+  String get textExportDistanceLabel => _pick(fr: 'Distance', en: 'Distance', de: 'Entfernung', it: 'Distanza', es: 'Distancia');
+  String get textExportShotsFiredLabel => _pick(fr: 'Coups tirés', en: 'Shots fired', de: 'Schüsse', it: 'Colpi sparati', es: 'Disparos');
+  String get textExportPrecisionLabel => _pick(fr: 'Précision', en: 'Accuracy', de: 'Genauigkeit', it: 'Precisione', es: 'Precisión');
+  String get textExportNotesLabel => _pick(fr: 'Notes', en: 'Notes', de: 'Notizen', it: 'Note', es: 'Notas');
+  String get textExportNoNotes => _pick(fr: '(Sans observations)', en: '(No observations)', de: '(Keine Anmerkungen)', it: '(Senza osservazioni)', es: '(Sin observaciones)');
+  String get textExportDetailedMode => _pick(fr: 'Mode: détaillé', en: 'Mode: detailed', de: 'Modus: detailliert', it: 'Modalità: dettagliata', es: 'Modo: detallado');
+
+  String textExportStepShots(int n) => '$n ${_pick(fr: 'coups', en: 'shots', de: 'Schüsse', it: 'colpi', es: 'disparos')}';
+  String textExportStepTarget(String t) => '${_pick(fr: 'cible', en: 'target', de: 'Ziel', it: 'bersaglio', es: 'objetivo')} $t';
+  String textExportStepReload(String r) => '${_pick(fr: 'rechargement', en: 'reload', de: 'Nachladen', it: 'ricarica', es: 'recarga')} $r';
+  String textExportStepTrigger(String t) => '${_pick(fr: 'déclencheur', en: 'trigger', de: 'Auslöser', it: 'innesco', es: 'disparador')} $t';
+  String textExportStepTransition(String? from, String? to) => '${_pick(fr: 'de', en: 'from', de: 'von', it: 'da', es: 'de')} ${from ?? '—'} ${_pick(fr: 'vers', en: 'to', de: 'zu', it: 'a', es: 'a')} ${to ?? '—'}';
+
+  String textExportAutoTotal(int n) => 'Total (AUTO): $n ${_pick(fr: 'coups', en: 'shots', de: 'Schüsse', it: 'colpi', es: 'disparos')}';
+  String textExportAutoMaxDistance(int d) => '${_pick(fr: 'Distance max (AUTO)', en: 'Max distance (AUTO)', de: 'Max. Entfernung (AUTO)', it: 'Distanza max (AUTO)', es: 'Distancia máx (AUTO)')}: $d m';
+
+  String get textExportFooter => _pick(
+        fr: 'Généré par THOT - Carnet de Tir',
+        en: 'Generated by THOT - Shooting Logbook',
+        de: 'Erstellt von THOT - Schießbuch',
+        it: 'Generato da THOT - Registro di Tiro',
+        es: 'Generado por THOT - Cuaderno de Tiro',
+      );
 }

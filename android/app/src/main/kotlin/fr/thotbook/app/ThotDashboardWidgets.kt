@@ -81,15 +81,22 @@ class ThotStatsWidgetProvider : HomeWidgetProvider() {
             val sessionsWeek = prefInt(widgetData, "widget_sessions_this_week", 0)
             val avgPrecision = prefDouble(widgetData, "widget_avg_precision", 0.0)
 
-            views.setTextViewText(R.id.widget_title, "Stats du jour")
-            views.setTextViewText(R.id.widget_primary_value, "$shotsToday tirs")
+            views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_stats_title))
+            views.setTextViewText(
+                R.id.widget_primary_value,
+                String.format(Locale.getDefault(), context.getString(R.string.widget_stats_shots), shotsToday),
+            )
             views.setTextViewText(
                 R.id.widget_secondary_value,
-                if (compact) "7j: $sessionsWeek sessions" else "$sessionsWeek sessions / 7j",
+                if (compact) {
+                    String.format(Locale.getDefault(), context.getString(R.string.widget_stats_sessions_week_compact), sessionsWeek)
+                } else {
+                    String.format(Locale.getDefault(), context.getString(R.string.widget_stats_sessions_week), sessionsWeek)
+                },
             )
             views.setTextViewText(
                 R.id.widget_footer,
-                String.format(Locale.getDefault(), "Précision moy. %.0f%%", avgPrecision),
+                String.format(Locale.getDefault(), context.getString(R.string.widget_stats_avg_precision), avgPrecision),
             )
             views.setProgressBar(R.id.widget_progress, 100, avgPrecision.coerceIn(0.0, 100.0).toInt(), false)
             views.setViewVisibility(
@@ -121,10 +128,19 @@ class ThotMaintenanceWidgetProvider : HomeWidgetProvider() {
             val foulingLevel = prefString(widgetData, "widget_fouling_level", "OK")
             val stockLevel = prefString(widgetData, "widget_stock_level", "OK")
 
-            views.setTextViewText(R.id.widget_title, "Maintenance")
-            views.setTextViewText(R.id.value_wear, "Usure ${pct(wear)} • $wearLevel")
-            views.setTextViewText(R.id.value_fouling, "Encrass. ${pct(fouling)} • $foulingLevel")
-            views.setTextViewText(R.id.value_stock, "Stock ${pct(stock)} • $stockLevel")
+            views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_maintenance_title))
+            views.setTextViewText(
+                R.id.value_wear,
+                String.format(Locale.getDefault(), context.getString(R.string.widget_maintenance_wear), pct(wear), wearLevel),
+            )
+            views.setTextViewText(
+                R.id.value_fouling,
+                String.format(Locale.getDefault(), context.getString(R.string.widget_maintenance_fouling), pct(fouling), foulingLevel),
+            )
+            views.setTextViewText(
+                R.id.value_stock,
+                String.format(Locale.getDefault(), context.getString(R.string.widget_maintenance_stock), pct(stock), stockLevel),
+            )
             views.setProgressBar(R.id.progress_wear, 100, (wear.coerceIn(0.0, 1.0) * 100.0).toInt(), false)
             views.setProgressBar(R.id.progress_fouling, 100, (fouling.coerceIn(0.0, 1.0) * 100.0).toInt(), false)
             views.setProgressBar(R.id.progress_stock, 100, (stock.coerceIn(0.0, 1.0) * 100.0).toInt(), false)
@@ -161,17 +177,21 @@ class ThotDocumentsWidgetProvider : HomeWidgetProvider() {
             val nextDueDays = prefInt(widgetData, "widget_next_doc_due_days", 9999)
 
             val subtitle = when {
-                dueCount <= 0 -> "Aucun rappel urgent"
-                nextDueDays == 9999 -> "Échéance à vérifier"
-                nextDueDays < 0 -> "Au moins un document expiré"
-                nextDueDays == 0 -> "Échéance aujourd'hui"
-                else -> "Prochaine échéance: $nextDueDays jour(s)"
+                dueCount <= 0 -> context.getString(R.string.widget_documents_no_reminder)
+                nextDueDays == 9999 -> context.getString(R.string.widget_documents_check_due)
+                nextDueDays < 0 -> context.getString(R.string.widget_documents_expired)
+                nextDueDays == 0 -> context.getString(R.string.widget_documents_due_today)
+                else -> String.format(Locale.getDefault(), context.getString(R.string.widget_documents_due_days), nextDueDays)
             }
 
-            views.setTextViewText(R.id.widget_title, "Rappels documents")
+            views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_documents_title))
             views.setTextViewText(
                 R.id.widget_primary_value,
-                if (compact) "$dueCount alertes" else "$dueCount à vérifier",
+                if (compact) {
+                    String.format(Locale.getDefault(), context.getString(R.string.widget_documents_count_compact), dueCount)
+                } else {
+                    String.format(Locale.getDefault(), context.getString(R.string.widget_documents_count), dueCount)
+                },
             )
             views.setTextViewText(R.id.widget_footer, subtitle)
             views.setProgressBar(R.id.widget_progress, 100, (dueCount * 20).coerceIn(0, 100), false)
@@ -200,17 +220,21 @@ class ThotActivityWidgetProvider : HomeWidgetProvider() {
             val sessions = prefInt(widgetData, "widget_total_sessions", 0)
 
             val activity = when {
-                days < 0 -> "Aucune session"
-                days == 0 -> "Aujourd'hui"
-                days == 1 -> "Hier"
-                else -> "Il y a $days jours"
+                days < 0 -> context.getString(R.string.widget_activity_no_session)
+                days == 0 -> context.getString(R.string.widget_activity_today)
+                days == 1 -> context.getString(R.string.widget_activity_yesterday)
+                else -> String.format(Locale.getDefault(), context.getString(R.string.widget_activity_days_ago), days)
             }
 
-            views.setTextViewText(R.id.widget_title, "Dernière activité")
+            views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_activity_title))
             views.setTextViewText(R.id.widget_primary_value, activity)
             views.setTextViewText(
                 R.id.widget_footer,
-                if (compact) "$sessions sessions" else "$sessions sessions totales",
+                if (compact) {
+                    String.format(Locale.getDefault(), context.getString(R.string.widget_activity_total_sessions_compact), sessions)
+                } else {
+                    String.format(Locale.getDefault(), context.getString(R.string.widget_activity_total_sessions), sessions)
+                },
             )
             val activityScore = when {
                 days < 0 -> 0

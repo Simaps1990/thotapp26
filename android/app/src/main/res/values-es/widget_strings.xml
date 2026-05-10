@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_stats_name">THOT · Estadísticas</string>
+    <string name="widget_maintenance_name">THOT · Mantenimiento</string>
+    <string name="widget_documents_name">THOT · Documentos</string>
+    <string name="widget_activity_name">THOT · Actividad</string>
+    <string name="widget_stats_description">Estadísticas diarias THOT</string>
+    <string name="widget_maintenance_description">Mantenimiento THOT</string>
+    <string name="widget_documents_description">Recordatorios de documentos THOT</string>
+    <string name="widget_activity_description">Actividad THOT</string>
+
+    <string name="widget_stats_title">Estadísticas del día</string>
+    <string name="widget_stats_shots">%d disparos</string>
+    <string name="widget_stats_sessions_week">%d sesiones / 7d</string>
+    <string name="widget_stats_sessions_week_compact">7d: %d sesiones</string>
+    <string name="widget_stats_avg_precision">Precisión media %.0f%%</string>
+
+    <string name="widget_maintenance_title">Mantenimiento</string>
+    <string name="widget_maintenance_wear">Desgaste %s • %s</string>
+    <string name="widget_maintenance_fouling">Suciedad %s • %s</string>
+    <string name="widget_maintenance_stock">Stock %s • %s</string>
+
+    <string name="widget_documents_title">Recordatorios de documentos</string>
+    <string name="widget_documents_count">%d por verificar</string>
+    <string name="widget_documents_count_compact">%d alertas</string>
+    <string name="widget_documents_no_reminder">Sin recordatorios urgentes</string>
+    <string name="widget_documents_check_due">Vencimiento por verificar</string>
+    <string name="widget_documents_expired">Al menos un documento vencido</string>
+    <string name="widget_documents_due_today">Vence hoy</string>
+    <string name="widget_documents_due_days">Próximo vencimiento: %d día(s)</string>
+
+    <string name="widget_activity_title">Última actividad</string>
+    <string name="widget_activity_no_session">Ninguna sesión</string>
+    <string name="widget_activity_today">Hoy</string>
+    <string name="widget_activity_yesterday">Ayer</string>
+    <string name="widget_activity_days_ago">Hace %d días</string>
+    <string name="widget_activity_total_sessions">%d sesiones totales</string>
+    <string name="widget_activity_total_sessions_compact">%d sesiones</string>
+
+    <string name="widget_hint_open">Toca para abrir THOT</string>
+</resources>

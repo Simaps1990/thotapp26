@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
-        <!-- Exclure totalement les fichiers applicatifs (données THOT). -->
-        <exclude domain="file" />
-        <!-- Préférences utilisateur non sensibles (thème, langue, réglages). -->
+        <include domain="file" path="thot_data_v1.dat" />
+        <include domain="file" path="thot_data_v1.bak" />
+        <include domain="file" path="thot_recovery_v1.json" />
+        <include domain="file" path="photos/" />
+        <include domain="file" path="user_documents/" />
         <include domain="sharedpref" path="." />
     </cloud-backup>
     <device-transfer>
-        <!-- Cohérence avec cloud backup : pas de transfert auto des données THOT. -->
-        <exclude domain="file" />
+        <!-- For device-to-device transfer, include everything. -->
+        <include domain="file" path="." />
         <include domain="sharedpref" path="." />
     </device-transfer>
 </data-extraction-rules>

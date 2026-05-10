@@ -20,6 +20,8 @@ import 'package:thot/presentation/shooting_timer_screen.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
+import 'package:thot/utils/image_storage.dart';
+import 'package:thot/utils/native_picker.dart';
 class _CitySuggestion {
   final String name;
   final String countryCode;
@@ -1994,13 +1996,14 @@ class _SessionSummary extends StatelessWidget {
 
   String _getCurrencySymbol(String? currency) {
     switch (currency) {
-      case 'USD':
-        return '\$';
-      case 'CAD':
-        return 'CAD';
+      case 'USD': return '\$';
+      case 'CAD': return 'CA\$';
+      case 'GBP': return '£';
+      case 'CHF': return 'CHF';
+      case 'JPY': return '¥';
+      case 'AUD': return 'A\$';
       case 'EUR':
-      default:
-        return '€';
+      default: return '€';
     }
   }
 
@@ -2448,49 +2451,32 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     super.dispose();
   }
   Future<void> _pickTargetPhoto() async {
-    try {
-      final picker = ImagePicker();
-      final List<XFile> files = await picker.pickMultiImage();
-      
-      if (!mounted) return;
-      if (files.isEmpty) return;
+    final picked = await NativePicker.pick(context, mode: PickerMode.photoOnly);
+    if (!mounted || picked.isCancelled) return;
 
-      final List<ExercisePhoto> picked = [];
-
-      for (final file in files) {
-        String? path;
-
-        if (kIsWeb) {
-          final bytes = await file.readAsBytes();
-          final base64 = base64Encode(bytes);
-          path = 'data:image/${file.name.split('.').last};base64,$base64';
-        } else {
-          path = file.path;
-        }
-
-        if (path.isEmpty) continue;
-
-        picked.add(
-          ExercisePhoto(
-            id: DateTime.now().microsecondsSinceEpoch.toString() + file.name,
-            name: file.name,
-            path: path,
-          ),
-        );
-      }
-
-      if (picked.isEmpty) return;
-
-      for (final photo in picked) {
-        _photoControllers[photo.id] = TextEditingController(text: photo.name);
-      }
-
-      setState(() {
-        _targetPhotos.addAll(picked);
-      });
-    } catch (e) {
-      debugPrint('Target photo pick failed: $e');
+    String? path;
+    if (kIsWeb) {
+      if (picked.bytes == null) return;
+      final ext = (picked.name ?? 'jpg').split('.').last;
+      path = 'data:image/$ext;base64,${base64Encode(picked.bytes!)}';
+    } else {
+      path = picked.path;
     }
+    if (path == null || path.isEmpty) return;
+
+    final id = DateTime.now().microsecondsSinceEpoch.toString() +
+        (picked.name ?? 'img');
+    final photo = ExercisePhoto(
+      id: id,
+      name: picked.name ?? 'photo',
+      path: path,
+    );
+
+    _photoControllers[photo.id] = TextEditingController(text: photo.name);
+
+    setState(() {
+      _targetPhotos.add(photo);
+    });
   }
 
 

@@ -161,4 +161,32 @@ String get associatePlatform => _pick(
 
   // --- Error Messages ---
   String get citySearchUnavailable => _pick(fr: 'Recherche de ville indisponible', en: 'City search unavailable', de: 'Stadtsuche nicht verfügbar', it: 'Ricerca città non disponibile', es: 'Búsqueda de ciudad no disponible');
+
+  // --- Provider suffixes (used from code without BuildContext) ---
+
+  /// Feminine form: plateforme, munition.
+  String suffixDeleted(String name) => '$name ${_pick(
+        fr: '(supprimée)',
+        en: '(deleted)',
+        de: '(gelöscht)',
+        it: '(eliminata)',
+        es: '(eliminada)',
+      )}';
+
+  /// Masculine form: accessoire.
+  String suffixDeletedMasc(String name) => '$name ${_pick(
+        fr: '(supprimé)',
+        en: '(deleted)',
+        de: '(gelöscht)',
+        it: '(eliminato)',
+        es: '(eliminado)',
+      )}';
+
+  String suffixCopy(String name) => '$name ${_pick(
+        fr: '(copie)',
+        en: '(copy)',
+        de: '(Kopie)',
+        it: '(copia)',
+        es: '(copia)',
+      )}';
 }

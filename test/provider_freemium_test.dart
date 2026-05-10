@@ -55,7 +55,8 @@ Future<ThotProvider> _makeProvider() async {
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 void main() {
-  group('ThotProvider — verrouillage plan gratuit (helpers UI)', () {
+  // NOTE: Skipped while `_kFreeLimitsDisabled = true` in ThotProvider.
+  group('ThotProvider — verrouillage plan gratuit (helpers UI)', skip: 'Freemium limits disabled via _kFreeLimitsDisabled flag', () {
     test('isPlatformLockedForFree : index 0 libre, index 1+ verrouillé', () async {
       final p = await _makeProvider();
       final w = _platform();
@@ -71,13 +72,13 @@ void main() {
       expect(p.isAmmoLockedForFree(a, 1), true);
     });
 
-    test('isSessionLockedForFree : index 0-4 libre, index 5+ verrouillé', () async {
+    test('isSessionLockedForFree : toujours false (sessions illimitées)', () async {
       final p = await _makeProvider();
       final s = _session();
-      for (var i = 0; i < ThotProvider.maxSessionsFree; i++) {
-        expect(p.isSessionLockedForFree(s, i), false);
-      }
-      expect(p.isSessionLockedForFree(s, ThotProvider.maxSessionsFree), true);
+      // Sessions are unlimited on the free plan.
+      expect(p.isSessionLockedForFree(s, 0), false);
+      expect(p.isSessionLockedForFree(s, 5), false);
+      expect(p.isSessionLockedForFree(s, 100), false);
     });
 
     test('isItemDocumentLockedForFree : index 0 libre, index 1+ verrouillé', () async {
@@ -93,7 +94,8 @@ void main() {
     });
   });
 
-  group('ThotProvider — duplicate', () {
+  // NOTE: Skipped while `_kFreeLimitsDisabled = true` in ThotProvider.
+  group('ThotProvider — duplicate', skip: 'Freemium limits disabled via _kFreeLimitsDisabled flag', () {
     test('duplicatePlatform retourne false quand limite atteinte', () async {
       final p = await _makeProvider();
       p.addPlatform(_platform(id: 'w1'));
@@ -124,14 +126,14 @@ void main() {
       expect(ids.length, 2);
     });
 
-    test('duplicateSession retourne false après 5 sessions (free)', () async {
+    test('duplicateSession réussit toujours (sessions illimitées)', () async {
       final p = await _makeProvider();
       for (var i = 0; i < 5; i++) {
         p.addSession(_session(id: 's$i'));
       }
       final result = p.duplicateSession(_session(id: 'sExtra'));
-      expect(result, false);
-      expect(p.sessions.length, 5);
+      expect(result, true);
+      expect(p.sessions.length, 6);
     });
   });
 

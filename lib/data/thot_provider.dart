@@ -14,6 +14,8 @@ import '../utils/maintenance_notifications.dart';
 import 'thot_file_store.dart';
 import 'thot_premium_service.dart';
 import 'thot_security_service.dart';
+import '../utils/image_storage.dart';
+import '../utils/crash_logger.dart';
 
 class ThotProvider extends ChangeNotifier {
   static const String _platformTypePistolSemiAuto = 'PA';
@@ -28,13 +30,28 @@ class ThotProvider extends ChangeNotifier {
   Future<void>? _initializeFuture;
   Timer? _saveDebounce;
   
-  // ⚠️ FREE LIMITS DISABLED — set to false before re-enabling Pro gates.
-  // Search TODO(FreeLimits) throughout this file to find all guarded checks.
+  // ============================================================
+  // FREEMIUM MACHINERY
+  // ============================================================
+  //
+  // THOT v1.3.3 ships with the freemium ENTIRELY DISABLED via the flag below.
+  // The full set of limits and the matching `isXLockedForFree(...)` getters
+  // are implemented for the day a Pro plan is reactivated. To turn the
+  // freemium back ON, change `_kFreeLimitsDisabled` to `false` and ensure
+  // the RevenueCat product IDs in `thot_premium_service.dart` are correct.
+  //
+  // NEVER call the limits checks bypassing the `_kFreeLimitsDisabled` guard
+  // at the top of each helper — UI stays consistent that way.
+  // ============================================================
+
   static const bool _kFreeLimitsDisabled = true;
 
+  // ----- Premium status -----
   bool get isPremium {
-    return true; // TODO(FreeLimits): return _isPremiumFromRevenueCat;
+    if (_kFreeLimitsDisabled) return true;
+    return _premiumService.isPremium;
   }
+
   bool get purchaseAvailable => _premiumService.purchaseAvailable;
   bool get purchasePending => _premiumService.purchasePending;
   String? get purchaseError => _premiumService.purchaseError;
@@ -45,9 +62,13 @@ class ThotProvider extends ChangeNotifier {
 
   Future<void> purchaseYearly() => _premiumService.purchaseYearly();
   Future<void> purchaseMonthly() => _premiumService.purchaseMonthly();
-  
-  // Sauvegarde native appareil : toujours autorisée par conception
-  // Sauvegarde système assumée (iCloud Backup sur iOS, Google Auto Backup sur Android).
+
+  // Sauvegarde système : iOS (iCloud Backup) inclut Application Support
+  // par défaut. Android : sauvegarde sélective configurée dans
+  // android/app/src/main/res/xml/backup_rules.xml et
+  // data_extraction_rules.xml (fichier domain + photos + user_documents).
+  // Limite Auto Backup Android : 25 MB par app — au-delà, le backup est
+  // silencieusement ignoré côté système.
   bool get cloudBackupEnabled => true;
 
   // Security
@@ -92,12 +113,13 @@ class ThotProvider extends ChangeNotifier {
   bool get biometricEnabled => _securityService.biometricEnabled;
   bool get isAuthenticated => _securityService.isAuthenticated;
   Future<bool> get isPinLocked async => _securityService.isCurrentlyLocked();
-  // Limits for free version
+  // ----- Limits -----
   static const int maxPlatformsFree = 1;
   static const int maxAmmosFree = 1;
   static const int maxAccessoriesFree = 1;
-  static const int maxSessionsFree = 5;
   static const int maxDocumentsPerItemFree = 1;
+  static const int maxUserDocumentsFree = 1;
+  // Sessions: unlimited even on free plan.
   
   // Theme State
   ThemeMode _themeMode = ThemeMode.light;
@@ -590,6 +612,15 @@ class ThotProvider extends ChangeNotifier {
   Locale? get appLocale =>
       _localeCode == null || _localeCode!.isEmpty ? null : Locale(_localeCode!);
   List<UserDocument> get userDocuments => _userDocuments;
+
+  /// Returns an [AppStrings] instance for the current locale, for use in
+  /// provider methods that don't have a [BuildContext].
+  AppStrings get _currentStrings {
+    final locale = _localeCode == null || _localeCode!.isEmpty
+        ? const Locale('fr')
+        : Locale(_localeCode!);
+    return AppStrings.forLocale(locale);
+  }
   
   void updateUserProfile({String? name, String? license, String? email}) {
     if (name != null) _userName = name;
@@ -710,10 +741,79 @@ class ThotProvider extends ChangeNotifier {
     // Annuler toutes les notifications de maintenance
     await MaintenanceNotifications.cancelAll();
 
+    // Wipe physical files (photos and uploaded PDFs).
+    await ImageStorage.wipeAll();
+    await ImageStorage.wipeUserDocuments();
+
+    // Clear crash log.
+    await CrashLogger.clear();
+
     notifyListeners();
   }
   
-  
+  // ── JSON data backup/restore ───────────────────────────────────────────────
+
+  /// Build a complete JSON backup of all user data (domain + preferences).
+  Map<String, dynamic> exportDomainAsJson() {
+    final domain = _buildDomainDataMap();
+    return {
+      'exportVersion': 1,
+      'exportDate': DateTime.now().toUtc().toIso8601String(),
+      'preferences': {
+        'userName': _userName,
+        'licenseNumber': _licenseNumber,
+        'userEmail': _userEmail,
+        'useMetric': _useMetric,
+        'dateFormatPreference': _dateFormatPreference,
+        'localeCode': _localeCode,
+        'themeMode': _themeMode == ThemeMode.dark ? 'dark' : (_themeMode == ThemeMode.system ? 'system' : 'light'),
+        'quickActions': _quickActions,
+      },
+      'domain': domain,
+    };
+  }
+
+  /// Restore all user data from a JSON backup produced by [exportDomainAsJson].
+  Future<void> importDomainFromJson(Map<String, dynamic> backup) async {
+    final domain = backup['domain'] as Map<String, dynamic>?;
+    if (domain == null) throw ArgumentError('Missing "domain" key in backup');
+
+    // Restore domain (platforms, ammos, accessories, sessions, etc.)
+    _loadDomainDataFromMap(domain);
+
+    // Restore preferences if present.
+    final prefs = backup['preferences'] as Map<String, dynamic>?;
+    if (prefs != null) {
+      _userName = (prefs['userName'] as String?) ?? _userName;
+      _licenseNumber = (prefs['licenseNumber'] as String?) ?? _licenseNumber;
+      _userEmail = (prefs['userEmail'] as String?) ?? _userEmail;
+      _useMetric = (prefs['useMetric'] as bool?) ?? _useMetric;
+      _dateFormatPreference = (prefs['dateFormatPreference'] as String?) ?? _dateFormatPreference;
+      final rawLocale = prefs['localeCode'] as String?;
+      _localeCode = (rawLocale == null || rawLocale.isEmpty) ? null : rawLocale;
+      final rawTheme = prefs['themeMode'] as String?;
+      _themeMode = rawTheme == 'dark'
+          ? ThemeMode.dark
+          : rawTheme == 'system'
+              ? ThemeMode.system
+              : ThemeMode.light;
+      final rawQuickActions = prefs['quickActions'] as List<dynamic>?;
+      if (rawQuickActions != null) {
+        _quickActions = rawQuickActions.cast<String>();
+      }
+    }
+
+    // Persist everything.
+    _domainDataLoadCompleted = true;
+    await _scheduleSaveImmediate();
+    notifyListeners();
+  }
+
+  Future<void> _scheduleSaveImmediate() async {
+    _saveDebounce?.cancel();
+    await _saveToLocal();
+  }
+
 Future<void> toggleCloudBackup(bool enabled) async {
   // Sauvegarde native laissée au système.
   // Cette méthode reste uniquement pour compatibilité,
@@ -789,61 +889,39 @@ Future<void> toggleCloudBackup(bool enabled) async {
   String? get primaryAmmoId => ammos.isEmpty ? null : ammos.first.id;
   String? get primaryAccessoryId => accessories.isEmpty ? null : accessories.first.id;
 
-  // TODO(FreeLimits): restore the real checks below when re-enabling limits.
-  //  bool canUsePlatformId(String id) =>
-  //      isPremium || (primaryPlatformId != null && id == primaryPlatformId);
-  //  bool canUseAmmoId(String id) =>
-  //      isPremium || (primaryAmmoId != null && id == primaryAmmoId);
-  //  bool canUseAccessoryId(String id) =>
-  //      isPremium || (primaryAccessoryId != null && id == primaryAccessoryId);
+  bool canUsePlatformId(String id) => true;
+  bool canUseAmmoId(String id) => true;
+  bool canUseAccessoryId(String id) => true;
 
-  bool canUsePlatformId(String id) => true; // Temporarily disabled
-  bool canUseAmmoId(String id) => true; // Temporarily disabled
-  bool canUseAccessoryId(String id) => true; // Temporarily disabled
-
-  // --- Free plan locking helpers -------------------------------------------------
-  // Ces méthodes ne modifient rien, elles dérivent seulement l'état "verrouillé Pro"
-  // à partir de l'abonnement et des quotas gratuits. L'UI peut les utiliser pour
-  // griser les éléments et limiter les actions.
-
-  bool isSessionLockedForFree(Session session, int index) {
-    // TODO(FreeLimits): restore index-based locking when re-enabling limits.
-    // if (isPremium) return false;
-    // return index >= maxSessionsFree;
-    return false;
-  }
-
+  // ----- isXLockedForFree (used to grey-out items past the quota) -----
   bool isPlatformLockedForFree(Platform platform, int index) {
-    // TODO(FreeLimits): restore first-platform-only behaviour when re-enabling
-    // limits.
-    // if (isPremium) return false;
-    // return index >= maxPlatformsFree;
-    return false;
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    return index >= maxPlatformsFree;
   }
 
   bool isAmmoLockedForFree(Ammo ammo, int index) {
-    // TODO(FreeLimits): restore first-ammo-only behaviour when re-enabling
-    // limits.
-    // if (isPremium) return false;
-    // return index >= maxAmmosFree;
-    return false;
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    return index >= maxAmmosFree;
   }
 
   bool isAccessoryLockedForFree(Accessory accessory, int index) {
-    // TODO(FreeLimits): restore first-accessory-only behaviour when
-    // re-enabling limits.
-    // if (isPremium) return false;
-    // return index >= maxAccessoriesFree;
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    return index >= maxAccessoriesFree;
+  }
+
+  bool isSessionLockedForFree(Session session, int index) {
+    // Sessions never locked — unlimited on free plan.
     return false;
   }
 
-  /// Documents côté item (plateforme, consommable, accessoire).
-  /// [currentDocumentsCount] est typiquement `item.documents.length`.
   bool isItemDocumentLockedForFree({required int documentIndex}) {
-    // TODO(FreeLimits): restore per-document locking when re-enabling limits.
-    // if (isPremium) return false;
-    // return documentIndex >= maxDocumentsPerItemFree;
-    return false;
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    return documentIndex >= maxDocumentsPerItemFree;
+  }
+
+  bool isUserDocumentLockedForFree({required int documentIndex}) {
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    return documentIndex >= maxUserDocumentsFree;
   }
 
   // Sessions
@@ -909,23 +987,71 @@ Future<void> toggleCloudBackup(bool enabled) async {
   int get _activeAccessoriesCount =>
       _accessories.where((a) => !a.isHidden).length;
 
-  // Check if user can add more items (free version limits)
-  // TODO(FreeLimits): restore real limits by re-enabling the checks below.
-  //  bool canAddPlatform() => isPremium || _activePlatformsCount < maxPlatformsFree;
-  //  bool canAddAmmo() => isPremium || _activeAmmosCount < maxAmmosFree;
-  //  bool canAddAccessory() =>
-  //      isPremium || _activeAccessoriesCount < maxAccessoriesFree;
-  //  bool canAddSession() => isPremium || _sessions.length < maxSessionsFree;
-  //
-  //  bool canAddDocumentToItem({required int currentDocumentsCount}) =>
-  //      isPremium || currentDocumentsCount < maxDocumentsPerItemFree;
+  // ----- canAddX guards (used by add buttons) -----
+  bool canAddPlatform() {
+    if (_kFreeLimitsDisabled || isPremium) return true;
+    return _activePlatformsCount < maxPlatformsFree;
+  }
 
-  bool canAddPlatform() => true; // Temporarily disabled
-  bool canAddAmmo() => true; // Temporarily disabled
-  bool canAddAccessory() => true; // Temporarily disabled
-  bool canAddSession() => true; // Temporarily disabled
+  bool canAddAmmo() {
+    if (_kFreeLimitsDisabled || isPremium) return true;
+    return _activeAmmosCount < maxAmmosFree;
+  }
 
-  bool canAddDocumentToItem({required int currentDocumentsCount}) => true;
+  bool canAddAccessory() {
+    if (_kFreeLimitsDisabled || isPremium) return true;
+    return _activeAccessoriesCount < maxAccessoriesFree;
+  }
+
+  bool canAddSession() {
+    // Sessions are always unlimited, even on the free plan.
+    return true;
+  }
+
+  bool canAddDocumentToItem({required int currentDocumentsCount}) {
+    if (_kFreeLimitsDisabled || isPremium) return true;
+    return currentDocumentsCount < maxDocumentsPerItemFree;
+  }
+
+  bool canAddUserDocument({required int currentUserDocumentsCount}) {
+    if (_kFreeLimitsDisabled || isPremium) return true;
+    return currentUserDocumentsCount < maxUserDocumentsFree;
+  }
+
+  // ----- Feature gating (timer modes, reflexes, color pod) -----
+
+  /// Timer modes free on the free plan: simple + startAndMic (chronomètre).
+  /// Pro: parTime, repeat, randomDelay, startAndShots.
+  bool isTimerModeLockedForFree(String modeName) {
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    const free = {'simple', 'startAndMic'};
+    return !free.contains(modeName);
+  }
+
+  /// Reflexes / training drills free: visual only.
+  /// Pro: auditory, math, memory, stroop, mot.
+  bool isReflexesModeLockedForFree(String modeName) {
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    const free = {'visual'};
+    return !free.contains(modeName);
+  }
+
+  /// Color Pod sub-modes free: 'colors', 'direction'.
+  /// Pro: 'shapes', 'letters', 'numbers'.
+  bool isColorPodSubModeLockedForFree(String subModeKey) {
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    const free = {'colors', 'direction'};
+    return !free.contains(subModeKey);
+  }
+
+  /// Tool screens locked behind Pro entirely.
+  /// Pro: cognitive drills, shooting tables (DOPE), diagnostics.
+  /// Free: ballistic calc (millième + hit factor + power factor), color pod.
+  bool isToolLockedForFree(String toolKey) {
+    if (_kFreeLimitsDisabled || isPremium) return false;
+    const proOnly = {'cognitive_drills', 'shooting_tables', 'diagnostics'};
+    return proOnly.contains(toolKey);
+  }
   
   String getLimitMessage(String type) {
     final strings = AppStrings.forLocale(appLocale ?? const Locale('fr'));
@@ -948,11 +1074,8 @@ Future<void> toggleCloudBackup(bool enabled) async {
         'accessoires',
       );
     } else if (type == 'session') {
-      return strings.premiumLimitMessage(
-        '${_sessions.length}',
-        '$maxSessionsFree',
-        'sessions',
-      ).replaceFirst('ajouter des sessions', 'créer des sessions');
+      // Sessions are unlimited on the free plan.
+      return '';
     }
     return '';
   }
@@ -961,20 +1084,29 @@ Future<void> toggleCloudBackup(bool enabled) async {
     await _premiumService.restorePurchases();
   }
 
-@override
-void dispose() {
-  _saveDebounce?.cancel();
-  super.dispose();
-}
+  /// Forces a synchronous flush of any pending save. Call this from app
+  /// lifecycle handlers (paused/detached) so we don't lose the last 400 ms
+  /// of edits if the OS kills the process.
+  Future<void> flushPendingSave() async {
+    if (_saveDebounce?.isActive ?? false) {
+      _saveDebounce!.cancel();
+      await _saveToLocal();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_saveDebounce?.isActive ?? false) {
+      _saveDebounce!.cancel();
+      // Best-effort flush. dispose() can't be async.
+      unawaited(_saveToLocal());
+    }
+    super.dispose();
+  }
 
   // --- Actions ---
 
   void addSession(Session session) {
-    // TODO(FreeLimits): re-enable guard below when restoring free limits.
-    // if (!canAddSession()) {
-    //   debugPrint('❌ Free limit reached: cannot add more sessions.');
-    //   return;
-    // }
     _sessions.insert(0, session);
     _applyMaterialFromSession(session);
     _scheduleSave();
@@ -1211,7 +1343,7 @@ void dispose() {
     final index = _platforms.indexWhere((w) => w.id == id);
     if (index == -1) return;
     _platforms[index] = _platforms[index].copyWith(
-      name: '${_platforms[index].name} (supprimée)', 
+      name: _currentStrings.suffixDeleted(_platforms[index].name), 
       isHidden: true,
     );
     _scheduleSave();
@@ -1226,7 +1358,7 @@ void dispose() {
     final now = DateTime.now();
     final newPlatform = Platform(
       id: now.microsecondsSinceEpoch.toString(),
-      name: '${platform.name} (copie)',
+      name: _currentStrings.suffixCopy(platform.name),
       model: platform.model,
       comment: platform.comment,
       type: platform.type,
@@ -1398,7 +1530,7 @@ void dispose() {
     final index = _ammos.indexWhere((a) => a.id == id);
     if (index == -1) return;
     _ammos[index] = _ammos[index].copyWith(
-      name: '${_ammos[index].name} (supprimée)', 
+      name: _currentStrings.suffixDeleted(_ammos[index].name), 
       isHidden: true,
     );
     _scheduleSave();
@@ -1413,7 +1545,7 @@ void dispose() {
     final now = DateTime.now();
     final newAmmo = Ammo(
       id: now.microsecondsSinceEpoch.toString(),
-      name: '${ammo.name} (copie)',
+      name: _currentStrings.suffixCopy(ammo.name),
       brand: ammo.brand,
       caliber: ammo.caliber,
       comment: ammo.comment,
@@ -1490,7 +1622,7 @@ void dispose() {
     final index = _accessories.indexWhere((a) => a.id == id);
     if (index == -1) return;
     _accessories[index] = _accessories[index].copyWith(
-      name: '${_accessories[index].name} (supprimé)', 
+      name: _currentStrings.suffixDeletedMasc(_accessories[index].name), 
       isHidden: true,
     );
     _scheduleSave();
@@ -1505,7 +1637,7 @@ void dispose() {
     final now = DateTime.now();
     final newAccessory = Accessory(
       id: now.microsecondsSinceEpoch.toString(),
-      name: '${accessory.name} (copie)',
+      name: _currentStrings.suffixCopy(accessory.name),
       brand: accessory.brand,
       model: accessory.model,
       type: accessory.type,
@@ -1558,7 +1690,7 @@ void dispose() {
         .toList(growable: false);
     final newSession = session.copyWith(
       id: now.microsecondsSinceEpoch.toString(),
-      name: '${session.name} (copie)',
+      name: _currentStrings.suffixCopy(session.name),
       date: now,
       exercises: copiedExercises,
       platformIds: List<String>.from(session.platformIds),

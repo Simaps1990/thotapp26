@@ -96,26 +96,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
   }
 
   void _openVisualStimulus(ThotProvider provider) {
-    if (!provider.isPremium) {
-      showProModal(context);
-      return;
-    }
     _openToolSheet(const ColorPodScreen());
   }
 
-  void _openAudioStimulus(ThotProvider provider) {
-    if (!provider.isPremium) {
-      showProModal(context);
-      return;
-    }
-    _showComingSoonSnack();
-  }
+
 
   void _openReflexes(ThotProvider provider) {
-    if (!provider.isPremium) {
-      showProModal(context);
-      return;
-    }
     _openToolSheet(const ReflexesScreen());
   }
 
@@ -132,7 +118,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
   }
 
   void _openDiagnostic(ThotProvider provider) {
-    if (!provider.isPremium) {
+    if (provider.isToolLockedForFree('diagnostics')) {
       showProModal(context);
       return;
     }
@@ -292,13 +278,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         onTap: () => _openVisualStimulus(provider),
                         iconColor: const Color(0xFFE91E63),
                       ),
-                      // const Gap(AppSpacing.md),
-                      // toolButton(
-                      //   icon: Icons.graphic_eq_rounded,
-                      //   title: strings.audioStimulusToolTitle,
-                      //   subtitle: strings.audioStimulusToolSubtitle,
-                      //   onTap: () => _openAudioStimulus(provider),
-                      // ),
+
                       const Gap(AppSpacing.md),
                       toolButton(
                         icon: Icons.bolt_rounded,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -13,23 +14,26 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'utils/maintenance_notifications.dart';
+import 'package:thot/utils/crash_logger.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  CrashLogger.runGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeDateFormatting();
+    await initializeDateFormatting();
 
-  await _configureRevenueCatSafely();
-  await MaintenanceNotifications.init();
+    await _configureRevenueCatSafely();
+    await MaintenanceNotifications.init();
 
-  if (!kIsWeb) {
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-  }
+    if (!kIsWeb) {
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
 
-  runApp(const MyApp());
+    runApp(const MyApp());
+  });
 }
 
 Future<String> _loadRevenueCatApiKey() async {
@@ -113,6 +117,8 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
+        // Flush any pending save before the OS may kill us.
+        unawaited(provider.flushPendingSave());
         if (provider.pinEnabled) provider.lockSession();
         break;
       case AppLifecycleState.inactive:
@@ -205,9 +211,19 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
 
           final scaledAppChild = shouldScaleIosUi
               ? MediaQuery(
-                  data: mediaQuery.copyWith(
-                    textScaler: const TextScaler.linear(iosElementScale),
-                  ),
+                  data: (() {
+                    // Honor the user's iOS Dynamic Type preference. We only
+                    // nudge the scale down by `iosElementScale` (~0.95) for
+                    // visual density, but keep the user's accessibility
+                    // preference intact: a user who enabled "Larger Text"
+                    // still sees larger text.
+                    final userScale = mediaQuery.textScaler.scale(1.0);
+                    final effectiveScale =
+                        (userScale * iosElementScale).clamp(0.85, 2.0);
+                    return mediaQuery.copyWith(
+                      textScaler: TextScaler.linear(effectiveScale),
+                    );
+                  })(),
                   child: Theme(
                     data: theme.copyWith(
                       iconTheme: theme.iconTheme.copyWith(

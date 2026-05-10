@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_stats_name">THOT · Statistiken</string>
+    <string name="widget_maintenance_name">THOT · Wartung</string>
+    <string name="widget_documents_name">THOT · Dokumente</string>
+    <string name="widget_activity_name">THOT · Aktivität</string>
+    <string name="widget_stats_description">THOT Tagesstatistiken</string>
+    <string name="widget_maintenance_description">THOT Wartung</string>
+    <string name="widget_documents_description">THOT Dokumentenerinnerungen</string>
+    <string name="widget_activity_description">THOT Aktivität</string>
+
+    <string name="widget_stats_title">Tagesstatistiken</string>
+    <string name="widget_stats_shots">%d Schüsse</string>
+    <string name="widget_stats_sessions_week">%d Sitzungen / 7T</string>
+    <string name="widget_stats_sessions_week_compact">7T: %d Sitzungen</string>
+    <string name="widget_stats_avg_precision">Ø Präzision %.0f%%</string>
+
+    <string name="widget_maintenance_title">Wartung</string>
+    <string name="widget_maintenance_wear">Verschleiß %s • %s</string>
+    <string name="widget_maintenance_fouling">Verschmutzung %s • %s</string>
+    <string name="widget_maintenance_stock">Bestand %s • %s</string>
+
+    <string name="widget_documents_title">Dokumentenerinnerungen</string>
+    <string name="widget_documents_count">%d zu prüfen</string>
+    <string name="widget_documents_count_compact">%d Warnungen</string>
+    <string name="widget_documents_no_reminder">Keine dringenden Erinnerungen</string>
+    <string name="widget_documents_check_due">Fälligkeit prüfen</string>
+    <string name="widget_documents_expired">Mindestens ein Dokument abgelaufen</string>
+    <string name="widget_documents_due_today">Heute fällig</string>
+    <string name="widget_documents_due_days">Nächste Fälligkeit: %d Tag(e)</string>
+
+    <string name="widget_activity_title">Letzte Aktivität</string>
+    <string name="widget_activity_no_session">Keine Sitzung</string>
+    <string name="widget_activity_today">Heute</string>
+    <string name="widget_activity_yesterday">Gestern</string>
+    <string name="widget_activity_days_ago">Vor %d Tagen</string>
+    <string name="widget_activity_total_sessions">%d Sitzungen gesamt</string>
+    <string name="widget_activity_total_sessions_compact">%d Sitzungen</string>
+
+    <string name="widget_hint_open">Tippen, um THOT zu öffnen</string>
+</resources>

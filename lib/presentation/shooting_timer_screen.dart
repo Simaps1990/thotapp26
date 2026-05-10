@@ -1183,7 +1183,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final stats = _computeStats(_shotTimes);
 
-    if (!isPremium && _mode != _TimerMode.simple) {
+    if (!isPremium && provider.isTimerModeLockedForFree(_mode.name)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _timer?.cancel();
@@ -1229,35 +1229,35 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen> with SingleTi
             _buildModeChip(
               label: strings.timerModeParTime,
               mode: _TimerMode.parTime,
-              isLocked: !isPremium,
+              isLocked: provider.isTimerModeLockedForFree('parTime'),
               colors: colors,
               textStyles: textStyles,
             ),
             _buildModeChip(
               label: strings.timerModeRepeat,
               mode: _TimerMode.repeat,
-              isLocked: !isPremium,
+              isLocked: provider.isTimerModeLockedForFree('repeat'),
               colors: colors,
               textStyles: textStyles,
             ),
             _buildModeChip(
               label: strings.timerModeRandomDelay,
               mode: _TimerMode.randomDelay,
-              isLocked: !isPremium,
+              isLocked: provider.isTimerModeLockedForFree('randomDelay'),
               colors: colors,
               textStyles: textStyles,
             ),
             _buildModeChip(
               label: strings.timerModeStartAndMic,
               mode: _TimerMode.startAndMic,
-              isLocked: !isPremium,
+              isLocked: provider.isTimerModeLockedForFree('startAndMic'),
               colors: colors,
               textStyles: textStyles,
             ),
             _buildModeChip(
               label: strings.timerModeStartAndShots,
               mode: _TimerMode.startAndShots,
-              isLocked: !isPremium,
+              isLocked: provider.isTimerModeLockedForFree('startAndShots'),
               colors: colors,
               textStyles: textStyles,
             ),

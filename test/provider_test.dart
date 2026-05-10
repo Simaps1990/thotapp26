@@ -74,7 +74,10 @@ Future<ThotProvider> _makeProvider() async {
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 void main() {
-  group('ThotProvider — limites plan gratuit', () {
+  // NOTE: These tests validate the active freemium enforcement.
+  // They are skipped while `_kFreeLimitsDisabled = true` in ThotProvider.
+  // Re-enable when the freemium flag is flipped to `false`.
+  group('ThotProvider — limites plan gratuit', skip: 'Freemium limits disabled via _kFreeLimitsDisabled flag', () {
     test('canAddPlatform retourne false quand limite atteinte (free)', () async {
       final p = await _makeProvider();
       p.addPlatform(_platform(id: 'w1'));

@@ -17,6 +17,8 @@ import '../widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/utils/web_document_opener.dart';
+import 'package:thot/utils/image_storage.dart';
+import 'package:thot/utils/native_picker.dart';
 
 class AddItemScreen extends StatefulWidget {
   final String? itemId;
@@ -1325,7 +1327,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           items: const [
                             DropdownMenuItem(value: 'EUR', child: Text('€')),
                             DropdownMenuItem(value: 'USD', child: Text('\$')),
-                            DropdownMenuItem(value: 'CAD', child: Text('CAD')),
+                            DropdownMenuItem(value: 'CAD', child: Text('CA\$')),
+                            DropdownMenuItem(value: 'GBP', child: Text('£')),
+                            DropdownMenuItem(value: 'CHF', child: Text('CHF')),
+                            DropdownMenuItem(value: 'JPY', child: Text('¥')),
+                            DropdownMenuItem(value: 'AUD', child: Text('A\$')),
                           ],
                           onChanged: (value) {
                             if (value != null) {
@@ -2434,24 +2440,21 @@ const Gap(AppSpacing.xl),
   }
 
   Future<void> _pickPhoto() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
-    
-    if (file != null) {
-      final bytes = kIsWeb ? await file.readAsBytes() : null;
-      setState(() {
-        if (kIsWeb) {
-          _photoBytes = bytes;
-          if (_photoBytes != null) {
-            final base64 = base64Encode(_photoBytes!);
-            _photoPath = 'data:image/${file.name.split('.').last};base64,$base64';
-          }
-        } else {
-          _photoPath = file.path;
-          _photoBytes = null;
+    final picked = await NativePicker.pick(context, mode: PickerMode.photoOnly);
+    if (!mounted || picked.isCancelled) return;
+    setState(() {
+      if (kIsWeb) {
+        _photoBytes = picked.bytes;
+        if (picked.bytes != null && picked.name != null) {
+          final ext = picked.name!.split('.').last;
+          final base64 = base64Encode(picked.bytes!);
+          _photoPath = 'data:image/$ext;base64,$base64';
         }
-      });
-    }
+      } else {
+        _photoPath = picked.path;
+        _photoBytes = null;
+      }
+    });
   }
   
   Future<void> _pickPdf() async {
@@ -2467,45 +2470,41 @@ const Gap(AppSpacing.xl),
       return;
     }
 
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      allowMultiple: true,
-      withData: kIsWeb,
-    );
-    
-    if (result == null || result.files.isEmpty) return;
+    final picked = await NativePicker.pick(context, mode: PickerMode.photoOrDocument);
+    if (!mounted || picked.isCancelled) return;
 
-    for (final picked in result.files) {
-      if (!provider.canAddDocumentToItem(currentDocumentsCount: _documents.length)) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppStrings.of(context).itemFreePdfLimitReached),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        context.push('/pro');
-        return;
-      }
-
-      final platformFile = _normalizePickedDocument(picked);
-      if (platformFile == null) continue;
-
-      final details = await _askDocumentDetails(initialName: _stripPdfExtension(picked.name));
-      if (!mounted) return;
-      if (details == null) continue;
-
-      setState(() {
-        _documents.add(_ItemDocumentDraft(
-          name: details.name,
-          type: details.type,
-          expiryDate: details.expiryDate,
-          notifyBeforeDays: details.notifyBeforeDays,
-          file: platformFile,
-        ));
-      });
+    // For images picked via camera/gallery, wrap into a PlatformFile-like path
+    // For documents picked via file_picker, path is already set
+    final String? resolvedPath;
+    if (kIsWeb) {
+      if (picked.bytes == null) return;
+      final ext = (picked.name ?? 'file').split('.').last.toLowerCase();
+      final mime = _mimeFromExtension(ext);
+      resolvedPath = 'data:$mime;base64,${base64Encode(picked.bytes!)}';
+    } else {
+      resolvedPath = picked.path;
     }
+    if (resolvedPath == null || resolvedPath.isEmpty) return;
+
+    final details = await _askDocumentDetails(
+      initialName: _stripPdfExtension(picked.name ?? 'document'),
+    );
+    if (!mounted || details == null) return;
+
+    setState(() {
+      _documents.add(_ItemDocumentDraft(
+        name: details.name,
+        type: details.type,
+        expiryDate: details.expiryDate,
+        notifyBeforeDays: details.notifyBeforeDays,
+        file: PlatformFile(
+          name: picked.name ?? 'document',
+          size: picked.bytes?.length ?? 0,
+          path: resolvedPath,
+          bytes: picked.bytes,
+        ),
+      ));
+    });
   }
 
   String _mimeFromExtension(String ext) {

@@ -619,4 +619,54 @@ es: 'Calcula una distancia o una desviación angular',
         es: '¿Quiere reiniciar los valores?',
       );
 
+
+  // --- Cost Statistics ---
+
+  String get statisticsCostTitle => _pick(
+        fr: 'COÛTS',
+        en: 'COSTS',
+        de: 'KOSTEN',
+        it: 'COSTI',
+        es: 'COSTOS',
+      );
+
+  String get statisticsMonthlyCostLabel => _pick(
+        fr: 'Coût mensuel estimé',
+        en: 'Estimated monthly cost',
+        de: 'Geschätzte monatliche Kosten',
+        it: 'Costo mensile stimato',
+        es: 'Costo mensual estimado',
+      );
+
+  String get statisticsTotalCostLabel => _pick(
+        fr: 'Coût total (6 mois)',
+        en: 'Total cost (6 months)',
+        de: 'Gesamtkosten (6 Monate)',
+        it: 'Costo totale (6 mesi)',
+        es: 'Costo total (6 meses)',
+      );
+
+  String get statisticsTopAmmoLabel => _pick(
+        fr: 'Consommable le plus coûteux',
+        en: 'Most expensive consumable',
+        de: 'Teuerstes Verbrauchsmaterial',
+        it: 'Consumabile più costoso',
+        es: 'Consumible más costoso',
+      );
+
+  String get statisticsCostChartEmptyLabel => _pick(
+        fr: 'Renseignez le prix unitaire de vos consommables pour activer le suivi',
+        en: 'Set unit prices on your consumables to enable tracking',
+        de: 'Setzen Sie Stückpreise bei Ihrem Verbrauchsmaterial, um die Verfolgung zu aktivieren',
+        it: 'Imposta i prezzi unitari dei tuoi consumabili per attivare il monitoraggio',
+        es: 'Establezca precios unitarios en sus consumibles para activar el seguimiento',
+      );
+
+  String get statisticsCostPerMonthSubtitle => _pick(
+        fr: 'Évolution des dépenses',
+        en: 'Spending trend',
+        de: 'Ausgabenentwicklung',
+        it: 'Andamento delle spese',
+        es: 'Evolución de gastos',
+      );
 }

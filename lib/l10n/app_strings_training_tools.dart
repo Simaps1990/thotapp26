@@ -403,21 +403,6 @@ es: 'Impactos múltiples',
         es: 'Decisión bajo estrés e inhibición',
       );
 
-  String get audioStimulusToolTitle => _pick(
-        fr: 'STIMULIS AUDIO',
-        en: 'AUDIO STIMULI',
-        de: 'AUDIO STIMULI',
-        it: 'STIMOLI AUDIO',
-        es: 'ESTÍMULOS DE AUDIO',
-      );
-
-  String get audioStimulusToolSubtitle => _pick(
-        fr: 'Cadence, sons, voix, bruit de fond',
-        en: 'Cadence, sounds, voice, background noise',
-        de: 'Kadenz, Geräusche, Stimme, Hintergrundgeräusch',
-        it: 'Cadenza, suoni, voce, rumore di fondo',
-        es: 'Cadencia, sonidos, voz, ruido de fondo',
-      );
 
   String get reflexesToolTitle => _pick(
         fr: 'ENTRAINEMENT INDIVIDUEL',

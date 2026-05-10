@@ -529,6 +529,105 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
                 const Gap(AppSpacing.lg),
 
+                // ── Cost statistics ───────────────────────────────
+                Builder(builder: (_) {
+                  final monthlyCosts = provider.getMonthlyCosts(6);
+                  final totalCost6m = monthlyCosts.fold<double>(0, (s, m) => s + ((m['cost'] as double?) ?? 0));
+                  final hasCosts = totalCost6m > 0;
+                  final topAmmos = provider.getTopAmmosByCost(6);
+                  final topAmmoId = topAmmos.isNotEmpty ? topAmmos.keys.first : null;
+                  final topAmmo = topAmmoId != null
+                      ? provider.ammos.where((a) => a.id == topAmmoId).firstOrNull
+                      : null;
+                  final topAmmoCost = topAmmoId != null ? topAmmos[topAmmoId] ?? 0 : 0.0;
+
+                  // Derive currency symbol from user's ammo data.
+                  String currencySymbol(String code) {
+                    switch (code) {
+                      case 'USD': return '\$';
+                      case 'CAD': return 'CA\$';
+                      case 'GBP': return '£';
+                      case 'CHF': return 'CHF';
+                      case 'JPY': return '¥';
+                      case 'AUD': return 'A\$';
+                      case 'EUR':
+                      default: return '€';
+                    }
+                  }
+                  // Use the dominant currency among priced ammos.
+                  final pricedAmmos = provider.ammos.where((a) => a.unitPrice != null && a.unitPrice! > 0).toList();
+                  final dominantCurrency = pricedAmmos.isEmpty
+                      ? 'EUR'
+                      : (pricedAmmos
+                            .fold<Map<String, int>>({}, (m, a) {
+                              m[a.currency] = (m[a.currency] ?? 0) + 1;
+                              return m;
+                            })
+                            .entries
+                            .reduce((a, b) => a.value >= b.value ? a : b)
+                          ).key;
+                  final sym = currencySymbol(dominantCurrency);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SectionTitle(title: strings.statisticsCostTitle),
+                      const Gap(AppSpacing.md),
+                      if (!hasCosts)
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: (context.findAncestorStateOfType<_StatisticsScreenState>())
+                                  ?._statsCardDecoration(context) ??
+                              BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(AppRadius.lg),
+                                border: Border.all(color: colors.outline),
+                              ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.attach_money_rounded, size: 40, color: colors.secondary.withValues(alpha: 0.5)),
+                              const Gap(AppSpacing.sm),
+                              Text(
+                                strings.statisticsCostChartEmptyLabel,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.secondary),
+                              ),
+                            ],
+                          ),
+                        )
+                      else ...[
+                        _AnalyticsLineCard(
+                          title: strings.statisticsMonthlyCostLabel,
+                          value: '${totalCost6m.toStringAsFixed(0)} $sym',
+                          badge: strings.statisticsTotalCostLabel,
+                          badgeTone: colors.tertiary,
+                          tone: colors.tertiary,
+                          points: monthlyCosts
+                              .map((m) {
+                                final dt = m['month'] as DateTime;
+                                return _LinePoint(
+                                  label: '${dt.month}/${dt.year.toString().substring(2)}',
+                                  value: (m['cost'] as double?) ?? 0,
+                                );
+                              })
+                              .toList(),
+                          footerLeft: strings.statisticsCostPerMonthSubtitle,
+                          emptyLabel: strings.statisticsCostChartEmptyLabel,
+                        ),
+                        const Gap(AppSpacing.md),
+                        if (topAmmo != null)
+                          _InsightRow(
+                            icon: Icons.local_fire_department_rounded,
+                            label: strings.statisticsTopAmmoLabel,
+                            value: '${topAmmo.name} • ${topAmmoCost.toStringAsFixed(0)} ${currencySymbol(topAmmo.currency)}',
+                            tone: colors.tertiary,
+                          ),
+                      ],
+                      const Gap(AppSpacing.lg),
+                    ],
+                  );
+                }),
+
                 _SectionTitle(title: strings.statisticsPlatformsByTypeTitle),
                 const Gap(AppSpacing.md),
                 _ModernDonutCard(

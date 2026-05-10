@@ -6,10 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:provider/provider.dart';
 
 import 'package:thot/theme.dart';
 import 'package:thot/utils/timer_sound.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/data/training_history.dart';
+import 'package:thot/data/thot_provider.dart';
+import 'package:thot/widgets/pro_badge.dart';
+import 'package:thot/presentation/pro_screen.dart';
 
 // ─── Couleurs disponibles ─────────────────────────────────────────────────────
 
@@ -273,6 +278,9 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
 
   if (!mounted || result == null) return;
 
+  await TrainingHistory.recordExerciseCompletion('color_pod');
+  if (!mounted) return;
+
   setState(() {
     _currentResult = result;
     _showingResults = true;
@@ -302,10 +310,15 @@ Widget build(BuildContext context) {
     final colors  = Theme.of(context).colorScheme;
     final texts   = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    final provider = context.read<ThotProvider>();
     const selectorTileSize = 52.0;
     const selectorTileRadius = 10.0;
     const sectionBottomGap = 4.0; // Réduit de AppSpacing.sm (~16px) à 4px
     const sectionGap = 16.0; // Réduit de AppSpacing.lg (~24px) à 16px
+
+    final shapesLocked = provider.isColorPodSubModeLockedForFree('shapes');
+    final lettersLocked = provider.isColorPodSubModeLockedForFree('letters');
+    final numbersLocked = provider.isColorPodSubModeLockedForFree('numbers');
 
     Widget sectionLabel(String title) => Text(
       title,
@@ -317,27 +330,38 @@ Widget build(BuildContext context) {
       required String title,
       required VoidCallback onActivateAll,
       required VoidCallback onDeactivateAll,
+      bool isLocked = false,
     }) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          sectionLabel(title),
-          Row(children: [
-            TextButton(
-              onPressed: onActivateAll,
-              child: Text(
-                strings.colorPodActivateAll,
-                style: texts.labelSmall?.copyWith(color: colors.primary),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              sectionLabel(title),
+              if (isLocked) ...[
+                const SizedBox(width: 8),
+                const ProBadge(compact: true),
+              ],
+            ],
+          ),
+          if (!isLocked)
+            Row(children: [
+              TextButton(
+                onPressed: onActivateAll,
+                child: Text(
+                  strings.colorPodActivateAll,
+                  style: texts.labelSmall?.copyWith(color: colors.primary),
+                ),
               ),
-            ),
-            TextButton(
-              onPressed: onDeactivateAll,
-              child: Text(
-                strings.colorPodDeactivateAll,
-                style: texts.labelSmall?.copyWith(color: colors.secondary),
+              TextButton(
+                onPressed: onDeactivateAll,
+                child: Text(
+                  strings.colorPodDeactivateAll,
+                  style: texts.labelSmall?.copyWith(color: colors.secondary),
+                ),
               ),
-            ),
-          ]),
+            ]),
         ],
       );
     }
@@ -518,133 +542,163 @@ Widget build(BuildContext context) {
           // ── FORMES ───────────────────────────────────────────────────────────
           sectionHeader(
             title: strings.colorPodShapes,
+            isLocked: shapesLocked,
             onActivateAll: () => setState(
               () => _selectedShapes.addAll(_kShapes.map((s) => s.id)),
             ),
             onDeactivateAll: () => setState(() => _selectedShapes.clear()),
           ),
           const Gap(sectionBottomGap),
-          toggleGrid(children: _kShapes.map((s) {
-            final sel = _selectedShapes.contains(s.id);
-            return GestureDetector(
-              onTap: () => setState(() {
-                if (sel) _selectedShapes.remove(s.id);
-                else _selectedShapes.add(s.id);
-              }),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: sel ? 1.0 : 0.6,
-                child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: selectorTileSize,
-                height: selectorTileSize,
-                decoration: BoxDecoration(
-                  color: sel
-                      ? colors.primary.withValues(alpha: 0.12)
-                      : colors.surface,
-                  borderRadius: BorderRadius.circular(selectorTileRadius),
-                  border: Border.all(
-                    color: sel ? colors.primary : colors.outline,
-                    width: sel ? 2 : 1,
-                  ),
-                ),
-                child: _shapeGlyph(
-                  id: s.id,
-                  color: sel ? colors.primary : colors.secondary,
-                  size: 28,
-                ),
+          GestureDetector(
+            onTap: shapesLocked ? () => showProModal(context) : null,
+            child: Opacity(
+              opacity: shapesLocked ? 0.4 : 1.0,
+              child: IgnorePointer(
+                ignoring: shapesLocked,
+                child: toggleGrid(children: _kShapes.map((s) {
+                  final sel = _selectedShapes.contains(s.id);
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      if (sel) _selectedShapes.remove(s.id);
+                      else _selectedShapes.add(s.id);
+                    }),
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 150),
+                      opacity: sel ? 1.0 : 0.6,
+                      child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: selectorTileSize,
+                      height: selectorTileSize,
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? colors.primary.withValues(alpha: 0.12)
+                            : colors.surface,
+                        borderRadius: BorderRadius.circular(selectorTileRadius),
+                        border: Border.all(
+                          color: sel ? colors.primary : colors.outline,
+                          width: sel ? 2 : 1,
+                        ),
+                      ),
+                      child: _shapeGlyph(
+                        id: s.id,
+                        color: sel ? colors.primary : colors.secondary,
+                        size: 28,
+                      ),
+                    ),
+                    ),
+                  );
+                }).toList()),
               ),
-              ),
-            );
-          }).toList()),
+            ),
+          ),
           const Gap(sectionGap),
 
           // ── LETTRES ──────────────────────────────────────────────────────────
           sectionHeader(
             title: strings.colorPodLetters,
+            isLocked: lettersLocked,
             onActivateAll: () => setState(() => _selectedLetters.addAll(_currentLetters)),
             onDeactivateAll: () => setState(() => _selectedLetters.clear()),
           ),
           const Gap(sectionBottomGap),
-          toggleGrid(children: _currentLetters.map((l) {
-            final sel = _selectedLetters.contains(l);
-            return GestureDetector(
-              onTap: () => setState(() {
-                if (sel) _selectedLetters.remove(l);
-                else _selectedLetters.add(l);
-              }),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: sel ? 1.0 : 0.6,
-                child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: selectorTileSize,
-                height: selectorTileSize,
-                decoration: BoxDecoration(
-                  color: sel
-                      ? colors.primary.withValues(alpha: 0.12)
-                      : colors.surface,
-                  borderRadius: BorderRadius.circular(selectorTileRadius),
-                  border: Border.all(
-                    color: sel ? colors.primary : colors.outline,
-                    width: sel ? 2 : 1,
-                  ),
-                ),
-                child: Center(
-                  child: Text(l,
-                    style: texts.labelLarge?.copyWith(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: sel ? colors.primary : colors.secondary)),
-                ),
+          GestureDetector(
+            onTap: lettersLocked ? () => showProModal(context) : null,
+            child: Opacity(
+              opacity: lettersLocked ? 0.4 : 1.0,
+              child: IgnorePointer(
+                ignoring: lettersLocked,
+                child: toggleGrid(children: _currentLetters.map((l) {
+                  final sel = _selectedLetters.contains(l);
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      if (sel) _selectedLetters.remove(l);
+                      else _selectedLetters.add(l);
+                    }),
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 150),
+                      opacity: sel ? 1.0 : 0.6,
+                      child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 120),
+                      width: selectorTileSize,
+                      height: selectorTileSize,
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? colors.primary.withValues(alpha: 0.12)
+                            : colors.surface,
+                        borderRadius: BorderRadius.circular(selectorTileRadius),
+                        border: Border.all(
+                          color: sel ? colors.primary : colors.outline,
+                          width: sel ? 2 : 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(l,
+                          style: texts.labelLarge?.copyWith(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: sel ? colors.primary : colors.secondary)),
+                      ),
+                    ),
+                    ),
+                  );
+                }).toList()),
               ),
-              ),
-            );
-          }).toList()),
+            ),
+          ),
           const Gap(sectionGap),
 
           // ── CHIFFRES ─────────────────────────────────────────────────────────
           sectionHeader(
             title: strings.colorPodDigits,
+            isLocked: numbersLocked,
             onActivateAll: () => setState(() => _selectedDigits.addAll(_kDigits)),
             onDeactivateAll: () => setState(() => _selectedDigits.clear()),
           ),
           const Gap(sectionBottomGap),
-          toggleGrid(children: _kDigits.map((d) {
-            final sel = _selectedDigits.contains(d);
-            return GestureDetector(
-              onTap: () => setState(() {
-                if (sel) _selectedDigits.remove(d);
-                else _selectedDigits.add(d);
-              }),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: sel ? 1.0 : 0.6,
-                child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: selectorTileSize,
-                height: selectorTileSize,
-                decoration: BoxDecoration(
-                  color: sel
-                      ? colors.primary.withValues(alpha: 0.12)
-                      : colors.surface,
-                  borderRadius: BorderRadius.circular(selectorTileRadius),
-                  border: Border.all(
-                    color: sel ? colors.primary : colors.outline,
-                    width: sel ? 2 : 1,
-                  ),
-                ),
-                child: Center(
-                  child: Text(d,
-                    style: texts.labelLarge?.copyWith(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: sel ? colors.primary : colors.secondary)),
-                ),
+          GestureDetector(
+            onTap: numbersLocked ? () => showProModal(context) : null,
+            child: Opacity(
+              opacity: numbersLocked ? 0.4 : 1.0,
+              child: IgnorePointer(
+                ignoring: numbersLocked,
+                child: toggleGrid(children: _kDigits.map((d) {
+                  final sel = _selectedDigits.contains(d);
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      if (sel) _selectedDigits.remove(d);
+                      else _selectedDigits.add(d);
+                    }),
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 150),
+                      opacity: sel ? 1.0 : 0.6,
+                      child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 120),
+                      width: selectorTileSize,
+                      height: selectorTileSize,
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? colors.primary.withValues(alpha: 0.12)
+                            : colors.surface,
+                        borderRadius: BorderRadius.circular(selectorTileRadius),
+                        border: Border.all(
+                          color: sel ? colors.primary : colors.outline,
+                          width: sel ? 2 : 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(d,
+                          style: texts.labelLarge?.copyWith(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: sel ? colors.primary : colors.secondary)),
+                      ),
+                    ),
+                    ),
+                  );
+                }).toList()),
               ),
-              ),
-            );
-          }).toList()),
+            ),
+          ),
           const Gap(sectionGap),
 
           // ── Sliders ──────────────────────────────────────────────────────────

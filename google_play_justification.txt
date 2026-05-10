@@ -62,9 +62,11 @@ Utilisation: Ajout de photos pour setups, consommables et cibles via file_picker
    - Usage 100% explicite et manuel
 
 3. APPROCHE LOCAL-FIRST:
-   - Toutes les données stockées localement et chiffrées
+   - Toutes les données stockées localement dans le sandbox isolé de l'app
+   - Accès optionnellement protégé par PIN (PBKDF2-HMAC-SHA256) et biométrie
    - Pas de compte utilisateur obligatoire
    - Pas d'analytics ou tracking
+   - Pas de transmission de données utilisateur à des serveurs externes
 
 4. TRANSPARENCE:
    - Écran légal détaillé dans l'app

@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!-- Exclure totalement les fichiers applicatifs (données THOT). -->
-    <exclude domain="file" />
-    <!-- Préférences utilisateur non sensibles (thème, langue, réglages). -->
+    <!-- Back up THOT domain data files (sessions, inventory, diagnostics). -->
+    <include domain="file" path="thot_data_v1.dat" />
+    <include domain="file" path="thot_data_v1.bak" />
+    <include domain="file" path="thot_recovery_v1.json" />
+    <!-- User photos and uploaded PDFs are also backed up. Auto Backup has
+         a 25 MB limit per app: heavy photo collections may not fit and
+         will be skipped silently. -->
+    <include domain="file" path="photos/" />
+    <include domain="file" path="user_documents/" />
+    <!-- Preferences (theme, language, settings). -->
     <include domain="sharedpref" path="." />
 </full-backup-content>

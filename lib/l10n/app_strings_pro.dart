@@ -202,4 +202,11 @@ extension AppStringsPro on AppStrings {
         it: 'Annuale',
         es: 'Anual',
       );
+  String get proBadgeLabel => _pick(
+        fr: 'PRO',
+        en: 'PRO',
+        de: 'PRO',
+        it: 'PRO',
+        es: 'PRO',
+      );
 }

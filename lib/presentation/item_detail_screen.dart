@@ -20,6 +20,7 @@ import '../data/models.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/utils/native_picker.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final String itemId;
@@ -35,13 +36,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   String _getCurrencySymbol(String? currency) {
     switch (currency) {
-      case 'USD':
-        return '\$';
-      case 'CAD':
-        return 'CAD';
+      case 'USD': return '\$';
+      case 'CAD': return 'CA\$';
+      case 'GBP': return '£';
+      case 'CHF': return 'CHF';
+      case 'JPY': return '¥';
+      case 'AUD': return 'A\$';
       case 'EUR':
-      default:
-        return '€';
+      default: return '€';
     }
   }
 
@@ -502,23 +504,34 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       return null;
     }
 
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      allowMultiple: false,
-    );
-    if (result == null || result.files.isEmpty) return null;
+    final picked = await NativePicker.pick(context, mode: PickerMode.photoOrDocument);
+    if (!mounted || picked.isCancelled) return null;
 
-    final picked = _normalizePickedPdf(result.files.first);
-    if (picked == null) return null;
+    final String? resolvedPath;
+    if (kIsWeb) {
+      if (picked.bytes == null) return null;
+      final ext = (picked.name ?? 'file').split('.').last.toLowerCase();
+      final isPdf = ext == 'pdf';
+      final mime = isPdf
+          ? 'application/pdf'
+          : (ext == 'png'
+              ? 'image/png'
+              : (ext == 'jpg' || ext == 'jpeg')
+                  ? 'image/jpeg'
+                  : 'application/octet-stream');
+      resolvedPath = 'data:$mime;base64,${base64Encode(picked.bytes!)}';
+    } else {
+      resolvedPath = picked.path;
+    }
+    if (resolvedPath == null || resolvedPath.isEmpty) return null;
 
     final details = await _askDocumentDetails(
-      initialName: _stripPdfExtension(result.files.first.name),
+      initialName: _stripPdfExtension(picked.name ?? 'document'),
     );
     if (!mounted || details == null) return null;
 
     return ItemDocument(
-      path: picked.path ?? '',
+      path: resolvedPath,
       name: details.$1,
       type: details.$2,
       expiryDate: details.$3,

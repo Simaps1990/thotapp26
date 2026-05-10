@@ -12,6 +12,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/utils/timer_sound.dart';
+import 'package:thot/data/training_history.dart';
 
 enum _CognitiveDrillMode { direction, stroop }
 enum _DirectionSubMode { fourArrows, leftRight, leftCenterRight, upDown, upDownCenter }
@@ -170,6 +171,7 @@ class _CognitiveDrillsScreenState extends State<CognitiveDrillsScreen> {
             : strings.cognitiveDrillDifficultyHard;
     if (!stoppedEarly) {
       await _saveScore(mode, modeLabel, difficultyLabel, cleanResult);
+      await TrainingHistory.recordExerciseCompletion('cognitive_${mode.name}');
     }
     if (!mounted) return;
     setState(() {});

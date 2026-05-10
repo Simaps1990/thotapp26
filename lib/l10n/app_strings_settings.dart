@@ -879,4 +879,130 @@ es: 'Nuevo',
         it: 'Altro',
         es: 'Otro',
       );
+
+  // --- Crash Log ---
+
+  String get exportCrashLogLabel => _pick(
+        fr: 'Exporter le journal de crash',
+        en: 'Export crash log',
+        de: 'Crash-Log exportieren',
+        it: 'Esporta il log dei crash',
+        es: 'Exportar el registro de fallos',
+      );
+
+  String get exportCrashLogSubtitle => _pick(
+        fr: "Pour signaler un bug à l'équipe THOT",
+        en: 'To report a bug to the THOT team',
+        de: 'Um einen Bug an das THOT-Team zu melden',
+        it: 'Per segnalare un bug al team THOT',
+        es: 'Para reportar un error al equipo THOT',
+      );
+
+  String get exportCrashLogEmpty => _pick(
+        fr: 'Aucun crash enregistré',
+        en: 'No crash recorded',
+        de: 'Keine Abstürze aufgezeichnet',
+        it: 'Nessun crash registrato',
+        es: 'Ningún fallo registrado',
+      );
+
+  // --- PIN disable confirmation ---
+
+  String get pinDisableConfirmTitle => _pick(
+        fr: 'Désactiver le code PIN ?',
+        en: 'Disable PIN code?',
+        de: 'PIN-Code deaktivieren?',
+        it: 'Disattivare il codice PIN?',
+        es: '¿Desactivar el código PIN?',
+      );
+
+  String get pinDisableConfirmMessage => _pick(
+        fr: "Vos données ne seront plus protégées par un PIN à l'ouverture de l'application.",
+        en: 'Your data will no longer be protected by a PIN when opening the app.',
+        de: 'Ihre Daten werden beim Öffnen der App nicht mehr durch einen PIN geschützt.',
+        it: "I tuoi dati non saranno più protetti da un PIN all'apertura dell'app.",
+        es: 'Tus datos ya no estarán protegidos por un PIN al abrir la aplicación.',
+      );
+
+  String get pinDisableConfirmAction => _pick(
+        fr: 'Désactiver',
+        en: 'Disable',
+        de: 'Deaktivieren',
+        it: 'Disattiva',
+        es: 'Desactivar',
+      );
+
+  // --- JSON Backup ---
+
+  String get jsonExportLabel => _pick(
+        fr: 'Exporter les données (JSON)',
+        en: 'Export data (JSON)',
+        de: 'Daten exportieren (JSON)',
+        it: 'Esporta dati (JSON)',
+        es: 'Exportar datos (JSON)',
+      );
+
+  String get jsonExportSubtitle => _pick(
+        fr: 'Sauvegarde complète de votre carnet',
+        en: 'Full backup of your logbook',
+        de: 'Vollständige Sicherung Ihres Hefts',
+        it: 'Backup completo del tuo registro',
+        es: 'Copia de seguridad completa de tu cuaderno',
+      );
+
+  String get jsonImportLabel => _pick(
+        fr: 'Importer des données (JSON)',
+        en: 'Import data (JSON)',
+        de: 'Daten importieren (JSON)',
+        it: 'Importa dati (JSON)',
+        es: 'Importar datos (JSON)',
+      );
+
+  String get jsonImportSubtitle => _pick(
+        fr: 'Restaurer à partir d\'un fichier .json',
+        en: 'Restore from a .json file',
+        de: 'Aus einer .json-Datei wiederherstellen',
+        it: 'Ripristina da un file .json',
+        es: 'Restaurar desde un archivo .json',
+      );
+
+  String get jsonImportSuccessSnack => _pick(
+        fr: 'Données importées avec succès',
+        en: 'Data imported successfully',
+        de: 'Daten erfolgreich importiert',
+        it: 'Dati importati con successo',
+        es: 'Datos importados con éxito',
+      );
+
+  String jsonImportErrorSnack(Object e) => _pick(
+        fr: 'Erreur lors de l\'import : $e',
+        en: 'Error during import: $e',
+        de: 'Fehler beim Import: $e',
+        it: 'Errore durante l\'importazione: $e',
+        es: 'Error durante la importación: $e',
+      );
+
+  String get jsonImportConfirmTitle => _pick(
+        fr: 'Remplacer les données ?',
+        en: 'Replace data?',
+        de: 'Daten ersetzen?',
+        it: 'Sostituire i dati?',
+        es: '¿Reemplazar los datos?',
+      );
+
+  String get jsonImportConfirmMessage => _pick(
+        fr: 'L\'import remplacera toutes vos données actuelles par celles du fichier. Cette action est irréversible.',
+        en: 'Import will replace all your current data with the file contents. This action cannot be undone.',
+        de: 'Der Import ersetzt alle aktuellen Daten durch den Dateiinhalt. Diese Aktion kann nicht rückgängig gemacht werden.',
+        it: 'L\'importazione sostituirà tutti i dati attuali con quelli del file. Questa azione è irreversibile.',
+        es: 'La importación reemplazará todos tus datos actuales con los del archivo. Esta acción es irreversible.',
+      );
+
+  String get jsonImportConfirmAction => _pick(
+        fr: 'Remplacer',
+        en: 'Replace',
+        de: 'Ersetzen',
+        it: 'Sostituisci',
+        es: 'Reemplazar',
+      );
 }

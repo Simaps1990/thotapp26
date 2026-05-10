@@ -102,9 +102,20 @@
     </section>
 
     <section>
-      <h2>7. Chiffrement</h2>
+      <h2>7. Stockage des données</h2>
       <p>
-        Les données structurées et sensibles de l’application sont chiffrées localement. Certaines pièces jointes et images peuvent rester stockées localement via les mécanismes natifs du système ou du sélecteur de fichiers.
+        Les données de l'application sont stockées localement sur l'appareil dans
+        le sandbox isolé propre à THOT, conformément aux mécanismes d'isolation
+        des applications iOS et Android. Aucune donnée n'est transmise à un
+        serveur distant. Les pièces jointes (photos, PDFs) sont stockées dans le
+        même sandbox isolé.
+      </p>
+      <p>
+        L'accès aux données peut être protégé par un code PIN personnel
+        (stocké sous forme de hash PBKDF2-HMAC-SHA256 avec 100 000 itérations,
+        sel aléatoire de 16 octets, comparaison à temps constant) et,
+        optionnellement, par l'authentification biométrique de l'appareil
+        (Face ID, Touch ID, empreinte Android).
       </p>
     </section>
 

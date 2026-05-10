@@ -25,6 +25,8 @@ import 'package:thot/utils/pdf_export_options.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/widgets/tutorial_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:thot/utils/crash_logger.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -891,6 +893,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (val) {
                   context.push('/set-pin');
                 } else {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(strings.pinDisableConfirmTitle),
+                      content: Text(strings.pinDisableConfirmMessage),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(strings.settingsDialogCancel),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(strings.pinDisableConfirmAction),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed != true || !context.mounted) return;
                   await provider.togglePinEnabled(false);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1027,6 +1047,114 @@ class _SettingsScreenState extends State<SettingsScreen> {
           label: strings.contactMeLabel,
           subtitle: strings.contactMeSubtitle,
           onTap: () => _showContactDialog(context),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: colors.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.upload_file_rounded,
+          label: strings.jsonExportLabel,
+          subtitle: strings.jsonExportSubtitle,
+          onTap: () async {
+            try {
+              final data = provider.exportDomainAsJson();
+              final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
+              final dir = await getApplicationSupportDirectory();
+              final file = File('${dir.path}/thot_backup.json');
+              await file.writeAsString(jsonStr, flush: true);
+              await Share.shareXFiles([XFile(file.path)], text: 'THOT backup');
+            } catch (e) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(strings.settingsExportError(e))),
+              );
+            }
+          },
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: colors.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.download_rounded,
+          label: strings.jsonImportLabel,
+          subtitle: strings.jsonImportSubtitle,
+          onTap: () async {
+            try {
+              final result = await FilePicker.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: ['json'],
+                withData: true,
+              );
+              if (result == null || result.files.isEmpty) return;
+              if (!context.mounted) return;
+              // Confirm before overwriting
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(strings.jsonImportConfirmTitle),
+                  content: Text(strings.jsonImportConfirmMessage),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(strings.settingsDialogCancel),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(strings.jsonImportConfirmAction),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed != true || !context.mounted) return;
+              final picked = result.files.single;
+              String raw;
+              if (picked.path != null) {
+                raw = await File(picked.path!).readAsString();
+              } else if (picked.bytes != null) {
+                raw = utf8.decode(picked.bytes!);
+              } else {
+                return;
+              }
+              final decoded = jsonDecode(raw) as Map<String, dynamic>;
+              await provider.importDomainFromJson(decoded);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(strings.jsonImportSuccessSnack)),
+              );
+            } catch (e) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(strings.jsonImportErrorSnack(e))),
+              );
+            }
+          },
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: colors.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.bug_report_outlined,
+          label: strings.exportCrashLogLabel,
+          subtitle: strings.exportCrashLogSubtitle,
+          onTap: () async {
+            final path = await CrashLogger.logFilePath;
+            if (path == null || !context.mounted) return;
+            final file = File(path);
+            if (!await file.exists() || (await file.length()) == 0) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(strings.exportCrashLogEmpty)),
+              );
+              return;
+            }
+            await Share.shareXFiles([XFile(path)], text: 'THOT crash log');
+          },
           trailing: Icon(
             Icons.chevron_right_rounded,
             color: colors.onSurface.withValues(alpha: 0.5),
@@ -1675,7 +1803,9 @@ Future<void> _handleExportPdf(
                     final strings = AppStrings.of(context);
 
                     final reachedLimit =
-                        !provider.isPremium && provider.userDocuments.isNotEmpty;
+                        !provider.canAddUserDocument(
+                          currentUserDocumentsCount: provider.userDocuments.length,
+                        );
                     final bgColor =
                         reachedLimit ? colors.surfaceContainerHighest : colors.primary;
                     final fgColor =

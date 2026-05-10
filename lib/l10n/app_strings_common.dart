@@ -308,4 +308,38 @@ es: 'Temporizador de disparos',
         it: 'Note legali, Termini d\'uso, Informativa privacy',
         es: 'Aviso legal, Términos de uso, Política de privacidad',
       );
+
+  // --- Native Picker Strings ---
+
+  String get pickerActionTakePhoto => _pick(
+        fr: 'Prendre une photo',
+        en: 'Take a photo',
+        de: 'Foto aufnehmen',
+        it: 'Scatta una foto',
+        es: 'Hacer una foto',
+      );
+
+  String get pickerActionChoosePhoto => _pick(
+        fr: 'Choisir une photo',
+        en: 'Choose a photo',
+        de: 'Foto auswählen',
+        it: 'Scegli una foto',
+        es: 'Elegir una foto',
+      );
+
+  String get pickerActionChooseDocument => _pick(
+        fr: 'Choisir un document',
+        en: 'Choose a document',
+        de: 'Dokument auswählen',
+        it: 'Scegli un documento',
+        es: 'Elegir un documento',
+      );
+
+  String get pickerActionCancel => _pick(
+        fr: 'Annuler',
+        en: 'Cancel',
+        de: 'Abbrechen',
+        it: 'Annulla',
+        es: 'Cancelar',
+      );
 }
