@@ -993,10 +993,11 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       );
       if (stroopHistoryJson != null) {
         try {
-          final List<dynamic> stroopDecoded = jsonDecode(stroopHistoryJson);
+          final stroopRaw = jsonDecode(stroopHistoryJson);
+          if (stroopRaw is! List) return;
           final strings = AppStrings.of(context);
-          final stroopRecords = stroopDecoded
-              .whereType<Map>()
+          final stroopRecords = stroopRaw
+              .whereType<Map<dynamic, dynamic>>()
               .where((e) => e['_modeKey'] == 'stroop')
               .map((e) {
                 final avgStr = (e[strings.reflexesAvgReactionTime] ?? '')
@@ -1010,9 +1011,11 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                     : (primaryFromAvg.isFinite ? primaryFromAvg : double.nan);
                 return _ReflexSessionRecord(
                   mode: _ReflexesMode.stroop,
-                  date: DateTime.tryParse(e['date'] ?? '') ?? DateTime.now(),
+                  date: DateTime.tryParse(e['date']?.toString() ?? '') ?? DateTime.now(),
                   primaryScore: primary,
-                  stats: Map<String, String>.from(e),
+                  stats: e.map<String, String>(
+                    (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
+                  ),
                 );
               })
               .where(
@@ -4996,6 +4999,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
   Color? _feedbackBgColor;
   Color? _feedbackAccentColor;
   bool _isFeedbackSuccess = false;
+  bool _keepLandscapeForNextLevel = false;
   late final AnimationController _feedbackAnimationController =
       AnimationController(
         vsync: this,
@@ -5043,20 +5047,21 @@ class _MotRunScreenState extends State<_MotRunScreen>
     );
   }
 
-  void _nextLevel() {
-    final current = _currentResult;
-    if (current == null) return;
-    final flaggedStats = Map<String, String>.from(current.stats)
-      ..['_next_level'] = '1';
-    Navigator.of(context).pop(
-      _ReflexSessionRecord(
-        mode: current.mode,
-        date: current.date,
-        primaryScore: current.primaryScore,
-        stats: flaggedStats,
-      ),
-    );
-  }
+void _nextLevel() {
+  final current = _currentResult;
+  if (current == null) return;
+  _keepLandscapeForNextLevel = true;
+  final flaggedStats = Map<String, String>.from(current.stats)
+    ..['_next_level'] = '1';
+  Navigator.of(context).pop(
+    _ReflexSessionRecord(
+      mode: current.mode,
+      date: current.date,
+      primaryScore: current.primaryScore,
+      stats: flaggedStats,
+    ),
+  );
+}
 
   @override
   void initState() {
@@ -5067,13 +5072,16 @@ class _MotRunScreenState extends State<_MotRunScreen>
       _repaintNotifier.value++;
     });
     WakelockPlus.enable();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     TimerSound.warmUp();
-    _startCountdown();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      _startCountdown();
+    });
   }
 
   @override
@@ -5084,12 +5092,23 @@ class _MotRunScreenState extends State<_MotRunScreen>
     _phaseTimer?.cancel();
     _blinkTimer?.cancel();
     _feedbackAnimationController.dispose();
+    _repaintNotifier.dispose();
     WakelockPlus.disable();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    if (_keepLandscapeForNextLevel) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
     super.dispose();
   }
 
@@ -6056,9 +6075,13 @@ class _ReflexSessionRecord {
           (e) => e.name == (json['mode'] ?? 'visual'),
           orElse: () => _ReflexesMode.visual,
         ),
-        date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+        date: DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
         primaryScore: (json['primaryScore'] as num?)?.toDouble() ?? 0,
-        stats: Map<String, String>.from(json['stats'] ?? const {}),
+        stats: json['stats'] is Map
+            ? (json['stats'] as Map<dynamic, dynamic>).map<String, String>(
+                (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
+              )
+            : const <String, String>{},
       );
   String primaryLabel(AppStrings strings) {
     switch (mode) {
@@ -6486,6 +6509,12 @@ class _LevelsPanelBodyState extends State<_LevelsPanelBody> {
     if (old.modeKey != widget.modeKey) _load();
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
     final records = await loadLevelRecords(widget.modeKey);
@@ -6767,7 +6796,6 @@ class _LevelCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasRecord = bestScore != null;
-    final isPerfect = stars == 3;
 
     Color bg;
     Color borderColor;
@@ -6779,10 +6807,6 @@ class _LevelCell extends StatelessWidget {
           : const Color(0xFFF0F0F0);
       borderColor = colors.outline.withValues(alpha: 0.18);
       textColor = colors.onSurface.withValues(alpha: 0.28);
-    } else if (isPerfect) {
-      bg = const Color(0xFF1B3A2A);
-      borderColor = const Color(0xFF00C853);
-      textColor = const Color(0xFF00E676);
     } else if (hasRecord) {
       bg = colors.surface;
       borderColor = LightColors.primary.withValues(alpha: 0.55);
@@ -6881,9 +6905,7 @@ class _LevelCell extends StatelessWidget {
                       Text(
                         bestScore!,
                         style: textStyles.labelSmall?.copyWith(
-                          color: isPerfect
-                              ? const Color(0xFF00E676)
-                              : colors.secondary,
+                          color: colors.secondary,
                           fontSize: 8,
                           fontWeight: FontWeight.w600,
                         ),

@@ -192,7 +192,7 @@ class DopePdfExporter {
         serialNumber: '',
         weight: 0,
         totalRounds: 0,
-        lastUsed: DateTime.now(),
+        lastUsed: null,
         comment: '',
         lastCleaned: DateTime.now(),
       ),
@@ -212,7 +212,7 @@ class DopePdfExporter {
         projectileType: '',
         quantity: 0,
         lowStockThreshold: 0,
-        lastUsed: DateTime.now(),
+        lastUsed: null,
         comment: '',
       ),
     );

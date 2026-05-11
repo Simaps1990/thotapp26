@@ -17,7 +17,6 @@ import '../widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/utils/web_document_opener.dart';
-import 'package:thot/utils/image_storage.dart';
 import 'package:thot/utils/native_picker.dart';
 
 class AddItemScreen extends StatefulWidget {
@@ -58,6 +57,59 @@ class _DocumentDetails {
     this.expiryDate,
     this.notifyBeforeDays = 0,
   });
+}
+
+class MaintenancePreset {
+  const MaintenancePreset({
+    required this.cleaningInterval,
+    required this.revisionInterval,
+  });
+
+  final int cleaningInterval;
+  final int revisionInterval;
+}
+
+MaintenancePreset maintenancePresetFor({
+  required String type,
+  required String caliber,
+}) {
+  final normalizedType = type.toLowerCase().trim();
+  final normalizedCaliber = caliber.toLowerCase().trim();
+
+  if (normalizedCaliber.contains('22lr') ||
+      normalizedCaliber.contains('.22') ||
+      normalizedCaliber.contains('22 lr')) {
+    return const MaintenancePreset(cleaningInterval: 1000, revisionInterval: 50000);
+  }
+  if (normalizedCaliber.contains('9mm') || normalizedCaliber.contains('9 mm')) {
+    return const MaintenancePreset(cleaningInterval: 500, revisionInterval: 15000);
+  }
+  if (normalizedCaliber.contains('.223') ||
+      normalizedCaliber.contains('223') ||
+      normalizedCaliber.contains('5.56') ||
+      normalizedCaliber.contains('5,56')) {
+    return const MaintenancePreset(cleaningInterval: 500, revisionInterval: 10000);
+  }
+  if (normalizedCaliber.contains('.308') ||
+      normalizedCaliber.contains('308') ||
+      normalizedCaliber.contains('7.62') ||
+      normalizedCaliber.contains('7,62')) {
+    return const MaintenancePreset(cleaningInterval: 400, revisionInterval: 8000);
+  }
+  if (normalizedCaliber.contains('12 gauge') ||
+      normalizedCaliber.contains('calibre 12') ||
+      normalizedCaliber == '12') {
+    return const MaintenancePreset(cleaningInterval: 250, revisionInterval: 8000);
+  }
+  if (normalizedCaliber.contains('.50') ||
+      normalizedCaliber.contains('50 bmg')) {
+    return const MaintenancePreset(cleaningInterval: 100, revisionInterval: 1000);
+  }
+  if (normalizedType.contains('airsoft') || normalizedCaliber.contains('airsoft')) {
+    return const MaintenancePreset(cleaningInterval: 5000, revisionInterval: 20000);
+  }
+
+  return const MaintenancePreset(cleaningInterval: 500, revisionInterval: 10000);
 }
 
 class _AddItemScreenState extends State<AddItemScreen> {
@@ -297,6 +349,20 @@ class _AddItemScreenState extends State<AddItemScreen> {
              (cleanlinessEligible && _trackCleanliness);
     }
     return false;
+  }
+
+  void _applyRecommendedMaintenancePresetIfDefault() {
+    if (_selectedCategory != 'PLATEFORME') return;
+    final cleaningValue = _cleaningRoundsThresholdController.text.trim();
+    final revisionValue = _wearRoundsThresholdController.text.trim();
+    if (cleaningValue != '500' || revisionValue != '10000') return;
+
+    final preset = maintenancePresetFor(
+      type: _selectedPlatformType,
+      caliber: _caliberController.text,
+    );
+    _cleaningRoundsThresholdController.text = preset.cleaningInterval.toString();
+    _wearRoundsThresholdController.text = preset.revisionInterval.toString();
   }
 
   final _primaryNameFieldKey = GlobalKey();
@@ -691,6 +757,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: SafeArea(
           top: false,
+          bottom: false,
           child: Column(
             children: [
               Container(
@@ -726,7 +793,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -758,6 +825,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     hintText: _primaryNameHint(),
+                    hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                     helperText:
                         _primaryNameError ? strings.requiredFieldError : null,
                     helperStyle:
@@ -808,6 +876,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemPlatformBrandHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                               filled: true,
                               fillColor: colors.surface,
                               border: OutlineInputBorder(
@@ -864,6 +933,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemCaliberHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                               helperText:
                                   _caliberError
                                       ? strings.requiredFieldError
@@ -939,6 +1009,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         _selectedPlatformType = v;
                         _platformTypeError = false;
                       });
+                      _applyRecommendedMaintenancePresetIfDefault();
                     },
                   ),
                 ),
@@ -967,6 +1038,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemSerialNumberHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                               filled: true,
                               fillColor: colors.surface,
                               border: OutlineInputBorder(
@@ -1011,6 +1083,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemWeightHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                               filled: true,
                               fillColor: colors.surface,
                               border: OutlineInputBorder(
@@ -1060,6 +1133,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemAmmoBrandHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                               filled: true,
                               fillColor: colors.surface,
                               border: OutlineInputBorder(
@@ -1116,6 +1190,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemCaliberHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                               helperText:
                                   _caliberError
                                       ? strings.requiredFieldError
@@ -1215,6 +1290,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       controller: _ammoTypeController,
                       decoration: InputDecoration(
                         hintText: strings.itemProjectileCustomHint,
+                        hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                         filled: true,
                         fillColor: colors.surface,
                         border: InputBorder.none,
@@ -1256,6 +1332,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     },
                     decoration: InputDecoration(
                       hintText: strings.itemQuantityHint,
+                      hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                       suffixText: strings.cartridges,
                       helperText:
                           _ammoQuantityError ? strings.quantityRequiredError : null,
@@ -1298,6 +1375,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           hintText: strings.ammoUnitPriceHint,
+                          hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                           filled: true,
                           fillColor: colors.surface,
                           border: OutlineInputBorder(
@@ -1371,6 +1449,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: strings.itemAccessoryBrandHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                               filled: true,
                               fillColor: colors.surface,
                               border: OutlineInputBorder(
@@ -1530,6 +1609,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       },
                       decoration: InputDecoration(
                         hintText: strings.itemAccessoryCustomTypeHint,
+                        hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                         errorText:
                             _accessoryTypeError ? strings.requiredFieldError : null,
                         filled: true,
@@ -1685,7 +1765,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               // Comment
               Row(
                 children: [
-                  Icon(Icons.edit_rounded, size: 18),
+                  Icon(Icons.edit_rounded, size: 18, color: colors.primary),
                   const Gap(8),
                   Text(
                     strings.commentOptionalLabel.toUpperCase(),
@@ -1704,6 +1784,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   hintText: strings.itemCommentHint,
+                  hintStyle: textStyles.bodyMedium?.copyWith(color: colors.onSurface.withAlpha(100)),
                   filled: true,
                   fillColor: colors.surface,
                   border: OutlineInputBorder(
@@ -2412,7 +2493,7 @@ else
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              _isEditMode ? Icons.check_rounded : Icons.save_rounded,
+                              Icons.save,
                               size: 20,
                             ),
                             const Gap(6),
@@ -2434,7 +2515,7 @@ else
                   ),
                 ],
               ),
-const Gap(AppSpacing.xl),
+              const Gap(AppSpacing.lg),
             ],           // ← ferme children: [] de Column intérieur (7)
           ),             // ← ferme Column (7)
         ),               // ← ferme SingleChildScrollView (6)
@@ -2957,7 +3038,7 @@ Text(
         totalRounds: initialRounds,
         lastCleaned: existing?.lastCleaned ?? DateTime.now(),
         lastRevised: existing?.lastRevised ?? (existing?.lastCleaned ?? DateTime.now()),
-        lastUsed: existing?.lastUsed ?? DateTime.now(),
+        lastUsed: existing?.lastUsed,
         trackWear: _trackWear,
         trackCleanliness: _trackCleanliness,
         trackRounds: _trackRounds,
@@ -3016,7 +3097,7 @@ Text(
         projectileType: ammoType,
         quantity: parsedQuantity,
         initialQuantity: effectiveInitial,
-        lastUsed: DateTime.now(),
+        lastUsed: null,
         trackStock: _trackStock,
         lowStockThreshold: int.tryParse(_lowStockThresholdController.text) ?? 50,
         photoPath: _photoPath,
@@ -3070,7 +3151,7 @@ Text(
         model: model,
         comment: _commentController.text.trim(),
         type: type,
-        lastUsed: DateTime.now(),
+        lastUsed: existing?.lastUsed,
         totalRounds: existing?.totalRounds ?? 0,
         lastCleaned: existing?.lastCleaned ?? DateTime.now(),
         lastRevised:

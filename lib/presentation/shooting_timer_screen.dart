@@ -14,7 +14,6 @@ import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/timer_sound.dart';
 import 'package:vibration/vibration.dart';
-import 'package:thot/widgets/exercise_countdown_background.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Timer tool used for training and session timing.
@@ -95,8 +94,6 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
   int _currentRepetition = 0;
 
   bool _showRunPanel = false;
-  bool _showBtWarningBanner = false;
-  bool _btWarningDismissedForSession = false;
 
   bool _actionStarted = false;
 
@@ -434,13 +431,17 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
             }
           }
         },
-        onError: (_) {
+        onError: (error) {
           _stopNoiseListening();
+          final strings = AppStrings.of(context);
+          _showTimerSnack(strings.timerMicrophoneError);
         },
         cancelOnError: true,
       );
-    } catch (_) {
+    } catch (error) {
       _stopNoiseListening();
+      final strings = AppStrings.of(context);
+      _showTimerSnack(strings.timerMicrophoneError);
     }
   }
 
@@ -451,6 +452,14 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
   void _stopNoiseListening() {
     _noiseSubscription?.cancel();
     _noiseSubscription = null;
+  }
+
+  /// Shows a snackbar message for timer-related notifications.
+  void _showTimerSnack(String message) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Shows a confirmation dialog before activating microphone-based timer modes.
@@ -1112,69 +1121,6 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
         : strings.timerModeStartAndShotsExample;
   }
 
-  Widget _buildBtWarningBanner({
-    required AppStrings strings,
-    required ColorScheme colors,
-    required TextTheme textStyles,
-    required bool isDark,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF3D3520) : const Color(0xFFFFF4DC),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: isDark ? const Color(0xFFE8A93C) : colors.error,
-          width: isDark ? 1.0 : 1.35,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: Icon(
-              Icons.warning_amber_rounded,
-              color: isDark ? const Color(0xFFE8A93C) : colors.error,
-              size: 20,
-            ),
-          ),
-          const Gap(AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.timerBtWarningTitle,
-                  style: textStyles.labelLarge?.copyWith(
-                    color: colors.onSurface,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const Gap(AppSpacing.xs),
-                Text(
-                  strings.timerBtWarningMessage,
-                  style: textStyles.bodySmall?.copyWith(
-                    color: colors.onSurface.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _showBtWarningBanner = false;
-                _btWarningDismissedForSession = true;
-              });
-            },
-            child: Text(strings.timerBtWarningDismiss),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ThotProvider>(context);
@@ -1562,15 +1508,6 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
     final runPanel = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_showBtWarningBanner && !_btWarningDismissedForSession) ...[
-          _buildBtWarningBanner(
-            strings: strings,
-            colors: colors,
-            textStyles: textStyles,
-            isDark: isDark,
-          ),
-          const Gap(AppSpacing.md),
-        ],
         Center(
           child: Column(
             children: [
@@ -1780,59 +1717,6 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
             ),
           ),
         ),
-        if (_mode == _TimerMode.startAndShots) ...[
-          const Gap(AppSpacing.md),
-          Center(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.full),
-                onTap: () {
-                  setState(() {
-                    _showBtWarningBanner = !_showBtWarningBanner;
-                    if (_showBtWarningBanner) {
-                      _btWarningDismissedForSession = false;
-                    }
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                    border: Border.all(
-                      color: isDark
-                          ? colors.outline
-                          : LightColors.surfaceHighlight,
-                      width: isDark ? 1.0 : 1.35,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        size: 16,
-                        color: colors.secondary,
-                      ),
-                      const Gap(AppSpacing.xs),
-                      Text(
-                        widget.embedded ? '?' : strings.timerBtWarningTitle,
-                        style: textStyles.labelSmall?.copyWith(
-                          color: colors.secondary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
         const Gap(0),
         Transform.translate(
           offset: const Offset(-15, 60),

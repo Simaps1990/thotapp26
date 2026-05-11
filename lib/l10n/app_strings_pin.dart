@@ -416,11 +416,11 @@ es: 'Riesgo elevado.\n\nInmoviliza la plataforma y hazla revisar por un técnico
       );
 
   String get saveChangesButton => _pick(
-        fr: 'ENREGISTRER LES MODIFICATIONS',
-        en: 'SAVE CHANGES',
-        de: 'ÄNDERUNGEN SPEICHERN',
-        it: 'SALVA MODIFICHE',
-        es: 'GUARDAR CAMBIOS',
+        fr: 'ENREGISTRER',
+        en: 'SAVE',
+        de: 'SPEICHERN',
+        it: 'SALVA',
+        es: 'GUARDAR',
       );
 
   String get batteryChangeDateLabel => _pick(

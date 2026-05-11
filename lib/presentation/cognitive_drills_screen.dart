@@ -11,8 +11,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:thot/widgets/exercise_countdown_background.dart';
 import 'package:thot/l10n/app_strings.dart';
-import 'package:thot/data/thot_provider.dart';
-import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/utils/timer_sound.dart';
 import 'package:thot/data/training_history.dart';
@@ -71,22 +69,23 @@ class _CognitiveDrillsScreenState extends State<CognitiveDrillsScreen> {
   Future<void> _loadScoreHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final historyJson = prefs.getString(_scoreHistoryKey);
-    if (historyJson != null) {
-      try {
-        final List<dynamic> decoded = jsonDecode(historyJson);
-        setState(() {
-          _scoreHistory = decoded
-              .whereType<Map>()
-              .map(
-                (e) => e.map(
-                  (key, value) =>
-                      MapEntry(key.toString(), value?.toString() ?? ''),
-                ),
-              )
-              .toList();
-        });
-      } catch (_) {}
-    }
+    if (historyJson == null) return;
+    try {
+      final decodedRaw = jsonDecode(historyJson);
+      if (decodedRaw is! List) return;
+      if (!mounted) return;
+      setState(() {
+        _scoreHistory = decodedRaw
+            .whereType<Map<dynamic, dynamic>>()
+            .map(
+              (e) => e.map<String, String>(
+                (key, value) =>
+                    MapEntry(key.toString(), value?.toString() ?? ''),
+              ),
+            )
+            .toList();
+      });
+    } catch (_) {}
   }
 
   double _parseFirstNumber(String value) {

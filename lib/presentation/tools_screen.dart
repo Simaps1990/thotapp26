@@ -39,11 +39,44 @@ class _ToolsScreenState extends State<ToolsScreen> {
   void _handleInitialOpenTool() {
     if (!mounted || _hasAutoOpenedTool) return;
     final provider = Provider.of<ThotProvider>(context, listen: false);
-    if (widget.initialOpenTool == 'reflexes') {
+    final tool = widget.initialOpenTool;
+    
+    if (tool == 'reflexes') {
       _hasAutoOpenedTool = true;
       _openReflexes(provider);
       return;
     }
+    if (tool == 'timer') {
+      _hasAutoOpenedTool = true;
+      _openTimer();
+      return;
+    }
+    if (tool == 'visual_stimuli') {
+      _hasAutoOpenedTool = true;
+      _openVisualStimulus(provider);
+      return;
+    }
+    if (tool == 'calculations') {
+      _hasAutoOpenedTool = true;
+      _openCalculations();
+      return;
+    }
+    if (tool == 'shooting_tables') {
+      _hasAutoOpenedTool = true;
+      _openShootingTables(provider);
+      return;
+    }
+    if (tool == 'diagnostic') {
+      _hasAutoOpenedTool = true;
+      _openDiagnostic(provider);
+      return;
+    }
+    if (tool == 'millieme') {
+      _hasAutoOpenedTool = true;
+      _openCalculations();
+      return;
+    }
+    
     if (provider.consumeOpenReflexesToolRequest()) {
       _hasAutoOpenedTool = true;
       _openReflexes(provider);

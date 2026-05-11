@@ -60,11 +60,11 @@ extension AppStringsNewSession on AppStrings {
       );
 
   String get shotsCountLabel => _pick(
-        fr: 'Nombre de coups',
-        en: 'Number of rounds',
-        de: 'Anzahl der Schüsse',
-        it: 'Numero di colpi',
-        es: 'Número de disparos',
+        fr: 'NB DE COUPS',
+        en: 'NO. OF ROUNDS',
+        de: 'ANZ. SCHÜSSE',
+        it: 'N. COLPI',
+        es: 'N.º DISPAROS',
       );
 
   String get shotsFiredError => _pick(
@@ -1149,6 +1149,14 @@ String get weatherUsageExplanation => _pick(
         de: 'Monat Tag Jahr',
         it: 'Mese Giorno Anno',
         es: 'Mes Día Año',
+      );
+
+  String get dateFormatYearMonthDay => _pick(
+        fr: 'Année Mois Jour',
+        en: 'Year Month Day',
+        de: 'Jahr Monat Tag',
+        it: 'Anno Mese Giorno',
+        es: 'Año Mes Día',
       );
 
   String get settingsAnonymousUserUpper => _pick(

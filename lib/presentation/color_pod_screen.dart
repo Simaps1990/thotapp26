@@ -1557,16 +1557,15 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen>
         t.cancel();
         setState(() => _countdown = 0);
 
-        try {
-          await TimerSound.play();
-        } catch (_) {}
+        unawaited(TimerSound.play());
+        unawaited(() async {
+          try {
+            final ok = await Vibration.hasVibrator();
+            if (ok) unawaited(Vibration.vibrate(duration: 300));
+          } catch (_) {}
+        }());
 
-        try {
-          final ok = await Vibration.hasVibrator();
-          if (ok) Vibration.vibrate(duration: 300);
-        } catch (_) {}
-
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future<void>.delayed(const Duration(milliseconds: 250));
         if (!mounted) return;
 
         setState(() {
@@ -1742,7 +1741,7 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen>
       final displayMs = (widget.colorDuration * 1000).round();
       final delayMs = (widget.colorDelay * 1000).round();
 
-      await Future.delayed(Duration(milliseconds: displayMs));
+      await Future<void>.delayed(Duration(milliseconds: displayMs));
       if (!mounted || _phase != _Phase.running || token != _runToken) return;
       if (_remainingMs <= 0) return;
 
@@ -1759,11 +1758,11 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen>
         _digitAnchor = null;
       });
 
-      await Future.delayed(Duration(milliseconds: delayMs));
+      await Future<void>.delayed(Duration(milliseconds: delayMs));
     }
   }
 
-  void _finish() async {
+  Future<void> _finish() async {
     _timer?.cancel();
     _delayTimer?.cancel();
     _stopwatch?.stop();
@@ -1774,7 +1773,7 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen>
 
     try {
       final ok = await Vibration.hasVibrator();
-      if (ok) Vibration.vibrate(duration: 800);
+      if (ok) unawaited(Vibration.vibrate(duration: 800));
     } catch (_) {}
 
     if (!mounted) return;

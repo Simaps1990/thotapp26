@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:thot/l10n/app_strings.dart';

@@ -17,6 +17,37 @@ import 'thot_security_service.dart';
 import '../utils/image_storage.dart';
 import '../utils/crash_logger.dart';
 
+enum WeightUnit {
+  gram,
+  grain,
+  ounce,
+}
+
+enum DistanceUnit {
+  meter,
+  yard,
+}
+
+enum VelocityUnit {
+  metersPerSecond,
+  feetPerSecond,
+}
+
+enum UnitProfile {
+  metric,
+  imperial,
+  custom,
+}
+
+double gramsToGrains(double grams) => grams * 15.4324;
+double grainsToGrams(double grains) => grains / 15.4324;
+double gramsToOunces(double grams) => grams / 28.3495;
+double ouncesToGrams(double ounces) => ounces * 28.3495;
+double metersToYards(double meters) => meters * 1.09361;
+double yardsToMeters(double yards) => yards / 1.09361;
+double mpsToFps(double mps) => mps * 3.28084;
+double fpsToMps(double fps) => fps / 3.28084;
+
 class ThotProvider extends ChangeNotifier {
   static const String _platformTypePistolSemiAuto = 'PA';
   static const String _platformTypePistolSemiAutomatiqueLegacy = 'Pistolet semi-automatique';
@@ -632,6 +663,9 @@ class ThotProvider extends ChangeNotifier {
   String _licenseNumber = "";
   String _userEmail = "";
   bool _useMetric = true;
+  WeightUnit _weightUnit = WeightUnit.gram;
+  DistanceUnit _distanceUnit = DistanceUnit.meter;
+  VelocityUnit _velocityUnit = VelocityUnit.metersPerSecond;
   String _dateFormatPreference = 'day_month_year';
   String? _localeCode; // null = suivre la langue du système
   bool _documentExpiryPushEnabled = false;
@@ -641,6 +675,24 @@ class ThotProvider extends ChangeNotifier {
   String get licenseNumber => _licenseNumber;
   String get userEmail => _userEmail;
   bool get useMetric => _useMetric;
+  WeightUnit get weightUnit => _weightUnit;
+  DistanceUnit get distanceUnit => _distanceUnit;
+  VelocityUnit get velocityUnit => _velocityUnit;
+  UnitProfile get unitProfile {
+    if (_useMetric &&
+        _weightUnit == WeightUnit.gram &&
+        _distanceUnit == DistanceUnit.meter &&
+        _velocityUnit == VelocityUnit.metersPerSecond) {
+      return UnitProfile.metric;
+    }
+    if (!_useMetric &&
+        _weightUnit == WeightUnit.grain &&
+        _distanceUnit == DistanceUnit.yard &&
+        _velocityUnit == VelocityUnit.feetPerSecond) {
+      return UnitProfile.imperial;
+    }
+    return UnitProfile.custom;
+  }
   String get dateFormatPreference => _dateFormatPreference;
   String? get localeCode => _localeCode;
   bool get documentExpiryPushEnabled => _documentExpiryPushEnabled;
@@ -666,7 +718,44 @@ class ThotProvider extends ChangeNotifier {
   }
   
   void setUnitSystem(bool metric) {
+    setUnitProfile(metric ? UnitProfile.metric : UnitProfile.imperial);
+  }
+
+  void setUnitProfile(UnitProfile profile) {
+    if (profile == UnitProfile.custom) return;
+    final metric = profile == UnitProfile.metric;
     _useMetric = metric;
+    _distanceUnit = metric ? DistanceUnit.meter : DistanceUnit.yard;
+    _velocityUnit = metric ? VelocityUnit.metersPerSecond : VelocityUnit.feetPerSecond;
+    _weightUnit = metric ? WeightUnit.gram : WeightUnit.grain;
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void setWeatherUnitSystem(bool metric) {
+    if (_useMetric == metric) return;
+    _useMetric = metric;
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void setWeightUnit(WeightUnit unit) {
+    if (_weightUnit == unit) return;
+    _weightUnit = unit;
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void setDistanceUnit(DistanceUnit unit) {
+    if (_distanceUnit == unit) return;
+    _distanceUnit = unit;
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void setVelocityUnit(VelocityUnit unit) {
+    if (_velocityUnit == unit) return;
+    _velocityUnit = unit;
     _scheduleSave();
     notifyListeners();
   }
@@ -717,6 +806,9 @@ class ThotProvider extends ChangeNotifier {
     _licenseNumber = '';
     _userEmail = '';
     _useMetric = true;
+    _weightUnit = WeightUnit.gram;
+    _distanceUnit = DistanceUnit.meter;
+    _velocityUnit = VelocityUnit.metersPerSecond;
     _dateFormatPreference = 'day_month_year';
     _localeCode = null;
     _documentExpiryPushEnabled = false;
@@ -740,6 +832,9 @@ class ThotProvider extends ChangeNotifier {
     await prefs.remove('licenseNumber');
     await prefs.remove('userEmail');
     await prefs.remove('useMetric');
+    await prefs.remove('weightUnit');
+    await prefs.remove('distanceUnit');
+    await prefs.remove('velocityUnit');
     await prefs.remove('dateFormatPreference');
     await prefs.remove('themeMode');
     await prefs.remove('quickActions');
@@ -799,6 +894,9 @@ class ThotProvider extends ChangeNotifier {
         'licenseNumber': _licenseNumber,
         'userEmail': _userEmail,
         'useMetric': _useMetric,
+        'weightUnit': _weightUnit.name,
+        'distanceUnit': _distanceUnit.name,
+        'velocityUnit': _velocityUnit.name,
         'dateFormatPreference': _dateFormatPreference,
         'localeCode': _localeCode,
         'themeMode': _themeMode == ThemeMode.dark ? 'dark' : (_themeMode == ThemeMode.system ? 'system' : 'light'),
@@ -823,6 +921,18 @@ class ThotProvider extends ChangeNotifier {
       _licenseNumber = (prefs['licenseNumber'] as String?) ?? _licenseNumber;
       _userEmail = (prefs['userEmail'] as String?) ?? _userEmail;
       _useMetric = (prefs['useMetric'] as bool?) ?? _useMetric;
+      _weightUnit = WeightUnit.values.firstWhere(
+        (unit) => unit.name == prefs['weightUnit'],
+        orElse: () => _weightUnit,
+      );
+      _distanceUnit = DistanceUnit.values.firstWhere(
+        (unit) => unit.name == prefs['distanceUnit'],
+        orElse: () => _distanceUnit,
+      );
+      _velocityUnit = VelocityUnit.values.firstWhere(
+        (unit) => unit.name == prefs['velocityUnit'],
+        orElse: () => _velocityUnit,
+      );
       _dateFormatPreference = (prefs['dateFormatPreference'] as String?) ?? _dateFormatPreference;
       final rawLocale = prefs['localeCode'] as String?;
       _localeCode = (rawLocale == null || rawLocale.isEmpty) ? null : rawLocale;
@@ -868,7 +978,6 @@ Future<void> toggleCloudBackup(bool enabled) async {
     'timer',
     'shooting_tables',
     'visual_stimuli',
-    'audio_stimuli',
     'reaction_exercises',
     'calculation_tools',
   ];
@@ -1233,7 +1342,6 @@ Future<void> toggleCloudBackup(bool enabled) async {
 
   void _reverseMaterialFromSession(Session session) {
     // Reverse platform + ammo counters based on exercises.
-    // Note: lastUsed is not recalculated here; it is cosmetic and would require a full scan.
     for (final entry in session.platformImpact.entries) {
       final platformIndex = _platforms.indexWhere((w) => w.id == entry.key);
       if (platformIndex == -1) continue;
@@ -1290,6 +1398,57 @@ Future<void> toggleCloudBackup(bool enabled) async {
         roundsAtLastCleaning: updatedRoundsAtLastCleaning,
         roundsAtLastRevision: updatedRoundsAtLastRevision,
       );
+    }
+  }
+
+  void _recalculateLastUsedAfterSessionRemoval(Session removedSession) {
+    final impactedPlatformIds = removedSession.platformImpact.keys.toSet();
+    final impactedAmmoIds = removedSession.ammoImpact.keys.toSet();
+    final impactedAccessoryIds = removedSession.equipmentImpact.keys.toSet();
+
+    DateTime? latestForPlatform(String id) {
+      DateTime? latest;
+      for (final session in _sessions) {
+        if (session.id == removedSession.id) continue;
+        if (!session.platformImpact.containsKey(id)) continue;
+        if (latest == null || session.date.isAfter(latest)) latest = session.date;
+      }
+      return latest;
+    }
+
+    DateTime? latestForAmmo(String id) {
+      DateTime? latest;
+      for (final session in _sessions) {
+        if (session.id == removedSession.id) continue;
+        if (!session.ammoImpact.containsKey(id)) continue;
+        if (latest == null || session.date.isAfter(latest)) latest = session.date;
+      }
+      return latest;
+    }
+
+    DateTime? latestForAccessory(String id) {
+      DateTime? latest;
+      for (final session in _sessions) {
+        if (session.id == removedSession.id) continue;
+        if (!session.equipmentImpact.containsKey(id)) continue;
+        if (latest == null || session.date.isAfter(latest)) latest = session.date;
+      }
+      return latest;
+    }
+
+    for (final id in impactedPlatformIds) {
+      final index = _platforms.indexWhere((p) => p.id == id);
+      if (index != -1) _platforms[index].lastUsed = latestForPlatform(id);
+    }
+
+    for (final id in impactedAmmoIds) {
+      final index = _ammos.indexWhere((a) => a.id == id);
+      if (index != -1) _ammos[index].lastUsed = latestForAmmo(id);
+    }
+
+    for (final id in impactedAccessoryIds) {
+      final index = _accessories.indexWhere((a) => a.id == id);
+      if (index != -1) _accessories[index].lastUsed = latestForAccessory(id);
     }
   }
 
@@ -1707,6 +1866,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
 
     // Reverse material impacts (wear/cleanliness + stock) so critical indicators stay accurate.
     _reverseMaterialFromSession(session);
+    _recalculateLastUsedAfterSessionRemoval(session);
 
     _sessions.removeAt(index);
     _scheduleSave();
@@ -1840,7 +2000,7 @@ Map<String, dynamic> _buildDomainDataMap() {
       'totalRounds': w.totalRounds,
       'lastCleaned': w.lastCleaned.toIso8601String(),
       'lastRevised': w.lastRevised.toIso8601String(),
-      'lastUsed': w.lastUsed.toIso8601String(),
+      'lastUsed': w.lastUsed?.toIso8601String(),
       'trackWear': w.trackWear,
       'trackCleanliness': w.trackCleanliness,
       'trackRounds': w.trackRounds,
@@ -1863,7 +2023,7 @@ Map<String, dynamic> _buildDomainDataMap() {
       'projectileType': a.projectileType,
       'quantity': a.quantity,
       'initialQuantity': a.initialQuantity,
-      'lastUsed': a.lastUsed.toIso8601String(),
+      'lastUsed': a.lastUsed?.toIso8601String(),
       'trackStock': a.trackStock,
       'lowStockThreshold': a.lowStockThreshold,
       'documents': a.documents.map((d) => d.toJson()).toList(),
@@ -1881,7 +2041,7 @@ Map<String, dynamic> _buildDomainDataMap() {
       'comment': ac.comment,
       'type': ac.type,
       'imageUrl': ac.imageUrl,
-      'lastUsed': ac.lastUsed.toIso8601String(),
+      'lastUsed': ac.lastUsed?.toIso8601String(),
       'totalRounds': ac.totalRounds,
       'lastCleaned': ac.lastCleaned.toIso8601String(),
       'lastRevised': ac.lastRevised.toIso8601String(),
@@ -2014,23 +2174,23 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
     _platforms = platformsList.whereType<Map>().map((w) {
       try {
         return Platform(
-          id: w['id'],
-          name: w['name'],
-          model: w['model'],
+          id: w['id'] as String,
+          name: w['name'] as String,
+          model: w['model'] as String,
           comment: (w['comment'] ?? '') as String,
           type: _migratePlatformType((w['type'] ?? 'Plateforme') as String),
-          caliber: w['caliber'],
-          serialNumber: w['serialNumber'],
+          caliber: w['caliber'] as String,
+          serialNumber: w['serialNumber'] as String,
           weight: (w['weight'] as num?)?.toDouble() ?? 0.0,
           totalRounds: (w['totalRounds'] ?? 0) as int,
-          lastCleaned: DateTime.tryParse(w['lastCleaned'] ?? '') ?? DateTime.now(),
+          lastCleaned: DateTime.tryParse(w['lastCleaned'] as String? ?? '') ?? DateTime.now(),
           lastRevised: w['lastRevised'] != null
-              ? DateTime.tryParse(w['lastRevised']) ?? DateTime.now()
-              : DateTime.tryParse(w['lastCleaned'] ?? '') ?? DateTime.now(),
-          lastUsed: DateTime.tryParse(w['lastUsed'] ?? '') ?? DateTime.now(),
-          trackWear: w['trackWear'] ?? true,
-          trackCleanliness: w['trackCleanliness'] ?? true,
-          trackRounds: w['trackRounds'] ?? true,
+              ? DateTime.tryParse(w['lastRevised'] as String) ?? DateTime.now()
+              : DateTime.tryParse(w['lastCleaned'] as String? ?? '') ?? DateTime.now(),
+          lastUsed: DateTime.tryParse(w['lastUsed'] as String? ?? ''),
+          trackWear: w['trackWear'] as bool? ?? true,
+          trackCleanliness: w['trackCleanliness'] as bool? ?? true,
+          trackRounds: w['trackRounds'] as bool? ?? true,
           cleaningRoundsThreshold: (w['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500,
           wearRoundsThreshold: (w['wearRoundsThreshold'] as num?)?.toInt() ?? 10000,
           roundsAtLastCleaning: _migrateRoundsAtLastCleaning(w),
@@ -2046,8 +2206,8 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
               })
               .whereType<PlatformHistoryEntry>()
               .toList(),
-          photoPath: w['photoPath'],
-          isHidden: w['isHidden'] ?? false,
+          photoPath: w['photoPath'] as String?,
+          isHidden: w['isHidden'] as bool? ?? false,
           linkedAccessoryIds: ((w['linkedAccessoryIds'] as List?) ?? const [])
               .whereType<String>()
               .toList(),
@@ -2066,20 +2226,20 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
         final effectiveInitial = (rawInitial <= 0 && qty > 0) ? qty : rawInitial;
 
         return Ammo(
-          id: a['id'],
-          name: a['name'],
-          brand: a['brand'],
-          caliber: a['caliber'],
+          id: a['id'] as String,
+          name: a['name'] as String,
+          brand: a['brand'] as String,
+          caliber: a['caliber'] as String,
           comment: (a['comment'] ?? '') as String,
           projectileType: (a['projectileType'] ?? a['bulletType'] ?? '') as String,
           quantity: qty,
           initialQuantity: effectiveInitial,
-          lastUsed: DateTime.tryParse(a['lastUsed'] ?? '') ?? DateTime.now(),
-          trackStock: a['trackStock'] ?? true,
+          lastUsed: DateTime.tryParse(a['lastUsed'] as String? ?? ''),
+          trackStock: a['trackStock'] as bool? ?? true,
           lowStockThreshold: (a['lowStockThreshold'] as num?)?.toInt() ?? 50,
           documents: _decodeItemDocuments(a['documents'] ?? a['pdfPaths'] ?? const []),
-          photoPath: a['photoPath'],
-          isHidden: a['isHidden'] ?? false,
+          photoPath: a['photoPath'] as String?,
+          isHidden: a['isHidden'] as bool? ?? false,
           unitPrice: (a['unitPrice'] as num?)?.toDouble(),
           currency: (a['currency'] as String?) ?? 'EUR',
           history: (() {
@@ -2110,14 +2270,14 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
     final accessoriesList = (data['accessories'] as List?) ?? const [];
     _accessories = accessoriesList.whereType<Map>().map((ac) {
       try {
-        final lastUsed = DateTime.tryParse(ac['lastUsed'] ?? '') ?? DateTime.now();
+        final lastUsed = DateTime.tryParse(ac['lastUsed'] as String? ?? '');
         final totalRounds = (ac['totalRounds'] ?? 0) as int;
         final lastCleaned = ac['lastCleaned'] != null
-            ? DateTime.tryParse(ac['lastCleaned']) ?? lastUsed
-            : lastUsed;
+            ? DateTime.tryParse(ac['lastCleaned'] as String)
+            : null;
         final lastRevised = ac['lastRevised'] != null
-            ? DateTime.tryParse(ac['lastRevised']) ?? lastCleaned
-            : lastCleaned;
+            ? DateTime.tryParse(ac['lastRevised'] as String)
+            : null;
 
         final roundsAtLastCleaning =
             (ac['roundsAtLastCleaning'] as num?)?.toInt() ?? totalRounds;
@@ -2125,8 +2285,8 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
             (ac['roundsAtLastRevision'] as num?)?.toInt() ?? totalRounds;
 
         return Accessory(
-          id: ac['id'],
-          name: ac['name'],
+          id: ac['id'] as String,
+          name: ac['name'] as String,
           brand: (ac['brand'] ?? '') as String,
           model: (ac['model'] ?? '') as String,
           comment: (ac['comment'] ?? '') as String,
@@ -2134,8 +2294,8 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
           imageUrl: (ac['imageUrl'] ?? '') as String,
           lastUsed: lastUsed,
           totalRounds: totalRounds,
-          lastCleaned: lastCleaned,
-          lastRevised: lastRevised,
+          lastCleaned: lastCleaned ?? DateTime.now(),
+          lastRevised: lastRevised ?? lastCleaned ?? DateTime.now(),
           trackWear: (ac['trackWear'] ?? false) as bool,
           trackCleanliness: (ac['trackCleanliness'] ?? false) as bool,
           cleaningRoundsThreshold: (ac['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500,
@@ -2143,7 +2303,7 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
           roundsAtLastCleaning: roundsAtLastCleaning,
           roundsAtLastRevision: roundsAtLastRevision,
           batteryChangedAt: ac['batteryChangedAt'] != null
-              ? DateTime.tryParse(ac['batteryChangedAt'])
+              ? DateTime.tryParse(ac['batteryChangedAt'] as String)
               : null,
           trackBattery: (ac['trackBattery'] ?? false) as bool,
           documents: _decodeItemDocuments(ac['documents'] ?? const []),
@@ -2186,14 +2346,14 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
             final shotAllocationsRaw = (e['shotAllocations'] as List?) ?? const [];
 
             return Exercise(
-              id: e['id'],
+              id: e['id'] as String,
               name: (e['name'] ?? '') as String,
-              platformId: e['platformId'],
+              platformId: (e['platformId'] ?? '') as String,
               platformLabel: (e['platformLabel'] as String?),
-              ammoId: e['ammoId'],
+              ammoId: (e['ammoId'] ?? '') as String,
               ammoLabel: (e['ammoLabel'] as String?),
               equipmentIds: _decodeEquipmentIds(e),
-              targetName: e['targetName'],
+              targetName: e['targetName'] as String?,
               targetPhotos: ((e['targetPhotos'] as List?) ?? const [])
                   .map((p) {
                     try {
@@ -2208,7 +2368,7 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
               distance: (e['distance'] as num?)?.toInt() ?? 0,
               precision: e['precision'] != null ? (e['precision'] as num).toDouble() : null,
               precisionEnabled: (e['precisionEnabled'] ?? true) as bool,
-              observations: e['observations'] ?? '',
+              observations: e['observations'] as String? ?? '',
               platformAssignments: assignmentsRaw
                   .whereType<Map>()
                   .map((m) => Map<String, dynamic>.from(m))
@@ -2269,23 +2429,23 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
         }).whereType<Exercise>().toList();
 
         return Session(
-          id: s['id'],
-          name: s['name'],
-          date: DateTime.tryParse(s['date'] ?? '') ?? DateTime.now(),
-          location: s['location'],
-          shootingDistance: s['shootingDistance'],
+          id: s['id'] as String,
+          name: s['name'] as String,
+          date: DateTime.tryParse(s['date'] as String? ?? '') ?? DateTime.now(),
+          location: (s['location'] as String?) ?? '',
+          shootingDistance: (s['shootingDistance'] as String?) ?? '',
           locationLatitude: (s['locationLatitude'] as num?)?.toDouble(),
           locationLongitude: (s['locationLongitude'] as num?)?.toDouble(),
-          sessionType: s['sessionType'],
-          weatherEnabled: s['weatherEnabled'],
-          temperature: s['temperature'] ?? '',
-          wind: s['wind'] ?? '',
-          humidity: s['humidity'] ?? '',
-          pressure: s['pressure'] ?? '',
-          temperatureEnabled: s['temperatureEnabled'] ?? true,
-          windEnabled: s['windEnabled'] ?? true,
-          humidityEnabled: s['humidityEnabled'] ?? true,
-          pressureEnabled: s['pressureEnabled'] ?? true,
+          sessionType: s['sessionType'] as String,
+          weatherEnabled: s['weatherEnabled'] as bool? ?? false,
+          temperature: s['temperature'] as String? ?? '',
+          wind: s['wind'] as String? ?? '',
+          humidity: s['humidity'] as String? ?? '',
+          pressure: s['pressure'] as String? ?? '',
+          temperatureEnabled: s['temperatureEnabled'] as bool? ?? true,
+          windEnabled: s['windEnabled'] as bool? ?? true,
+          humidityEnabled: s['humidityEnabled'] as bool? ?? true,
+          pressureEnabled: s['pressureEnabled'] as bool? ?? true,
           platformIds: ((s['platformIds'] as List?) ?? const [])
               .whereType<String>()
               .toList(),
@@ -2298,19 +2458,19 @@ void _loadDomainDataFromMap(Map<String, dynamic> data) {
     }).whereType<Session>().toList();
 
     final diagnosticsList = (data['diagnostics'] as List?) ?? const [];
-    _diagnostics = diagnosticsList.whereType<Map>().map((d) {
+    _diagnostics = diagnosticsList.whereType<Map<String, dynamic>>().map((d) {
       try {
         return Diagnostic(
-          id: d['id'],
-          date: DateTime.tryParse(d['date'] ?? '') ?? DateTime.now(),
-          platformId: d['platformId'],
+          id: d['id'] as String,
+          date: DateTime.tryParse(d['date'] as String? ?? '') ?? DateTime.now(),
+          platformId: d['platformId'] as String,
           platformNameSnapshot: (d['platformNameSnapshot'] ?? '') as String,
           platformTypeSnapshot: (d['platformTypeSnapshot'] ?? '') as String,
-          responses: Map<String, dynamic>.from(d['responses'] ?? const {}),
+          responses: Map<String, dynamic>.from(d['responses'] as Map? ?? const {}),
           incidentKey: (d['incidentKey'] ?? 'incident_unknown') as String,
           suspectedIssueKey: (d['suspectedIssueKey'] ?? 'multiple_possible') as String,
           riskLevelKey: (d['riskLevelKey'] ?? 'medium') as String,
-          probabilities: Map<String, int>.from(d['probabilities'] ?? const {}),
+          probabilities: Map<String, int>.from(d['probabilities'] as Map? ?? const {}),
           finalDecision: (d['finalDecision'] ?? '') as String,
           summary: (d['summary'] ?? '') as String,
         );
@@ -2372,6 +2532,9 @@ Future<void> _saveToLocal() async {
     await prefs.setString('licenseNumber', _licenseNumber);
     await prefs.setString('userEmail', _userEmail);
     await prefs.setBool('useMetric', _useMetric);
+    await prefs.setString('weightUnit', _weightUnit.name);
+    await prefs.setString('distanceUnit', _distanceUnit.name);
+    await prefs.setString('velocityUnit', _velocityUnit.name);
     await prefs.setString('dateFormatPreference', _dateFormatPreference);
     await prefs.setString('themeMode', _themeMode.toString());
     await prefs.setStringList('quickActions', _quickActions);
@@ -2449,6 +2612,20 @@ Future<void> _loadFromLocal() async {
     _licenseNumber = prefs.getString('licenseNumber') ?? '';
     _userEmail = prefs.getString('userEmail') ?? '';
     _useMetric = prefs.getBool('useMetric') ?? true;
+    _weightUnit = WeightUnit.values.firstWhere(
+      (unit) => unit.name == prefs.getString('weightUnit'),
+      orElse: () => WeightUnit.gram,
+    );
+    _distanceUnit = DistanceUnit.values.firstWhere(
+      (unit) => unit.name == prefs.getString('distanceUnit'),
+      orElse: () => _useMetric ? DistanceUnit.meter : DistanceUnit.yard,
+    );
+    _velocityUnit = VelocityUnit.values.firstWhere(
+      (unit) => unit.name == prefs.getString('velocityUnit'),
+      orElse: () => _useMetric
+          ? VelocityUnit.metersPerSecond
+          : VelocityUnit.feetPerSecond,
+    );
     _dateFormatPreference =
         prefs.getString('dateFormatPreference') ?? 'day_month_year';
     _premiumService.loadMetadataFromPrefs(prefs);
@@ -2688,7 +2865,7 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
       brand: '',
       caliber: '',
       quantity: 0,
-      lastUsed: DateTime.now(),
+      lastUsed: null,
     ));
     if (ammo.unitPrice == null) return null;
 
@@ -2711,7 +2888,7 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
       brand: '',
       caliber: '',
       quantity: 0,
-      lastUsed: DateTime.now(),
+      lastUsed: null,
     ));
     if (ammo.unitPrice == null) return null;
 
@@ -2740,7 +2917,7 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
           brand: '',
           caliber: '',
           quantity: 0,
-          lastUsed: DateTime.now(),
+          lastUsed: null,
         ));
         if (ammo.unitPrice != null) {
           hasPricedAmmo = true;
@@ -2801,7 +2978,7 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
               brand: '',
               caliber: '',
               quantity: 0,
-              lastUsed: DateTime.now(),
+              lastUsed: null,
             ));
             if (ammo.unitPrice != null) {
               costs[entry.key] = (costs[entry.key] ?? 0) + (entry.value * ammo.unitPrice!);

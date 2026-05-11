@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
@@ -50,6 +51,16 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   }
 
   int _tierRank(String tier) => tier == 'gold' ? 3 : (tier == 'silver' ? 2 : 1);
+
+  String? _achievementIconAsset(String id) {
+    if (id.contains('ammo') || id.contains('round')) return 'assets/images/pointe.svg';
+    if (id.contains('platform')) return 'assets/images/tube.svg';
+    if (id.contains('cleaning') || id.contains('revision')) return 'assets/images/material.svg';
+    if (id.contains('session')) return 'assets/images/seance.svg';
+    if (id.contains('precision') || id.contains('perfect')) return 'assets/images/target.svg';
+    if (id.contains('reflex')) return 'assets/images/train.svg';
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +178,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                       color: tierColor,
                       tier: a.tier,
                       unlockedAt: date,
+                      iconAsset: _achievementIconAsset(a.id),
                     ),
                   );
                 }),
@@ -181,16 +193,29 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   }
 }
 
-class _GradientTrophyIcon extends StatelessWidget {
+class _GradientAchievementIcon extends StatelessWidget {
   final double size;
   final Color baseColor;
+  final String? assetPath;
 
-  const _GradientTrophyIcon({required this.size, required this.baseColor});
+  const _GradientAchievementIcon({
+    required this.size,
+    required this.baseColor,
+    this.assetPath,
+  });
 
   @override
   Widget build(BuildContext context) {
     final light = Color.lerp(baseColor, Colors.white, 0.45) ?? baseColor;
     final dark = Color.lerp(baseColor, Colors.black, 0.2) ?? baseColor;
+    final child = assetPath == null
+        ? Icon(Icons.emoji_events_rounded, size: size, color: Colors.white)
+        : SvgPicture.asset(
+            assetPath!,
+            width: size,
+            height: size,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          );
 
     return ShaderMask(
       shaderCallback: (bounds) {
@@ -206,7 +231,7 @@ class _GradientTrophyIcon extends StatelessWidget {
         ).createShader(bounds);
       },
       blendMode: BlendMode.srcIn,
-      child: Icon(Icons.emoji_events_rounded, size: size, color: Colors.white),
+      child: child,
     );
   }
 }
@@ -218,6 +243,7 @@ class _AchievementCard extends StatelessWidget {
   final Color color;
   final String tier;
   final DateTime? unlockedAt;
+  final String? iconAsset;
 
   const _AchievementCard({
     required this.index,
@@ -226,6 +252,7 @@ class _AchievementCard extends StatelessWidget {
     required this.color,
     required this.tier,
     this.unlockedAt,
+    this.iconAsset,
   });
 
   @override
@@ -290,7 +317,11 @@ class _AchievementCard extends StatelessWidget {
                       ),
                     ),
                     child: Center(
-                      child: _GradientTrophyIcon(size: 28, baseColor: color),
+                      child: _GradientAchievementIcon(
+                        size: 28,
+                        baseColor: color,
+                        assetPath: iconAsset,
+                      ),
                     ),
                   ),
                   const Gap(AppSpacing.md),

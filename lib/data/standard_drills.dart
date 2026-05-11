@@ -12,6 +12,10 @@ class StandardDrills {
       _elPresidente(strings),
       _dotTorture(strings),
       _fast(strings),
+      _theTest(strings),
+      _hackathornStandards(strings),
+      _hateful8(strings),
+      _twoReloadTwo(strings),
     ];
   }
 
@@ -359,6 +363,160 @@ class StandardDrills {
           shots: 4,
           target: s.standardDrillFastStep5Target,
           comment: s.standardDrillFastStep5Comment,
+        ),
+      ],
+    );
+  }
+
+  static ExerciseTemplate _theTest(AppStrings s) {
+    final now = DateTime.now();
+    return ExerciseTemplate(
+      id: 'std_the_test',
+      name: s.standardDrillTheTestName,
+      createdAt: now,
+      shotsFired: 10,
+      distance: 10,
+      detailedMode: true,
+      observations: s.standardDrillTheTestObservations,
+      steps: [
+        ExerciseStep(
+          id: 'std_the_test_step_1',
+          type: StepType.attente,
+          durationSeconds: 2,
+          trigger: s.standardDrillBillStep2Trigger,
+        ),
+        ExerciseStep(
+          id: 'std_the_test_step_2',
+          type: StepType.tir,
+          position: ShootingPosition.debout,
+          distanceM: 10,
+          shots: 10,
+          target: s.standardDrillBillStep3Target,
+        ),
+      ],
+    );
+  }
+
+  static ExerciseTemplate _hackathornStandards(AppStrings s) {
+    final now = DateTime.now();
+    return ExerciseTemplate(
+      id: 'std_hackathorn_standards',
+      name: s.standardDrillHackathornName,
+      createdAt: now,
+      shotsFired: 12,
+      distance: 7,
+      detailedMode: true,
+      observations: s.standardDrillHackathornObservations,
+      steps: [
+        ExerciseStep(
+          id: 'std_hackathorn_step_1',
+          type: StepType.attente,
+          durationSeconds: 2,
+          trigger: s.standardDrillBillStep2Trigger,
+        ),
+        ExerciseStep(
+          id: 'std_hackathorn_step_2',
+          type: StepType.tir,
+          position: ShootingPosition.debout,
+          distanceM: 5,
+          shots: 4,
+          target: s.standardDrillBillStep3Target,
+        ),
+        ExerciseStep(
+          id: 'std_hackathorn_step_3',
+          type: StepType.transition,
+        ),
+        ExerciseStep(
+          id: 'std_hackathorn_step_4',
+          type: StepType.tir,
+          position: ShootingPosition.debout,
+          distanceM: 7,
+          shots: 4,
+          target: s.standardDrillBillStep3Target,
+        ),
+        ExerciseStep(
+          id: 'std_hackathorn_step_5',
+          type: StepType.transition,
+        ),
+        ExerciseStep(
+          id: 'std_hackathorn_step_6',
+          type: StepType.tir,
+          position: ShootingPosition.debout,
+          distanceM: 10,
+          shots: 4,
+          target: s.standardDrillBillStep3Target,
+        ),
+      ],
+    );
+  }
+
+  static ExerciseTemplate _hateful8(AppStrings s) {
+    final now = DateTime.now();
+    return ExerciseTemplate(
+      id: 'std_hateful_8',
+      name: s.standardDrillHateful8Name,
+      createdAt: now,
+      shotsFired: 8,
+      distance: 7,
+      detailedMode: true,
+      observations: s.standardDrillHateful8Observations,
+      steps: [
+        ExerciseStep(
+          id: 'std_hateful_8_step_1',
+          type: StepType.attente,
+          durationSeconds: 2,
+          trigger: s.standardDrillBillStep2Trigger,
+        ),
+        ExerciseStep(
+          id: 'std_hateful_8_step_2',
+          type: StepType.tir,
+          position: ShootingPosition.debout,
+          distanceM: 7,
+          shots: 8,
+          target: s.standardDrillBillStep3Target,
+        ),
+      ],
+    );
+  }
+
+  static ExerciseTemplate _twoReloadTwo(AppStrings s) {
+    final now = DateTime.now();
+    return ExerciseTemplate(
+      id: 'std_2_reload_2',
+      name: s.standardDrillTwoReloadTwoName,
+      createdAt: now,
+      shotsFired: 4,
+      distance: 7,
+      detailedMode: true,
+      observations: s.standardDrillTwoReloadTwoObservations,
+      steps: [
+        ExerciseStep(
+          id: 'std_2_reload_2_step_1',
+          type: StepType.attente,
+          durationSeconds: 2,
+          trigger: s.standardDrillBillStep2Trigger,
+        ),
+        ExerciseStep(
+          id: 'std_2_reload_2_step_2',
+          type: StepType.tir,
+          position: ShootingPosition.debout,
+          distanceM: 7,
+          shots: 2,
+          target: s.standardDrillBillStep3Target,
+        ),
+        ExerciseStep(
+          id: 'std_2_reload_2_step_3',
+          type: StepType.rechargement,
+          reloadType: ReloadType.urgence,
+          comment: s.standardDrillFastStep4Comment,
+        ),
+        ExerciseStep(
+          id: 'std_2_reload_2_step_4',
+          type: StepType.tir,
+          position: ShootingPosition.debout,
+          distanceM: 7,
+          shots: 2,
+          target: s.standardDrillBillStep3Target,
         ),
       ],
     );

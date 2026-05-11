@@ -921,7 +921,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       itemName = platform.name;
       headerSubtitle = null;
       itemType = 'PLATEFORME';
-      lastUsedText = AppDateFormats.formatDateShort(context, platform.lastUsed);
+      lastUsedText = platform.lastUsed != null
+          ? AppDateFormats.formatDateShort(context, platform.lastUsed!)
+          : strings.neverUsed;
       documents = platform.documents;
       photoPath = platform.photoPath;
       comment = platform.comment;
@@ -929,7 +931,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       itemName = ammo.name;
       headerSubtitle = null;
       itemType = 'CONSOMMABLE';
-      lastUsedText = AppDateFormats.formatDateShort(context, ammo.lastUsed);
+      lastUsedText = ammo.lastUsed != null
+          ? AppDateFormats.formatDateShort(context, ammo.lastUsed!)
+          : strings.neverUsed;
       documents = ammo.documents;
       photoPath = ammo.photoPath;
       comment = ammo.comment;
@@ -938,7 +942,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       itemName = acc.model.trim().isEmpty ? acc.name : acc.model;
       headerSubtitle = acc.brand.trim().isEmpty ? null : acc.brand;
       itemType = 'ACCESSOIRE';
-      lastUsedText = AppDateFormats.formatDateShort(context, acc.lastUsed);
+      lastUsedText = acc.lastUsed != null
+          ? AppDateFormats.formatDateShort(context, acc.lastUsed!)
+          : strings.neverUsed;
       documents = acc.documents;
       photoPath = acc.photoPath;
       comment = acc.comment;
@@ -1344,14 +1350,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                       final commentController =
                                           TextEditingController();
                                       DateTime selectedDate = DateTime.now();
-                                      final result = await showDialog<bool>(
-                                        context: context,
-                                        builder: (ctx) => StatefulBuilder(
-                                          builder: (ctx, setStateDlg) =>
-                                              AlertDialog(
-                                            title: Text(
-                                              strings.partChangeTitle,
-                                            ),
+                                      bool? result;
+                                      try {
+                                        result = await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => StatefulBuilder(
+                                            builder: (ctx, setStateDlg) =>
+                                                AlertDialog(
+                                              title: Text(
+                                                strings.partChangeTitle,
+                                              ),
                                             content: SingleChildScrollView(
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
@@ -1522,6 +1530,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                           ),
                                         ),
                                       );
+                                      } finally {
+                                        partController.dispose();
+                                        commentController.dispose();
+                                      }
                                       if (result == true) {
                                         provider.recordPlatformPartChange(
                                           platformId: platform.id,

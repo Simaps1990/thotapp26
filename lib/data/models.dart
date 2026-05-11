@@ -178,7 +178,7 @@ class Platform {
   int totalRounds;
   DateTime lastCleaned;
   DateTime lastRevised;
-  DateTime lastUsed;
+  DateTime? lastUsed;
   final String imageUrl;
   final String category; // 'Plateforme'
   final List<ItemDocument> documents;
@@ -215,7 +215,7 @@ class Platform {
     required this.totalRounds,
     required this.lastCleaned,
     DateTime? lastRevised,
-    required this.lastUsed,
+    this.lastUsed,
     this.imageUrl = '',
     this.category = 'Plateforme',
     this.trackWear = true,
@@ -331,7 +331,7 @@ class Ammo {
   /// quantity as the new “stock de départ” baseline.
   int initialQuantity;
   final String imageUrl;
-  DateTime lastUsed;
+  DateTime? lastUsed;
   final List<ItemDocument> documents;
   final String? photoPath; // Path to item photo
   final List<AmmoHistoryEntry>? history;
@@ -353,7 +353,7 @@ class Ammo {
     required this.quantity,
     int? initialQuantity,
     this.imageUrl = '',
-    required this.lastUsed,
+    this.lastUsed,
     this.trackStock = true,
     this.lowStockThreshold = 50,
     this.documents = const [],
@@ -424,7 +424,7 @@ class Accessory {
   /// Domain type shown in inventory badges (e.g. Optique, Holster, Protection...).
   final String type;
   final String imageUrl;
-  DateTime lastUsed;
+  DateTime? lastUsed;
   /// Total number of shots fired while this accessory was selected in exercises.
   ///
   /// This is used for accessory follow-up (it does NOT participate in critical indicators).
@@ -462,9 +462,9 @@ class Accessory {
     this.comment = '',
     required this.type,
     this.imageUrl = '',
-    required this.lastUsed,
+    this.lastUsed,
     this.totalRounds = 0,
-    DateTime? lastCleaned,
+    required this.lastCleaned,
     DateTime? lastRevised,
     this.trackWear = false,
     this.trackCleanliness = false,
@@ -478,8 +478,7 @@ class Accessory {
     this.photoPath,
     this.isHidden = false,
     this.linkedPlatformIds = const [],
-  })  : lastCleaned = lastCleaned ?? lastUsed,
-        lastRevised = lastRevised ?? (lastCleaned ?? lastUsed),
+  })  : lastRevised = lastRevised ?? lastCleaned,
         roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
         roundsAtLastRevision = roundsAtLastRevision ?? totalRounds;
 

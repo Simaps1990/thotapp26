@@ -7,8 +7,6 @@ import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
 import '../data/thot_provider.dart';
 
-enum _BallisticCalcTab { millieme, hitFactor, powerFactor }
-
 class BallisticCalcScreen extends StatefulWidget {
   final bool embedded;
 
@@ -1247,9 +1245,6 @@ class _HitFactorTabState extends State<_HitFactorTab> {
 
 // --- Power Factor Tab ---
 
-enum _VelocityUnit { mps, fps }
-enum _WeightUnit { grain, gram }
-
 class _PowerFactorTab extends StatefulWidget {
   const _PowerFactorTab();
 
@@ -1261,33 +1256,36 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
   final TextEditingController _velocityController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
 
-  _VelocityUnit _velocityUnit = _VelocityUnit.mps;
-  _WeightUnit _weightUnit = _WeightUnit.grain;
-
   double get _velocity => double.tryParse(_velocityController.text) ?? 0;
   double get _weight => double.tryParse(_weightController.text) ?? 0;
 
-  double get _velocityFps {
-    if (_velocityUnit == _VelocityUnit.fps) return _velocity;
-    return _velocity * 3.28084;
+  double _velocityFps(VelocityUnit unit) {
+    if (unit == VelocityUnit.feetPerSecond) return _velocity;
+    return mpsToFps(_velocity);
   }
 
-  double get _weightGrain {
-    if (_weightUnit == _WeightUnit.grain) return _weight;
-    return _weight * 15.4324;
+  double _weightGrain(WeightUnit unit) {
+    if (unit == WeightUnit.grain) return _weight;
+    if (unit == WeightUnit.ounce) return gramsToGrains(ouncesToGrams(_weight));
+    return gramsToGrains(_weight);
   }
 
-  double get _powerFactor => (_velocityFps * _weightGrain) / 1000;
+  double _powerFactor(ThotProvider provider) =>
+      (_velocityFps(provider.velocityUnit) * _weightGrain(provider.weightUnit)) / 1000;
 
   String _classification(AppStrings strings) {
-    if (_powerFactor >= 165) return strings.powerFactorClassificationMajor;
-    if (_powerFactor >= 125) return strings.powerFactorClassificationMinor;
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final powerFactor = _powerFactor(provider);
+    if (powerFactor >= 165) return strings.powerFactorClassificationMajor;
+    if (powerFactor >= 125) return strings.powerFactorClassificationMinor;
     return strings.powerFactorClassificationSubMinor;
   }
 
   Color _classificationColor(ColorScheme colors) {
-    if (_powerFactor >= 165) return colors.primary;
-    if (_powerFactor >= 125) return const Color(0xFFFFA726).withValues(alpha: 0.9);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final powerFactor = _powerFactor(provider);
+    if (powerFactor >= 165) return colors.primary;
+    if (powerFactor >= 125) return const Color(0xFFFFA726).withValues(alpha: 0.9);
     return const Color(0xFFE53935).withValues(alpha: 0.9);
   }
 
@@ -1303,6 +1301,15 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context);
+    final velocitySuffix =
+        provider.velocityUnit == VelocityUnit.metersPerSecond ? 'm/s' : 'fps';
+    final weightSuffix = provider.weightUnit == WeightUnit.grain
+        ? 'gr'
+        : provider.weightUnit == WeightUnit.ounce
+            ? 'oz'
+            : 'g';
+    final powerFactor = _powerFactor(provider);
 
     final fieldDecoration = InputDecoration(
       filled: true,
@@ -1360,47 +1367,10 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: fieldDecoration.copyWith(
                             hintText: strings.powerFactorVelocityHint,
-                            suffixText: _velocityUnit == _VelocityUnit.mps ? 'm/s' : 'fps',
+                            suffixText: velocitySuffix,
                           ),
                           onChanged: (_) => setState(() {}),
                         ),
-                      ),
-                    ),
-                    const Gap(AppSpacing.sm),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SegmentedButton<_VelocityUnit>(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return colors.primary;
-                            }
-                            if (Theme.of(context).brightness == Brightness.dark) {
-                              return Theme.of(context).scaffoldBackgroundColor;
-                            }
-                            return Theme.of(context).scaffoldBackgroundColor;
-                          }),
-                          foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return colors.onPrimary;
-                            }
-                            if (Theme.of(context).brightness == Brightness.dark) {
-                              return Colors.white;
-                            }
-                            return colors.onSurface;
-                          }),
-                        ),
-                        segments: [
-                          ButtonSegment(value: _VelocityUnit.mps, label: Text('m/s')),
-                          ButtonSegment(value: _VelocityUnit.fps, label: Text('fps')),
-                        ],
-                        selected: {_velocityUnit},
-                        onSelectionChanged: (Set<_VelocityUnit> newSelection) {
-                          setState(() => _velocityUnit = newSelection.first);
-                        },
                       ),
                     ),
                   ],
@@ -1421,47 +1391,10 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: fieldDecoration.copyWith(
                             hintText: strings.powerFactorWeightHint,
-                            suffixText: _weightUnit == _WeightUnit.grain ? 'gr' : 'g',
+                            suffixText: weightSuffix,
                           ),
                           onChanged: (_) => setState(() {}),
                         ),
-                      ),
-                    ),
-                    const Gap(AppSpacing.sm),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SegmentedButton<_WeightUnit>(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return colors.primary;
-                            }
-                            if (Theme.of(context).brightness == Brightness.dark) {
-                              return Theme.of(context).scaffoldBackgroundColor;
-                            }
-                            return Theme.of(context).scaffoldBackgroundColor;
-                          }),
-                          foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return colors.onPrimary;
-                            }
-                            if (Theme.of(context).brightness == Brightness.dark) {
-                              return Colors.white;
-                            }
-                            return colors.onSurface;
-                          }),
-                        ),
-                        segments: [
-                          ButtonSegment(value: _WeightUnit.grain, label: Text('gr')),
-                          ButtonSegment(value: _WeightUnit.gram, label: Text('g')),
-                        ],
-                        selected: {_weightUnit},
-                        onSelectionChanged: (Set<_WeightUnit> newSelection) {
-                          setState(() => _weightUnit = newSelection.first);
-                        },
                       ),
                     ),
                   ],
@@ -1486,7 +1419,7 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                 ),
                 const Gap(AppSpacing.sm),
                 Text(
-                  _powerFactor.toStringAsFixed(1),
+                  powerFactor.toStringAsFixed(1),
                   style: textStyles.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: colors.primary),
                 ),
                 const Gap(AppSpacing.md),
@@ -1494,7 +1427,7 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                   borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(
                     minHeight: 8,
-                    value: (_powerFactor / 170).clamp(0.0, 1.0).toDouble(),
+                    value: (powerFactor / 170).clamp(0.0, 1.0).toDouble(),
                     backgroundColor: colors.primary.withValues(alpha: 0.12),
                     valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
                   ),

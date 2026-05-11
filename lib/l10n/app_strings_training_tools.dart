@@ -347,28 +347,20 @@ es: 'Impactos múltiples',
         es: 'Hit Factor',
       );
 
-  String get timerBtWarningTitle => _pick(
-        fr: 'Casque Bluetooth détecté',
-        en: 'Bluetooth headset detected',
-        de: 'Bluetooth-Headset erkannt',
-        it: 'Cuffie Bluetooth rilevate',
-        es: 'Auriculares Bluetooth detectados',
+  String get timerMicrophonePermissionDenied => _pick(
+        fr: 'Permission micro refusée. Activez le micro pour utiliser la détection acoustique.',
+        en: 'Microphone permission denied. Enable the microphone to use acoustic detection.',
+        de: 'Mikrofonberechtigung verweigert. Aktivieren Sie das Mikrofon, um die akustische Erkennung zu verwenden.',
+        it: 'Autorizzazione microfono negata. Attiva il microfono per usare il rilevamento acustico.',
+        es: 'Permiso de micrófono denegado. Active el micrófono para usar la detección acústica.',
       );
 
-  String get timerBtWarningMessage => _pick(
-        fr: 'La latence audio Bluetooth peut fausser les chronos (100-200 ms). Préférez les haut-parleurs du téléphone.',
-        en: 'Bluetooth audio latency can skew timing (100-200 ms). Prefer phone speakers.',
-        de: 'Bluetooth-Audio-Latenz kann die Zeitmessung verfälschen (100-200 ms). Verwenden Sie lieber die Telefonlautsprecher.',
-        it: 'La latenza audio Bluetooth può falsare i tempi (100-200 ms). Preferisci gli altoparlanti del telefono.',
-        es: 'La latencia de audio Bluetooth puede alterar los tiempos (100-200 ms). Prefiera los altavoces del teléfono.',
-      );
-
-  String get timerBtWarningDismiss => _pick(
-        fr: 'Compris',
-        en: 'Got it',
-        de: 'Verstanden',
-        it: 'Ho capito',
-        es: 'Entendido',
+  String get timerMicrophoneError => _pick(
+        fr: 'Erreur micro. Impossible d\'écouter le son pour le moment.',
+        en: 'Microphone error. Sound detection is currently unavailable.',
+        de: 'Mikrofonfehler. Die Geräuscherkennung ist derzeit nicht verfügbar.',
+        it: 'Errore microfono. Il rilevamento audio non è al momento disponibile.',
+        es: 'Error de micrófono. La detección de sonido no está disponible en este momento.',
       );
 
   String get visualStimulusToolTitle => _pick(

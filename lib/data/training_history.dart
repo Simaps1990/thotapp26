@@ -107,6 +107,10 @@ class TrainingHistory {
   }
 
   static int getWeeklyStreak() {
+    return getDailyStreak();
+  }
+
+  static int getDailyStreak() {
     final now = DateTime.now();
     int streak = 0;
     DateTime current = now;
@@ -121,6 +125,38 @@ class TrainingHistory {
       }
     }
     
+    return streak;
+  }
+
+  static int getDailyStreakWithGrace({int graceDays = 2}) {
+    if (_dailyTraining.isEmpty) return 0;
+
+    final trainingDays = _dailyTraining.entries
+        .where((entry) => entry.value.isNotEmpty)
+        .map((entry) => DateFormat('yyyy-MM-dd').parse(entry.key))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    if (trainingDays.isEmpty) return 0;
+
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final latest = trainingDays.first;
+    if (todayOnly.difference(latest).inDays > graceDays) return 0;
+
+    var streak = 1;
+    var previous = latest;
+    for (final day in trainingDays.skip(1)) {
+      final gap = previous.difference(day).inDays;
+      if (gap <= graceDays + 1) {
+        streak++;
+        previous = day;
+      } else {
+        break;
+      }
+    }
+
     return streak;
   }
 

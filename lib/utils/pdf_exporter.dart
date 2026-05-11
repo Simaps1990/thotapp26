@@ -514,6 +514,14 @@ class PdfExporter {
           case 'es': return 'disparos totales';
           default: return 'coups au total';
         }
+      case 'Jamais utilisé':
+        switch (locale) {
+          case 'en': return 'Never used';
+          case 'de': return 'Nie verwendet';
+          case 'it': return 'Mai usato';
+          case 'es': return 'Nunca usado';
+          default: return 'Jamais utilisé';
+        }
       default:
         return key;
     }
@@ -584,7 +592,7 @@ class PdfExporter {
         'roundsSinceCleaning': p.roundsSinceCleaning,
         'revisionProgress': p.revisionProgress,
         'roundsSinceRevision': p.roundsSinceRevision,
-        'lastUsed': p.lastUsed.toIso8601String(),
+        'lastUsed': p.lastUsed?.toIso8601String(),
         'comment': p.comment,
         'history': p.history.map((h) => {
           'date': h.date.toIso8601String(),
@@ -603,7 +611,7 @@ class PdfExporter {
         'projectileType': a.projectileType,
         'quantity': a.quantity,
         'lowStockThreshold': a.lowStockThreshold,
-        'lastUsed': a.lastUsed.toIso8601String(),
+        'lastUsed': a.lastUsed?.toIso8601String(),
         'comment': a.comment,
       }).toList();
     }
@@ -618,7 +626,7 @@ class PdfExporter {
         'totalRounds': ac.totalRounds,
         'trackBattery': ac.trackBattery,
         'batteryChangedAt': ac.batteryChangedAt?.toIso8601String(),
-        'lastUsed': ac.lastUsed.toIso8601String(),
+        'lastUsed': ac.lastUsed?.toIso8601String(),
         'comment': ac.comment,
       }).toList();
     }
@@ -860,7 +868,7 @@ if (options.includeSessions && provider.sessions.isNotEmpty) {
               _field(_label('Total coups', localeTag), '${w.totalRounds}'),
               _field(_label('Entretien', localeTag), '${(w.cleaningProgress * 100).toInt()}%  (${w.roundsSinceCleaning} coups)'),
               _field(_label('Révision', localeTag), '${(w.revisionProgress * 100).toInt()}%  (${w.roundsSinceRevision} coups)'),
-              _field(_label('Dernière utilisation', localeTag), _formatDateForLocaleTag(localeTag, w.lastUsed)),
+              _field(_label('Dernière utilisation', localeTag), w.lastUsed != null ? _formatDateForLocaleTag(localeTag, w.lastUsed!) : _label('Jamais utilisé', localeTag)),
             ])),
           ]),
           if (w.comment.isNotEmpty) ...[
@@ -905,7 +913,7 @@ if (options.includeSessions && provider.sessions.isNotEmpty) {
             pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
               _field(_label('Stock actuel', localeTag), '${a.quantity} ${_label('consommables', localeTag)}'),
               _field(_label("Seuil d'alerte", localeTag), '${a.lowStockThreshold} ${_label('consommables', localeTag)}'),
-              _field(_label('Dernière utilisation', localeTag), _formatDateForLocaleTag(localeTag, a.lastUsed)),
+              _field(_label('Dernière utilisation', localeTag), a.lastUsed != null ? _formatDateForLocaleTag(localeTag, a.lastUsed!) : _label('Jamais utilisé', localeTag)),
             ])),
           ]),
           if (a.comment.isNotEmpty) ...[
@@ -928,7 +936,7 @@ if (options.includeSessions && provider.sessions.isNotEmpty) {
           _field(_label('Total coups', localeTag), '${ac.totalRounds}'),
           if (ac.trackBattery && ac.batteryChangedAt != null)
             _field(_label('Dernière pile', localeTag), _formatDateForLocaleTag(localeTag, ac.batteryChangedAt!)),
-          _field(_label('Dernière utilisation', localeTag), _formatDateForLocaleTag(localeTag, ac.lastUsed)),
+          _field(_label('Dernière utilisation', localeTag), ac.lastUsed != null ? _formatDateForLocaleTag(localeTag, ac.lastUsed!) : _label('Jamais utilisé', localeTag)),
           if (ac.comment.isNotEmpty) ...[
             pw.SizedBox(height: 4),
             _field(_label('Note', localeTag), ac.comment),

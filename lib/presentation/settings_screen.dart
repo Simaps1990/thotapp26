@@ -113,7 +113,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     final rootOverlay = Overlay.of(context, rootOverlay: true);
-    if (rootOverlay == null) return;
     rootOverlay.insert(_tutorialOverlayEntry!);
   }
 
@@ -553,11 +552,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const Divider(indent: 48, height: 1),
         _SettingsItem(
           icon: Icons.square_foot_rounded,
-          label: strings.unitsLabel,
+          label: strings.unitProfileLabel,
           subtitle: null,
           compact: true,
           trailing: DropdownButtonHideUnderline(
+            child: DropdownButton<UnitProfile>(
+              alignment: Alignment.centerRight,
+              value: provider.unitProfile == UnitProfile.custom
+                  ? null
+                  : provider.unitProfile,
+              hint: Align(
+                alignment: Alignment.centerRight,
+                child: Text(strings.unitsCustom),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: UnitProfile.metric,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(strings.unitsMetric),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: UnitProfile.imperial,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(strings.unitsImperial),
+                  ),
+                ),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  provider.setUnitProfile(val);
+                }
+              },
+              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+            ),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.monitor_weight_outlined,
+          label: strings.unitsWeightLabel,
+          subtitle: null,
+          compact: true,
+          trailing: DropdownButtonHideUnderline(
+            child: DropdownButton<WeightUnit>(
+              alignment: Alignment.centerRight,
+              value: provider.weightUnit,
+              items: const [
+                DropdownMenuItem(value: WeightUnit.gram, child: Text('g')),
+                DropdownMenuItem(value: WeightUnit.grain, child: Text('gr')),
+                DropdownMenuItem(value: WeightUnit.ounce, child: Text('oz')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  provider.setWeightUnit(val);
+                }
+              },
+              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+            ),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.straighten_rounded,
+          label: strings.unitsDistanceLabel,
+          subtitle: null,
+          compact: true,
+          trailing: DropdownButtonHideUnderline(
+            child: DropdownButton<DistanceUnit>(
+              alignment: Alignment.centerRight,
+              value: provider.distanceUnit,
+              items: const [
+                DropdownMenuItem(value: DistanceUnit.meter, child: Text('m')),
+                DropdownMenuItem(value: DistanceUnit.yard, child: Text('yd')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  provider.setDistanceUnit(val);
+                }
+              },
+              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+            ),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.speed_rounded,
+          label: strings.unitsVelocityLabel,
+          subtitle: null,
+          compact: true,
+          trailing: DropdownButtonHideUnderline(
+            child: DropdownButton<VelocityUnit>(
+              alignment: Alignment.centerRight,
+              value: provider.velocityUnit,
+              items: const [
+                DropdownMenuItem(
+                  value: VelocityUnit.metersPerSecond,
+                  child: Text('m/s'),
+                ),
+                DropdownMenuItem(
+                  value: VelocityUnit.feetPerSecond,
+                  child: Text('fps'),
+                ),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  provider.setVelocityUnit(val);
+                }
+              },
+              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+            ),
+          ),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.cloud_outlined,
+          label: strings.unitsWeatherLabel,
+          subtitle: provider.useMetric
+              ? strings.unitsWeatherExampleMetric
+              : strings.unitsWeatherExampleImperial,
+          trailing: DropdownButtonHideUnderline(
             child: DropdownButton<bool>(
+              alignment: Alignment.centerRight,
               value: provider.useMetric,
               items: [
                 DropdownMenuItem(
@@ -577,7 +699,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
               onChanged: (val) {
                 if (val != null) {
-                  provider.setUnitSystem(val);
+                  provider.setWeatherUnitSystem(val);
                 }
               },
               icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
@@ -593,6 +715,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           compact: true,
           trailing: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
+              alignment: Alignment.centerRight,
               value: provider.dateFormatPreference,
               items: [
                 DropdownMenuItem(
@@ -607,6 +730,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(strings.dateFormatMonthDayYear),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 'year_month_day',
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(strings.dateFormatYearMonthDay),
                   ),
                 ),
               ],
@@ -656,6 +786,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.shield_rounded,
           label: strings.backupLabel,
           subtitle: strings.backupSubtitle,
+          trailing: const SizedBox.shrink(),
+        ),
+        const Divider(indent: 48, height: 1),
+        _SettingsItem(
+          icon: Icons.offline_bolt_outlined,
+          label: strings.offlineModeLabel,
+          subtitle: strings.offlineModeSubtitle,
           trailing: const SizedBox.shrink(),
         ),
       ],

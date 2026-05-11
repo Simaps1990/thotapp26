@@ -33,6 +33,7 @@ Accessory _accessory({String id = 'acc1', int totalRounds = 0}) => Accessory(
       name: 'Eotech 512',
       type: 'Optique',
       lastUsed: DateTime(2026, 1, 1),
+      lastCleaned: DateTime(2026, 1, 1),
       totalRounds: totalRounds,
     );
 

@@ -14,7 +14,6 @@ import 'package:thot/presentation/diagnostic_screen.dart';
 import 'package:thot/presentation/ballistic_calc_screen.dart';
 import 'package:thot/presentation/shooting_timer_screen.dart';
 import 'package:thot/presentation/color_pod_screen.dart';
-import 'package:thot/presentation/reflexes_screen.dart';
 import 'package:thot/presentation/shooting_tables_screen.dart';
 import 'package:thot/presentation/achievements_screen.dart';
 import 'package:thot/presentation/statistics_screen.dart';
@@ -93,29 +92,24 @@ class _MaintenanceAlert {
       );
 }
 
-void _showReflexesModal(BuildContext context) {
+void _openQuickToolSheet(BuildContext context, Widget child) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => const ReflexesScreen(),
+    builder: (_) => DraggableScrollableSheet(
+      initialChildSize: 0.96,
+      minChildSize: 0.70,
+      maxChildSize: 0.98,
+      expand: false,
+      builder: (_, scrollController) => child,
+    ),
   );
-}
-
-void _showAudioStimuliComingSoon(BuildContext context) {
-  final strings = AppStrings.of(context);
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(strings.toolComingSoon)));
 }
 
 void _showCalculationToolsModal(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => const BallisticCalcScreen(),
-  );
+  _openQuickToolSheet(context, const BallisticCalcScreen());
 }
 
 // ── Écran d'accueil ──────────────────────────────────────────────────────────
@@ -125,32 +119,15 @@ void _showDiagnosticModal(BuildContext context) {
     showProModal(context);
     return;
   }
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => const DiagnosticScreen(),
-  );
+  _openQuickToolSheet(context, const DiagnosticScreen());
 }
 
 void _showMilliemeModal(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return const BallisticCalcScreen();
-    },
-  );
+  _openQuickToolSheet(context, const BallisticCalcScreen());
 }
 
 void _showTimerModal(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => const ShootingTimerScreen(),
-  );
+  _openQuickToolSheet(context, const ShootingTimerScreen());
 }
 
 void _showAchievementsModal(BuildContext context) {
@@ -229,21 +206,11 @@ void _showStatisticsModal(BuildContext context) {
 }
 
 void _showColorPodModal(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => const ColorPodScreen(),
-  );
+  _openQuickToolSheet(context, const ColorPodScreen());
 }
 
 void _showShootingTablesModal(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => const ShootingTablesScreen(),
-  );
+  _openQuickToolSheet(context, const ShootingTablesScreen());
 }
 
 enum _PrecisionRange { day, week, month, year, total }
@@ -858,7 +825,11 @@ class _HomeScreenState extends State<HomeScreen> {
       borderRadius: BorderRadius.circular(radius),
       border: isDark
           ? null
-          : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
+          : Border.all(
+              color: LightColors.surfaceHighlight,
+              width: 1.35,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
       boxShadow: AppShadows.cardPremium,
     );
   }
@@ -1401,7 +1372,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final key = actionId == 'new_session'
                             ? _newSessionKey
                             : null;
-                        return _QuickActionItem(
+                        return _QuickActionButton(
                           key: key,
                           icon: action['icon'] as Widget,
                           label: action['label'] as String,
@@ -1469,6 +1440,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? colors.outline.withValues(alpha: 0.3)
                           : LightColors.surfaceHighlight,
                       width: 1,
+                      strokeAlign: BorderSide.strokeAlignInside,
                     ),
                     boxShadow: AppShadows.cardPremium,
                     image: DecorationImage(
@@ -1586,8 +1558,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
                                                   colors: [
-                                                    LightColors.primary,
-                                                    Color(0xFF7A9E6B),
+                                                    Color(0xFF799438),
+                                                    Color(0xFF6E7E1D),
                                                   ],
                                                 )
                                               : null,
@@ -1857,12 +1829,12 @@ class _HomeScreenState extends State<HomeScreen> {
             TextButton(
               onPressed: () => StatefulNavigationShell.of(context).goBranch(1),
               style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
                 strings.homeSeeAll,
-                style: textStyles.labelSmall?.copyWith(
+                style: textStyles.labelMedium?.copyWith(
                   color: colors.primary,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1914,12 +1886,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   TextButton(
                     onPressed: () => _showStatisticsModal(context),
                     style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(
                       strings.homeSeeAll,
-                      style: textStyles.labelSmall?.copyWith(
+                      style: textStyles.labelMedium?.copyWith(
                         color: colors.primary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1996,167 +1968,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-  List<Widget> _buildCostDashboardSection({
-    required BuildContext context,
-    required ThotProvider provider,
-    required ColorScheme colors,
-    required TextTheme textStyles,
-  }) {
-    final strings = AppStrings.of(context);
-    final monthlyCosts = provider.getMonthlyCosts(12);
-    final topAmmos = provider.getTopAmmosByCost(12);
-    final totalYearlyCost = monthlyCosts.fold<double>(
-      0,
-      (sum, m) => sum + (m['cost'] as double),
-    );
-
-    if (totalYearlyCost == 0) return [];
-
-    return [
-      SizedBox(
-        height: 24,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              strings.costDashboardTitle,
-              style: textStyles.labelLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colors.secondary,
-              ),
-            ),
-            Text(
-              '${strings.costDashboardYearlyTotal}: ${totalYearlyCost.toStringAsFixed(2)} €',
-              style: textStyles.labelSmall?.copyWith(
-                color: colors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-      const Gap(9),
-      Container(
-        padding: AppSpacing.paddingLg,
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          boxShadow: AppShadows.cardPremium,
-          border: Border.all(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? colors.outline
-                : LightColors.surfaceHighlight,
-            width: 1.2,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top 5 ammos by cost
-            if (topAmmos.isNotEmpty) ...[
-              Text(
-                'Top 5 ${strings.statisticsAmmosLabel}',
-                style: textStyles.labelSmall?.copyWith(color: colors.secondary),
-              ),
-              const Gap(8),
-              ...topAmmos.entries.take(5).toList().asMap().entries.map((entry) {
-                final index = entry.key;
-                final ammo = provider.ammos.firstWhere(
-                  (a) => a.id == entry.value.key,
-                  orElse: () => Ammo(
-                    id: '',
-                    name: '',
-                    brand: '',
-                    caliber: '',
-                    quantity: 0,
-                    lastUsed: DateTime.now(),
-                  ),
-                );
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${index + 1}.',
-                        style: textStyles.labelMedium?.copyWith(
-                          color: colors.secondary,
-                        ),
-                      ),
-                      const Gap(8),
-                      Expanded(
-                        child: Text(ammo.name, style: textStyles.bodyMedium),
-                      ),
-                      Text(
-                        '${entry.value.value.toStringAsFixed(2)} €',
-                        style: textStyles.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              const Gap(12),
-            ],
-            // Monthly cost chart (simple bar representation)
-            Text(
-              'Coût mensuel (12 mois)',
-              style: textStyles.labelSmall?.copyWith(color: colors.secondary),
-            ),
-            const Gap(8),
-            SizedBox(
-              height: 100,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: monthlyCosts.map((m) {
-                  final cost = m['cost'] as double;
-                  final maxCost = monthlyCosts.fold<double>(
-                    0,
-                    (max, mc) => (mc['cost'] as double) > max
-                        ? mc['cost'] as double
-                        : max,
-                  );
-                  final height = maxCost > 0
-                      ? (cost / maxCost * 80).clamp(4.0, 80.0)
-                      : 4.0;
-                  final month = m['month'] as DateTime;
-                  final localeTag = Localizations.localeOf(
-                    context,
-                  ).toLanguageTag();
-                  final monthLabel = DateFormat.M(localeTag).format(month);
-                  return Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          height: height,
-                          width: 8,
-                          decoration: BoxDecoration(
-                            color: colors.primary,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const Gap(4),
-                        Text(
-                          monthLabel,
-                          style: textStyles.labelSmall?.copyWith(
-                            fontSize: 10,
-                            color: colors.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ThotProvider>(context);
@@ -2171,12 +1982,6 @@ class _HomeScreenState extends State<HomeScreen> {
       textStyles: textStyles,
     );
     final precisionSection = _buildPrecisionChartSection(
-      provider: provider,
-      colors: colors,
-      textStyles: textStyles,
-    );
-    final costDashboardSection = _buildCostDashboardSection(
-      context: context,
       provider: provider,
       colors: colors,
       textStyles: textStyles,
@@ -2244,10 +2049,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       colors: colors,
                       textStyles: textStyles,
                     )),
-              if (costDashboardSection.isNotEmpty) ...[
-                const Gap(26),
-                ...costDashboardSection,
-              ],
               if (precisionSection.isNotEmpty) ...[
                 const Gap(26),
                 ...precisionSection,
@@ -2307,7 +2108,11 @@ class _HomeStandardActionCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       border: isDark
           ? null
-          : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
+          : Border.all(
+              color: LightColors.surfaceHighlight,
+              width: 1.35,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
       boxShadow: AppShadows.cardPremium,
     );
   }
@@ -2529,21 +2334,21 @@ Map<String, dynamic> _getQuickAction(
           size: 24,
         ),
         'label': strings.quickActionLabelDiagnostic,
-        'onTap': () => _showDiagnosticModal(context),
+        'onTap': () => context.go('/tools?open=diagnostic&t=${DateTime.now().millisecondsSinceEpoch}'),
       };
 
     case 'millieme':
       return {
         'icon': Icon(Icons.straighten_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelMillieme,
-        'onTap': () => _showMilliemeModal(context),
+        'onTap': () => context.go('/tools?open=millieme&t=${DateTime.now().millisecondsSinceEpoch}'),
       };
 
     case 'timer':
       return {
         'icon': Icon(Icons.timer_rounded, color: colors.primary, size: 24),
         'label': strings.shortcutTimer,
-        'onTap': () => _showTimerModal(context),
+        'onTap': () => context.go('/tools?open=timer&t=${DateTime.now().millisecondsSinceEpoch}'),
       };
 
     case 'shooting_tables':
@@ -2554,35 +2359,28 @@ Map<String, dynamic> _getQuickAction(
           size: 24,
         ),
         'label': strings.quickActionLabelShootingTables,
-        'onTap': () => _showShootingTablesModal(context),
+        'onTap': () => context.go('/tools?open=shooting_tables&t=${DateTime.now().millisecondsSinceEpoch}'),
       };
 
     case 'visual_stimuli':
       return {
         'icon': Icon(Icons.palette_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelVisualStimuli,
-        'onTap': () => _showColorPodModal(context),
-      };
-
-    case 'audio_stimuli':
-      return {
-        'icon': Icon(Icons.graphic_eq_rounded, color: colors.primary, size: 24),
-        'label': strings.quickActionLabelAudioStimuli,
-        'onTap': () => _showAudioStimuliComingSoon(context),
+        'onTap': () => context.go('/tools?open=visual_stimuli&t=${DateTime.now().millisecondsSinceEpoch}'),
       };
 
     case 'reaction_exercises':
       return {
         'icon': Icon(Icons.bolt_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelReactionExercises,
-        'onTap': () => _showReflexesModal(context),
+        'onTap': () => context.go('/tools?open=reflexes&t=${DateTime.now().millisecondsSinceEpoch}'),
       };
 
     case 'calculation_tools':
       return {
         'icon': Icon(Icons.calculate_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelCalculationTools,
-        'onTap': () => _showCalculationToolsModal(context),
+        'onTap': () => context.go('/tools?open=calculations&t=${DateTime.now().millisecondsSinceEpoch}'),
       };
 
     default:
@@ -2598,12 +2396,12 @@ Map<String, dynamic> _getQuickAction(
   }
 }
 
-class _QuickActionItem extends StatelessWidget {
+class _QuickActionButton extends StatelessWidget {
   final Widget icon;
   final String label;
   final VoidCallback onTap;
 
-  const _QuickActionItem({
+  const _QuickActionButton({
     super.key,
     required this.icon,
     required this.label,
@@ -2627,7 +2425,11 @@ class _QuickActionItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Theme.of(context).brightness == Brightness.dark
                 ? null
-                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
+                : Border.all(
+                    color: LightColors.surfaceHighlight,
+                    width: 1.35,
+                    strokeAlign: BorderSide.strokeAlignInside,
+                  ),
             boxShadow: AppShadows.cardPremium,
           ),
           child: Center(
@@ -2679,7 +2481,7 @@ class _MaintenanceBar extends StatelessWidget {
     if (normalizedProgress <= 0.33) {
       return const Color(0xFF3A7D44);
     } else if (normalizedProgress <= 0.66) {
-      return const Color(0xFFC2A14A);
+      return const Color(0xFF2F6F3A);
     } else {
       return const Color(0xFFD64545);
     }
@@ -2755,7 +2557,11 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Theme.of(context).brightness == Brightness.dark
             ? null
-            : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
+            : Border.all(
+                color: LightColors.surfaceHighlight,
+                width: 1.35,
+                strokeAlign: BorderSide.strokeAlignInside,
+              ),
         boxShadow: AppShadows.cardPremium,
       ),
       child: DefaultTextStyle.merge(
@@ -2787,7 +2593,7 @@ class _StatCard extends StatelessWidget {
 }
 
 class _LastSessionCard extends StatelessWidget {
-  final session;
+  final Session session;
   final ThotProvider provider;
   final ColorScheme colors;
   final TextTheme textStyles;
@@ -2829,7 +2635,11 @@ class _LastSessionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Theme.of(context).brightness == Brightness.dark
                 ? null
-                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
+                : Border.all(
+                    color: LightColors.surfaceHighlight,
+                    width: 1.35,
+                    strokeAlign: BorderSide.strokeAlignInside,
+                  ),
             boxShadow: AppShadows.cardPremium,
           ),
           child: Column(
@@ -2886,6 +2696,7 @@ class _LastSessionCard extends StatelessWidget {
                         border: Border.all(
                           color: LightColors.surfaceHighlight,
                           width: 1.35,
+                          strokeAlign: BorderSide.strokeAlignInside,
                         ),
                       ),
                       child: Row(
@@ -3306,6 +3117,7 @@ class _NotificationPanelState extends State<_NotificationPanel>
                         : Border.all(
                             color: LightColors.surfaceHighlight,
                             width: 1.35,
+                            strokeAlign: BorderSide.strokeAlignInside,
                           ),
                     boxShadow: [
                       BoxShadow(

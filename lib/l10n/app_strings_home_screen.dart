@@ -539,14 +539,6 @@ it: 'Stimoli cognitivi',
 es: 'Estímulos cognitivos',
       );
 
-  String get quickActionLabelAudioStimuli => _pick(
-fr: 'Stimulis audio',
-en: 'Audio stimuli',
-de: 'Audio Stimuli',
-it: 'Stimoli audio',
-es: 'Estímulos de audio',
-      );
-
   String get quickActionLabelReactionExercises => _pick(
 fr: 'Entraînement individuel',
 en: 'Individual training',

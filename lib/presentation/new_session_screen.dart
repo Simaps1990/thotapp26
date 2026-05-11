@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
@@ -16,11 +15,9 @@ import 'package:thot/data/thot_provider.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/utils/unit_converter.dart';
-import 'package:thot/presentation/shooting_timer_screen.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
-import 'package:thot/utils/image_storage.dart';
 import 'package:thot/utils/native_picker.dart';
 class _CitySuggestion {
   final String name;
@@ -204,8 +201,12 @@ void _loadSession() {
           ),
           const Gap(8),
           Text(
-            strings.sessionTypeLabel,
-            style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            strings.sessionTypeLabel.toUpperCase(),
+            style: textStyles.labelLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: colors.onSurface,
+              letterSpacing: 1.1,
+            ),
           ),
         ],
       ),
@@ -248,6 +249,8 @@ void _loadSession() {
               decoration: InputDecoration(
                 labelText: strings.sessionNameLabel,
                 hintText: strings.sessionNameHint,
+                hintStyle: textStyles.bodyMedium
+                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
                 errorText: null,
                 filled: true,
                 fillColor: colors.surface,
@@ -358,6 +361,8 @@ void _loadSession() {
               decoration: InputDecoration(
                 labelText: strings.locationLabel,
                 hintText: strings.locationHint,
+                hintStyle: textStyles.bodyMedium
+                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
                 errorText: _locationError
                     ? strings.locationRequiredForWeather
                     : (_citySearchError ? strings.citySearchUnavailable : null),
@@ -389,6 +394,8 @@ void _loadSession() {
         decoration: InputDecoration(
           labelText: strings.shootingDistanceLabel,
           hintText: strings.shootingDistanceHint,
+          hintStyle: textStyles.bodyMedium
+              ?.copyWith(color: colors.onSurface.withAlpha(100)),
           filled: true,
           fillColor: colors.surface,
           border: OutlineInputBorder(
@@ -458,7 +465,6 @@ void _loadSession() {
           ),
         ),
       ),
-      const Gap(AppSpacing.lg),
     ];
   }
 
@@ -489,9 +495,16 @@ void _loadSession() {
             child: FilledButton.icon(
               onPressed: _addExercise,
               icon: const Icon(Icons.add, size: 18),
-              label: Text(strings.createExerciseButton),
+              label: Text(
+                strings.createExerciseButton.toUpperCase(),
+                style: textStyles.labelLarge?.copyWith(
+                  color: colors.onPrimary,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.6,
+                ),
+              ),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
@@ -503,9 +516,15 @@ void _loadSession() {
             child: OutlinedButton.icon(
               onPressed: _importExerciseFromTemplate,
               icon: const Icon(Icons.download_rounded, size: 18),
-              label: Text(strings.importExerciseButton),
+              label: Text(
+                strings.importExerciseButton.toUpperCase(),
+                style: textStyles.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.6,
+                ),
+              ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
@@ -726,6 +745,7 @@ void _loadSession() {
           onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: SafeArea(
           top: false,
+          bottom: false,
           child: Column(
             children: [
               _buildHeader(
@@ -738,7 +758,7 @@ void _loadSession() {
                 child: SingleChildScrollView(
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   controller: _sessionScrollController,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -766,6 +786,9 @@ void _loadSession() {
                       ),
 
                       ..._buildSaveSection(colors: colors),
+                      SizedBox(
+                        height: MediaQuery.paddingOf(context).bottom,
+                      ),
                     ],
                   ),
                 ),
@@ -834,260 +857,17 @@ void _loadSession() {
 
   void _importExerciseFromTemplate() {
     final provider = Provider.of<ThotProvider>(context, listen: false);
-    final userTemplates = provider.exerciseTemplates;
-    final strings = AppStrings.of(context);
-    final standardDrills = StandardDrills.all(strings);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (_, controller) {
-            final colors = Theme.of(ctx).colorScheme;
-            final textStyles = Theme.of(ctx).textTheme;
-            final baseBackground = Theme.of(ctx).scaffoldBackgroundColor;
-            return Container(
-              decoration: BoxDecoration(
-                color: baseBackground,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                children: [
-                  // ── poignée ──
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: LightColors.iconInactive.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const Gap(AppSpacing.md),
-                  // ── header : titre + bulle ⓘ ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            strings.importTemplateTitle,
-                            style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: ctx,
-                              builder: (_) => AlertDialog(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                title: Row(
-                                  children: [
-                                    Icon(Icons.info_outline_rounded, size: 20, color: colors.primary),
-                                    const Gap(AppSpacing.sm),
-                                    Expanded(
-                                      child: Text(strings.importTemplateTitle,
-                                          style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                                    ),
-                                  ],
-                                ),
-                                content: Text(
-                                  strings.createTemplateTooltip,
-                                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(ctx).pop(),
-                                    child: Text(strings.actionClose),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            child: Icon(
-                              Icons.info_outline_rounded,
-                              size: 20,
-                              color: colors.secondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Gap(AppSpacing.sm),
-                  // ── séparateur standard ──
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: colors.outline.withValues(alpha: 0.35),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      controller: controller,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.md,
-                      ),
-                      children: [
-                        if (standardDrills.isNotEmpty) ...[
-                          // ── titre de section ──
-                          Text(
-                            strings.exerciseTemplatesStandardSection,
-                            style: textStyles.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colors.onSurface,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const Gap(AppSpacing.sm),
-                          // ── card drills standards ──
-                          Container(
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
-                            ),
-                            child: Column(
-                              children: standardDrills.asMap().entries.map((entry) {
-                                final i = entry.key;
-                                final t = entry.value;
-                                final subtitle = t.detailedMode
-                                    ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${t.distance} m'
-                                    : '${t.shotsFired} coups · ${t.distance} m';
-                                final isLast = i == standardDrills.length - 1;
-                                return Column(
-                                  children: [
-                                    ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.md,
-                                        vertical: 2,
-                                      ),
-                                      title: Text(
-                                        t.name,
-                                        style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Text(
-                                        subtitle,
-                                        style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                                      ),
-                                      trailing: Icon(Icons.add_circle_outline, color: colors.primary),
-                                      onTap: () {
-                                        _addTemplateAsExercise(t);
-                                        Navigator.pop(ctx);
-                                      },
-                                    ),
-                                    if (!isLast)
-                                      Divider(
-                                        height: 1,
-                                        indent: AppSpacing.md,
-                                        endIndent: AppSpacing.md,
-                                        color: colors.outline.withValues(alpha: 0.3),
-                                      ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          const Gap(AppSpacing.xl),
-                        ],
-                        if (userTemplates.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                            child: Text(
-                              strings.exerciseTemplatesMyTemplatesSection,
-                              style: textStyles.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: colors.onSurface,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
-                            ),
-                            child: Column(
-                              children: userTemplates.asMap().entries.map((entry) {
-                                final i = entry.key;
-                                final t = entry.value;
-                                final isLast = i == userTemplates.length - 1;
-                                return Column(
-                                  children: [
-                                    ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.md,
-                                        vertical: 2,
-                                      ),
-                                      title: Text(
-                                        t.name,
-                                        style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Text(
-                                        '${t.shotsFired} coups, ${t.distance}m',
-                                        style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                                      ),
-                                      trailing: Icon(Icons.add_circle_outline, color: colors.primary),
-                                      onTap: () {
-                                        _addTemplateAsExercise(t);
-                                        if (ctx.mounted) Navigator.of(ctx).pop();
-                                      },
-                                    ),
-                                    if (!isLast)
-                                      Divider(
-                                        height: 1,
-                                        indent: AppSpacing.md,
-                                        endIndent: AppSpacing.md,
-                                        color: colors.outline.withValues(alpha: 0.3),
-                                      ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ],
-                        if (standardDrills.isEmpty && userTemplates.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: AppSpacing.paddingLg,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.inventory_2_outlined,
-                                    size: 30,
-                                    color: colors.secondary,
-                                  ),
-                                  const Gap(AppSpacing.sm),
-                                  Text(
-                                    strings.noTemplatesAvailable,
-                                    textAlign: TextAlign.center,
-                                    style: textStyles.bodyMedium?.copyWith(
-                                      color: colors.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (ctx) => _ImportExerciseTemplateSheet(
+        provider: provider,
+        onSelected: (template) {
+          _addTemplateAsExercise(template);
+          Navigator.of(ctx).pop();
+        },
+      ),
     );
   }
 
@@ -1623,6 +1403,8 @@ class WeatherEditableField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
+        hintStyle: textStyles.bodyMedium
+            ?.copyWith(color: colors.onSurface.withAlpha(100)),
         prefixIcon: Icon(prefixIcon, size: 20),
         filled: true,
         fillColor: colors.surface,
@@ -1680,12 +1462,16 @@ class _SectionHeader extends StatelessWidget {
           data: IconThemeData(color: colors.primary, size: 18),
           child: leading,
         ),
-        const Gap(AppSpacing.sm),
-        Text(title,
+        const Gap(8),
+        Text(title.toUpperCase(),
             style: Theme.of(context)
                 .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold)),
+                .labelLarge
+                ?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: colors.onSurface,
+                  letterSpacing: 1.1,
+                )),
       ],
     );
   }
@@ -2096,6 +1882,389 @@ class _InfoRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ImportExerciseTemplateSheet extends StatefulWidget {
+  final ThotProvider provider;
+  final ValueChanged<ExerciseTemplate> onSelected;
+
+  const _ImportExerciseTemplateSheet({
+    required this.provider,
+    required this.onSelected,
+  });
+
+  @override
+  State<_ImportExerciseTemplateSheet> createState() =>
+      _ImportExerciseTemplateSheetState();
+}
+
+class _ImportExerciseTemplateSheetState
+    extends State<_ImportExerciseTemplateSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  int _selectedSourceIndex = 0;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<ExerciseTemplate> _filteredTemplates(List<ExerciseTemplate> templates) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return templates;
+    return templates
+        .where((template) =>
+            template.name.toLowerCase().contains(query) ||
+            template.observations.toLowerCase().contains(query))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+    final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+    final searchFillColor = Color.alphaBlend(
+      colors.outline.withValues(alpha: 0.8),
+      baseBackground,
+    );
+    final standardDrills = _filteredTemplates(StandardDrills.all(strings));
+    final userTemplates = _filteredTemplates(widget.provider.exerciseTemplates);
+    final visibleTemplates =
+        _selectedSourceIndex == 0 ? standardDrills : userTemplates;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (_, controller) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: Container(
+            color: baseBackground,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Gap(10),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: LightColors.iconInactive.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Gap(12),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                strings.importTemplateTitle.toUpperCase(),
+                                style: textStyles.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                            ),
+                            const Gap(6),
+                            Tooltip(
+                              message: strings.createTemplateTooltip,
+                              triggerMode: TooltipTriggerMode.tap,
+                              showDuration: const Duration(seconds: 5),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    colors.onSurface.withValues(alpha: 0.88),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              textStyle: textStyles.bodySmall
+                                  ?.copyWith(color: colors.surface),
+                              child: Icon(
+                                Icons.info_outline_rounded,
+                                size: 18,
+                                color:
+                                    colors.onSurface.withValues(alpha: 0.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 28,
+                            color: colors.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(AppSpacing.xs),
+                Divider(
+                  color: colors.outline,
+                  indent: AppSpacing.lg,
+                  endIndent: AppSpacing.lg,
+                ),
+                const Gap(AppSpacing.sm),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.xs,
+                    AppSpacing.lg,
+                    10,
+                  ),
+                  child: SizedBox(
+                    height: 44,
+                    child: _SlidingSegmentedSelector(
+                      selectedIndex: _selectedSourceIndex,
+                      labels: [
+                        strings.exerciseTemplatesStandardSection,
+                        strings.exerciseTemplatesMyTemplatesSection,
+                      ],
+                      onSelected: (index) {
+                        setState(() => _selectedSourceIndex = index);
+                      },
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    8,
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: textStyles.bodyMedium?.copyWith(fontSize: 14),
+                    onChanged: (value) {
+                      setState(() => _searchQuery = value);
+                    },
+                    decoration: InputDecoration(
+                      hintText: strings.searchEllipsis,
+                      hintStyle: textStyles.bodyMedium?.copyWith(
+                        fontSize: 14,
+                        color: colors.secondary,
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              splashRadius: 18,
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      suffixIconConstraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      filled: true,
+                      fillColor: searchFillColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: colors.outline),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: colors.outline),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: colors.outline),
+                      ),
+                    ),
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                Expanded(
+                  child: visibleTemplates.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: AppSpacing.paddingLg,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.bookmark_border_rounded,
+                                  size: 64,
+                                  color: colors.secondary
+                                      .withValues(alpha: 0.5),
+                                ),
+                                const Gap(AppSpacing.md),
+                                Text(
+                                  strings.noTemplatesAvailable,
+                                  style: textStyles.bodyMedium
+                                      ?.copyWith(color: colors.secondary),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: controller,
+                          padding: const EdgeInsets.only(bottom: 80),
+                          itemCount: visibleTemplates.length,
+                          itemBuilder: (context, index) {
+                            final template = visibleTemplates[index];
+                            final subtitle = template.detailedMode
+                                ? '${strings.stepsCount(template.steps?.length ?? 0)} · ${template.distance} m'
+                                : '${template.shotsFired} coups · ${template.distance} m';
+                            final isStandard = _selectedSourceIndex == 0;
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                0,
+                                AppSpacing.lg,
+                                AppSpacing.md,
+                              ),
+                              child: Material(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () => widget.onSelected(template),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.md,
+                                      vertical: 8,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Flexible(
+                                                        child: Text(
+                                                          template.name,
+                                                          style: textStyles
+                                                              .titleSmall
+                                                              ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color:
+                                                                colors.onSurface,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      if (isStandard) ...[
+                                                        const Gap(6),
+                                                        Icon(
+                                                          Icons.verified_rounded,
+                                                          size: 16,
+                                                          color: colors.primary,
+                                                        ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                  const Gap(2),
+                                                  Text(
+                                                    subtitle,
+                                                    style: textStyles.bodySmall
+                                                        ?.copyWith(
+                                                      color: colors.secondary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Gap(AppSpacing.sm),
+                                            FilledButton.icon(
+                                              onPressed: () =>
+                                                  widget.onSelected(template),
+                                              icon:
+                                                  const Icon(Icons.add, size: 16),
+                                              label: Text(
+                                                strings.templateImportButton,
+                                              ),
+                                              style: FilledButton.styleFrom(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 8,
+                                                ),
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (template.observations.trim().isNotEmpty) ...[
+                                          const Gap(4),
+                                          Text(
+                                            '${strings.observationsTitle} : ${template.observations.trim()}',
+                                            style:
+                                                textStyles.bodySmall?.copyWith(
+                                              color: colors.secondary,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -2641,48 +2810,27 @@ return GestureDetector(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-icon: const Icon(Icons.timer_rounded),
-                  color: colors.primary,
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const ShootingTimerScreen(),
-                    );
-                  },
-
-                ),
                 Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            strings.addExerciseTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textStyles.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Icône en forme de V pour fermer
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 28,
-                            color: colors.onSurface.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    strings.addExerciseTitle.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textStyles.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                ),
+                // Icône en forme de V pour fermer
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 28,
+                      color: colors.onSurface.withValues(alpha: 0.7),
+                    ),
                   ),
                 ),
               ],
@@ -2716,10 +2864,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       const Gap(8),
                       Text(
                         strings.exerciseNameLabel.toUpperCase(),
-                        style: textStyles.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                        style: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
                           color: colors.onSurface,
-                          letterSpacing: 0.5,
+                          letterSpacing: 1.1,
                         ),
                       ),
                     ],
@@ -2733,6 +2881,8 @@ controller: widget.scrollController ?? _exerciseScrollController,
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'.*'))],
                     decoration: InputDecoration(
                       hintText: strings.exerciseNameHint,
+                      hintStyle: textStyles.bodyMedium
+                          ?.copyWith(color: colors.onSurface.withAlpha(100)),
                       filled: true,
                       fillColor: colors.surface,
                       border: OutlineInputBorder(
@@ -2763,10 +2913,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       const Gap(8),
                       Text(
                         strings.platformTitle.toUpperCase(),
-                        style: textStyles.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                        style: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
                           color: colors.onSurface,
-                          letterSpacing: 0.5,
+                          letterSpacing: 1.1,
                         ),
                       ),
                     ],
@@ -2939,6 +3089,9 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                 decoration: InputDecoration(
                                   labelText: strings.borrowedPlatformOptional,
                                   hintText: strings.borrowedPlatformHint,
+                                  hintStyle: textStyles.bodyMedium?.copyWith(
+                                    color: colors.onSurface.withAlpha(100),
+                                  ),
                                   prefixIcon: const Padding(
                                     padding: EdgeInsets.all(12),
                                     child: Icon(
@@ -2989,10 +3142,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       const Gap(8),
                       Text(
                         strings.usedEquipmentLabel.toUpperCase(),
-                        style: textStyles.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                        style: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
                           color: colors.onSurface,
-                          letterSpacing: 0.5,
+                          letterSpacing: 1.1,
                         ),
                       ),
                     ],
@@ -3062,10 +3215,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       const Gap(8),
                       Text(
                         strings.ammoTitle.toUpperCase(),
-                        style: textStyles.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                        style: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
                           color: colors.onSurface,
-                          letterSpacing: 0.5,
+                          letterSpacing: 1.1,
                         ),
                       ),
                     ],
@@ -3201,6 +3354,9 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       decoration: InputDecoration(
                         labelText: strings.borrowedAmmoOptional,
                         hintText: strings.borrowedAmmoHint,
+                        hintStyle: textStyles.bodyMedium?.copyWith(
+                          color: colors.onSurface.withAlpha(100),
+                        ),
                         prefixIcon: const Padding(
                           padding: EdgeInsets.all(12),
                           child: Icon(
@@ -3242,10 +3398,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                 const Gap(8),
                 Text(
                   strings.exerciseModeLabel.toUpperCase(),
-                  style: textStyles.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
                     color: colors.onSurface,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1.1,
                   ),
                 ),
               ],
@@ -3292,10 +3448,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                   const Gap(6),
                                   Text(
                                     strings.shotsCountLabel.toUpperCase(),
-                                    style: textStyles.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                      fontSize: 11,
+                                    style: textStyles.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      color: colors.onSurface,
+                                      letterSpacing: 1.1,
                                     ),
                                   ),
                                 ],
@@ -3328,6 +3484,9 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                   },
                                   decoration: InputDecoration(
                                     hintText: '0',
+                                    hintStyle: textStyles.bodyMedium?.copyWith(
+                                      color: colors.onSurface.withAlpha(100),
+                                    ),
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     filled: true,
                                     fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
@@ -3367,10 +3526,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                   const Gap(6),
                                   Text(
                                     strings.distanceLabel.toUpperCase(),
-                                    style: textStyles.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                      fontSize: 11,
+                                    style: textStyles.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      color: colors.onSurface,
+                                      letterSpacing: 1.1,
                                     ),
                                   ),
                                 ],
@@ -3403,6 +3562,9 @@ controller: widget.scrollController ?? _exerciseScrollController,
                                   },
                                   decoration: InputDecoration(
                                     hintText: '0',
+                                    hintStyle: textStyles.bodyMedium?.copyWith(
+                                      color: colors.onSurface.withAlpha(100),
+                                    ),
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     suffixText: converter.useMetric ? 'm' : 'yd',
                                     filled: true,
@@ -3486,10 +3648,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                       children: [
                         Text(
                           strings.exerciseStepsTitle.toUpperCase(),
-                          style: textStyles.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                            fontSize: 11,
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: colors.onSurface,
+                            letterSpacing: 1.1,
                           ),
                         ),
                         ElevatedButton.icon(
@@ -3616,10 +3778,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                 const Gap(8),
                 Text(
                   strings.usedTargetLabel.toUpperCase(),
-                  style: textStyles.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
                     color: colors.onSurface,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1.1,
                   ),
                 ),
               ],
@@ -3630,6 +3792,8 @@ controller: widget.scrollController ?? _exerciseScrollController,
               onTap: () => _targetNameController.selection = TextSelection(baseOffset: 0, extentOffset: _targetNameController.text.length),
               decoration: InputDecoration(
                 hintText: strings.targetNameHint,
+                hintStyle: textStyles.bodyMedium
+                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
                 filled: true,
                 fillColor: colors.surface,
                 border: OutlineInputBorder(
@@ -3662,10 +3826,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                     const Gap(8),
                     Text(
                       strings.targetPhotosTitle.toUpperCase(),
-                      style: textStyles.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                      style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
                         color: colors.onSurface,
-                        letterSpacing: 0.5,
+                        letterSpacing: 1.1,
                       ),
                     ),
                   ],
@@ -3829,10 +3993,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                     const Gap(8),
                     Text(
                       strings.measurePrecisionTitle.toUpperCase(),
-                      style: textStyles.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                      style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
                         color: colors.onSurface,
-                        letterSpacing: 0.5,
+                        letterSpacing: 1.1,
                       ),
                     ),
                   ],
@@ -3873,10 +4037,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                 const Gap(8),
                 Text(
                   strings.observationsTitle.toUpperCase(),
-                  style: textStyles.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
                     color: colors.onSurface,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1.1,
                   ),
                 ),
               ],
@@ -3889,6 +4053,8 @@ controller: widget.scrollController ?? _exerciseScrollController,
               onTap: () => _observationsController.selection = TextSelection(baseOffset: 0, extentOffset: _observationsController.text.length),
               decoration: InputDecoration(
                 hintText: strings.observationsExample,
+                hintStyle: textStyles.bodyMedium
+                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 12,
@@ -3972,7 +4138,12 @@ controller: widget.scrollController ?? _exerciseScrollController,
         content: TextField(
           controller: nameController,
           autofocus: true,
-          decoration: InputDecoration(hintText: strings.templateNameHint),
+          decoration: InputDecoration(
+            hintText: strings.templateNameHint,
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
+                ),
+          ),
         ),
         actions: [
           TextButton(

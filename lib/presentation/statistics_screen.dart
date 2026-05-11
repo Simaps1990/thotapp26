@@ -86,7 +86,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  double? _computeRecentPrecisionDelta(List<dynamic> sessionsWithPrecision) {
+  double? _computeRecentPrecisionDelta(List<Session> sessionsWithPrecision) {
     if (sessionsWithPrecision.length < 2) return null;
 
     final sorted = [...sessionsWithPrecision]
@@ -103,21 +103,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (previous.isEmpty) return null;
 
     final recentAvg =
-        recent.map<double>((s) => s.averagePrecision as double).reduce((a, b) => a + b) /
+        recent.map<double>((s) => s.averagePrecision).reduce((a, b) => a + b) /
             recent.length;
 
     final previousAvg =
-        previous.map<double>((s) => s.averagePrecision as double).reduce((a, b) => a + b) /
+        previous.map<double>((s) => s.averagePrecision).reduce((a, b) => a + b) /
             previous.length;
 
     return recentAvg - previousAvg;
   }
 
-  int? _computeRegularityScore(List<dynamic> sessionsWithPrecision) {
+  int? _computeRegularityScore(List<Session> sessionsWithPrecision) {
     if (sessionsWithPrecision.length < 2) return null;
 
     final values =
-        sessionsWithPrecision.map<double>((s) => s.averagePrecision as double).toList();
+        sessionsWithPrecision.map<double>((s) => s.averagePrecision).toList();
 
     final mean = values.reduce((a, b) => a + b) / values.length;
     final variance =
@@ -128,7 +128,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return score;
   }
 
-  List<_WeeklyBucket> _buildWeeklyBuckets(List<dynamic> sessions) {
+  List<_WeeklyBucket> _buildWeeklyBuckets(List<Session> sessions) {
     final now = DateTime.now();
     final currentWeekStart = _startOfWeek(now);
 
@@ -138,13 +138,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       final end = start.add(const Duration(days: 7));
 
       final weekSessions = sessions.where((s) {
-        final date = s.date as DateTime;
+        final date = s.date;
         return !date.isBefore(start) && date.isBefore(end);
       }).toList();
 
       final totalShots = weekSessions.fold<int>(
         0,
-        (sum, s) => sum + ((s.totalRounds as num?)?.toInt() ?? 0),
+        (sum, s) => sum + s.totalRounds,
       );
 
       buckets.add(
@@ -535,11 +535,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   final totalCost6m = monthlyCosts.fold<double>(0, (s, m) => s + ((m['cost'] as double?) ?? 0));
                   final hasCosts = totalCost6m > 0;
                   final topAmmos = provider.getTopAmmosByCost(6);
-                  final topAmmoId = topAmmos.isNotEmpty ? topAmmos.keys.first : null;
-                  final topAmmo = topAmmoId != null
-                      ? provider.ammos.where((a) => a.id == topAmmoId).firstOrNull
-                      : null;
-                  final topAmmoCost = topAmmoId != null ? topAmmos[topAmmoId] ?? 0 : 0.0;
 
                   // Derive currency symbol from user's ammo data.
                   String currencySymbol(String code) {
@@ -596,32 +591,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                         )
                       else ...[
-                        _AnalyticsLineCard(
-                          title: strings.statisticsMonthlyCostLabel,
-                          value: '${totalCost6m.toStringAsFixed(0)} $sym',
-                          badge: strings.statisticsTotalCostLabel,
-                          badgeTone: colors.tertiary,
-                          tone: colors.tertiary,
-                          points: monthlyCosts
-                              .map((m) {
-                                final dt = m['month'] as DateTime;
-                                return _LinePoint(
-                                  label: '${dt.month}/${dt.year.toString().substring(2)}',
-                                  value: (m['cost'] as double?) ?? 0,
-                                );
-                              })
-                              .toList(),
-                          footerLeft: strings.statisticsCostPerMonthSubtitle,
-                          emptyLabel: strings.statisticsCostChartEmptyLabel,
+                        _CostDashboardCard(
+                          monthlyCosts: monthlyCosts,
+                          topAmmos: topAmmos,
+                          provider: provider,
+                          totalCost: totalCost6m,
+                          currencySymbol: sym,
                         ),
-                        const Gap(AppSpacing.md),
-                        if (topAmmo != null)
-                          _InsightRow(
-                            icon: Icons.local_fire_department_rounded,
-                            label: strings.statisticsTopAmmoLabel,
-                            value: '${topAmmo.name} • ${topAmmoCost.toStringAsFixed(0)} ${currencySymbol(topAmmo.currency)}',
-                            tone: colors.tertiary,
-                          ),
                       ],
                       const Gap(AppSpacing.lg),
                     ],
@@ -863,12 +839,18 @@ class _AnalyticsLineCard extends StatelessWidget {
             points.map((e) => e.value).reduce(math.min) - 8,
           ).toDouble();
 
+    final maxPointValue = points.isEmpty
+        ? 100.0
+        : points.map((e) => e.value).reduce(math.max).toDouble();
     final double maxY = points.isEmpty
         ? 100.0
-        : math.min(
-            100.0,
-            points.map((e) => e.value).reduce(math.max) + 8,
-          ).toDouble();
+        : (maxPointValue + math.max(8.0, maxPointValue * 0.12));
+    final chartHorizontalPadding = points.length > 1 ? 0.18 : 0.5;
+    final chartMinX = points.isEmpty ? 0.0 : -chartHorizontalPadding;
+    final chartMaxX = points.isEmpty
+        ? 1.0
+        : (points.length - 1).toDouble() + chartHorizontalPadding;
+    final chartYInterval = math.max(1.0, ((maxY - minY) / 3).ceilToDouble());
 
     return Container(
       height: 292,
@@ -922,105 +904,120 @@ class _AnalyticsLineCard extends StatelessWidget {
           Expanded(
             child: points.isEmpty
                 ? _ChartEmptyState(label: emptyLabel)
-                : LineChart(
-                    LineChartData(
-                      minY: minY,
-                      maxY: maxY,
-                      lineTouchData: LineTouchData(
-                        handleBuiltInTouches: true,
-                        touchTooltipData: LineTouchTooltipData(
-                          getTooltipColor: (_) => colors.surface,
-                          tooltipBorder: BorderSide(color: colors.outline),
-                          getTooltipItems: (touchedSpots) {
-                            return touchedSpots.map((spot) {
-                              final point = points[spot.x.toInt()];
-                              return LineTooltipItem(
-                                '${point.label}\n${point.value.toStringAsFixed(0)}%',
-                                textStyles.bodySmall!.copyWith(
-                                  color: colors.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              );
-                            }).toList();
-                          },
-                        ),
-                      ),
-                      gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: false,
-                        horizontalInterval: 20,
-                        getDrawingHorizontalLine: (_) => FlLine(
-                          color: colors.outline.withValues(alpha: 0.18),
-                          strokeWidth: 1,
-                        ),
-                      ),
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 28,
-                            interval: 20,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                value.toInt().toString(),
-                                style: textStyles.labelSmall?.copyWith(
-                                  color: colors.secondary,
-                                ),
-                              );
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    clipBehavior: Clip.hardEdge,
+                    child: LineChart(
+                      LineChartData(
+                        minX: chartMinX,
+                        maxX: chartMaxX,
+                        minY: minY,
+                        maxY: maxY,
+                        lineTouchData: LineTouchData(
+                          handleBuiltInTouches: true,
+                          touchTooltipData: LineTouchTooltipData(
+                            getTooltipColor: (_) => colors.surface,
+                            tooltipBorder: BorderSide(color: colors.outline),
+                            getTooltipItems: (touchedSpots) {
+                              return touchedSpots.map((spot) {
+                                final point = points[spot.x.toInt()];
+                                return LineTooltipItem(
+                                  '${point.label}\n${point.value.toStringAsFixed(0)}%',
+                                  textStyles.bodySmall!.copyWith(
+                                    color: colors.onSurface,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                );
+                              }).toList();
                             },
                           ),
                         ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 24,
-                            interval: points.length > 3 ? (points.length - 1) / 2 : 1,
-                            getTitlesWidget: (value, meta) {
-                              final index = value.round();
-                              if (index < 0 || index >= points.length) {
-                                return const SizedBox.shrink();
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 6),
-                                child: Text(
-                                  points[index].label,
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: chartYInterval,
+                          getDrawingHorizontalLine: (_) => FlLine(
+                            color: colors.outline.withValues(alpha: 0.18),
+                            strokeWidth: 1,
+                          ),
+                        ),
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 28,
+                              interval: chartYInterval,
+                              getTitlesWidget: (value, meta) {
+                                if (value >= maxY - chartYInterval * 0.35) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Text(
+                                  value.toInt().toString(),
                                   style: textStyles.labelSmall?.copyWith(
                                     color: colors.secondary,
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      borderData: FlBorderData(show: false),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: chartPoints,
-                          isCurved: true,
-                          color: tone,
-                          barWidth: 3,
-                          dotData: FlDotData(
-                            show: true,
-                            getDotPainter: (spot, xPercent, barData, index) => FlDotCirclePainter(
-                              radius: 3.2,
-                              color: tone,
-                              strokeWidth: 2,
-                              strokeColor: colors.surface,
+                                );
+                              },
                             ),
                           ),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: tone.withValues(alpha: 0.08),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 24,
+                              interval: points.length > 3 ? (points.length - 1) / 2 : 1,
+                              getTitlesWidget: (value, meta) {
+                                final index = value.round();
+                                if (index < 0 || index >= points.length) {
+                                  return const SizedBox.shrink();
+                                }
+                                if (points.length > 3 &&
+                                    index != 0 &&
+                                    index != points.length - 1 &&
+                                    index != (points.length - 1) ~/ 2) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    points[index].label,
+                                    style: textStyles.labelSmall?.copyWith(
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
-                      ],
+                        borderData: FlBorderData(show: false),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: chartPoints,
+                            isCurved: true,
+                            color: tone,
+                            barWidth: 3,
+                            dotData: FlDotData(
+                              show: true,
+                              getDotPainter: (spot, xPercent, barData, index) => FlDotCirclePainter(
+                                radius: 3.2,
+                                color: tone,
+                                strokeWidth: 2,
+                                strokeColor: colors.surface,
+                              ),
+                            ),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: tone.withValues(alpha: 0.08),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
           ),
@@ -1037,6 +1034,166 @@ class _AnalyticsLineCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CostDashboardCard extends StatelessWidget {
+  final List<Map<String, dynamic>> monthlyCosts;
+  final Map<String, double> topAmmos;
+  final ThotProvider provider;
+  final double totalCost;
+  final String currencySymbol;
+
+  const _CostDashboardCard({
+    required this.monthlyCosts,
+    required this.topAmmos,
+    required this.provider,
+    required this.totalCost,
+    required this.currencySymbol,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+    final decoration =
+        (context.findAncestorStateOfType<_StatisticsScreenState>())
+                ?._statsCardDecoration(context) ??
+            BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: colors.outline),
+            );
+    final maxCost = monthlyCosts.fold<double>(
+      0,
+      (max, month) => ((month['cost'] as double?) ?? 0) > max
+          ? (month['cost'] as double?) ?? 0
+          : max,
+    );
+
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: decoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.statisticsMonthlyCostLabel,
+                  style: textStyles.labelLarge?.copyWith(
+                    color: colors.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                '${totalCost.toStringAsFixed(0)} $currencySymbol',
+                style: textStyles.titleMedium?.copyWith(
+                  color: colors.tertiary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const Gap(AppSpacing.md),
+          if (topAmmos.isNotEmpty) ...[
+            Text(
+              strings.statisticsTopAmmoLabel,
+              style: textStyles.labelSmall?.copyWith(color: colors.secondary),
+            ),
+            const Gap(8),
+            ...topAmmos.entries.take(5).toList().asMap().entries.map((entry) {
+              final index = entry.key;
+              final ammo = provider.ammos.firstWhere(
+                (a) => a.id == entry.value.key,
+                orElse: () => Ammo(
+                  id: '',
+                  name: '',
+                  brand: '',
+                  caliber: '',
+                  quantity: 0,
+                  lastUsed: null,
+                ),
+              );
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      '${index + 1}.',
+                      style: textStyles.labelMedium?.copyWith(
+                        color: colors.secondary,
+                      ),
+                    ),
+                    const Gap(8),
+                    Expanded(
+                      child: Text(
+                        ammo.name,
+                        style: textStyles.bodyMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${entry.value.value.toStringAsFixed(0)} $currencySymbol',
+                      style: textStyles.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colors.tertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const Gap(12),
+          ],
+          Text(
+            strings.statisticsCostPerMonthSubtitle,
+            style: textStyles.labelSmall?.copyWith(color: colors.secondary),
+          ),
+          const Gap(8),
+          SizedBox(
+            height: 112,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: monthlyCosts.map((monthData) {
+                final cost = (monthData['cost'] as double?) ?? 0;
+                final height = maxCost > 0
+                    ? (cost / maxCost * 82).clamp(4.0, 82.0)
+                    : 4.0;
+                final month = monthData['month'] as DateTime;
+                return Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        height: height,
+                        width: 9,
+                        decoration: BoxDecoration(
+                          color: colors.tertiary,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                      const Gap(5),
+                      Text(
+                        '${month.month}',
+                        style: textStyles.labelSmall?.copyWith(
+                          fontSize: 10,
+                          color: colors.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );

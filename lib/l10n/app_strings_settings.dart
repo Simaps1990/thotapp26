@@ -172,6 +172,70 @@ extension AppStringsSettings on AppStrings {
         es: 'Imperial',
       );
 
+  String get unitProfileLabel => _pick(
+        fr: "Profil d'unités",
+        en: 'Unit profile',
+        de: 'Einheitenprofil',
+        it: 'Profilo unità',
+        es: 'Perfil de unidades',
+      );
+
+  String get unitsCustom => _pick(
+        fr: 'Personnalisé',
+        en: 'Custom',
+        de: 'Benutzerdefiniert',
+        it: 'Personalizzato',
+        es: 'Personalizado',
+      );
+
+  String get unitsWeightLabel => _pick(
+        fr: 'Poids projectile',
+        en: 'Projectile weight',
+        de: 'Geschossgewicht',
+        it: 'Peso del proiettile',
+        es: 'Peso del proyectil',
+      );
+
+  String get unitsDistanceLabel => _pick(
+        fr: 'Distance',
+        en: 'Distance',
+        de: 'Distanz',
+        it: 'Distanza',
+        es: 'Distancia',
+      );
+
+  String get unitsVelocityLabel => _pick(
+        fr: 'Vitesse projectile',
+        en: 'Projectile velocity',
+        de: 'Geschossgeschwindigkeit',
+        it: 'Velocità del proiettile',
+        es: 'Velocidad del proyectil',
+      );
+
+  String get unitsWeatherLabel => _pick(
+        fr: 'Météo et environnement',
+        en: 'Weather and environment',
+        de: 'Wetter und Umgebung',
+        it: 'Meteo e ambiente',
+        es: 'Tiempo y entorno',
+      );
+
+  String get unitsWeatherExampleMetric => _pick(
+        fr: 'ex: 22°C, 12 km/h, 1013 hPa',
+        en: 'e.g. 22°C, 12 km/h, 1013 hPa',
+        de: 'z. B. 22°C, 12 km/h, 1013 hPa',
+        it: 'es: 22°C, 12 km/h, 1013 hPa',
+        es: 'ej. 22°C, 12 km/h, 1013 hPa',
+      );
+
+  String get unitsWeatherExampleImperial => _pick(
+        fr: 'ex: 72°F, 7 mph, 29.92 inHg',
+        en: 'e.g. 72°F, 7 mph, 29.92 inHg',
+        de: 'z. B. 72°F, 7 mph, 29.92 inHg',
+        it: 'es: 72°F, 7 mph, 29.92 inHg',
+        es: 'ej. 72°F, 7 mph, 29.92 inHg',
+      );
+
   String get backupLabel => _pick(
         fr: "Sauvegarde de l'appareil",
         en: 'Device backup',
@@ -186,6 +250,22 @@ en: "Data is stored and secured only on the device. Cloud backup is available vi
 de: "Daten werden ausschließlich auf dem Gerät gespeichert und gesichert. Cloud-Backups sind über Ihr iOS-/Android-Konto möglich.",
 it: "I dati sono archiviati e protetti esclusivamente sul dispositivo. Il backup cloud è disponibile tramite il tuo account iOS/Android.",
 es: "Los datos se almacenan y se protegen únicamente en el dispositivo. La copia de seguridad en la nube está disponible a través de tu cuenta iOS/Android.",
+      );
+
+  String get offlineModeLabel => _pick(
+        fr: 'Mode hors connexion',
+        en: 'Offline mode',
+        de: 'Offline-Modus',
+        it: 'Modalità offline',
+        es: 'Modo sin conexión',
+      );
+
+  String get offlineModeSubtitle => _pick(
+        fr: 'Vos données principales restent sur l’appareil. Les services réseau ne sont utilisés que pour les fonctions explicites comme les achats, la météo ou les liens externes.',
+        en: 'Your main data stays on the device. Network services are only used for explicit features such as purchases, weather or external links.',
+        de: 'Ihre wichtigsten Daten bleiben auf dem Gerät. Netzwerkdienste werden nur für ausdrückliche Funktionen wie Käufe, Wetter oder externe Links verwendet.',
+        it: 'I dati principali restano sul dispositivo. I servizi di rete vengono usati solo per funzioni esplicite come acquisti, meteo o link esterni.',
+        es: 'Tus datos principales permanecen en el dispositivo. Los servicios de red solo se usan para funciones explícitas como compras, meteorología o enlaces externos.',
       );
 
   String get documentPushRemindersLabel => _pick(

@@ -20,7 +20,7 @@ import 'package:thot/utils/crash_logger.dart';
 void main() {
   CrashLogger.runGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
-    GoogleFonts.config.allowRuntimeFetching = true;
+    GoogleFonts.config.allowRuntimeFetching = false;
 
     await initializeDateFormatting();
 
@@ -31,7 +31,10 @@ void main() {
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
       ]);
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     }
 
     runApp(const MyApp());
@@ -206,6 +209,7 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
           const iosElementScale = 0.95;
           final mediaQuery = MediaQuery.of(context);
           final theme = Theme.of(context);
+          final brightness = theme.brightness;
 
           final appChild = child ?? const SizedBox();
           final shouldScaleIosUi =
@@ -241,7 +245,26 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
                 )
               : appChild;
 
-          return AchievementToastLayer(child: scaledAppChild);
+          final overlayStyle = brightness == Brightness.dark
+              ? const SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  systemNavigationBarColor: Colors.transparent,
+                  systemNavigationBarDividerColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.light,
+                  systemNavigationBarIconBrightness: Brightness.light,
+                )
+              : const SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  systemNavigationBarColor: Colors.transparent,
+                  systemNavigationBarDividerColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark,
+                  systemNavigationBarIconBrightness: Brightness.dark,
+                );
+
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: overlayStyle,
+            child: AchievementToastLayer(child: scaledAppChild),
+          );
         },
       ),
     );

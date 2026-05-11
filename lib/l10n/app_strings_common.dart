@@ -350,4 +350,12 @@ es: 'Temporizador de disparos',
         it: 'Annulla',
         es: 'Cancelar',
       );
+
+  String get neverUsed => _pick(
+        fr: 'Jamais utilisé',
+        en: 'Never used',
+        de: 'Nie verwendet',
+        it: 'Mai usato',
+        es: 'Nunca usado',
+      );
 }

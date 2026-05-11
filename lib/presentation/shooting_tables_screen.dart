@@ -3454,7 +3454,7 @@ class _PocketCardOverlayState extends State<_PocketCardOverlay> {
     }
     final platform = provider.platforms.firstWhere(
       (p) => p.id == platformId,
-      orElse: () => Platform(id: '', name: 'Inconnu', type: '', model: '', caliber: '', serialNumber: '', weight: 0, totalRounds: 0, lastUsed: DateTime.now(), comment: '', lastCleaned: DateTime.now()),
+      orElse: () => Platform(id: '', name: 'Inconnu', type: '', model: '', caliber: '', serialNumber: '', weight: 0, totalRounds: 0, lastUsed: null, comment: '', lastCleaned: DateTime.now()),
     );
     return platform.name;
   }
@@ -3463,7 +3463,7 @@ class _PocketCardOverlayState extends State<_PocketCardOverlay> {
     if (ammoId == null) return strings.shootingTableNoAmmo;
     final ammo = provider.ammos.firstWhere(
       (a) => a.id == ammoId,
-      orElse: () => Ammo(id: '', name: 'Inconnu', brand: '', caliber: '', projectileType: '', quantity: 0, lowStockThreshold: 0, lastUsed: DateTime.now(), comment: ''),
+      orElse: () => Ammo(id: '', name: 'Inconnu', brand: '', caliber: '', projectileType: '', quantity: 0, lowStockThreshold: 0, lastUsed: null, comment: ''),
     );
     return ammo.name;
   }

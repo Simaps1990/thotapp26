@@ -94,8 +94,8 @@ final List<AchievementDefinition> achievementDefinitions = [
   AchievementDefinition(id: 'full_ecosystem', title: 'Écosystème complet', description: 'Vivez avec THOT : 40 matériels différents répertoriés.', tier: 'gold', target: 40, progress: (p) => p.platforms.length + p.ammos.length + p.accessories.length),
 
   // Reflex training achievements
-  AchievementDefinition(id: 'reflex_week_7', title: 'Semaine parfaite', description: '7 jours d\'entraînement consécutifs en réflexes.', tier: 'bronze', target: 7, progress: (p) => TrainingHistory.getWeeklyStreak()),
-  AchievementDefinition(id: 'reflex_month_30', title: 'Mois complet', description: '30 jours d\'entraînement consécutifs en réflexes.', tier: 'silver', target: 30, progress: (p) => TrainingHistory.getWeeklyStreak()),
+  AchievementDefinition(id: 'reflex_week_7', title: 'Semaine parfaite', description: '7 jours d\'entraînement consécutifs en réflexes.', tier: 'bronze', target: 7, progress: (p) => TrainingHistory.getDailyStreakWithGrace()),
+  AchievementDefinition(id: 'reflex_month_30', title: 'Mois complet', description: '30 jours d\'entraînement consécutifs en réflexes.', tier: 'silver', target: 30, progress: (p) => TrainingHistory.getDailyStreakWithGrace()),
   AchievementDefinition(id: 'reflex_total_50', title: 'Entraînement régulier', description: '50 séances d\'entraînement réflexes complétées.', tier: 'bronze', target: 50, progress: (p) => TrainingHistory.getTotalTrainingCount()),
   AchievementDefinition(id: 'reflex_total_100', title: 'Athlète mental', description: '100 séances d\'entraînement réflexes complétées.', tier: 'silver', target: 100, progress: (p) => TrainingHistory.getTotalTrainingCount()),
   AchievementDefinition(id: 'reflex_total_500', title: 'Maître des réflexes', description: '500 séances d\'entraînement réflexes complétées.', tier: 'gold', target: 500, progress: (p) => TrainingHistory.getTotalTrainingCount()),

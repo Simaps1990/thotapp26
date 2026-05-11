@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:gap/gap.dart';
@@ -333,15 +335,24 @@ class _TutorialCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mediaQuery = MediaQuery.of(context);
+    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    final bottomSafe = math.max(
+      mediaQuery.padding.bottom,
+      mediaQuery.viewPadding.bottom,
+    );
+    final bottomPadding = isAndroid
+        ? math.max(40.0, bottomSafe + 24.0)
+        : math.max(22.0, bottomSafe + 16.0);
 
     return Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.md,
           AppSpacing.md,
           AppSpacing.md,
-          22,
+          bottomPadding,
         ),
         child: FadeTransition(
           opacity: fadeAnimation,

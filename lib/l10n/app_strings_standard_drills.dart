@@ -445,4 +445,68 @@ extension AppStringsStandardDrills on AppStrings {
         it: 'Cadenza rapida dopo reload, double-tap decisi',
         es: 'Cadencia rápida después de recarga, double-tap firmes',
       );
+
+  String get standardDrillTheTestName => _pick(
+        fr: 'The Test',
+        en: 'The Test',
+        de: 'The Test',
+        it: 'The Test',
+        es: 'The Test',
+      );
+
+  String get standardDrillTheTestObservations => _pick(
+        fr: '10 tirs, 10 secondes, 10 yards. Exercice de précision sous contrainte.',
+        en: '10 shots, 10 seconds, 10 yards. Precision under time pressure.',
+        de: '10 Schüsse, 10 Sekunden, 10 Yards. Präzision unter Zeitdruck.',
+        it: '10 colpi, 10 secondi, 10 yard. Precisione sotto pressione temporale.',
+        es: '10 disparos, 10 segundos, 10 yardas. Precisión bajo presión de tiempo.',
+      );
+
+  String get standardDrillHackathornName => _pick(
+        fr: 'Hackathorn Standards',
+        en: 'Hackathorn Standards',
+        de: 'Hackathorn Standards',
+        it: 'Hackathorn Standards',
+        es: 'Hackathorn Standards',
+      );
+
+  String get standardDrillHackathornObservations => _pick(
+        fr: 'Standards courts à distances variables pour contrôler vitesse, précision et transitions.',
+        en: 'Short standards at varied distances to measure speed, accuracy and transitions.',
+        de: 'Kurze Standards auf variierenden Distanzen zur Messung von Tempo, Präzision und Übergängen.',
+        it: 'Standard brevi a distanze variabili per misurare velocità, precisione e transizioni.',
+        es: 'Estándares cortos a distancias variables para medir velocidad, precisión y transiciones.',
+      );
+
+  String get standardDrillHateful8Name => _pick(
+        fr: 'Hateful 8',
+        en: 'Hateful 8',
+        de: 'Hateful 8',
+        it: 'Hateful 8',
+        es: 'Hateful 8',
+      );
+
+  String get standardDrillHateful8Observations => _pick(
+        fr: 'Drill compact orienté cadence, précision et gestion des transitions.',
+        en: 'Compact drill focused on cadence, accuracy and transitions.',
+        de: 'Kompakter Drill mit Fokus auf Kadenz, Präzision und Übergänge.',
+        it: 'Drill compatto focalizzato su cadenza, precisione e transizioni.',
+        es: 'Ejercicio compacto centrado en cadencia, precisión y transiciones.',
+      );
+
+  String get standardDrillTwoReloadTwoName => _pick(
+        fr: '2-Reload-2',
+        en: '2-Reload-2',
+        de: '2-Reload-2',
+        it: '2-Reload-2',
+        es: '2-Reload-2',
+      );
+
+  String get standardDrillTwoReloadTwoObservations => _pick(
+        fr: 'Deux tirs, rechargement, deux tirs. Travail de manipulation et reprise de visée.',
+        en: 'Two shots, reload, two shots. Manipulation and sight recovery drill.',
+        de: 'Zwei Schüsse, Nachladen, zwei Schüsse. Übung für Handhabung und Zielwiederaufnahme.',
+        it: 'Due colpi, ricarica, due colpi. Esercizio di manipolazione e ripresa della mira.',
+        es: 'Dos disparos, recarga, dos disparos. Ejercicio de manipulación y recuperación de puntería.',
+      );
 }
