@@ -6,10 +6,14 @@ import 'package:gap/gap.dart';
 import 'package:thot/l10n/app_strings.dart';
 
 class ExerciseStepsCarousel extends StatefulWidget {
-final List<ExerciseStep> steps;
+  final List<ExerciseStep> steps;
   final bool useMetric;
 
-  const ExerciseStepsCarousel({super.key, required this.steps, required this.useMetric});
+  const ExerciseStepsCarousel({
+    super.key,
+    required this.steps,
+    required this.useMetric,
+  });
 
   @override
   State<ExerciseStepsCarousel> createState() => _ExerciseStepsCarouselState();
@@ -58,7 +62,12 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
                     onPageChanged: (i) => setState(() => _index = i),
                     itemBuilder: (context, i) {
                       final step = widget.steps[i];
-final config = _StepUiConfig.fromStep(context, step, strings, widget.useMetric);
+                      final config = _StepUiConfig.fromStep(
+                        context,
+                        step,
+                        strings,
+                        widget.useMetric,
+                      );
                       return Padding(
                         padding: AppSpacing.paddingMd,
                         child: Column(
@@ -97,32 +106,35 @@ final config = _StepUiConfig.fromStep(context, step, strings, widget.useMetric);
                                 ],
                               ),
                             ),
-                            Container(
-                              height: 1,
-                              color: colors.outline,
-                            ),
+                            Container(height: 1, color: colors.outline),
                             const Gap(10),
                             Builder(
                               builder: (context) {
                                 final cells = <Widget>[];
 
                                 if (config.info1Value.trim().isNotEmpty) {
-                                  cells.add(_InfoCell(
-                                    label: config.info1Label,
-                                    value: config.info1Value,
-                                  ));
+                                  cells.add(
+                                    _InfoCell(
+                                      label: config.info1Label,
+                                      value: config.info1Value,
+                                    ),
+                                  );
                                 }
                                 if (config.info2Value.trim().isNotEmpty) {
-                                  cells.add(_InfoCell(
-                                    label: config.info2Label,
-                                    value: config.info2Value,
-                                  ));
+                                  cells.add(
+                                    _InfoCell(
+                                      label: config.info2Label,
+                                      value: config.info2Value,
+                                    ),
+                                  );
                                 }
                                 if (config.info3Value.trim().isNotEmpty) {
-                                  cells.add(_InfoCell(
-                                    label: config.info3Label,
-                                    value: config.info3Value,
-                                  ));
+                                  cells.add(
+                                    _InfoCell(
+                                      label: config.info3Label,
+                                      value: config.info3Value,
+                                    ),
+                                  );
                                 }
 
                                 if (cells.isEmpty) {
@@ -130,7 +142,8 @@ final config = _StepUiConfig.fromStep(context, step, strings, widget.useMetric);
                                 }
 
                                 return Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
                                   children: cells,
                                 );
                               },
@@ -138,12 +151,19 @@ final config = _StepUiConfig.fromStep(context, step, strings, widget.useMetric);
                             if ((step.comment ?? '').trim().isNotEmpty) ...[
                               const Gap(10),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: LightColors.surfaceHighlight,
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
                                   border: Border.all(
-                                    color: colors.outline.withValues(alpha: 0.7),
+                                    color: colors.outline.withValues(
+                                      alpha: 0.7,
+                                    ),
                                   ),
                                 ),
                                 child: Text(
@@ -320,7 +340,13 @@ class _StepUiConfig {
     required this.info3Value,
   });
 
-static _StepUiConfig fromStep(BuildContext context, ExerciseStep step, AppStrings strings, bool useMetric) {    final colors = Theme.of(context).colorScheme;
+  static _StepUiConfig fromStep(
+    BuildContext context,
+    ExerciseStep step,
+    AppStrings strings,
+    bool useMetric,
+  ) {
+    final colors = Theme.of(context).colorScheme;
 
     final positionText = step.position == null
         ? null
@@ -342,20 +368,32 @@ static _StepUiConfig fromStep(BuildContext context, ExerciseStep step, AppString
           info1Label: strings.exerciseFieldShots,
           info1Value: step.shots?.toString() ?? '',
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
+          info2Value: step.distanceM == null
+              ? ''
+              : useMetric
+              ? '${step.distanceM} m'
+              : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: strings.exerciseFieldTarget,
           info3Value: targetText,
         );
-case StepType.deplacement:
+      case StepType.deplacement:
         return _StepUiConfig(
           icon: '🏃🏻‍♂️‍➡️',
           title: strings.exerciseStepTypeLabel(StepType.deplacement),
-          subtitle: step.movementType == null ? null : strings.exerciseMovementTypeLabel(step.movementType!),
+          subtitle: step.movementType == null
+              ? null
+              : strings.exerciseMovementTypeLabel(step.movementType!),
           color: colors.primary,
           info1Label: strings.exerciseFieldMovementType,
-          info1Value: step.movementType == null ? '' : strings.exerciseMovementTypeLabel(step.movementType!),
+          info1Value: step.movementType == null
+              ? ''
+              : strings.exerciseMovementTypeLabel(step.movementType!),
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
+          info2Value: step.distanceM == null
+              ? ''
+              : useMetric
+              ? '${step.distanceM} m'
+              : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: '',
           info3Value: '',
         );
@@ -396,7 +434,11 @@ case StepType.deplacement:
           info1Label: strings.exerciseFieldTarget,
           info1Value: targetText,
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
+          info2Value: step.distanceM == null
+              ? ''
+              : useMetric
+              ? '${step.distanceM} m'
+              : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: '',
           info3Value: '',
         );
@@ -407,10 +449,15 @@ case StepType.deplacement:
           subtitle: positionText,
           color: LightColors.waitTeal,
           info1Label: strings.exerciseFieldDuration,
-          info1Value:
-              step.durationSeconds == null ? '' : '${step.durationSeconds} s',
+          info1Value: step.durationSeconds == null
+              ? ''
+              : '${step.durationSeconds} s',
           info2Label: strings.exerciseFieldDistance,
-          info2Value: step.distanceM == null ? '' : useMetric ? '${step.distanceM} m' : '${(step.distanceM! * 1.09361).round()} yd',
+          info2Value: step.distanceM == null
+              ? ''
+              : useMetric
+              ? '${step.distanceM} m'
+              : '${(step.distanceM! * 1.09361).round()} yd',
           info3Label: strings.exerciseFieldTrigger,
           info3Value: triggerText,
         );

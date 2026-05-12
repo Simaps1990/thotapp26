@@ -354,10 +354,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             onPressed: () async {
                               final picked = await showDatePicker(
                                 context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime.now(),
+                                initialDate: expiryDate ?? DateTime.now(),
+                                firstDate: DateTime(2000),
                                 lastDate: DateTime.now().add(
-                                  const Duration(days: 365 * 20),
+                                  const Duration(days: 3650),
                                 ),
                               );
                               if (picked != null) {
@@ -833,6 +833,297 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
+  Future<void> _showPartReplacementDialog({
+    required ThotProvider provider,
+    required Platform platform,
+    PlatformReplacementPart? part,
+  }) async {
+    final strings = AppStrings.of(context);
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final partController = TextEditingController(text: part?.name ?? '');
+    final commentController = TextEditingController(text: part?.comment ?? '');
+    final roundsAtChangeController = TextEditingController(
+      text: '${part?.roundsAtChange ?? 0}',
+    );
+    DateTime selectedDate = part?.changedAt ?? DateTime.now();
+    String? errorText;
+
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setStateDlg) {
+            InputDecoration fieldDecoration({
+              required String labelText,
+              String? hintText,
+              String? errorText,
+              String? suffixText,
+            }) {
+              return InputDecoration(
+                labelText: labelText,
+                hintText: hintText,
+                errorText: errorText,
+                suffixText: suffixText,
+                hintStyle: textStyles.bodyMedium?.copyWith(
+                  color: colors.onSurface.withValues(alpha: 0.38),
+                ),
+                filled: true,
+                fillColor: colors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.outline),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.error),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide(color: colors.error),
+                ),
+              );
+            }
+
+            return AlertDialog(
+              titlePadding: EdgeInsets.zero,
+              contentPadding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+              title: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            (part == null
+                                    ? strings.partChangeTitle
+                                    : strings.editPartReplacement)
+                                .toUpperCase(),
+                            style: textStyles.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
+                    child: Divider(
+                      height: 1,
+                      color: colors.outline.withValues(alpha: 0.55),
+                    ),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 360,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: partController,
+                        decoration: fieldDecoration(
+                          labelText: strings.partNameLabel,
+                          hintText: strings.partNameHint,
+                        ),
+                      ),
+                      const Gap(16),
+                      Text(
+                        strings.dateLabel,
+                        style: textStyles.labelMedium?.copyWith(
+                          color: colors.secondary,
+                        ),
+                      ),
+                      const Gap(8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final now = DateTime.now();
+                          final firstDate = DateTime(2000);
+                          final initialDate = selectedDate.isBefore(firstDate)
+                              ? firstDate
+                              : selectedDate.isAfter(now)
+                              ? now
+                              : selectedDate;
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: initialDate,
+                            firstDate: firstDate,
+                            lastDate: now,
+                          );
+                          if (picked != null) {
+                            setStateDlg(
+                              () => selectedDate = DateTime(
+                                picked.year,
+                                picked.month,
+                                picked.day,
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.calendar_today_rounded,
+                          size: 18,
+                        ),
+                        label: Text(
+                          AppDateFormats.formatDateShort(context, selectedDate),
+                        ),
+                      ),
+                      const Gap(16),
+                      TextField(
+                        controller: roundsAtChangeController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (_) {
+                          if (errorText != null) {
+                            setStateDlg(() => errorText = null);
+                          }
+                        },
+                        decoration: fieldDecoration(
+                          labelText: strings.partStartingRoundsLabel,
+                          errorText: errorText,
+                          suffixText: strings.shotsLower,
+                        ),
+                      ),
+                      const Gap(16),
+                      TextField(
+                        controller: commentController,
+                        maxLines: 3,
+                        decoration: fieldDecoration(
+                          labelText: strings.partChangeCommentLabel,
+                          hintText: strings.partChangeCommentHint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    Navigator.pop(ctx, false);
+                  },
+                  child: Text(strings.cancel),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    if (partController.text.trim().isEmpty) return;
+                    final roundsAtChange = int.tryParse(
+                      roundsAtChangeController.text.trim(),
+                    );
+                    if (roundsAtChange == null) {
+                      setStateDlg(
+                        () => errorText = strings.partStartingRoundsInvalid,
+                      );
+                      return;
+                    }
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    Navigator.pop(ctx, true);
+                  },
+                  child: Text(strings.settingsDialogSave),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      if (result != true) return;
+
+      final name = partController.text.trim();
+      final comment = commentController.text.trim();
+      final roundsAtChange =
+          int.tryParse(roundsAtChangeController.text.trim()) ??
+          (part?.roundsAtChange ?? platform.totalRounds);
+      if (part == null) {
+        provider.recordPlatformPartChange(
+          platformId: platform.id,
+          partName: name,
+          date: selectedDate,
+          comment: comment,
+          roundsAtChange: roundsAtChange,
+        );
+      } else {
+        provider.updatePlatformReplacementPart(
+          platformId: platform.id,
+          part: part.copyWith(
+            name: name,
+            changedAt: selectedDate,
+            roundsAtChange: roundsAtChange,
+            platformRoundsAtChange: part.platformRoundsAtChange,
+            comment: comment,
+          ),
+        );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(strings.partChangeRecordedSuccess),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      Future<void>.delayed(const Duration(milliseconds: 300), () {
+        partController.dispose();
+        commentController.dispose();
+        roundsAtChangeController.dispose();
+      });
+    }
+  }
+
+  Future<void> _deletePlatformReplacementPart({
+    required ThotProvider provider,
+    required Platform platform,
+    required PlatformReplacementPart part,
+  }) async {
+    final strings = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(strings.confirmation),
+        content: Text(strings.confirmDeletePartReplacement),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(strings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(strings.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    provider.deletePlatformReplacementPart(
+      platformId: platform.id,
+      partId: part.id,
+    );
+  }
+
   Map<String, int> _calculateUsageHistory(
     ThotProvider provider,
     String itemId,
@@ -930,6 +1221,31 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
 
     return history;
+  }
+
+  int _roundsSincePartReplacement({
+    required ThotProvider provider,
+    required Platform platform,
+    required PlatformReplacementPart part,
+  }) {
+    final changedAtDay = DateTime(
+      part.changedAt.year,
+      part.changedAt.month,
+      part.changedAt.day,
+    );
+    var total = 0;
+    for (final session in provider.sessions) {
+      final sessionDay = DateTime(
+        session.date.year,
+        session.date.month,
+        session.date.day,
+      );
+      if (sessionDay.isBefore(changedAtDay)) continue;
+      for (final exercise in session.exercises) {
+        total += exercise.platformShotImpact[platform.id] ?? 0;
+      }
+    }
+    return total;
   }
 
   @override
@@ -1426,326 +1742,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                       icon: const Icon(
                                         Icons.build_circle_outlined,
                                       ),
-                                      onPressed: () async {
-                                        final partController =
-                                            TextEditingController();
-                                        final commentController =
-                                            TextEditingController();
-                                        DateTime selectedDate = DateTime.now();
-                                        bool? result;
-                                        String partName = '';
-                                        String comment = '';
-
-                                        try {
-                                          result = await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => StatefulBuilder(
-                                              builder: (ctx, setStateDlg) => AlertDialog(
-                                                title: Text(
-                                                  strings.partChangeTitle,
-                                                ),
-                                                content: SingleChildScrollView(
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .stretch,
-                                                    children: [
-                                                      Text(
-                                                        strings.partNameLabel,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .labelMedium
-                                                            ?.copyWith(
-                                                              color: colors
-                                                                  .secondary,
-                                                            ),
-                                                      ),
-
-                                                      TextField(
-                                                        controller:
-                                                            partController,
-                                                        decoration: InputDecoration(
-                                                          contentPadding:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 10,
-                                                              ),
-                                                          hintText: strings
-                                                              .partNameHint,
-                                                          filled: true,
-                                                          fillColor:
-                                                              Color.alphaBlend(
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .colorScheme
-                                                                    .onSurface
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.08,
-                                                                    ),
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .colorScheme
-                                                                    .surface,
-                                                              ),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  AppRadius.lg,
-                                                                ),
-                                                            borderSide:
-                                                                BorderSide(
-                                                                  color: colors
-                                                                      .outline,
-                                                                ),
-                                                          ),
-                                                          enabledBorder:
-                                                              OutlineInputBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      AppRadius
-                                                                          .lg,
-                                                                    ),
-                                                                borderSide:
-                                                                    BorderSide(
-                                                                      color: colors
-                                                                          .outline,
-                                                                    ),
-                                                              ),
-                                                          focusedBorder:
-                                                              OutlineInputBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      AppRadius
-                                                                          .lg,
-                                                                    ),
-                                                                borderSide:
-                                                                    BorderSide(
-                                                                      color: colors
-                                                                          .outline,
-                                                                    ),
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      const Gap(16),
-                                                      Text(
-                                                        strings.dateLabel,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .labelMedium
-                                                            ?.copyWith(
-                                                              color: colors
-                                                                  .secondary,
-                                                            ),
-                                                      ),
-                                                      const Gap(8),
-                                                      OutlinedButton.icon(
-                                                        onPressed: () async {
-                                                          final picked =
-                                                              await showDatePicker(
-                                                                context:
-                                                                    context,
-                                                                initialDate:
-                                                                    selectedDate,
-                                                                firstDate:
-                                                                    DateTime(
-                                                                      2000,
-                                                                    ),
-                                                                lastDate:
-                                                                    DateTime.now().add(
-                                                                      const Duration(
-                                                                        days:
-                                                                            3650,
-                                                                      ),
-                                                                    ),
-                                                              );
-                                                          if (picked != null) {
-                                                            setStateDlg(
-                                                              () => selectedDate =
-                                                                  DateTime(
-                                                                    picked.year,
-                                                                    picked
-                                                                        .month,
-                                                                    picked.day,
-                                                                  ),
-                                                            );
-                                                          }
-                                                        },
-                                                        icon: const Icon(
-                                                          Icons
-                                                              .calendar_today_rounded,
-                                                          size: 18,
-                                                        ),
-                                                        label: Text(
-                                                          AppDateFormats.formatDateShort(
-                                                            context,
-                                                            selectedDate,
-                                                          ),
-                                                        ),
-                                                        style: OutlinedButton.styleFrom(
-                                                          padding:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 12,
-                                                              ),
-                                                          shape: RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  AppRadius.sm,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const Gap(16),
-                                                      Text(
-                                                        strings
-                                                            .partChangeCommentLabel,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .labelMedium
-                                                            ?.copyWith(
-                                                              color: colors
-                                                                  .secondary,
-                                                            ),
-                                                      ),
-                                                      TextField(
-                                                        controller:
-                                                            commentController,
-                                                        maxLines: 3,
-                                                        decoration: InputDecoration(
-                                                          contentPadding:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 10,
-                                                              ),
-                                                          hintText: strings
-                                                              .partChangeCommentHint,
-                                                          filled: true,
-                                                          fillColor:
-                                                              Color.alphaBlend(
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .colorScheme
-                                                                    .onSurface
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.08,
-                                                                    ),
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .colorScheme
-                                                                    .surface,
-                                                              ),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  AppRadius.lg,
-                                                                ),
-                                                            borderSide:
-                                                                BorderSide(
-                                                                  color: colors
-                                                                      .outline,
-                                                                ),
-                                                          ),
-                                                          enabledBorder:
-                                                              OutlineInputBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      AppRadius
-                                                                          .lg,
-                                                                    ),
-                                                                borderSide:
-                                                                    BorderSide(
-                                                                      color: colors
-                                                                          .outline,
-                                                                    ),
-                                                              ),
-                                                          focusedBorder:
-                                                              OutlineInputBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      AppRadius
-                                                                          .lg,
-                                                                    ),
-                                                                borderSide:
-                                                                    BorderSide(
-                                                                      color: colors
-                                                                          .outline,
-                                                                    ),
-                                                              ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          ctx,
-                                                          false,
-                                                        ),
-                                                    child: Text(strings.cancel),
-                                                  ),
-                                                  FilledButton(
-                                                    onPressed: () {
-                                                      if (partController.text
-                                                          .trim()
-                                                          .isEmpty) {
-                                                        return;
-                                                      }
-                                                      Navigator.pop(ctx, true);
-                                                    },
-                                                    child: Text(
-                                                      strings
-                                                          .settingsDialogSave,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                          if (result == true) {
-                                            partName = partController.text
-                                                .trim();
-                                            comment = commentController.text
-                                                .trim();
-                                          }
-                                        } finally {
-                                          partController.dispose();
-                                          commentController.dispose();
-                                        }
-
-                                        if (result == true) {
-                                          provider.recordPlatformPartChange(
-                                            platformId: platform.id,
-                                            partName: partName,
-                                            date: selectedDate,
-                                            comment: comment,
-                                          );
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  strings
-                                                      .partChangeRecordedSuccess,
-                                                ),
-                                                duration: const Duration(
-                                                  seconds: 3,
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      },
+                                      onPressed: () =>
+                                          _showPartReplacementDialog(
+                                            provider: provider,
+                                            platform: platform,
+                                          ),
                                       label: Text(strings.recordPartChange),
                                       style: FilledButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(
@@ -2620,6 +2621,201 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                             )
                                             .toList(),
                                 ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      if (platform != null &&
+                          platform.replacementParts.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.build_circle_outlined,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.replacedPartsLabel.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1,
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Container(
+                          width: double.infinity,
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (final part in platform.replacementParts) ...[
+                                Container(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    14,
+                                    12,
+                                    10,
+                                    12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colors.surfaceContainerHighest
+                                        .withValues(alpha: 0.34),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.md,
+                                    ),
+                                    border: Border.all(
+                                      color: colors.outline.withValues(
+                                        alpha: 0.42,
+                                      ),
+                                      width: 1.15,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  part.name,
+                                                  style: textStyles.bodyLarge
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                        color: colors.onSurface,
+                                                      ),
+                                                ),
+                                                const Gap(3),
+                                                Text(
+                                                  '${strings.partChangedOnLabel} ${AppDateFormats.formatDateShort(context, part.changedAt)}',
+                                                  style: textStyles.bodySmall
+                                                      ?.copyWith(
+                                                        color: colors.secondary,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Gap(8),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                tooltip:
+                                                    strings.editPartReplacement,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                constraints:
+                                                    const BoxConstraints.tightFor(
+                                                      width: 34,
+                                                      height: 34,
+                                                    ),
+                                                padding: EdgeInsets.zero,
+                                                color: colors.primary,
+                                                onPressed: () =>
+                                                    _showPartReplacementDialog(
+                                                      provider: provider,
+                                                      platform: platform,
+                                                      part: part,
+                                                    ),
+                                                icon: const Icon(
+                                                  Icons.edit_rounded,
+                                                  size: 19,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                tooltip: strings
+                                                    .deletePartReplacement,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                constraints:
+                                                    const BoxConstraints.tightFor(
+                                                      width: 34,
+                                                      height: 34,
+                                                    ),
+                                                padding: EdgeInsets.zero,
+                                                color: colors.primary,
+                                                onPressed: () =>
+                                                    _deletePlatformReplacementPart(
+                                                      provider: provider,
+                                                      platform: platform,
+                                                      part: part,
+                                                    ),
+                                                icon: const Icon(
+                                                  Icons.delete_rounded,
+                                                  size: 19,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      const Gap(10),
+                                      Row(
+                                        children: [
+                                          SvgPicture.asset(
+                                            'assets/images/pointe.svg',
+                                            width: 12,
+                                            height: 12,
+                                            colorFilter: ColorFilter.mode(
+                                              colors.onSurface.withValues(
+                                                alpha: 0.82,
+                                              ),
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                          const Gap(6),
+                                          Text(
+                                            '${strings.partRoundsSinceChangeLabel} ${strings.shotsWithUnit(_roundsSincePartReplacement(provider: provider, platform: platform, part: part))}',
+                                            style: textStyles.bodyMedium
+                                                ?.copyWith(
+                                                  color: colors.onSurface
+                                                      .withValues(alpha: 0.86),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (part.comment.trim().isNotEmpty) ...[
+                                        const Gap(10),
+                                        Text(
+                                          part.comment.trim(),
+                                          style: textStyles.bodySmall?.copyWith(
+                                            color: colors.secondary,
+                                            height: 1.35,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                if (part != platform.replacementParts.last)
+                                  const Gap(10),
+                              ],
+                            ],
+                          ),
                         ),
                         const Gap(AppSpacing.lg),
                       ],

@@ -31,30 +31,36 @@ abstract final class CrashLogger {
       () async {
         FlutterError.onError = (FlutterErrorDetails details) {
           FlutterError.presentError(details);
-          unawaited(_log(
-            type: 'flutter_error',
-            error: details.exceptionAsString(),
-            stackTrace: details.stack?.toString() ?? '',
-            library: details.library ?? '',
-            context: details.context?.toString() ?? '',
-          ));
+          unawaited(
+            _log(
+              type: 'flutter_error',
+              error: details.exceptionAsString(),
+              stackTrace: details.stack?.toString() ?? '',
+              library: details.library ?? '',
+              context: details.context?.toString() ?? '',
+            ),
+          );
         };
         PlatformDispatcher.instance.onError = (error, stack) {
-          unawaited(_log(
-            type: 'platform_dispatcher',
-            error: error.toString(),
-            stackTrace: stack.toString(),
-          ));
+          unawaited(
+            _log(
+              type: 'platform_dispatcher',
+              error: error.toString(),
+              stackTrace: stack.toString(),
+            ),
+          );
           return false;
         };
         await appBody();
       },
       (error, stack) {
-        unawaited(_log(
-          type: 'zone_error',
-          error: error.toString(),
-          stackTrace: stack.toString(),
-        ));
+        unawaited(
+          _log(
+            type: 'zone_error',
+            error: error.toString(),
+            stackTrace: stack.toString(),
+          ),
+        );
       },
     );
   }
@@ -89,9 +95,7 @@ abstract final class CrashLogger {
         'context': context,
         'stack': stackTrace,
         'platform': defaultTargetPlatform.name,
-        'mode': kReleaseMode
-            ? 'release'
-            : (kProfileMode ? 'profile' : 'debug'),
+        'mode': kReleaseMode ? 'release' : (kProfileMode ? 'profile' : 'debug'),
       };
       final line = '${jsonEncode(entry)}\n';
       final file = await _getLogFile();

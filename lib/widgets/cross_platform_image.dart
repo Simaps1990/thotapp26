@@ -68,7 +68,7 @@ class CrossPlatformImage extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-color: Colors.grey.withValues(alpha: 0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
       child: const Center(
         child: Icon(Icons.image_outlined, color: Colors.grey, size: 40),
       ),
@@ -79,7 +79,7 @@ color: Colors.grey.withValues(alpha: 0.2),
     return Container(
       width: width,
       height: height,
-color: Colors.grey.withValues(alpha: 0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
       child: const Center(
         child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: 40),
       ),

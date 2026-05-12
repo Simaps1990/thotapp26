@@ -8,7 +8,9 @@ library exercise_level_params;
 //  Parameters: stimuliCount, minDelayMs, maxDelayMs
 // ─────────────────────────────────────────────
 
-({int stimuliCount, int minDelayMs, int maxDelayMs}) visualLevelParams(int level) {
+({int stimuliCount, int minDelayMs, int maxDelayMs}) visualLevelParams(
+  int level,
+) {
   // Level 1: few stimuli, very long delays
   // Level 50: many stimuli, very short delays
   final t = (level - 1) / 49.0; // 0..1
@@ -23,7 +25,9 @@ library exercise_level_params;
 //  Same structure as visual
 // ─────────────────────────────────────────────
 
-({int stimuliCount, int minDelayMs, int maxDelayMs}) auditoryLevelParams(int level) {
+({int stimuliCount, int minDelayMs, int maxDelayMs}) auditoryLevelParams(
+  int level,
+) {
   final t = (level - 1) / 49.0;
   final stimuli = (8 + (t * 22)).round().clamp(8, 30);
   final minDelay = (2500 - t * 1700).round().clamp(800, 2500);
@@ -37,7 +41,9 @@ library exercise_level_params;
 //  Operators: 0=addSub, 1=addSubMul, 2=mixed
 // ─────────────────────────────────────────────
 
-({int durationSeconds, int operatorMode, int operandMax}) mathLevelParams(int level) {
+({int durationSeconds, int operatorMode, int operandMax}) mathLevelParams(
+  int level,
+) {
   final t = (level - 1) / 49.0;
 
   // Operator progression
@@ -56,7 +62,11 @@ library exercise_level_params;
   // Operand range grows
   final operandMax = (10 + (t * 89)).round().clamp(10, 99);
 
-  return (durationSeconds: duration, operatorMode: opMode, operandMax: operandMax);
+  return (
+    durationSeconds: duration,
+    operatorMode: opMode,
+    operandMax: operandMax,
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -105,7 +115,8 @@ int stroopLevelDifficulty(int level) {
   int trials,
   double circleDiameter,
   int highlightDurationMs,
-}) motLevelParams(int level) {
+})
+motLevelParams(int level) {
   final t = (level - 1) / 49.0;
 
   // Total circles: 6 → 12

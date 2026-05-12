@@ -69,8 +69,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   Future<void> _checkAndShowTutorial() async {
     if (_tutorialDismissedThisSession) return;
     final prefs = await SharedPreferences.getInstance();
-    final neverShowAgain =
-        prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
+    final neverShowAgain = prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
     if (!neverShowAgain && mounted && _tutorialOverlayEntry == null) {
       _showTutorial();
     }
@@ -151,13 +150,17 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   // Fonction pour retirer les accents et passer en minuscules
   String _normalize(String str) {
-    const withDia = 'ÀÁÂÃÄÅàáâãäåÒÓÔÕÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñŠšŸÿýŽž';
-    const withoutDia = 'AAAAAAaaaaaaOOOOOOOooooooEEEEeeeeeCcDIIIIiiiiUUUUuuuuNnSsYyyZz';
+    const withDia =
+        'ÀÁÂÃÄÅàáâãäåÒÓÔÕÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñŠšŸÿýŽž';
+    const withoutDia =
+        'AAAAAAaaaaaaOOOOOOOooooooEEEEeeeeeCcDIIIIiiiiUUUUuuuuNnSsYyyZz';
 
     String normalized = str.toLowerCase();
     for (int i = 0; i < withDia.length; i++) {
       normalized = normalized.replaceAll(
-          withDia[i].toLowerCase(), withoutDia[i].toLowerCase());
+        withDia[i].toLowerCase(),
+        withoutDia[i].toLowerCase(),
+      );
     }
     return normalized;
   }
@@ -181,7 +184,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     // Apply search filter with normalization
     if (_searchQuery.isNotEmpty) {
       final query = _normalize(_searchQuery);
-      
+
       filtered = filtered.where((session) {
         // Search in session name
         if (_normalize(session.name).contains(query)) return true;
@@ -193,8 +196,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
         if (_normalize(session.sessionType).contains(query)) return true;
 
         // Search in date
-        final dateStr =
-            _normalize(AppDateFormats.formatDateShort(context, session.date));
+        final dateStr = _normalize(
+          AppDateFormats.formatDateShort(context, session.date),
+        );
         if (dateStr.contains(query)) return true;
 
         // Search in platforms, ammo, accessories used in exercises
@@ -375,7 +379,11 @@ class _SessionListScreenState extends State<SessionListScreen> {
                           key: _templatesKey,
                           child: TextButton.icon(
                             onPressed: () => _showTemplateModal(context),
-                            icon: const Icon(Icons.bookmark_rounded, color: Colors.white, size: 18),
+                            icon: const Icon(
+                              Icons.bookmark_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                             label: Text(
                               strings.templatesLabel,
                               style: textStyles.labelLarge?.copyWith(
@@ -384,8 +392,13 @@ class _SessionListScreenState extends State<SessionListScreen> {
                               ),
                             ),
                             style: TextButton.styleFrom(
-                              backgroundColor: Colors.black.withValues(alpha: 0.6),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              backgroundColor: Colors.black.withValues(
+                                alpha: 0.6,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(100),
                               ),
@@ -459,51 +472,70 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                   ),
                                   child: TextField(
                                     controller: _searchController,
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          fontSize: 14,
-                                        ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(fontSize: 14),
                                     onChanged: (value) {
                                       setState(() => _searchQuery = value);
                                     },
                                     decoration: InputDecoration(
                                       hintText: strings.searchSessionsHint,
-                                      hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      hintStyle: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
                                             fontSize: 14,
                                             color: colors.secondary,
                                           ),
                                       isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 10,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 10,
+                                          ),
+                                      prefixIcon: const Icon(
+                                        Icons.search,
+                                        size: 20,
                                       ),
-                                      prefixIcon: const Icon(Icons.search, size: 20),
-                                      prefixIconConstraints: const BoxConstraints(
-                                        minWidth: 40,
-                                        minHeight: 40,
-                                      ),
+                                      prefixIconConstraints:
+                                          const BoxConstraints(
+                                            minWidth: 40,
+                                            minHeight: 40,
+                                          ),
                                       suffixIcon: _searchQuery.isNotEmpty
                                           ? IconButton(
-                                              icon: const Icon(Icons.clear, size: 18),
+                                              icon: const Icon(
+                                                Icons.clear,
+                                                size: 18,
+                                              ),
                                               splashRadius: 18,
                                               onPressed: () {
                                                 _searchController.clear();
-                                                setState(() => _searchQuery = '');
+                                                setState(
+                                                  () => _searchQuery = '',
+                                                );
                                               },
                                             )
                                           : null,
-                                      suffixIconConstraints: const BoxConstraints(
-                                        minWidth: 40,
-                                        minHeight: 40,
-                                      ),
+                                      suffixIconConstraints:
+                                          const BoxConstraints(
+                                            minWidth: 40,
+                                            minHeight: 40,
+                                          ),
                                       filled: true,
                                       fillColor: searchFillColor,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(color: colors.outline),
+                                        borderSide: BorderSide(
+                                          color: colors.outline,
+                                        ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(color: colors.outline),
+                                        borderSide: BorderSide(
+                                          color: colors.outline,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -522,67 +554,78 @@ class _SessionListScreenState extends State<SessionListScreen> {
               child: ColoredBox(
                 color: Theme.of(context).scaffoldBackgroundColor,
                 child: filteredSessions.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off_rounded,
-                            size: 64,
-                            color: colors.secondary.withValues(alpha: 0.5),
-                          ),
-                          const Gap(AppSpacing.md),
-                          Text(
-                            _searchQuery.isNotEmpty
-                                ? strings.sessionsEmptySearchTitle
-                                : strings.sessionsEmptyPeriodTitle,
-                            style: textStyles.titleMedium?.copyWith(
-                              color: colors.secondary,
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off_rounded,
+                              size: 64,
+                              color: colors.secondary.withValues(alpha: 0.5),
                             ),
-                          ),
-                          const Gap(AppSpacing.sm),
-                          Text(
-                            _searchQuery.isNotEmpty
-                                ? strings.sessionsEmptySearchSubtitle
-                                : strings.sessionsEmptyPeriodSubtitle,
-                            style: textStyles.bodyMedium?.copyWith(
-                              color: colors.secondary,
+                            const Gap(AppSpacing.md),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? strings.sessionsEmptySearchTitle
+                                  : strings.sessionsEmptyPeriodTitle,
+                              style: textStyles.titleMedium?.copyWith(
+                                color: colors.secondary,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg,
-                        0,
-                        AppSpacing.lg,
-                        AppSpacing.lg,
-                      ),
-                      itemCount: filteredSessions.length,
-                      separatorBuilder: (_, __) => const Gap(AppSpacing.md),
-                      itemBuilder: (context, index) {
-                        final session = filteredSessions[index];
-                        final isLocked = provider.isSessionLockedForFree(session, index);
-                        // Get the first platform and ammo from exercises (supports none/borrowed)
-                        String platformName = "—";
-                        String ammoName = "—";
-                        if (session.exercises.isNotEmpty) {
-                          final firstEx = session.exercises.first;
-                          platformName = platformDisplayName(context, provider, firstEx);
-                          ammoName = ammoDisplayName(context, provider, firstEx);
-                        }
+                            const Gap(AppSpacing.sm),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? strings.sessionsEmptySearchSubtitle
+                                  : strings.sessionsEmptyPeriodSubtitle,
+                              style: textStyles.bodyMedium?.copyWith(
+                                color: colors.secondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          0,
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                        ),
+                        itemCount: filteredSessions.length,
+                        separatorBuilder: (_, __) => const Gap(AppSpacing.md),
+                        itemBuilder: (context, index) {
+                          final session = filteredSessions[index];
+                          final isLocked = provider.isSessionLockedForFree(
+                            session,
+                            index,
+                          );
+                          // Get the first platform and ammo from exercises (supports none/borrowed)
+                          String platformName = "—";
+                          String ammoName = "—";
+                          if (session.exercises.isNotEmpty) {
+                            final firstEx = session.exercises.first;
+                            platformName = platformDisplayName(
+                              context,
+                              provider,
+                              firstEx,
+                            );
+                            ammoName = ammoDisplayName(
+                              context,
+                              provider,
+                              firstEx,
+                            );
+                          }
 
-                        return _SessionCard(
-                          session: session,
-                          platformName: platformName,
-                          ammoName: ammoName,
-                          provider: provider,
-                          converter: converter,
-                          isLocked: isLocked,
-                        );
-                      },
-                    ),
+                          return _SessionCard(
+                            session: session,
+                            platformName: platformName,
+                            ammoName: ammoName,
+                            provider: provider,
+                            converter: converter,
+                            isLocked: isLocked,
+                          );
+                        },
+                      ),
               ),
             ),
           ],
@@ -624,9 +667,7 @@ class _SlidingSegmentedSelector extends StatelessWidget {
           decoration: BoxDecoration(
             color: chipGray,
             borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
-              color: subtleBorderColor,
-            ),
+            border: Border.all(color: subtleBorderColor),
           ),
           child: Stack(
             children: [
@@ -658,7 +699,9 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppRadius.full),
                           child: Center(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -666,7 +709,9 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                                   if (i == 0) ...[
                                     AnimatedRotation(
                                       turns: selectedIndex == 0 ? 0.25 : 0,
-                                      duration: const Duration(milliseconds: 250),
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
                                       child: Icon(
                                         Icons.keyboard_arrow_down_rounded,
                                         size: 16,
@@ -681,7 +726,9 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                                   if (i == 1) ...[
                                     AnimatedRotation(
                                       turns: selectedIndex == 1 ? 0.25 : 0,
-                                      duration: const Duration(milliseconds: 250),
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
                                       child: Icon(
                                         Icons.sort_rounded,
                                         size: 16,
@@ -696,7 +743,9 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                                   if (i == 2) ...[
                                     AnimatedRotation(
                                       turns: selectedIndex == 2 ? 0.25 : 0,
-                                      duration: const Duration(milliseconds: 250),
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
                                       child: Icon(
                                         Icons.refresh_rounded,
                                         size: 16,
@@ -764,10 +813,7 @@ class _SessionCard extends StatelessWidget {
 
     Widget buildMenu() {
       return PopupMenuButton<String>(
-        icon: Icon(
-          Icons.more_vert_rounded,
-          color: colors.onSurface,
-        ),
+        icon: Icon(Icons.more_vert_rounded, color: colors.onSurface),
         onSelected: (value) {
           if (value == 'delete') {
             Future<void>.delayed(Duration.zero, () {
@@ -888,10 +934,7 @@ class _SessionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: isDark
                 ? null
-                : Border.all(
-                    color: LightColors.surfaceHighlight,
-                    width: 1.35,
-                  ),
+                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
             boxShadow: AppShadows.cardPremium,
           ),
           child: Opacity(
@@ -1032,7 +1075,11 @@ class _SessionCard extends StatelessWidget {
   Future<void> _shareSession(BuildContext context) async {
     final strings = AppStrings.of(context);
     final summary = SessionTextExporter.buildSummary(
-        context: context, session: session, provider: provider, converter: converter);
+      context: context,
+      session: session,
+      provider: provider,
+      converter: converter,
+    );
 
     if (kIsWeb) {
       await showModalBottomSheet(
@@ -1071,8 +1118,7 @@ class _SessionCard extends StatelessWidget {
       useRootNavigator: true,
       builder: (dialogContext) => AlertDialog(
         title: Text(strings.confirmDeleteTitle),
-        content: Text(
-            strings.confirmDeleteSessionMessage(session.name)),
+        content: Text(strings.confirmDeleteSessionMessage(session.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -1104,8 +1150,11 @@ class SessionShareSheet extends StatelessWidget {
   final Session session;
   final String summary;
 
-  const SessionShareSheet(
-      {super.key, required this.session, required this.summary});
+  const SessionShareSheet({
+    super.key,
+    required this.session,
+    required this.summary,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1125,9 +1174,12 @@ class SessionShareSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(strings.exportSessionTitle,
-                style: textStyles.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              strings.exportSessionTitle,
+              style: textStyles.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const Gap(AppSpacing.xs),
             Text(
               strings.exportSessionSubtitle,
@@ -1136,7 +1188,8 @@ class SessionShareSheet extends StatelessWidget {
             const Gap(AppSpacing.md),
             Container(
               constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.45),
+                maxHeight: MediaQuery.of(context).size.height * 0.45,
+              ),
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: colors.surface,
@@ -1144,8 +1197,10 @@ class SessionShareSheet extends StatelessWidget {
                 border: Border.all(color: colors.outline),
               ),
               child: SingleChildScrollView(
-                child: SelectableText(summary,
-                    style: textStyles.bodySmall?.copyWith(height: 1.45)),
+                child: SelectableText(
+                  summary,
+                  style: textStyles.bodySmall?.copyWith(height: 1.45),
+                ),
               ),
             ),
             const Gap(AppSpacing.md),
@@ -1164,9 +1219,12 @@ class SessionShareSheet extends StatelessWidget {
                       );
                     },
                     icon: Icon(Icons.copy_rounded, color: colors.onPrimary),
-                    label: Text(strings.actionCopy,
-                        style: textStyles.labelLarge
-                            ?.copyWith(color: colors.onPrimary)),
+                    label: Text(
+                      strings.actionCopy,
+                      style: textStyles.labelLarge?.copyWith(
+                        color: colors.onPrimary,
+                      ),
+                    ),
                   ),
                 ),
                 const Gap(AppSpacing.sm),
@@ -1177,11 +1235,15 @@ class SessionShareSheet extends StatelessWidget {
                             final safeName = session.name.trim().isEmpty
                                 ? 'seance'
                                 : session.name.trim();
-                            final filename = 'THOT_$safeName.txt'
-                                .replaceAll(RegExp(r'[^a-zA-Z0-9_\-\.]+'), '_');
+                            final filename = 'THOT_$safeName.txt'.replaceAll(
+                              RegExp(r'[^a-zA-Z0-9_\-\.]+'),
+                              '_',
+                            );
                             try {
                               await WebTextExporter.downloadTextFile(
-                                  filename: filename, content: summary);
+                                filename: filename,
+                                content: summary,
+                              );
                             } catch (e) {
                               debugPrint('Failed to export text file: $e');
                               if (!context.mounted) return;
@@ -1193,11 +1255,16 @@ class SessionShareSheet extends StatelessWidget {
                               );
                             }
                           },
-                          icon: Icon(Icons.download_rounded,
-                              color: colors.primary),
-                          label: Text(strings.actionDownloadTxt,
-                              style: textStyles.labelLarge
-                                  ?.copyWith(color: colors.primary)),
+                          icon: Icon(
+                            Icons.download_rounded,
+                            color: colors.primary,
+                          ),
+                          label: Text(
+                            strings.actionDownloadTxt,
+                            style: textStyles.labelLarge?.copyWith(
+                              color: colors.primary,
+                            ),
+                          ),
                         )
                       : OutlinedButton.icon(
                           onPressed: () async {
@@ -1205,7 +1272,8 @@ class SessionShareSheet extends StatelessWidget {
                               await SharePlus.instance.share(
                                 ShareParams(
                                   text: summary,
-                                  subject: '${strings.sessionShareSubjectPrefix}${session.name}',
+                                  subject:
+                                      '${strings.sessionShareSubjectPrefix}${session.name}',
                                 ),
                               );
                             } catch (e) {
@@ -1219,11 +1287,16 @@ class SessionShareSheet extends StatelessWidget {
                               );
                             }
                           },
-                          icon:
-                              Icon(Icons.share_rounded, color: colors.primary),
-                          label: Text(strings.sessionMenuShare,
-                              style: textStyles.labelLarge
-                                  ?.copyWith(color: colors.primary)),
+                          icon: Icon(
+                            Icons.share_rounded,
+                            color: colors.primary,
+                          ),
+                          label: Text(
+                            strings.sessionMenuShare,
+                            style: textStyles.labelLarge?.copyWith(
+                              color: colors.primary,
+                            ),
+                          ),
                         ),
                 ),
               ],
@@ -1231,9 +1304,10 @@ class SessionShareSheet extends StatelessWidget {
             const Gap(AppSpacing.sm),
             TextButton(
               onPressed: () => context.pop(),
-              child: Text(strings.actionClose,
-                  style:
-                      textStyles.labelLarge?.copyWith(color: colors.secondary)),
+              child: Text(
+                strings.actionClose,
+                style: textStyles.labelLarge?.copyWith(color: colors.secondary),
+              ),
             ),
           ],
         ),
@@ -1269,7 +1343,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
   bool _detailedMode = false;
   final List<ExerciseStep> _steps = [];
 
-@override
+  @override
   void dispose() {
     _searchController.dispose();
     _nameController.dispose();
@@ -1328,10 +1402,10 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
       builder: (ctx) => _TemplateStepSheet(initialStep: initial),
     );
     if (!mounted || step == null) return;
-    
+
     // Fermer le clavier après validation
     FocusScope.of(context).unfocus();
-    
+
     setState(() {
       final idx = _steps.indexWhere((s) => s.id == step.id);
       if (idx >= 0) {
@@ -1373,9 +1447,11 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
       list = list
-          .where((t) =>
-              t.name.toLowerCase().contains(q) ||
-              t.observations.toLowerCase().contains(q))
+          .where(
+            (t) =>
+                t.name.toLowerCase().contains(q) ||
+                t.observations.toLowerCase().contains(q),
+          )
           .toList();
     }
 
@@ -1436,7 +1512,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
     final provider = Provider.of<ThotProvider>(context);
     final userTemplates = _filteredTemplates(provider);
     final standardDrills = StandardDrills.all(strings);
-    
+
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
     final searchFillColor = Color.alphaBlend(
       colors.outline.withValues(alpha: 0.8),
@@ -1451,950 +1527,1297 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
           backgroundColor: Colors.transparent,
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           floatingActionButton: Padding(
-              padding: const EdgeInsets.only(bottom: 0),
-              child: Opacity(
-                opacity: _pageIndex == 0 ? 1.0 : 0.0,
-                child: IgnorePointer(
-                  ignoring: _pageIndex != 0,
-                  child: FloatingActionButton.extended(
-                    onPressed: () => _openEditor(template: null),
-                    icon: const Icon(Icons.add),
-                    label: Text(strings.createTemplateButton),
-                    backgroundColor: colors.primary,
-                    foregroundColor: colors.onPrimary,
-                  ),
+            padding: const EdgeInsets.only(bottom: 0),
+            child: Opacity(
+              opacity: _pageIndex == 0 ? 1.0 : 0.0,
+              child: IgnorePointer(
+                ignoring: _pageIndex != 0,
+                child: FloatingActionButton.extended(
+                  onPressed: () => _openEditor(template: null),
+                  icon: const Icon(Icons.add),
+                  label: Text(strings.createTemplateButton),
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
                 ),
               ),
             ),
+          ),
           body: IndexedStack(
             index: _pageIndex,
             children: [
-          // --- PAGE 1: LISTE DES MODÈLES ---
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Poignée de sheet
-              const Gap(10),
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: LightColors.iconInactive.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const Gap(12),
-              // Header avec titre, bulle info et flèche descendante
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Text(
-                            strings.homeTemplateTitle,
-                            style: textStyles.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                          const Gap(6),
-                          Tooltip(
-                            message: strings.homeTemplateSubtitle,
-                            triggerMode: TooltipTriggerMode.tap,
-                            showDuration: const Duration(seconds: 5),
-                            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: colors.onSurface.withValues(alpha: 0.88),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            textStyle: textStyles.bodySmall?.copyWith(color: colors.surface),
-                            child: Icon(
-                              Icons.info_outline_rounded,
-                              size: 18,
-                              color: colors.onSurface.withValues(alpha: 0.4),
-                            ),
-                          ),
-                        ],
+              // --- PAGE 1: LISTE DES MODÈLES ---
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Poignée de sheet
+                  const Gap(10),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: LightColors.iconInactive.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 28,
-                          color: colors.onSurface.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Gap(AppSpacing.xs),
-              Divider(color: colors.outline, indent: AppSpacing.lg, endIndent: AppSpacing.lg),
-              const Gap(AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.xs,
-                  AppSpacing.lg,
-                  10,
-                ),
-                child: SizedBox(
-                  height: 44,
-                  child: _SlidingSegmentedSelector(
-                    selectedIndex: _getSortIndex(),
-                    labels: [
-                      'Date',
-                      'Nom',
-                      _modeFilterLabel(),
-                    ],
-                    onSelected: (index) {
-                      setState(() {
-                        switch (index) {
-                          case 0:
-                            // Toggle date sort order
-                            if (_sortByDate) {
-                              _dateDescending = !_dateDescending;
-                            } else {
-                              _sortByDate = true;
-                              _dateDescending = true;
-                            }
-                            _sortByName = false;
-                            // Keep mode filter unchanged
-                            break;
-                          case 1:
-                            // Toggle name sort order
-                            if (_sortByName) {
-                              _nameDescending = !_nameDescending;
-                            } else {
-                              _sortByDate = false;
-                              _sortByName = true;
-                              _nameDescending = false; // Commence par A-Z
-                            }
-                            // Keep mode filter unchanged
-                            break;
-                          case 2:
-                            // Cycle mode filter only
-                            _cycleModeFilter();
-                            // Désactiver les tris pour que le filtre de mode reste sélectionné
-                            _sortByDate = false;
-                            _sortByName = false;
-                            break;
-                        }
-                      });
-                    },
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  0,
-                  AppSpacing.lg,
-                  8,
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 14,
-                      ),
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: strings.searchEllipsis,
-                    hintStyle: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(
-                          fontSize: 14,
-                          color: colors.secondary,
-                        ),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
+                  const Gap(12),
+                  // Header avec titre, bulle info et flèche descendante
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
                     ),
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    prefixIconConstraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            splashRadius: 18,
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          )
-                        : null,
-                    suffixIconConstraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                    filled: true,
-                    fillColor: searchFillColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                  ),
-                ),
-              ),
-              const Gap(AppSpacing.md),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // --- DRILLS STANDARDS THOT ---
-                      if (standardDrills.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
                           child: Row(
                             children: [
-                              Expanded(
-                                child: Text(
-                                  strings.exerciseTemplatesStandardSection,
-                                  style: textStyles.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: colors.onSurface,
-                                  ),
+                              Text(
+                                strings.homeTemplateTitle,
+                                style: textStyles.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurface,
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () => setState(() => _standardDrillsExpanded = !_standardDrillsExpanded),
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: LightColors.primary,
-                                    borderRadius: BorderRadius.circular(8),
+                              const Gap(6),
+                              Tooltip(
+                                message: strings.homeTemplateSubtitle,
+                                triggerMode: TooltipTriggerMode.tap,
+                                showDuration: const Duration(seconds: 5),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.lg,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.onSurface.withValues(
+                                    alpha: 0.88,
                                   ),
-                                  child: Icon(
-                                    _standardDrillsExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                                    color: Colors.white,
-                                    size: 20,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                textStyle: textStyles.bodySmall?.copyWith(
+                                  color: colors.surface,
+                                ),
+                                child: Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 18,
+                                  color: colors.onSurface.withValues(
+                                    alpha: 0.4,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                          child: Divider(color: Colors.transparent, height: 4),
-                        ),
-                        if (_standardDrillsExpanded) ...[
-                          const Gap(AppSpacing.sm),
-                          ...standardDrills.map((t) {
-                            final subtitle = t.detailedMode
-                                ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${t.distance} m'
-                                : '${t.shotsFired} coups · ${t.distance} m';
-                            return Padding(
-                              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-                              child: ListTile(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                tileColor: colors.surface,
-                                title: Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        t.name,
-                                        style: textStyles.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: colors.onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                    const Gap(6),
-                                    Icon(Icons.verified_rounded, size: 16, color: colors.primary),
-                                  ],
-                                ),
-                                subtitle: Text(
-                                  subtitle,
-                                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                                ),
-                                onTap: () => _openEditor(template: t),
-                              ),
-                            );
-                          }),
-                          const Gap(AppSpacing.sm),
-                        ],
-                        const Gap(AppSpacing.sm),
-                      ],
-                      // --- MES MODÈLES ---
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                        child: Divider(color: colors.outline),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-                        child: Text(
-                          strings.exerciseTemplatesMyTemplatesSection,
-                          style: textStyles.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
-                          ),
-                        ),
-                      ),
-                      if (userTemplates.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 120, bottom: AppSpacing.xl),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.bookmark_border_rounded,
-                                  size: 64,
-                                  color: colors.secondary.withValues(alpha: 0.5),
-                                ),
-                                const Gap(AppSpacing.md),
-                                Text(
-                                  strings.noTemplatesAvailable,
-                                  style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
+                        GestureDetector(
+                          onTap: () {
+                            if (Navigator.canPop(context)) {
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 28,
+                              color: colors.onSurface.withValues(alpha: 0.7),
                             ),
                           ),
-                        )
-                      else
-                        ...userTemplates.map((t) {
-                          final subtitle = t.detailedMode
-                              ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${AppDateFormats.formatDateShort(context, t.createdAt)}'
-                              : '${t.shotsFired} coups · ${t.distance} m · ${AppDateFormats.formatDateShort(context, t.createdAt)}';
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-                            child: ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              tileColor: colors.surface,
-                              title: Text(
-                                t.name,
-                                style: textStyles.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: colors.onSurface,
-                                ),
-                              ),
-                              subtitle: Text(
-                                subtitle,
-                                style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                              ),
-                              onTap: () => _openEditor(template: t),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Divider(
+                    color: colors.outline,
+                    indent: AppSpacing.lg,
+                    endIndent: AppSpacing.lg,
+                  ),
+                  const Gap(AppSpacing.sm),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.xs,
+                      AppSpacing.lg,
+                      10,
+                    ),
+                    child: SizedBox(
+                      height: 44,
+                      child: _SlidingSegmentedSelector(
+                        selectedIndex: _getSortIndex(),
+                        labels: ['Date', 'Nom', _modeFilterLabel()],
+                        onSelected: (index) {
+                          setState(() {
+                            switch (index) {
+                              case 0:
+                                // Toggle date sort order
+                                if (_sortByDate) {
+                                  _dateDescending = !_dateDescending;
+                                } else {
+                                  _sortByDate = true;
+                                  _dateDescending = true;
+                                }
+                                _sortByName = false;
+                                // Keep mode filter unchanged
+                                break;
+                              case 1:
+                                // Toggle name sort order
+                                if (_sortByName) {
+                                  _nameDescending = !_nameDescending;
+                                } else {
+                                  _sortByDate = false;
+                                  _sortByName = true;
+                                  _nameDescending = false; // Commence par A-Z
+                                }
+                                // Keep mode filter unchanged
+                                break;
+                              case 2:
+                                // Cycle mode filter only
+                                _cycleModeFilter();
+                                // Désactiver les tris pour que le filtre de mode reste sélectionné
+                                _sortByDate = false;
+                                _sortByName = false;
+                                break;
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      0,
+                      AppSpacing.lg,
+                      8,
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                      onChanged: (value) {
+                        setState(() => _searchQuery = value);
+                      },
+                      decoration: InputDecoration(
+                        hintText: strings.searchEllipsis,
+                        hintStyle: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(fontSize: 14, color: colors.secondary),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                splashRadius: 18,
                                 onPressed: () {
-                                  showDialog<void>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: Text(strings.confirmDeleteTitle),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(ctx).pop(),
-                                          child: Text(strings.actionCancel),
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                        suffixIconConstraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        filled: true,
+                        fillColor: searchFillColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // --- DRILLS STANDARDS THOT ---
+                          if (standardDrills.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                0,
+                                AppSpacing.lg,
+                                0,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      strings.exerciseTemplatesStandardSection,
+                                      style: textStyles.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: colors.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => setState(
+                                      () => _standardDrillsExpanded =
+                                          !_standardDrillsExpanded,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: LightColors.primary,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        _standardDrillsExpanded
+                                            ? Icons.expand_less_rounded
+                                            : Icons.expand_more_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              child: Divider(
+                                color: Colors.transparent,
+                                height: 4,
+                              ),
+                            ),
+                            if (_standardDrillsExpanded) ...[
+                              const Gap(AppSpacing.sm),
+                              ...standardDrills.map((t) {
+                                final subtitle = t.detailedMode
+                                    ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${t.distance} m'
+                                    : '${t.shotsFired} coups · ${t.distance} m';
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    AppSpacing.lg,
+                                    0,
+                                    AppSpacing.lg,
+                                    AppSpacing.sm,
+                                  ),
+                                  child: ListTile(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    tileColor: colors.surface,
+                                    title: Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            t.name,
+                                            style: textStyles.titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: colors.onSurface,
+                                                ),
+                                          ),
                                         ),
-                                        FilledButton(
-                                          onPressed: () {
-                                            provider.deleteExerciseTemplate(t.id);
-                                            Navigator.of(ctx).pop();
-                                          },
-                                          child: Text(strings.actionDelete),
+                                        const Gap(6),
+                                        Icon(
+                                          Icons.verified_rounded,
+                                          size: 16,
+                                          color: colors.primary,
                                         ),
                                       ],
                                     ),
-                                  );
-                                },
-                              ),
+                                    subtitle: Text(
+                                      subtitle,
+                                      style: textStyles.bodySmall?.copyWith(
+                                        color: colors.secondary,
+                                      ),
+                                    ),
+                                    onTap: () => _openEditor(template: t),
+                                  ),
+                                );
+                              }),
+                              const Gap(AppSpacing.sm),
+                            ],
+                            const Gap(AppSpacing.sm),
+                          ],
+                          // --- MES MODÈLES ---
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
                             ),
-                          );
-                        }),
-                      const Gap(80),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          // --- PAGE 2: ÉDITEUR DE MODÈLE ---
-          Padding(
-            padding: const EdgeInsets.only(left: AppSpacing.lg, right: AppSpacing.lg, bottom: AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Gap(10),
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: LightColors.iconInactive.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _goToPage(0),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: LightColors.primary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const Gap(AppSpacing.sm),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
+                            child: Divider(color: colors.outline),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.lg,
+                              0,
+                              AppSpacing.lg,
+                              AppSpacing.sm,
+                            ),
                             child: Text(
-                              _editingTemplate != null 
-                                ? strings.templateNameDialogTitle 
-                                : strings.createExerciseTemplateTitle,
+                              strings.exerciseTemplatesMyTemplatesSection,
                               style: textStyles.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.bold,
                                 color: colors.onSurface,
                               ),
                             ),
                           ),
-                          const Gap(6),
-                          Tooltip(
-                            message: _editingTemplate != null 
-                                ? strings.editTemplateTooltip
-                                : strings.createTemplateTooltip,
-                            triggerMode: TooltipTriggerMode.tap,
-                            showDuration: const Duration(seconds: 4),
-                            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          if (userTemplates.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: 120,
+                                bottom: AppSpacing.xl,
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.bookmark_border_rounded,
+                                      size: 64,
+                                      color: colors.secondary.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                    const Gap(AppSpacing.md),
+                                    Text(
+                                      strings.noTemplatesAvailable,
+                                      style: textStyles.bodyMedium?.copyWith(
+                                        color: colors.secondary,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            ...userTemplates.map((t) {
+                              final subtitle = t.detailedMode
+                                  ? '${strings.stepsCount(t.steps?.length ?? 0)} · ${AppDateFormats.formatDateShort(context, t.createdAt)}'
+                                  : '${t.shotsFired} coups · ${t.distance} m · ${AppDateFormats.formatDateShort(context, t.createdAt)}';
+                              return Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.lg,
+                                  0,
+                                  AppSpacing.lg,
+                                  AppSpacing.sm,
+                                ),
+                                child: ListTile(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  tileColor: colors.surface,
+                                  title: Text(
+                                    t.name,
+                                    style: textStyles.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: colors.onSurface,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    subtitle,
+                                    style: textStyles.bodySmall?.copyWith(
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                  onTap: () => _openEditor(template: t),
+                                  trailing: IconButton(
+                                    icon: Icon(Icons.delete_rounded),
+                                    onPressed: () {
+                                      showDialog<void>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: Text(
+                                            strings.confirmDeleteTitle,
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(),
+                                              child: Text(strings.actionCancel),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () {
+                                                provider.deleteExerciseTemplate(
+                                                  t.id,
+                                                );
+                                                Navigator.of(ctx).pop();
+                                              },
+                                              child: Text(strings.actionDelete),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            }),
+                          const Gap(80),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // --- PAGE 2: ÉDITEUR DE MODÈLE ---
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.lg,
+                  right: AppSpacing.lg,
+                  bottom: AppSpacing.lg,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Gap(10),
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: LightColors.iconInactive.withValues(
+                            alpha: 0.5,
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () => _goToPage(0),
+                          child: Container(
+                            width: 36,
+                            height: 36,
                             decoration: BoxDecoration(
-                              color: colors.onSurface.withValues(alpha: 0.88),
+                              color: LightColors.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            textStyle: textStyles.bodySmall?.copyWith(color: colors.surface),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.sm),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  _editingTemplate != null
+                                      ? strings.templateNameDialogTitle
+                                      : strings.createExerciseTemplateTitle,
+                                  style: textStyles.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.onSurface,
+                                  ),
+                                ),
+                              ),
+                              const Gap(6),
+                              Tooltip(
+                                message: _editingTemplate != null
+                                    ? strings.editTemplateTooltip
+                                    : strings.createTemplateTooltip,
+                                triggerMode: TooltipTriggerMode.tap,
+                                showDuration: const Duration(seconds: 4),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.lg,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.onSurface.withValues(
+                                    alpha: 0.88,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                textStyle: textStyles.bodySmall?.copyWith(
+                                  color: colors.surface,
+                                ),
+                                child: Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 18,
+                                  color: colors.onSurface.withValues(
+                                    alpha: 0.45,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.xs),
+                        GestureDetector(
+                          onTap: () {
+                            if (Navigator.canPop(context)) {
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
                             child: Icon(
-                              Icons.info_outline_rounded,
-                              size: 18,
-                              color: colors.onSurface.withValues(alpha: 0.45),
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 28,
+                              color: colors.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      child: Divider(color: colors.outline),
+                    ),
+                    const Gap(AppSpacing.md),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 1. SECTION NOM
+                            Row(
+                              children: [
+                                Icon(Icons.edit_note_rounded, size: 18),
+                                const Gap(8),
+                                Text(
+                                  strings.templateNameDialogTitle.toUpperCase(),
+                                  style: textStyles.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.onSurface,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Gap(AppSpacing.sm),
+                            TextField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                hintText: strings.templateNameHint,
+                                filled: true,
+                                fillColor: colors.surface,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                  borderSide: BorderSide(color: colors.outline),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                  borderSide: BorderSide(color: colors.outline),
+                                ),
+                              ),
+                            ),
+                            const Gap(AppSpacing.lg),
+
+                            // 2. SECTION DÉROULÉ
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.tune_rounded,
+                                  size: 18,
+                                  color: colors.primary,
+                                ),
+                                const Gap(8),
+                                Text(
+                                  strings.exerciseModeLabel.toUpperCase(),
+                                  style: textStyles.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.onSurface,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Gap(AppSpacing.sm),
+                            Container(
+                              padding: AppSpacing.paddingMd,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                border: Border.all(
+                                  color: colors.outline.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Gap(2),
+                                  SizedBox(
+                                    height: 44,
+                                    child: _SlidingSegmentedSelector(
+                                      selectedIndex: _detailedMode ? 1 : 0,
+                                      labels: [
+                                        strings.exerciseModeSimple,
+                                        strings.exerciseModeDetailed,
+                                      ],
+                                      onSelected: (index) {
+                                        setState(() {
+                                          _detailedMode = index == 1;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const Gap(AppSpacing.md),
+                                  if (!_detailedMode) ...[
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  SvgPicture.asset(
+                                                    'assets/images/hit.svg',
+                                                    width: 14,
+                                                    height: 14,
+                                                    colorFilter:
+                                                        ColorFilter.mode(
+                                                          colors.secondary
+                                                              .withValues(
+                                                                alpha: 0.7,
+                                                              ),
+                                                          BlendMode.srcIn,
+                                                        ),
+                                                  ),
+                                                  const Gap(6),
+                                                  Text(
+                                                    strings.shotsCountLabel
+                                                        .toUpperCase(),
+                                                    style: textStyles.labelSmall
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                          color:
+                                                              colors.secondary,
+                                                          fontSize: 10,
+                                                          letterSpacing: 0.5,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const Gap(AppSpacing.xs),
+                                              TextField(
+                                                controller: _shotsController,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                decoration: InputDecoration(
+                                                  hintText: '0',
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 10,
+                                                      ),
+                                                  filled: true,
+                                                  fillColor: Color.alphaBlend(
+                                                    colors.onSurface.withValues(
+                                                      alpha: 0.08,
+                                                    ),
+                                                    colors.surface,
+                                                  ),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          AppRadius.lg,
+                                                        ),
+                                                    borderSide: BorderSide(
+                                                      color: colors.outline,
+                                                    ),
+                                                  ),
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              AppRadius.lg,
+                                                            ),
+                                                        borderSide: BorderSide(
+                                                          color: colors.outline,
+                                                        ),
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Gap(AppSpacing.md),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.straighten_rounded,
+                                                    size: 14,
+                                                    color: colors.secondary
+                                                        .withValues(alpha: 0.7),
+                                                  ),
+                                                  const Gap(6),
+                                                  Text(
+                                                    strings.distanceLabel
+                                                        .toUpperCase(),
+                                                    style: textStyles.labelSmall
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                          color:
+                                                              colors.secondary,
+                                                          fontSize: 10,
+                                                          letterSpacing: 0.5,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const Gap(AppSpacing.xs),
+                                              TextField(
+                                                controller: _distanceController,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                decoration: InputDecoration(
+                                                  hintText: '0',
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 10,
+                                                      ),
+                                                  suffixText: provider.useMetric
+                                                      ? 'm'
+                                                      : 'yd',
+                                                  filled: true,
+                                                  fillColor: Color.alphaBlend(
+                                                    colors.onSurface.withValues(
+                                                      alpha: 0.08,
+                                                    ),
+                                                    colors.surface,
+                                                  ),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          AppRadius.lg,
+                                                        ),
+                                                    borderSide: BorderSide(
+                                                      color: colors.outline,
+                                                    ),
+                                                  ),
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              AppRadius.lg,
+                                                            ),
+                                                        borderSide: BorderSide(
+                                                          color: colors.outline,
+                                                        ),
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ] else ...[
+                                    // Detailed Mode Content
+                                    Builder(
+                                      builder: (context) {
+                                        final totalShots = _steps.fold<int>(
+                                          0,
+                                          (sum, step) =>
+                                              sum + (step.shots ?? 0),
+                                        );
+                                        final totalSteps = _steps.length;
+                                        final maxDistance = _steps.fold<int>(
+                                          0,
+                                          (max, step) =>
+                                              (step.distanceM ?? 0) > max
+                                              ? step.distanceM!
+                                              : max,
+                                        );
+
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Container(
+                                              width: double.infinity,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 10,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Color.alphaBlend(
+                                                  colors.onSurface.withValues(
+                                                    alpha: 0.03,
+                                                  ),
+                                                  colors.surface,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppRadius.lg,
+                                                    ),
+                                                border: Border.all(
+                                                  color: colors.outline
+                                                      .withValues(alpha: 0.5),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: colors.primary,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            6,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      strings.exerciseAutoBadge,
+                                                      style: textStyles
+                                                          .labelSmall
+                                                          ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Colors.white,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  const Gap(12),
+                                                  Expanded(
+                                                    child: Text(
+                                                      strings
+                                                          .exerciseAutoTotals(
+                                                            totalShots,
+                                                            totalSteps,
+                                                            maxDistance,
+                                                            provider.useMetric
+                                                                ? 'm'
+                                                                : 'yd',
+                                                          ),
+                                                      style: textStyles
+                                                          .bodySmall
+                                                          ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: colors
+                                                                .secondary,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Gap(AppSpacing.md),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  strings.exerciseStepsTitle
+                                                      .toUpperCase(),
+                                                  style: textStyles.titleSmall
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                        letterSpacing: 0.5,
+                                                        fontSize: 11,
+                                                      ),
+                                                ),
+                                                FilledButton.icon(
+                                                  onPressed: () =>
+                                                      _addOrEditStep(),
+                                                  icon: const Icon(
+                                                    Icons.add,
+                                                    size: 16,
+                                                  ),
+                                                  label: Text(
+                                                    strings.exerciseActionAdd,
+                                                  ),
+                                                  style: FilledButton.styleFrom(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 0,
+                                                        ),
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const Gap(AppSpacing.sm),
+                                            if (_steps.isEmpty)
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  20,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Color.alphaBlend(
+                                                    colors.onSurface.withValues(
+                                                      alpha: 0.03,
+                                                    ),
+                                                    colors.surface,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        AppRadius.lg,
+                                                      ),
+                                                  border: Border.all(
+                                                    color: colors.outline
+                                                        .withValues(alpha: 0.5),
+                                                    style: BorderStyle.solid,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  strings.exerciseNoSteps,
+                                                  style: textStyles.bodyMedium
+                                                      ?.copyWith(
+                                                        color: colors.secondary,
+                                                        fontStyle:
+                                                            FontStyle.italic,
+                                                      ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              )
+                                            else
+                                              ReorderableListView.builder(
+                                                shrinkWrap: true,
+                                                physics:
+                                                    const NeverScrollableScrollPhysics(),
+                                                itemCount: _steps.length,
+                                                onReorder:
+                                                    (oldIndex, newIndex) {
+                                                      setState(() {
+                                                        if (oldIndex < newIndex)
+                                                          newIndex -= 1;
+                                                        final step = _steps
+                                                            .removeAt(oldIndex);
+                                                        _steps.insert(
+                                                          newIndex,
+                                                          step,
+                                                        );
+                                                      });
+                                                    },
+                                                itemBuilder: (context, i) {
+                                                  final s = _steps[i];
+                                                  final typeLabel = strings
+                                                      .exerciseStepTypeLabel(
+                                                        s.type,
+                                                      );
+
+                                                  final parts = <String>[];
+                                                  if (s.type == StepType.tir &&
+                                                      s.shots != null) {
+                                                    parts.add(
+                                                      '${s.shots} ${strings.exerciseNarrativeShotsWord}',
+                                                    );
+                                                  }
+                                                  if (s.distanceM != null)
+                                                    parts.add(
+                                                      '${s.distanceM} ${provider.useMetric ? 'm' : 'yd'}',
+                                                    );
+                                                  if ((s.target ?? '')
+                                                      .trim()
+                                                      .isNotEmpty)
+                                                    parts.add(s.target!.trim());
+                                                  final subtitle = parts.isEmpty
+                                                      ? null
+                                                      : parts.join(' · ');
+
+                                                  return Container(
+                                                    key: ValueKey(s.id),
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 8,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.fromLTRB(
+                                                          12,
+                                                          8,
+                                                          2,
+                                                          8,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Color.alphaBlend(
+                                                        colors.onSurface
+                                                            .withValues(
+                                                              alpha: 0.03,
+                                                            ),
+                                                        colors.surface,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            AppRadius.lg,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: colors.outline
+                                                            .withValues(
+                                                              alpha: 0.5,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    child: InkWell(
+                                                      onTap: () =>
+                                                          _addOrEditStep(
+                                                            initial: s,
+                                                          ),
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            (i + 1)
+                                                                .toString()
+                                                                .padLeft(
+                                                                  2,
+                                                                  '0',
+                                                                ),
+                                                            style: textStyles
+                                                                .titleMedium
+                                                                ?.copyWith(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w900,
+                                                                  color: colors
+                                                                      .primary
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.6,
+                                                                      ),
+                                                                  fontSize: 16,
+                                                                ),
+                                                          ),
+                                                          const Gap(10),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Text(
+                                                                  typeLabel,
+                                                                  style: textStyles
+                                                                      .titleSmall
+                                                                      ?.copyWith(
+                                                                        fontWeight:
+                                                                            FontWeight.w800,
+                                                                      ),
+                                                                ),
+                                                                if (subtitle !=
+                                                                    null) ...[
+                                                                  const Gap(2),
+                                                                  Text(
+                                                                    subtitle,
+                                                                    style: textStyles.bodySmall?.copyWith(
+                                                                      color: colors
+                                                                          .secondary,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          const Gap(2),
+                                                          ReorderableDragStartListener(
+                                                            index: i,
+                                                            child: Icon(
+                                                              Icons
+                                                                  .drag_indicator_rounded,
+                                                              size: 20,
+                                                              color: colors
+                                                                  .onSurface,
+                                                            ),
+                                                          ),
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .delete_rounded,
+                                                              size: 18,
+                                                            ),
+                                                            onPressed: () =>
+                                                                setState(
+                                                                  () => _steps
+                                                                      .removeAt(
+                                                                        i,
+                                                                      ),
+                                                                ),
+                                                            visualDensity:
+                                                                VisualDensity
+                                                                    .compact,
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            constraints:
+                                                                const BoxConstraints(),
+                                                            splashRadius: 20,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const Gap(AppSpacing.sm),
+
+                            // 3. SECTION OBSERVATIONS
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.notes_rounded,
+                                  size: 18,
+                                  color: colors.primary,
+                                ),
+                                const Gap(8),
+                                Text(
+                                  strings.observationsTitle.toUpperCase(),
+                                  style: textStyles.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.onSurface,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Gap(AppSpacing.sm),
+                            TextField(
+                              controller: _notesController,
+                              minLines: 4,
+                              maxLines: 4,
+                              decoration: InputDecoration(
+                                hintText: strings.observationsTitle,
+                                filled: true,
+                                fillColor: colors.surface,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                  borderSide: BorderSide(color: colors.outline),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                  borderSide: BorderSide(color: colors.outline),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: colors.primary,
+                                    width: 1.6,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 52,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.tonal(
+                              onPressed: () => _goToPage(0),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: colors.primary.withValues(
+                                  alpha: 0.72,
+                                ),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                strings.actionCancel.toUpperCase(),
+                                style: textStyles.labelLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Gap(AppSpacing.md),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: () => _saveTemplate(provider),
+                              style: FilledButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                'ENREGISTRER',
+                                style: textStyles.labelLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Gap(AppSpacing.xs),
-                    GestureDetector(
-                      onTap: () {
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 28,
-                          color: colors.onSurface.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Divider(color: colors.outline),
-                ),
-                const Gap(AppSpacing.md),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                // 1. SECTION NOM
-                Row(
-                  children: [
-                    Icon(Icons.edit_note_rounded, size: 18),
-                    const Gap(8),
-                    Text(
-                      strings.templateNameDialogTitle.toUpperCase(),
-                      style: textStyles.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: colors.onSurface,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const Gap(AppSpacing.sm),
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    hintText: strings.templateNameHint,
-                    filled: true,
-                    fillColor: colors.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                  ),
-                ),
-                const Gap(AppSpacing.lg),
-
-                // 2. SECTION DÉROULÉ
-                Row(
-                  children: [
-                    Icon(Icons.tune_rounded, size: 18, color: colors.primary),
-                    const Gap(8),
-                    Text(
-                      strings.exerciseModeLabel.toUpperCase(),
-                      style: textStyles.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: colors.onSurface,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const Gap(AppSpacing.sm),
-                Container(
-                  padding: AppSpacing.paddingMd,
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Gap(2),
-                      SizedBox(
-                        height: 44,
-                        child: _SlidingSegmentedSelector(
-                          selectedIndex: _detailedMode ? 1 : 0,
-                          labels: [
-                            strings.exerciseModeSimple,
-                            strings.exerciseModeDetailed,
-                          ],
-                          onSelected: (index) {
-                            setState(() {
-                              _detailedMode = index == 1;
-                            });
-                          },
-                        ),
-                      ),
-                      const Gap(AppSpacing.md),
-                      if (!_detailedMode) ...[
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      SvgPicture.asset(
-                                        'assets/images/hit.svg',
-                                        width: 14,
-                                        height: 14,
-                                        colorFilter: ColorFilter.mode(
-                                          colors.secondary.withValues(alpha: 0.7),
-                                          BlendMode.srcIn,
-                                        ),
-                                      ),
-                                      const Gap(6),
-                                      Text(
-                                        strings.shotsCountLabel.toUpperCase(),
-                                        style: textStyles.labelSmall?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color: colors.secondary,
-                                          fontSize: 10,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Gap(AppSpacing.xs),
-                                  TextField(
-                                    controller: _shotsController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      hintText: '0',
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                      filled: true,
-                                      fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.08), colors.surface),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                        borderSide: BorderSide(color: colors.outline),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                        borderSide: BorderSide(color: colors.outline),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Gap(AppSpacing.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.straighten_rounded,
-                                        size: 14,
-                                        color: colors.secondary.withValues(alpha: 0.7),
-                                      ),
-                                      const Gap(6),
-                                      Text(
-                                        strings.distanceLabel.toUpperCase(),
-                                        style: textStyles.labelSmall?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color: colors.secondary,
-                                          fontSize: 10,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Gap(AppSpacing.xs),
-                                  TextField(
-                                    controller: _distanceController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      hintText: '0',
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                      suffixText: provider.useMetric ? 'm' : 'yd',
-                                      filled: true,
-                                      fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.08), colors.surface),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                        borderSide: BorderSide(color: colors.outline),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                        borderSide: BorderSide(color: colors.outline),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ] else ...[
-                        // Detailed Mode Content
-                        Builder(builder: (context) {
-                          final totalShots = _steps.fold<int>(0, (sum, step) => sum + (step.shots ?? 0));
-                          final totalSteps = _steps.length;
-                          final maxDistance = _steps.fold<int>(0, (max, step) => (step.distanceM ?? 0) > max ? step.distanceM! : max);
-                          
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                  border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: colors.primary,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        strings.exerciseAutoBadge,
-                                        style: textStyles.labelSmall?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                    const Gap(12),
-                                    Expanded(
-                                      child: Text(
-                                        strings.exerciseAutoTotals(totalShots, totalSteps, maxDistance, provider.useMetric ? 'm' : 'yd'),
-                                        style: textStyles.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: colors.secondary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Gap(AppSpacing.md),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    strings.exerciseStepsTitle.toUpperCase(),
-                                    style: textStyles.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                  FilledButton.icon(
-                                    onPressed: () => _addOrEditStep(),
-                                    icon: const Icon(Icons.add, size: 16),
-                                    label: Text(strings.exerciseActionAdd),
-                                    style: FilledButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                                      visualDensity: VisualDensity.compact,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(AppSpacing.sm),
-                              if (_steps.isEmpty)
-                                Container(
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    color: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
-                                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                                    border: Border.all(color: colors.outline.withValues(alpha: 0.5), style: BorderStyle.solid),
-                                  ),
-                                  child: Text(
-                                    strings.exerciseNoSteps,
-                                    style: textStyles.bodyMedium?.copyWith(color: colors.secondary, fontStyle: FontStyle.italic),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                )
-                              else
-                                ReorderableListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: _steps.length,
-                                  onReorder: (oldIndex, newIndex) {
-                                    setState(() {
-                                      if (oldIndex < newIndex) newIndex -= 1;
-                                      final step = _steps.removeAt(oldIndex);
-                                      _steps.insert(newIndex, step);
-                                    });
-                                  },
-                                  itemBuilder: (context, i) {
-                                    final s = _steps[i];
-                                    final typeLabel = strings.exerciseStepTypeLabel(s.type);
-                                    
-                                    final parts = <String>[];
-                                    if (s.type == StepType.tir && s.shots != null) {
-                                      parts.add('${s.shots} ${strings.exerciseNarrativeShotsWord}');
-                                    }
-                                    if (s.distanceM != null) parts.add('${s.distanceM} ${provider.useMetric ? 'm' : 'yd'}');
-                                    if ((s.target ?? '').trim().isNotEmpty) parts.add(s.target!.trim());
-                                    final subtitle = parts.isEmpty ? null : parts.join(' · ');
-
-                                    return Container(
-                                      key: ValueKey(s.id),
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      padding: const EdgeInsets.fromLTRB(12, 8, 2, 8),
-                                      decoration: BoxDecoration(
-                                        color: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                        border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
-                                      ),
-                                      child: InkWell(
-                                        onTap: () => _addOrEditStep(initial: s),
-                                        child: Row(
-                                          children: [
-                                            Text(
-                                              (i + 1).toString().padLeft(2, '0'),
-                                              style: textStyles.titleMedium?.copyWith(
-                                                fontWeight: FontWeight.w900,
-                                                color: colors.primary.withValues(alpha: 0.6),
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            const Gap(10),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    typeLabel,
-                                                    style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                                                  ),
-                                                  if (subtitle != null) ...[
-                                                    const Gap(2),
-                                                    Text(
-                                                      subtitle,
-                                                      style: textStyles.bodySmall?.copyWith(color: colors.secondary, fontWeight: FontWeight.w500),
-                                                    ),
-                                                  ],
-                                                ],
-                                              ),
-                                            ),
-                                            const Gap(2),
-                                            ReorderableDragStartListener(
-                                              index: i,
-                                              child: Icon(Icons.drag_indicator_rounded, size: 20, color: colors.onSurface),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete_rounded, size: 18),
-                                              onPressed: () => setState(() => _steps.removeAt(i)),
-                                              visualDensity: VisualDensity.compact,
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(),
-                                              splashRadius: 20,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                            ],
-                          );
-                        }),
-                      ],
-                    ],
-                  ),
-                ),
-                const Gap(AppSpacing.sm),
-
-                // 3. SECTION OBSERVATIONS
-                Row(
-                  children: [
-                    Icon(Icons.notes_rounded, size: 18, color: colors.primary),
-                    const Gap(8),
-                    Text(
-                      strings.observationsTitle.toUpperCase(),
-                      style: textStyles.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: colors.onSurface,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const Gap(AppSpacing.sm),
-                TextField(
-                  controller: _notesController,
-                  minLines: 4,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: strings.observationsTitle,
-                    filled: true,
-                    fillColor: colors.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.outline),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: colors.primary, width: 1.6),
-                    ),
-                  ),
-                ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 52,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.tonal(
-                          onPressed: () => _goToPage(0),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colors.primary.withValues(alpha: 0.72),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            strings.actionCancel.toUpperCase(),
-                            style: textStyles.labelLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Gap(AppSpacing.md),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () => _saveTemplate(provider),
-                          style: FilledButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'ENREGISTRER',
-                            style: textStyles.labelLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-      ),
+        ),
       ),
     );
   }
@@ -2468,22 +2891,22 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
 
     InputDecoration decoration(String label) => InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: colors.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: BorderSide(color: colors.outline),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: BorderSide(color: colors.outline),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: BorderSide(color: colors.primary, width: 1.6),
-          ),
-        );
+      labelText: label,
+      filled: true,
+      fillColor: colors.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderSide: BorderSide(color: colors.outline),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderSide: BorderSide(color: colors.outline),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderSide: BorderSide(color: colors.primary, width: 1.6),
+      ),
+    );
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -2511,10 +2934,12 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                 Expanded(
                   child: Text(
                     (widget.initialStep == null
-                        ? strings.exerciseNewStepTitle
-                        : strings.exerciseEditStepTitle).toUpperCase(),
-                    style: textStyles.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w900),
+                            ? strings.exerciseNewStepTitle
+                            : strings.exerciseEditStepTitle)
+                        .toUpperCase(),
+                    style: textStyles.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
                 // Icône en forme de V pour fermer
@@ -2525,7 +2950,13 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                     child: Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 28,
-                      color: textStyles.titleMedium?.color?.withValues(alpha: 0.7) ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color:
+                          textStyles.titleMedium?.color?.withValues(
+                            alpha: 0.7,
+                          ) ??
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -2533,22 +2964,28 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
             ),
           ),
           const Gap(8),
-          Divider(color: colors.outline, indent: AppSpacing.lg, endIndent: AppSpacing.lg),
+          Divider(
+            color: colors.outline,
+            indent: AppSpacing.lg,
+            endIndent: AppSpacing.lg,
+          ),
           const Gap(AppSpacing.sm),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
                 left: AppSpacing.lg,
                 right: AppSpacing.lg,
-                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     strings.exerciseStepTypeTitle,
-                    style: textStyles.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Gap(8),
                   Wrap(
@@ -2569,8 +3006,9 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                             color: selected ? colors.primary : colors.outline,
                           ),
                         ),
-                        labelStyle: textStyles.labelLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        labelStyle: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -2579,11 +3017,12 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                   const Gap(AppSpacing.sm),
                   Text(
                     strings.exerciseStepPositionTitle,
-                    style: textStyles.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Gap(8),
-                   Wrap(
+                  Wrap(
                     spacing: 8,
                     runSpacing: 4,
                     children: [
@@ -2611,12 +3050,12 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                           onSelected: (_) => setState(() => _position = p),
                           selectedColor: colors.primary.withValues(alpha: 0.2),
                           backgroundColor: colors.surface,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                           visualDensity: VisualDensity.compact,
                           shape: StadiumBorder(
                             side: BorderSide(
-                              color:
-                                  selected ? colors.primary : colors.outline,
+                              color: selected ? colors.primary : colors.outline,
                             ),
                           ),
                         );
@@ -2631,25 +3070,30 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       controller: _shotsController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
-                          '${strings.exerciseFieldShots}${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldShots}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(12),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
-                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(12),
                     TextField(
                       controller: _targetController,
                       decoration: decoration(
-                          '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ] else if (_type == StepType.deplacement) ...[
                     Text(
                       strings.exerciseFieldMovementType,
-                      style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                      style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const Gap(8),
                     Wrap(
@@ -2659,7 +3103,8 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                         ChoiceChip(
                           label: const Text('·'),
                           selected: _movementType == null,
-                          onSelected: (_) => setState(() => _movementType = null),
+                          onSelected: (_) =>
+                              setState(() => _movementType = null),
                           selectedColor: colors.primary.withValues(alpha: 0.2),
                           backgroundColor: colors.surface,
                           shape: StadiumBorder(
@@ -2675,12 +3120,17 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                           return ChoiceChip(
                             label: Text(strings.exerciseMovementTypeLabel(t)),
                             selected: selected,
-                            onSelected: (_) => setState(() => _movementType = t),
-                            selectedColor: colors.primary.withValues(alpha: 0.2),
+                            onSelected: (_) =>
+                                setState(() => _movementType = t),
+                            selectedColor: colors.primary.withValues(
+                              alpha: 0.2,
+                            ),
                             backgroundColor: colors.surface,
                             shape: StadiumBorder(
                               side: BorderSide(
-                                color: selected ? colors.primary : colors.outline,
+                                color: selected
+                                    ? colors.primary
+                                    : colors.outline,
                               ),
                             ),
                           );
@@ -2692,12 +3142,15 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
-                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ] else if (_type == StepType.rechargement) ...[
                     Text(
                       strings.exerciseFieldReloadType,
-                      style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                      style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const Gap(8),
                     Wrap(
@@ -2721,15 +3174,23 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                     ),
                   ] else if (_type == StepType.transition) ...[
                     DropdownButtonFormField<String>(
-                      initialValue: _platformFromController.text.isEmpty ? null : _platformFromController.text,
+                      initialValue: _platformFromController.text.isEmpty
+                          ? null
+                          : _platformFromController.text,
                       decoration: decoration(
-                          '${strings.exerciseFieldPlatformFrom}${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldPlatformFrom}${strings.exerciseOptionalHint}',
+                      ),
                       items: [
-                        DropdownMenuItem(value: null, child: Text(strings.exerciseWritePlatformOption)),
-                        ...provider.platforms.map((platform) => DropdownMenuItem(
-                          value: platform.name,
-                          child: Text(platform.name),
-                        )),
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text(strings.exerciseWritePlatformOption),
+                        ),
+                        ...provider.platforms.map(
+                          (platform) => DropdownMenuItem(
+                            value: platform.name,
+                            child: Text(platform.name),
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value == null) {
@@ -2741,15 +3202,23 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                     ),
                     const Gap(12),
                     DropdownButtonFormField<String>(
-                      initialValue: _platformToController.text.isEmpty ? null : _platformToController.text,
+                      initialValue: _platformToController.text.isEmpty
+                          ? null
+                          : _platformToController.text,
                       decoration: decoration(
-                          '${strings.exerciseFieldPlatformTo}${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldPlatformTo}${strings.exerciseOptionalHint}',
+                      ),
                       items: [
-                        DropdownMenuItem(value: null, child: Text(strings.exerciseWritePlatformOption)),
-                        ...provider.platforms.map((platform) => DropdownMenuItem(
-                          value: platform.name,
-                          child: Text(platform.name),
-                        )),
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text(strings.exerciseWritePlatformOption),
+                        ),
+                        ...provider.platforms.map(
+                          (platform) => DropdownMenuItem(
+                            value: platform.name,
+                            child: Text(platform.name),
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value == null) {
@@ -2763,41 +3232,47 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                     TextField(
                       controller: _targetController,
                       decoration: decoration(
-                          '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(12),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
-                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ] else if (_type == StepType.attente) ...[
                     TextField(
                       controller: _durationController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
-                          '${strings.exerciseFieldDuration} (s)${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldDuration} (s)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(12),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
-                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(12),
                     TextField(
                       controller: _triggerController,
                       decoration: decoration(
-                          '${strings.exerciseFieldTrigger}${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldTrigger}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ] else ...[
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
                       decoration: decoration(
-                          '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ],
                   const Gap(12),
@@ -2817,17 +3292,20 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       ),
                       child: FilledButton(
                         onPressed: () {
-                          final distanceM =
-                              int.tryParse(_distanceController.text.trim());
-                          final shots =
-                              int.tryParse(_shotsController.text.trim());
-                          final durationSeconds =
-                              int.tryParse(_durationController.text.trim());
+                          final distanceM = int.tryParse(
+                            _distanceController.text.trim(),
+                          );
+                          final shots = int.tryParse(
+                            _shotsController.text.trim(),
+                          );
+                          final durationSeconds = int.tryParse(
+                            _durationController.text.trim(),
+                          );
 
                           final step = ExerciseStep(
-                            id: widget.initialStep?.id ??
-                                DateTime.now()
-                                    .microsecondsSinceEpoch
+                            id:
+                                widget.initialStep?.id ??
+                                DateTime.now().microsecondsSinceEpoch
                                     .toString(),
                             type: _type,
                             position: _position,
@@ -2838,9 +3316,10 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                                 : _targetController.text.trim(),
                             platformFrom:
                                 _platformFromController.text.trim().isEmpty
-                                    ? null
-                                    : _platformFromController.text.trim(),
-                            platformTo: _platformToController.text.trim().isEmpty
+                                ? null
+                                : _platformFromController.text.trim(),
+                            platformTo:
+                                _platformToController.text.trim().isEmpty
                                 ? null
                                 : _platformToController.text.trim(),
                             reloadType: _reloadType,
@@ -2865,8 +3344,9 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                         ),
                         child: Text(
                           (widget.initialStep == null
-                              ? strings.exerciseActionAdd
-                              : strings.exerciseActionSave).toUpperCase(),
+                                  ? strings.exerciseActionAdd
+                                  : strings.exerciseActionSave)
+                              .toUpperCase(),
                         ),
                       ),
                     ),

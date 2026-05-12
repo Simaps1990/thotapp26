@@ -50,12 +50,16 @@ class _LegalScreenState extends State<LegalScreen> {
               const Gap(AppSpacing.lg),
               Text(
                 strings.legalInfoTitle,
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const Gap(8),
               Text(
                 strings.legalInfoSubtitle,
-                style: textTheme.bodyMedium?.copyWith(color: colors.onSurface.withValues(alpha: 0.7)),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurface.withValues(alpha: 0.7),
+                ),
               ),
               const Gap(AppSpacing.lg),
               _TocCard(
@@ -90,15 +94,11 @@ class _LegalScreenState extends State<LegalScreen> {
         sections: [
           _LegalSection(
             title: strings.legalPresentationTitle,
-            body: isFrench
-                ? "THOT est un carnet de tir numérique destiné à organiser les informations liées au matériel, aux sessions, aux statistiques, aux documents et au suivi personnel de l'utilisateur.\n\nLes données de l'application sont principalement stockées localement sur l'appareil.\n\nSite web : thotbook.fr\n"
-                : "THOT is a digital shooting logbook designed to help you organize information related to your equipment, sessions, statistics, documents, and personal tracking.\n\nApp data is primarily stored locally on your device.\n\nWebsite: thotbook.fr\n",
+            body: strings.legalPresentationBody,
           ),
           _LegalSection(
             title: strings.legalSupportTitle,
-            body: isFrench
-                ? "Pour toute assistance ou question :\n- Email : simapswebdesign@gmail.com\n"
-                : "For assistance or questions:\n- Email: simapswebdesign@gmail.com\n",
+            body: strings.legalSupportBody,
           ),
           _LegalSection(
             title: strings.legalMicTimerDisclaimerSectionTitle,
@@ -115,19 +115,19 @@ class _LegalScreenState extends State<LegalScreen> {
         title: strings.legalCguTitle,
         sections: [
           _LegalSection(
-            title: isFrench ? '1. Objet' : '1. Purpose',
+            title: strings.legalTermsPurposeTitle,
             body: isFrench
                 ? "Les présentes conditions générales d’utilisation encadrent l’accès au site thotbook.fr et à l’application THOT, ainsi que l’usage des fonctionnalités proposées. En utilisant le site ou l’application, vous acceptez ces conditions."
                 : "These Terms of Use govern access to the thotbook.fr website and the THOT app, as well as the use of the provided features. By using the website or the app, you accept these terms.",
           ),
           _LegalSection(
-            title: isFrench ? '2. Objet du service' : '2. Service description',
+            title: strings.legalTermsServiceTitle,
             body: isFrench
                 ? "THOT est une application mobile de carnet de tir numérique destinée à organiser des informations liées au matériel, aux sessions, aux statistiques, aux documents, aux consommables et au suivi personnel de l'utilisateur."
                 : "THOT is a mobile digital shooting logbook intended to organize information related to equipment, sessions, statistics, documents, and personal tracking.",
           ),
           _LegalSection(
-            title: isFrench ? '3. Nature de l’outil' : '3. Nature of the tool',
+            title: strings.legalTermsToolNatureTitle,
             body: isFrench
                 ? "THOT constitue un outil personnel d’organisation, de suivi et d’archivage. L’application ne remplace pas une obligation réglementaire, un registre officiel, un conseil juridique, ni une vérification de conformité.\n\nL’utilisateur demeure seul responsable des informations qu’il saisit, de leur exactitude, de leur conservation, de leur sauvegarde éventuelle et du respect des lois applicables à son activité."
                 : "THOT is a personal organization, tracking, and archiving tool. The app does not replace any legal/regulatory obligation, official register, legal advice, or compliance check.\n\nYou remain solely responsible for the information you enter, its accuracy, its preservation, any backup you may perform, and your compliance with applicable laws.",
@@ -141,19 +141,19 @@ class _LegalScreenState extends State<LegalScreen> {
             body: strings.diagnosticDisclaimerBody,
           ),
           _LegalSection(
-            title: isFrench ? '4. Accès et disponibilité' : '4. Access and availability',
+            title: strings.legalTermsAccessTitle,
             body: isFrench
                 ? "Le site est accessible en ligne. L’application THOT est proposée via les boutiques de téléchargement compatibles. Certaines fonctions peuvent dépendre de l’appareil, du système d’exploitation, des autorisations accordées et des capacités techniques du terminal utilisé.\n\nL’éditeur peut faire évoluer, corriger, suspendre ou mettre à jour tout ou partie du service sans préavis, notamment pour des raisons techniques, de sécurité ou d’amélioration."
                 : "The website is accessible online. The THOT app is distributed through compatible app stores. Some features may depend on the device, operating system, granted permissions, and technical capabilities.\n\nThe publisher may evolve, fix, suspend, or update all or part of the service without notice for technical, security, or improvement purposes.",
           ),
           _LegalSection(
-            title: isFrench ? '5. Données et sécurité locale' : '5. Data and local security',
+            title: strings.legalDataStorageTitle,
             body: isFrench
                 ? "Vos données ne quittent jamais votre appareil. THOT ne dispose d'aucun serveur propre, d'aucune base de données centrale, d'aucun compte utilisateur. Toutes vos données (plateformes, consommables, sessions, documents) restent stockées localement, uniquement sur votre appareil, avec une protection renforcée.\n\nAucune fuite via un serveur central n'est possible : il n'en existe pas.\n\nLes seuls échanges réseau optionnels sont la météo et le lieu d'une session (uniquement si vous appuyez sur le bouton dédié), et la validation de l'abonnement Pro via RevenueCat (identifiant de transaction anonyme, aucune donnée personnelle).\n\nL'application fonctionne entièrement hors ligne. THOT peut proposer une protection locale par code PIN et une authentification biométrique (Face ID / Touch ID)."
                 : "Your data never leaves your device. THOT has no server, no central database, and no user account. All your data (platforms, ammo, sessions, documents) stays stored locally on your device only, with strong local protection.\n\nNo data leak through a central server is possible: there is none.\n\nThe only optional network calls are weather and location for a session (only when you tap the dedicated button), and Pro subscription validation via RevenueCat (anonymous transaction ID, no personal data).\n\nThe app works fully offline. THOT may offer local protection via PIN code and biometric authentication (Face ID / Touch ID).",
           ),
           _LegalSection(
-            title: isFrench ? '6. Offre gratuite et abonnement Pro' : '6. Free plan and Pro subscription',
+            title: strings.legalPurchaseTitle,
             body: isFrench
                 ? "Une version gratuite permet de découvrir THOT avec des limitations d’usage. Une version Pro est proposée au prix affiché dans l’application.\n\nLes abonnements, résiliations, modalités de facturation et remboursements relèvent des règles et conditions des plateformes de distribution concernées, notamment l’App Store et Google Play."
                 : "A free version lets you discover THOT with usage limitations. A Pro version is available at the price shown in the app.\n\nSubscriptions, cancellations, billing terms, and refunds are governed by the rules and conditions of the distribution platforms, including the App Store and Google Play.",
@@ -177,7 +177,7 @@ class _LegalScreenState extends State<LegalScreen> {
         title: strings.legalPrivacyTitle,
         sections: [
           _LegalSection(
-            title: isFrench ? '1. Principes' : '1. Principles',
+            title: strings.legalPrivacyPrinciplesTitle,
             body: isFrench
                 ? "Cette politique de confidentialité explique quelles informations peuvent être traitées dans le cadre du site et de l’application THOT, pour quelles finalités et selon quelles modalités.\n\nTHOT a été conçu avec une logique de confidentialité locale. Les données liées à l’usage de l’application sont principalement stockées sur l’appareil de l’utilisateur. L’éditeur ne met pas en place de compte utilisateur obligatoire et ne déclare pas de collecte analytics sur le site à ce jour."
                 : "This Privacy Policy explains what information may be processed when using the THOT website and mobile application, for what purposes, and under which conditions.\n\nTHOT is designed with a local-first privacy approach. Most app data is stored on the user's device. The publisher does not require a mandatory user account and, at the time of writing, does not run analytics tracking on the website.",
@@ -208,20 +208,20 @@ class _LegalScreenState extends State<LegalScreen> {
           ),
           _LegalSection(
             title: isFrench
-                ? '5. Microphone (minuteur) : pourquoi, quand, et quelles données'
-                : '5. Microphone (timer): why, when, and what data',
+                ? strings.legalMicrophoneTimerTitle
+                : strings.legalMicrophoneTimerTitle,
             body: isFrench
                 ? "Pourquoi : le microphone est utilisé pour permettre la détection d’un départ sonore (ex : tir) afin de déclencher/arrêter automatiquement le minuteur lorsque l’utilisateur active ce mode.\n\nQuand : le microphone est utilisé uniquement :\n- lorsque l’utilisateur sélectionne un mode de minuteur avec détection sonore ;\n- et pendant l’exécution du minuteur.\n\nDonnées audio : l’application ne stocke pas d’enregistrement audio, n’envoie pas d’audio sur Internet et ne partage pas de données audio avec des tiers. La détection repose sur des mesures instantanées du niveau sonore sur l’appareil."
                 : "Why: the microphone is used to detect a sharp sound (e.g., a gunshot) in order to automatically start/stop the timer when you enable this mode.\n\nWhen: the microphone is used only when you select a sound-detection timer mode and while the timer is running.\n\nAudio data: the app does not store audio recordings, does not send audio over the Internet, and does not share audio data with third parties. Detection relies on instantaneous sound level measurements on the device.",
           ),
           _LegalSection(
-            title: isFrench ? '6. Services tiers : RevenueCat (abonnements)' : '6. Third-party services: RevenueCat (subscriptions)',
+            title: strings.legalRevenueCatTitle,
             body: isFrench
                 ? "Pourquoi : RevenueCat est utilisé pour gérer les abonnements Premium (achat, restauration, validation).\n\nQuand : uniquement si vous accédez aux fonctionnalités Premium ou restaurez un achat.\n\nDonnées : identifiants d’abonnement et de transaction nécessaires à la gestion. RevenueCat ne reçoit pas vos données personnelles ni vos contenus (sessions, documents, images).\n\nSécurité : communications sécurisées; RevenueCat est certifié ISO 27001."
                 : "Why: RevenueCat is used to manage Premium subscriptions (purchase, restore, validation).\n\nWhen: only if you access Premium features or restore a purchase.\n\nData: subscription and transaction identifiers required for management. RevenueCat does not receive your personal data or your content (sessions, documents, images).\n\nSecurity: secure communications; RevenueCat is ISO 27001 certified.",
           ),
           _LegalSection(
-            title: isFrench ? '7. Transferts de données hors de l\'appareil' : '7. Off-device data transfers',
+            title: strings.legalBackupTitle,
             body: isFrench
                 ? "THOT peut transférer des données hors de l\'appareil uniquement dans les cas suivants :\n\n- Météo : nom de ville vers API Open-Meteo.com pour récupérer données météo publiques.\n- Abonnements : identifiants de transaction vers RevenueCat pour gestion des abonnements.\n- Sauvegarde système : les données applicatives (inventaire, sessions, diagnostics, préférences) sont incluses dans la sauvegarde automatique du système d\'exploitation (iCloud Backup sur iOS, Google Auto Backup sur Android), comme pour la majorité des applications. Cette sauvegarde permet la restauration de l\'application sur un nouvel appareil. Elle est gérée par Apple ou Google selon les paramètres de votre compte et de votre appareil. THOT ne reçoit aucune copie de cette sauvegarde.\n\nTHOT n\'envoie aucun de vos contenus personnels (sessions, documents, images) vers ses propres serveurs."
                 : "THOT may transfer data off-device only in the following cases:\n\n- Weather: city name to Open-Meteo.com API to fetch public weather data.\n- Subscriptions: transaction identifiers to RevenueCat for subscription management.\n- System backup: app data (inventory, sessions, diagnostics, preferences) is included in the operating system's automatic backup (iCloud Backup on iOS, Google Auto Backup on Android), as for most apps. This backup enables app restoration on a new device. It is managed by Apple or Google according to your account and device settings. THOT does not receive any copy of this backup.\n\nTHOT does not send any of your personal content (sessions, documents, images) to its own servers.",
@@ -246,8 +246,8 @@ class _LegalScreenState extends State<LegalScreen> {
           ),
           _LegalSection(
             title: isFrench
-                ? '11. Stockage local dans l\'application'
-                : '11. Local storage in the app',
+                ? strings.legalLocalStorageTitle
+                : strings.legalLocalStorageTitle,
             body: isFrench
                 ? "Les informations de suivi saisies dans l'application sont stockées localement sur le terminal et incluses dans la sauvegarde automatique du système d'exploitation (iCloud Backup sur iOS, Google Auto Backup sur Android). Cette sauvegarde système permet à l'utilisateur de restaurer ses données sur un nouvel appareil sans intervention manuelle. THOT ne crée pas de sauvegarde sur ses propres serveurs.\n\nL'utilisateur peut désactiver cette sauvegarde système dans les paramètres de son compte Apple iCloud ou Google selon sa préférence.\n\nCertaines fonctionnalités, comme la biométrie, le code PIN ou l'ajout de documents, dépendent des autorisations accordées et des capacités du terminal utilisé.\n\nLorsque l'utilisateur saisit manuellement une ville dans la création d'une session et active la météo, l'application utilise uniquement le nom de la ville pour récupérer les conditions météo locales. Aucun accès au GPS ou à la position de l'appareil n'est effectué. Le switch météo ne contrôle que l'affichage de ces informations."
                 : "Tracking information entered in the app is stored locally on your device and is included in the operating system's automatic backup (iCloud Backup on iOS, Google Auto Backup on Android). This system backup enables you to restore your data on a new device without manual action. THOT does not create any backup on its own servers.\n\nYou can disable this system backup in your Apple iCloud or Google account settings.\n\nSome features (biometrics, PIN code, document attachments) depend on the permissions you grant and on device capabilities.\n\nWhen you manually enter a city while creating a session and enable weather, the app uses only the city name to fetch local weather conditions. No GPS or device position access is performed. The weather switch only controls the display of this information.",
@@ -261,13 +261,17 @@ class _LegalScreenState extends State<LegalScreen> {
                 : "The app provides an action to delete all local data stored on the device. This includes your profile, inventory, sessions, diagnostics, documents added in the app, local preferences, local security settings (PIN, biometrics, lock state), and the local cache related to premium status. System backups (iCloud, Google Auto Backup) previously made by the operating system are not deleted by this local action; to delete them, you must use your Apple iCloud or Google account settings.",
           ),
           _LegalSection(
-            title: isFrench ? '13. Retrait du consentement' : '13. Withdrawing consent',
+            title: isFrench
+                ? '13. Retrait du consentement'
+                : '13. Withdrawing consent',
             body: isFrench
                 ? "Vous pouvez retirer votre consentement à tout moment :\n\n- Microphone : désactivez le mode de minuteur avec détection sonore et/ou retirez l’autorisation Micro dans les réglages du système (iOS/Android).\n- Notifications : désactivez les rappels de péremption dans les paramètres THOT et/ou retirez l’autorisation Notifications dans les réglages du système (iOS/Android).\n- Météo : cessez de saisir des villes dans vos sessions ou désactivez la fonction météo.\n\nVous pouvez également supprimer vos données en utilisant la fonctionnalité de suppression des données locales dans l’application, ou en désinstallant l’application."
                 : "You can withdraw your consent at any time:\n\n- Microphone: disable the sound-detection timer mode and/or revoke the microphone permission in iOS/Android settings.\n- Notifications: disable document expiry reminders in THOT settings and/or revoke notification permission in iOS/Android settings.\n- Weather: stop entering cities in your sessions or disable the weather function.\n\nYou can also delete your data using the in-app local data deletion feature, or by uninstalling the app.",
           ),
           _LegalSection(
-            title: isFrench ? '14. Destinataires des données' : '14. Recipients',
+            title: isFrench
+                ? '14. Destinataires des données'
+                : '14. Recipients',
             body: isFrench
                 ? "Les données transmises via le formulaire de contact sont destinées à Paola PAVIOT, éditeur de THOT, à l'adresse simapswebdesign@gmail.com. L'application peut également interroger des prestataires techniques strictement nécessaires à certaines fonctionnalités activées par l'utilisateur, par exemple un service météo, un service de géocodage inverse ou le service RevenueCat pour la gestion de l'abonnement Pro. Ces données ne sont pas destinées à une exploitation publicitaire ou à une revente par l'éditeur."
                 : "Data sent via the contact form is received by Paola PAVIOT, publisher of THOT, at simapswebdesign@gmail.com. The app may also interact with technical providers strictly necessary for user-enabled features (for example: a weather service, a reverse geocoding service, or RevenueCat for Pro subscription management). This data is not intended for advertising use or resale by the publisher.",
@@ -297,25 +301,27 @@ class _LegalScreenState extends State<LegalScreen> {
         title: strings.legalMentionsTitle,
         sections: [
           _LegalSection(
-            title: isFrench ? 'Éditeur' : 'Publisher',
+            title: strings.legalPublisherTitle,
             body: isFrench
                 ? "Nom commercial : THOT\n\nÉditeur : Paola PAVIOT\n\nAdresse : 11 allée du centre, 78000 Versailles, France\n\nEmail : simapswebdesign@gmail.com\n\nDirecteur de la publication : Paola PAVIOT\n\nSite web : thotbook.fr"
                 : "Trade name: THOT\n\nPublisher: Paola PAVIOT\n\nAddress: 11 allée du centre, 78000 Versailles, France\n\nEmail: simapswebdesign@gmail.com\n\nPublication director: Paola PAVIOT\n\nWebsite: thotbook.fr",
           ),
           _LegalSection(
-            title: isFrench ? 'Hébergement' : 'Hosting',
+            title: strings.legalHostingTitle,
             body: isFrench
                 ? "Site web hébergé par : Netlify, Inc.\n\nSite web de l’hébergeur : https://www.netlify.com\n\nL’application THOT est distribuée via les stores Apple App Store et Google Play Store."
                 : "Website hosting: Netlify, Inc.\n\nHost website: https://www.netlify.com\n\nThe THOT app is distributed through the Apple App Store and Google Play Store.",
           ),
           _LegalSection(
-            title: isFrench ? 'Propriété intellectuelle' : 'Intellectual property',
+            title: isFrench
+                ? 'Propriété intellectuelle'
+                : 'Intellectual property',
             body: isFrench
                 ? "Les éléments présents sur le site et dans l’application THOT, notamment les textes, la structure, l’interface, le design, le code, les éléments graphiques et les contenus associés, sont protégés par le droit de la propriété intellectuelle et demeurent la propriété de Paola PAVIOT, sauf mention contraire.\n\nLa marque THOT n’est pas déposée à ce jour. Toute reproduction, représentation, adaptation, extraction, copie substantielle, réutilisation ou usage non autorisé du contenu, du code, du design, de la base d’informations ou du nom THOT est interdite sans autorisation préalable écrite."
                 : "Elements available on the website and in the THOT app (including texts, structure, interface, design, code, graphics, and related content) are protected by intellectual property laws and remain the property of Paola PAVIOT unless stated otherwise.\n\nThe THOT trademark is not registered at this time. Any reproduction, representation, adaptation, extraction, substantial copying, reuse, or unauthorized use of the content, code, design, data, or the name THOT is prohibited without prior written permission.",
           ),
           _LegalSection(
-            title: isFrench ? 'Responsabilité' : 'Liability',
+            title: strings.legalLiabilityTitle,
             body: isFrench
                 ? "THOT est présenté comme un outil numérique d’organisation et de suivi personnel. Les informations publiées sur le site ont une vocation informative et peuvent être mises à jour à tout moment.\n\nL’éditeur s’efforce d’assurer l’exactitude des informations disponibles, sans garantir l’absence totale d’erreurs, d’omissions ou d’indisponibilités temporaires.\n\nL’application ne remplace aucune obligation réglementaire, administrative ou légale applicable à l’utilisateur. Celui-ci demeure seul responsable de l’usage de ses équipements, de ses données, de ses déclarations et du respect de la réglementation en vigueur dans son pays.\n\n${strings.diagnosticDisclaimerBody}"
                 : "THOT is presented as a digital organization and personal tracking tool. Information published on the website is provided for informational purposes and may be updated at any time.\n\nThe publisher strives to ensure the accuracy of available information, without guaranteeing the total absence of errors, omissions, or temporary unavailability.\n\nThe app does not replace any regulatory, administrative, or legal obligation applicable to the user. You remain solely responsible for the use of your equipment, your data, your declarations, and compliance with applicable regulations in your country.\n\n${strings.diagnosticDisclaimerBody}",
@@ -341,10 +347,7 @@ class _LegalScreenState extends State<LegalScreen> {
 }
 
 class _TocCard extends StatelessWidget {
-  const _TocCard({
-    required this.chapters,
-    required this.initialChapterId,
-  });
+  const _TocCard({required this.chapters, required this.initialChapterId});
 
   final List<_LegalChapter> chapters;
   final String? initialChapterId;
@@ -366,7 +369,9 @@ class _TocCard extends StatelessWidget {
         children: [
           Text(
             strings.legalChaptersLabel,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
           ),
           const Gap(12),
           ...chapters.map(
@@ -381,9 +386,17 @@ class _TocCard extends StatelessWidget {
                     ),
                   ),
                   if (initialChapterId == c.id)
-                    Icon(Icons.check_circle_rounded, color: colors.primary, size: 18)
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: colors.primary,
+                      size: 18,
+                    )
                   else
-                    Icon(Icons.menu_book_rounded, color: colors.secondary, size: 18),
+                    Icon(
+                      Icons.menu_book_rounded,
+                      color: colors.secondary,
+                      size: 18,
+                    ),
                 ],
               ),
             ),
@@ -475,10 +488,7 @@ class _LegalChapter {
 }
 
 class _LegalSection {
-  const _LegalSection({
-    required this.title,
-    required this.body,
-  });
+  const _LegalSection({required this.title, required this.body});
 
   final String title;
   final String body;

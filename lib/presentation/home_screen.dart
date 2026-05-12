@@ -301,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Limites d'usage désactivées (dev flag ON)",
+            "TEST: Mode Payant désactivé",
             style: const TextStyle(fontSize: 12),
           ),
           behavior: SnackBarBehavior.floating,
@@ -1540,31 +1540,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: Column(
                                   children: [
-                                    AnimatedScale(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.elasticOut,
-                                      scale: isTrained ? 1.05 : 1.0,
-                                      child: AnimatedContainer(
+                                    AnimatedContainer(
                                         duration: const Duration(
                                           milliseconds: 220,
                                         ),
                                         curve: Curves.easeOut,
                                         height: 30,
                                         decoration: BoxDecoration(
-                                          gradient: isTrained
-                                              ? const LinearGradient(
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                  colors: [
-                                                    Color(0xFF799438),
-                                                    Color(0xFF6E7E1D),
-                                                  ],
-                                                )
-                                              : null,
                                           color: isTrained
-                                              ? null
+                                              ? const Color(0xFF5CB85C)
                                               : Colors.white.withValues(
                                                   alpha: 0.15,
                                                 ),
@@ -1603,7 +1587,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           ),
                                         ),
-                                      ),
                                     ),
                                     const Gap(4),
                                     Text(
@@ -1886,7 +1869,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   TextButton(
                     onPressed: () => _showStatisticsModal(context),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(
@@ -2334,21 +2320,27 @@ Map<String, dynamic> _getQuickAction(
           size: 24,
         ),
         'label': strings.quickActionLabelDiagnostic,
-        'onTap': () => context.go('/tools?open=diagnostic&t=${DateTime.now().millisecondsSinceEpoch}'),
+        'onTap': () => context.go(
+          '/tools?open=diagnostic&t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
       };
 
     case 'millieme':
       return {
         'icon': Icon(Icons.straighten_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelMillieme,
-        'onTap': () => context.go('/tools?open=millieme&t=${DateTime.now().millisecondsSinceEpoch}'),
+        'onTap': () => context.go(
+          '/tools?open=millieme&t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
       };
 
     case 'timer':
       return {
         'icon': Icon(Icons.timer_rounded, color: colors.primary, size: 24),
         'label': strings.shortcutTimer,
-        'onTap': () => context.go('/tools?open=timer&t=${DateTime.now().millisecondsSinceEpoch}'),
+        'onTap': () => context.go(
+          '/tools?open=timer&t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
       };
 
     case 'shooting_tables':
@@ -2359,28 +2351,36 @@ Map<String, dynamic> _getQuickAction(
           size: 24,
         ),
         'label': strings.quickActionLabelShootingTables,
-        'onTap': () => context.go('/tools?open=shooting_tables&t=${DateTime.now().millisecondsSinceEpoch}'),
+        'onTap': () => context.go(
+          '/tools?open=shooting_tables&t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
       };
 
     case 'visual_stimuli':
       return {
         'icon': Icon(Icons.palette_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelVisualStimuli,
-        'onTap': () => context.go('/tools?open=visual_stimuli&t=${DateTime.now().millisecondsSinceEpoch}'),
+        'onTap': () => context.go(
+          '/tools?open=visual_stimuli&t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
       };
 
     case 'reaction_exercises':
       return {
         'icon': Icon(Icons.bolt_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelReactionExercises,
-        'onTap': () => context.go('/tools?open=reflexes&t=${DateTime.now().millisecondsSinceEpoch}'),
+        'onTap': () => context.go(
+          '/tools?open=reflexes&t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
       };
 
     case 'calculation_tools':
       return {
         'icon': Icon(Icons.calculate_rounded, color: colors.primary, size: 24),
         'label': strings.quickActionLabelCalculationTools,
-        'onTap': () => context.go('/tools?open=calculations&t=${DateTime.now().millisecondsSinceEpoch}'),
+        'onTap': () => context.go(
+          '/tools?open=calculations&t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
       };
 
     default:

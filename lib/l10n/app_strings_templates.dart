@@ -76,10 +76,10 @@ extension AppStringsTemplates on AppStrings {
   );
 
   String get saveExerciseButton => _pick(
-        fr: "ENREGISTRER L'EXERCICE",
-        en: 'SAVE EXERCISE',
-        de: 'ÜBUNG SPEICHERN',
-        it: 'SALVA ESERCIZIO',
-        es: 'GUARDAR EJERCICIO',
-      );
+    fr: "ENREGISTRER L'EXERCICE",
+    en: 'SAVE EXERCISE',
+    de: 'ÜBUNG SPEICHERN',
+    it: 'SALVA ESERCIZIO',
+    es: 'GUARDAR EJERCICIO',
+  );
 }

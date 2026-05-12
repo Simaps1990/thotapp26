@@ -23,10 +23,10 @@ class ExerciseLevelRecord {
   });
 
   Map<String, dynamic> toJson() => {
-        'level': level,
-        'score': score,
-        'date': date.toIso8601String(),
-      };
+    'level': level,
+    'score': score,
+    'date': date.toIso8601String(),
+  };
 
   factory ExerciseLevelRecord.fromJson(Map<String, dynamic> j) =>
       ExerciseLevelRecord(
@@ -45,7 +45,9 @@ Future<Map<int, ExerciseLevelRecord>> loadLevelRecords(String modeKey) async {
     final decoded = jsonDecode(raw) as List<dynamic>;
     final map = <int, ExerciseLevelRecord>{};
     for (final e in decoded) {
-      final r = ExerciseLevelRecord.fromJson(Map<String, dynamic>.from(e as Map));
+      final r = ExerciseLevelRecord.fromJson(
+        Map<String, dynamic>.from(e as Map),
+      );
       map[r.level] = r; // keep best – handled by save
     }
     return map;
@@ -54,16 +56,20 @@ Future<Map<int, ExerciseLevelRecord>> loadLevelRecords(String modeKey) async {
   }
 }
 
-Future<void> saveLevelRecord(String modeKey, ExerciseLevelRecord record,
-    Map<int, ExerciseLevelRecord> current) async {
+Future<void> saveLevelRecord(
+  String modeKey,
+  ExerciseLevelRecord record,
+  Map<int, ExerciseLevelRecord> current,
+) async {
   final existing = current[record.level];
   if (existing == null || record.score > existing.score) {
     current[record.level] = record;
   }
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString(
-      'exercise_levels_$modeKey',
-      jsonEncode(current.values.map((r) => r.toJson()).toList()));
+    'exercise_levels_$modeKey',
+    jsonEncode(current.values.map((r) => r.toJson()).toList()),
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -249,7 +255,12 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
 
   Widget _buildHeader(ColorScheme colors, TextTheme textStyles, bool isDark) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -282,7 +293,10 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: LightColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -308,7 +322,11 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
                         return Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.star_rounded, color: Colors.orange, size: 14),
+                            Icon(
+                              Icons.star_rounded,
+                              color: Colors.orange,
+                              size: 14,
+                            ),
                             const Gap(2),
                             Text(
                               '$totalStars / $maxPossibleStars',
@@ -329,9 +347,7 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
           const Gap(AppSpacing.sm),
           Text(
             widget.description,
-            style: textStyles.bodySmall?.copyWith(
-              color: colors.secondary,
-            ),
+            style: textStyles.bodySmall?.copyWith(color: colors.secondary),
           ),
           if (widget.instructions.isNotEmpty) ...[
             const Gap(AppSpacing.sm),
@@ -340,17 +356,25 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
               decoration: BoxDecoration(
                 color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.outline.withValues(alpha: 0.45)),
+                border: Border.all(
+                  color: colors.outline.withValues(alpha: 0.45),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline_rounded, size: 16, color: colors.primary),
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: colors.primary,
+                  ),
                   const Gap(8),
                   Expanded(
                     child: Text(
                       widget.instructions,
-                      style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                      style: textStyles.bodySmall?.copyWith(
+                        color: colors.secondary,
+                      ),
                     ),
                   ),
                 ],
@@ -364,7 +388,11 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
     );
   }
 
-  Widget _buildLevelsGrid(ColorScheme colors, TextTheme textStyles, bool isDark) {
+  Widget _buildLevelsGrid(
+    ColorScheme colors,
+    TextTheme textStyles,
+    bool isDark,
+  ) {
     final unlockedUpTo = _unlockedUpTo;
 
     return GridView.builder(
@@ -468,9 +496,7 @@ class _LevelTile extends StatelessWidget {
           color: bg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? LightColors.primary
-                : borderColor,
+            color: isSelected ? LightColors.primary : borderColor,
             width: isSelected ? 2.5 : 1.2,
           ),
           boxShadow: isUnlocked && !isSelected
@@ -482,14 +508,14 @@ class _LevelTile extends StatelessWidget {
                   ),
                 ]
               : isSelected
-                  ? [
-                      BoxShadow(
-                        color: LightColors.primary.withValues(alpha: 0.35),
-                        blurRadius: 12,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
+              ? [
+                  BoxShadow(
+                    color: LightColors.primary.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
         ),
         child: Stack(
           children: [
@@ -566,8 +592,9 @@ class _LevelTile extends StatelessWidget {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(LightColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          LightColors.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -587,7 +614,9 @@ class _LevelTile extends StatelessWidget {
         return Icon(
           filled ? Icons.star_rounded : Icons.star_outline_rounded,
           size: 12,
-          color: filled ? const Color(0xFFFFC107) : colors.onSurface.withValues(alpha: 0.2),
+          color: filled
+              ? const Color(0xFFFFC107)
+              : colors.onSurface.withValues(alpha: 0.2),
         );
       }),
     );

@@ -17,12 +17,7 @@ class PickedFile {
   final String? name;
   final bool isImage;
 
-  const PickedFile._({
-    this.path,
-    this.bytes,
-    this.name,
-    required this.isImage,
-  });
+  const PickedFile._({this.path, this.bytes, this.name, required this.isImage});
 
   static const PickedFile cancelled = PickedFile._(isImage: false);
   bool get isCancelled => path == null && bytes == null;
@@ -174,8 +169,13 @@ abstract final class NativePicker {
       );
       if (result == null || result.files.isEmpty) return PickedFile.cancelled;
       final f = result.files.single;
-      final isImage = ['jpg', 'jpeg', 'png', 'webp', 'heic']
-          .contains((f.extension ?? '').toLowerCase());
+      final isImage = [
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+        'heic',
+      ].contains((f.extension ?? '').toLowerCase());
       return PickedFile._(
         path: kIsWeb ? null : f.path,
         bytes: kIsWeb ? f.bytes : null,

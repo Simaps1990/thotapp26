@@ -56,12 +56,14 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _scaleAnimation = Tween<double>(
+      begin: 0.9,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _targetFollowTicker = createTicker((_) {
       _syncTrackedTargetRect();
     })..start();
@@ -136,8 +138,8 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   @override
   Widget build(BuildContext context) {
     final currentStep = widget.steps[_currentStep];
-    final targetRect = _trackedTargetRect ??
-        _resolveTargetRect(currentStep.targetKey);
+    final targetRect =
+        _trackedTargetRect ?? _resolveTargetRect(currentStep.targetKey);
     final progress = (_currentStep + 1) / widget.steps.length;
 
     return Material(
@@ -145,16 +147,10 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       child: Stack(
         children: [
           Positioned.fill(
-            child: _TutorialScrim(
-              targetRect: targetRect,
-              onTap: _nextStep,
-            ),
+            child: _TutorialScrim(targetRect: targetRect, onTap: _nextStep),
           ),
           if (targetRect != null)
-            _FocusPulse(
-              rect: targetRect,
-              animation: _controller,
-            ),
+            _FocusPulse(rect: targetRect, animation: _controller),
           Positioned.fill(
             child: _TutorialCard(
               title: currentStep.title,
@@ -189,10 +185,7 @@ class _TutorialScrim extends StatelessWidget {
   final Rect? targetRect;
   final VoidCallback onTap;
 
-  const _TutorialScrim({
-    required this.targetRect,
-    required this.onTap,
-  });
+  const _TutorialScrim({required this.targetRect, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -224,9 +217,7 @@ class _SpotlightPainter extends CustomPainter {
     if (targetRect != null) {
       final inflated = targetRect!.inflate(10);
       path
-        ..addRRect(
-          RRect.fromRectAndRadius(inflated, const Radius.circular(16)),
-        )
+        ..addRRect(RRect.fromRectAndRadius(inflated, const Radius.circular(16)))
         ..fillType = PathFillType.evenOdd;
     }
 
@@ -265,10 +256,7 @@ class _FocusPulse extends StatelessWidget {
   final Rect rect;
   final Animation<double> animation;
 
-  const _FocusPulse({
-    required this.rect,
-    required this.animation,
-  });
+  const _FocusPulse({required this.rect, required this.animation});
 
   @override
   Widget build(BuildContext context) {
@@ -417,7 +405,11 @@ class _TutorialCard extends StatelessWidget {
                       const Spacer(),
                       IconButton(
                         onPressed: onSkip,
-                        icon: Icon(Icons.close_rounded, size: 20, color: colors.onSurface.withValues(alpha: 0.65)),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: colors.onSurface.withValues(alpha: 0.65),
+                        ),
                       ),
                     ],
                   ),
@@ -435,17 +427,17 @@ class _TutorialCard extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: colors.onSurface,
-                        ),
+                      fontWeight: FontWeight.w900,
+                      color: colors.onSurface,
+                    ),
                   ),
                   const Gap(AppSpacing.xs),
                   Text(
                     description,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colors.onSurface.withValues(alpha: 0.82),
-                          height: 1.45,
-                        ),
+                      color: colors.onSurface.withValues(alpha: 0.82),
+                      height: 1.45,
+                    ),
                   ),
                   const Gap(AppSpacing.md),
                   Row(
@@ -453,8 +445,9 @@ class _TutorialCard extends StatelessWidget {
                       TextButton(
                         onPressed: onNeverShowAgain,
                         style: TextButton.styleFrom(
-                          foregroundColor:
-                              colors.onSurface.withValues(alpha: 0.65),
+                          foregroundColor: colors.onSurface.withValues(
+                            alpha: 0.65,
+                          ),
                         ),
                         child: Text(
                           strings.tutorialNeverShowAgain,
@@ -479,9 +472,7 @@ class _TutorialCard extends StatelessWidget {
                           currentStep == totalSteps
                               ? strings.tutorialFinish
                               : strings.tutorialNext,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
                     ],

@@ -23,7 +23,8 @@ class ProScreen extends StatefulWidget {
   State<ProScreen> createState() => _ProScreenState();
 }
 
-class _ProScreenState extends State<ProScreen> with SingleTickerProviderStateMixin {
+class _ProScreenState extends State<ProScreen>
+    with SingleTickerProviderStateMixin {
   /// false = mensuel sélectionné (défaut, conforme à la maquette : badge RECOMMANDÉ + trial)
   /// true  = annuel sélectionné
   bool _yearlySelected = false;
@@ -146,7 +147,9 @@ class _ProScreenState extends State<ProScreen> with SingleTickerProviderStateMix
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
                         child: Column(
                           children: [
                             Text(
@@ -169,151 +172,186 @@ class _ProScreenState extends State<ProScreen> with SingleTickerProviderStateMix
                         ),
                       ),
 
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                      child: _ProBenefitsCard(
-                        bgColor: _cardBg,
-                        borderColor: _cardBorder,
-                        benefits: [
-                          _ProBenefitData(
-                            icon: const Icon(Icons.all_inclusive, color: _kakiOliveLight, size: 22),
-                            title: strings.proBenefitCreateTitle,
-                            subtitle: strings.proBenefitCreateSubtitle,
-                          ),
-                          _ProBenefitData(
-                            icon: const Icon(Icons.auto_fix_high_rounded, color: _kakiOliveLight, size: 22),
-                            title: strings.proBenefitToolsTitle,
-                            subtitle: strings.proBenefitToolsSubtitle,
-                          ),
-                          _ProBenefitData(
-                            icon: const Icon(Icons.inventory_2_rounded, color: _kakiOliveLight, size: 22),
-                            title: strings.proBenefitStoreTitle,
-                            subtitle: strings.proBenefitStoreSubtitle,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    if (!provider.isPremium) ...[
-                      const Gap(AppSpacing.lg),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                        child: _ProOfferCardsRow(
-                          yearlySelected: _yearlySelected,
-                          onSelectMonthly: () => setState(() => _yearlySelected = false),
-                          onSelectYearly: () => setState(() => _yearlySelected = true),
-                          kakiOlive: _kakiOlive,
-                          kakiOliveLight: _kakiOliveLight,
-                          cardBg: _cardBg,
-                          cardBorder: _cardBorder,
-                          creamWhite: _creamWhite,
-                          mutedText: _mutedText,
-                        ),
-                      ),
-
-                      const Gap(AppSpacing.lg),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                        child: _ProCtaButton(
-                          label: _yearlySelected
-                              ? strings.proSubscribeNowCta
-                              : strings.proStartTrialCta,
-                          onTap: () => _handleCta(context, provider),
-                          kakiOlive: _kakiOlive,
-                        ),
-                      ),
-
-                      const Gap(AppSpacing.sm),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                        child: Text(
-                          strings.proNoPaymentToday,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: _mutedText,
-                            fontSize: 12.5,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-
-                      const Gap(AppSpacing.md),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.lg,
-                          vertical: AppSpacing.sm,
                         ),
-                        child: _ProFooterLinks(
-                          onPrivacy: () => _openExternalLink(context, _privacyUri),
-                          onTos: () => _openExternalLink(context, _cguUri),
-                          onRestore: () => _restorePurchases(context, provider),
-                          mutedText: _mutedText,
-                          kakiOliveLight: _kakiOliveLight,
-                        ),
-                      ),
-
-                      const Gap(AppSpacing.lg),
-                    ] else ...[
-                      const Gap(AppSpacing.lg),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                        child: Container(
-                          padding: AppSpacing.paddingLg,
-                          decoration: BoxDecoration(
-                            color: _cardBg,
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            border: Border.all(color: _cardBorder),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.verified_rounded, color: _kakiOliveLight),
-                              const Gap(AppSpacing.md),
-                              Expanded(
-                                child: Text(
-                                  strings.proActiveOnAccount,
-                                  style: TextStyle(
-                                    color: _creamWhite,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                        child: _ProBenefitsCard(
+                          bgColor: _cardBg,
+                          borderColor: _cardBorder,
+                          benefits: [
+                            _ProBenefitData(
+                              icon: const Icon(
+                                Icons.all_inclusive,
+                                color: _kakiOliveLight,
+                                size: 22,
                               ),
-                            ],
-                          ),
+                              title: strings.proBenefitCreateTitle,
+                              subtitle: strings.proBenefitCreateSubtitle,
+                            ),
+                            _ProBenefitData(
+                              icon: const Icon(
+                                Icons.auto_fix_high_rounded,
+                                color: _kakiOliveLight,
+                                size: 22,
+                              ),
+                              title: strings.proBenefitToolsTitle,
+                              subtitle: strings.proBenefitToolsSubtitle,
+                            ),
+                            _ProBenefitData(
+                              icon: const Icon(
+                                Icons.inventory_2_rounded,
+                                color: _kakiOliveLight,
+                                size: 22,
+                              ),
+                              title: strings.proBenefitStoreTitle,
+                              subtitle: strings.proBenefitStoreSubtitle,
+                            ),
+                          ],
                         ),
                       ),
 
-                      const Gap(AppSpacing.lg),
+                      if (!provider.isPremium) ...[
+                        const Gap(AppSpacing.lg),
 
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            onPressed: () => _restorePurchases(context, provider),
-                            icon: const Icon(Icons.refresh_rounded, color: _kakiOliveLight),
-                            label: Text(
-                              strings.proRestorePurchases,
-                              style: const TextStyle(color: _kakiOliveLight),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
+                          child: _ProOfferCardsRow(
+                            yearlySelected: _yearlySelected,
+                            onSelectMonthly: () =>
+                                setState(() => _yearlySelected = false),
+                            onSelectYearly: () =>
+                                setState(() => _yearlySelected = true),
+                            kakiOlive: _kakiOlive,
+                            kakiOliveLight: _kakiOliveLight,
+                            cardBg: _cardBg,
+                            cardBorder: _cardBorder,
+                            creamWhite: _creamWhite,
+                            mutedText: _mutedText,
+                          ),
+                        ),
+
+                        const Gap(AppSpacing.lg),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
+                          child: _ProCtaButton(
+                            label: _yearlySelected
+                                ? strings.proSubscribeNowCta
+                                : strings.proStartTrialCta,
+                            onTap: () => _handleCta(context, provider),
+                            kakiOlive: _kakiOlive,
+                          ),
+                        ),
+
+                        const Gap(AppSpacing.sm),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
+                          child: Text(
+                            strings.proNoPaymentToday,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: _mutedText,
+                              fontSize: 12.5,
+                              height: 1.4,
                             ),
                           ),
                         ),
-                      ),
 
-                      const Gap(AppSpacing.lg),
+                        const Gap(AppSpacing.md),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.sm,
+                          ),
+                          child: _ProFooterLinks(
+                            onPrivacy: () =>
+                                _openExternalLink(context, _privacyUri),
+                            onTos: () => _openExternalLink(context, _cguUri),
+                            onRestore: () =>
+                                _restorePurchases(context, provider),
+                            mutedText: _mutedText,
+                            kakiOliveLight: _kakiOliveLight,
+                          ),
+                        ),
+
+                        const Gap(AppSpacing.lg),
+                      ] else ...[
+                        const Gap(AppSpacing.lg),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
+                          child: Container(
+                            padding: AppSpacing.paddingLg,
+                            decoration: BoxDecoration(
+                              color: _cardBg,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(color: _cardBorder),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.verified_rounded,
+                                  color: _kakiOliveLight,
+                                ),
+                                const Gap(AppSpacing.md),
+                                Expanded(
+                                  child: Text(
+                                    strings.proActiveOnAccount,
+                                    style: TextStyle(
+                                      color: _creamWhite,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const Gap(AppSpacing.lg),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: () =>
+                                  _restorePurchases(context, provider),
+                              icon: const Icon(
+                                Icons.refresh_rounded,
+                                color: _kakiOliveLight,
+                              ),
+                              label: Text(
+                                strings.proRestorePurchases,
+                                style: const TextStyle(color: _kakiOliveLight),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const Gap(AppSpacing.lg),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        Positioned(
+          Positioned(
             top: topInset - 8,
             right: 8,
             child: FadeTransition(
@@ -456,10 +494,12 @@ class _TrialBannerText extends StatelessWidget {
 
     for (final match in regex.allMatches(rawText)) {
       if (match.start > lastIndex) {
-        spans.add(TextSpan(
-          text: rawText.substring(lastIndex, match.start),
-          style: baseStyle,
-        ));
+        spans.add(
+          TextSpan(
+            text: rawText.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
       }
       spans.add(TextSpan(text: match.group(1), style: emphasisStyle));
       lastIndex = match.end;
@@ -692,8 +732,9 @@ class _ProOfferCardsRow extends StatelessWidget {
         languageCode == 'it' ||
         languageCode == 'es';
     final numeric = value.toStringAsFixed(2);
-    final localizedNumeric =
-        localeUsesComma ? numeric.replaceAll('.', ',') : numeric;
+    final localizedNumeric = localeUsesComma
+        ? numeric.replaceAll('.', ',')
+        : numeric;
     final raw = storePriceRaw?.trim() ?? '';
     if (raw.isEmpty) return localizedNumeric;
     final symbolPrefixMatch = RegExp(r'^[^0-9]+').firstMatch(raw);
@@ -720,8 +761,10 @@ class _ProOfferCardsRow extends StatelessWidget {
 
     if (yearlyValue != null && monthlyValue != null && monthlyValue > 0) {
       final equivalent = yearlyValue / 12;
-      savingsPercent =
-          ((1 - (equivalent / monthlyValue)) * 100).round().clamp(0, 99);
+      savingsPercent = ((1 - (equivalent / monthlyValue)) * 100).round().clamp(
+        0,
+        99,
+      );
       yearlyEquivalentLabel = strings.proPerMonthEquivalent(
         _formatPriceLikeStore(
           equivalent,
@@ -950,7 +993,10 @@ class _ProOfferCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF363725),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFF6c6948), width: 0.8),
+                  border: Border.all(
+                    color: const Color(0xFF6c6948),
+                    width: 0.8,
+                  ),
                 ),
                 child: Text(
                   topBadge!,
@@ -1126,15 +1172,15 @@ class _ProFooterLinks extends StatelessWidget {
     }
 
     Widget separator() => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            '•',
-            style: TextStyle(
-              color: mutedText.withValues(alpha: 0.5),
-              fontSize: 11.5,
-            ),
-          ),
-        );
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        '•',
+        style: TextStyle(
+          color: mutedText.withValues(alpha: 0.5),
+          fontSize: 11.5,
+        ),
+      ),
+    );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

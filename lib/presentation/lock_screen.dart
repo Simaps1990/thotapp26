@@ -56,11 +56,11 @@ class _LockScreenState extends State<LockScreen> {
       context.go('/');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppStrings.of(context).biometricUnavailable),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        SnackBar(
+          content: Text(AppStrings.of(context).biometricUnavailable),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -124,7 +124,7 @@ class _LockScreenState extends State<LockScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              
+
               // App Logo/Title
               Icon(Icons.lock_rounded, size: 64, color: colors.primary),
               const Gap(16),
@@ -164,7 +164,7 @@ class _LockScreenState extends State<LockScreen> {
                   );
                 }),
               ),
-              
+
               if (_isLockedOut) ...[
                 const Gap(16),
                 Text(
@@ -207,7 +207,10 @@ class _LockScreenState extends State<LockScreen> {
                             return const SizedBox(width: 72);
                           },
                         ),
-                        _NumberButton(label: '0', onPressed: () => _onNumberPressed('0')),
+                        _NumberButton(
+                          label: '0',
+                          onPressed: () => _onNumberPressed('0'),
+                        ),
                         _NumberButton(
                           icon: Icons.backspace_outlined,
                           onPressed: _onDeletePressed,
@@ -230,8 +233,12 @@ class _LockScreenState extends State<LockScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: numbers
-          .map((digit) =>
-              _NumberButton(label: digit, onPressed: () => _onNumberPressed(digit)))
+          .map(
+            (digit) => _NumberButton(
+              label: digit,
+              onPressed: () => _onNumberPressed(digit),
+            ),
+          )
           .toList(),
     );
   }

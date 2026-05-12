@@ -30,7 +30,6 @@ class _InventoryScreenState extends State<InventoryScreen>
   late TabController _tabController;
   final _searchController = TextEditingController();
   String _searchQuery = '';
-  bool _compactInventoryView = false;
   final GlobalKey _menuSearchKey = GlobalKey();
   OverlayEntry? _tutorialOverlayEntry;
   static const _tutorialNeverShowAgainKey =
@@ -427,34 +426,16 @@ class _InventoryScreenState extends State<InventoryScreen>
                       type: 'platform',
                       provider: provider,
                       searchQuery: _searchQuery,
-                      compactView: _compactInventoryView,
-                      onToggleCompactView: () {
-                        setState(
-                          () => _compactInventoryView = !_compactInventoryView,
-                        );
-                      },
                     ),
                     _InventoryList(
                       type: 'ammo',
                       provider: provider,
                       searchQuery: _searchQuery,
-                      compactView: _compactInventoryView,
-                      onToggleCompactView: () {
-                        setState(
-                          () => _compactInventoryView = !_compactInventoryView,
-                        );
-                      },
                     ),
                     _InventoryList(
                       type: 'accessory',
                       provider: provider,
                       searchQuery: _searchQuery,
-                      compactView: _compactInventoryView,
-                      onToggleCompactView: () {
-                        setState(
-                          () => _compactInventoryView = !_compactInventoryView,
-                        );
-                      },
                     ),
                   ],
                 ),
@@ -564,15 +545,11 @@ class _InventoryList extends StatelessWidget {
   final String type;
   final ThotProvider provider;
   final String searchQuery;
-  final bool compactView;
-  final VoidCallback onToggleCompactView;
 
   const _InventoryList({
     required this.type,
     required this.provider,
     required this.searchQuery,
-    required this.compactView,
-    required this.onToggleCompactView,
   });
   String _formatLastUse(DateTime? lastUsed) {
     if (lastUsed == null) return '—';
@@ -821,28 +798,11 @@ class _InventoryList extends StatelessWidget {
 
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
-      itemCount: filtered.length + 1,
+      itemCount: filtered.length,
       separatorBuilder: (_, __) => const Gap(16),
       itemBuilder: (context, index) {
-        if (index == 0) {
-          return Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: onToggleCompactView,
-              icon: Icon(
-                compactView
-                    ? Icons.view_agenda_rounded
-                    : Icons.view_compact_rounded,
-                size: 18,
-              ),
-              label: Text(compactView ? 'Vue détaillée' : 'Vue compacte'),
-            ),
-          );
-        }
-
-        final itemIndex = index - 1;
         if (type == 'platform') {
-          final w = filtered[itemIndex] as Platform;
+          final w = filtered[index] as Platform;
           final originalIndex = provider.platforms.indexOf(w);
           final isLocked = provider.isPlatformLockedForFree(w, originalIndex);
           return _InventoryCard(
@@ -857,7 +817,6 @@ class _InventoryList extends StatelessWidget {
             lastUse: _formatLastUse(w.lastUsed),
             badges: _platformBadges(w),
             typeAccentColor: _typeAccentColor('platform'),
-            compactView: compactView,
             svgIconAsset: 'assets/images/tube.svg',
             icon: Icons.security_rounded,
             photoPath: w.photoPath,
@@ -879,7 +838,7 @@ class _InventoryList extends StatelessWidget {
             },
           );
         } else if (type == 'ammo') {
-          final a = filtered[itemIndex] as Ammo;
+          final a = filtered[index] as Ammo;
           final originalIndex = provider.ammos.indexOf(a);
           final isLocked = provider.isAmmoLockedForFree(a, originalIndex);
           return _InventoryCard(
@@ -896,7 +855,6 @@ class _InventoryList extends StatelessWidget {
             lastUse: _formatLastUse(a.lastUsed),
             badges: _ammoBadges(a),
             typeAccentColor: _typeAccentColor('ammo'),
-            compactView: compactView,
             svgIconAsset: 'assets/images/pointe.svg',
             icon: Icons.inventory_2_rounded,
             photoPath: a.photoPath,
@@ -918,7 +876,7 @@ class _InventoryList extends StatelessWidget {
             },
           );
         } else {
-          final ac = filtered[itemIndex] as Accessory;
+          final ac = filtered[index] as Accessory;
           final originalIndex = provider.accessories.indexOf(ac);
           final isLocked = provider.isAccessoryLockedForFree(ac, originalIndex);
           return _InventoryCard(
@@ -940,7 +898,6 @@ class _InventoryList extends StatelessWidget {
             lastUse: _formatLastUse(ac.lastUsed),
             badges: _accessoryBadges(ac),
             typeAccentColor: _typeAccentColor('accessory'),
-            compactView: compactView,
             icon: Icons.inventory_2_rounded,
             photoPath: ac.photoPath,
             isLocked: isLocked,
@@ -1038,7 +995,6 @@ class _InventoryCard extends StatelessWidget {
   final String lastUse;
   final List<_InventoryStatusBadge> badges;
   final Color typeAccentColor;
-  final bool compactView;
   final String? svgIconAsset;
   final IconData icon;
   final String? photoPath;
@@ -1058,7 +1014,6 @@ class _InventoryCard extends StatelessWidget {
     required this.lastUse,
     required this.badges,
     required this.typeAccentColor,
-    required this.compactView,
     this.svgIconAsset,
     required this.icon,
     this.photoPath,
@@ -1083,9 +1038,7 @@ class _InventoryCard extends StatelessWidget {
             : () => context.push('/inventory/detail/$itemId'),
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: compactView
-              ? const EdgeInsets.all(12)
-              : AppSpacing.paddingMd,
+          padding: AppSpacing.paddingMd,
           decoration: BoxDecoration(
             color: colors.surface,
             borderRadius: BorderRadius.circular(16),
@@ -1104,8 +1057,8 @@ class _InventoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: compactView ? 48 : 60,
-                      height: compactView ? 48 : 60,
+                      width: 60,
+                      height: 60,
                       decoration: BoxDecoration(
                         color: typeAccentColor.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(16),
@@ -1115,8 +1068,8 @@ class _InventoryCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(16),
                               child: CrossPlatformImage(
                                 filePath: photoPath,
-                                width: compactView ? 48 : 60,
-                                height: compactView ? 48 : 60,
+                                width: 60,
+                                height: 60,
                                 fit: BoxFit.cover,
                               ),
                             )
@@ -1124,8 +1077,8 @@ class _InventoryCard extends StatelessWidget {
                               child: svgIconAsset != null
                                   ? SvgPicture.asset(
                                       svgIconAsset!,
-                                      width: compactView ? 40 : 52,
-                                      height: compactView ? 40 : 52,
+                                      width: 52,
+                                      height: 52,
                                       colorFilter: ColorFilter.mode(
                                         typeAccentColor,
                                         BlendMode.srcIn,
@@ -1133,7 +1086,7 @@ class _InventoryCard extends StatelessWidget {
                                     )
                                   : Icon(
                                       icon,
-                                      size: compactView ? 40 : 52,
+                                      size: 52,
                                       color: typeAccentColor,
                                     ),
                             ),
@@ -1181,10 +1134,10 @@ class _InventoryCard extends StatelessWidget {
                             style: textStyles.bodySmall?.copyWith(
                               color: colors.secondary,
                             ),
-                            maxLines: compactView ? 1 : 2,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (!compactView && badges.isNotEmpty) ...[
+                          if (badges.isNotEmpty) ...[
                             const Gap(8),
                             Wrap(
                               spacing: 6,
@@ -1202,103 +1155,61 @@ class _InventoryCard extends StatelessWidget {
                   ],
                 ),
 
-                if (!compactView) ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(height: 1),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                statLabel,
-                                style: textStyles.labelSmall?.copyWith(
-                                  color: colors.secondary,
-                                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              statLabel,
+                              style: textStyles.labelSmall?.copyWith(
+                                color: colors.secondary,
                               ),
-                              Text(
-                                statValue,
-                                style: textStyles.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isLow
-                                      ? colors.error
-                                      : colors.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Gap(24),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                strings.lastSession,
-                                style: textStyles.labelSmall?.copyWith(
-                                  color: colors.secondary,
-                                ),
-                              ),
-                              Text(
-                                lastUse,
-                                style: textStyles.bodyMedium?.copyWith(
-                                  color: colors.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      _InventoryCardMenu(
-                        isLocked: isLocked,
-                        onEdit: onEdit,
-                        onDelete: onDelete,
-                        onDuplicate: onDuplicate,
-                      ),
-                    ],
-                  ),
-                ],
-
-                if (compactView) ...[
-                  const Gap(8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (badges.isNotEmpty)
-                        Expanded(
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: badges
-                                .take(2)
-                                .map((badge) => _StatusBadgeChip(badge: badge))
-                                .toList(),
-                          ),
-                        )
-                      else
-                        Expanded(
-                          child: Text(
-                            '$statLabel : $statValue',
-                            style: textStyles.labelSmall?.copyWith(
-                              color: isLow ? colors.error : colors.secondary,
-                              fontWeight: FontWeight.w700,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            Text(
+                              statValue,
+                              style: textStyles.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isLow ? colors.error : colors.onSurface,
+                              ),
+                            ),
+                          ],
                         ),
-                      _InventoryCardMenu(
-                        isLocked: isLocked,
-                        onEdit: onEdit,
-                        onDelete: onDelete,
-                        onDuplicate: onDuplicate,
-                      ),
-                    ],
-                  ),
-                ],
+                        const Gap(24),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.lastSession,
+                              style: textStyles.labelSmall?.copyWith(
+                                color: colors.secondary,
+                              ),
+                            ),
+                            Text(
+                              lastUse,
+                              style: textStyles.bodyMedium?.copyWith(
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    _InventoryCardMenu(
+                      isLocked: isLocked,
+                      onEdit: onEdit,
+                      onDelete: onDelete,
+                      onDuplicate: onDuplicate,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

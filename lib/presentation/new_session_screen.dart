@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +20,7 @@ import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/utils/native_picker.dart';
+
 class _CitySuggestion {
   final String name;
   final String countryCode;
@@ -76,7 +78,8 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
   bool _exercisesError = false;
 
   DateTime _selectedDate = DateTime.now();
-  String _sessionType = 'Personnel'; // Stored as internal key, displayed via AppStrings
+  String _sessionType =
+      'Personnel'; // Stored as internal key, displayed via AppStrings
 
   // Weather
   bool _weatherEnabled = false;
@@ -113,45 +116,46 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
     }
   }
 
-void _loadSession() {
-  final provider = Provider.of<ThotProvider>(context, listen: false);
+  void _loadSession() {
+    final provider = Provider.of<ThotProvider>(context, listen: false);
 
-  try {
-    final session =
-        provider.sessions.firstWhere((s) => s.id == widget.sessionId);
+    try {
+      final session = provider.sessions.firstWhere(
+        (s) => s.id == widget.sessionId,
+      );
 
-    setState(() {
-      _nameController.text = session.name;
-      _locationController.text = session.location;
-      _shootingDistanceController.text = session.shootingDistance ?? '';
-      _selectedDate = session.date;
-      _sessionType = session.sessionType;
-      _weatherEnabled = session.weatherEnabled;
-      _tempController.text = session.temperature;
-      _windController.text = session.wind;
-      _humidityController.text = session.humidity;
-      _pressureController.text = session.pressure;
-      _tempEnabled = session.temperatureEnabled;
-      _windEnabled = session.windEnabled;
-      _humidityEnabled = session.humidityEnabled;
-      _pressureEnabled = session.pressureEnabled;
-      _exercises = List.from(session.exercises);
+      setState(() {
+        _nameController.text = session.name;
+        _locationController.text = session.location;
+        _shootingDistanceController.text = session.shootingDistance ?? '';
+        _selectedDate = session.date;
+        _sessionType = session.sessionType;
+        _weatherEnabled = session.weatherEnabled;
+        _tempController.text = session.temperature;
+        _windController.text = session.wind;
+        _humidityController.text = session.humidity;
+        _pressureController.text = session.pressure;
+        _tempEnabled = session.temperatureEnabled;
+        _windEnabled = session.windEnabled;
+        _humidityEnabled = session.humidityEnabled;
+        _pressureEnabled = session.pressureEnabled;
+        _exercises = List.from(session.exercises);
 
-      _selectedCityLatitude = session.locationLatitude;
-      _selectedCityLongitude = session.locationLongitude;
+        _selectedCityLatitude = session.locationLatitude;
+        _selectedCityLongitude = session.locationLongitude;
 
-      final rawLocation = session.location.trim();
-      if (rawLocation.contains(',')) {
-        final parts = rawLocation.split(',');
-        if (parts.isEmpty) {
-          // keep location as typed; no additional metadata to store here
+        final rawLocation = session.location.trim();
+        if (rawLocation.contains(',')) {
+          final parts = rawLocation.split(',');
+          if (parts.isEmpty) {
+            // keep location as typed; no additional metadata to store here
+          }
         }
-      }
-    });
-  } catch (e) {
-    debugPrint('Error loading session: $e');
+      });
+    } catch (e) {
+      debugPrint('Error loading session: $e');
+    }
   }
-}
 
   Widget _buildHeader({
     required ColorScheme colors,
@@ -159,7 +163,14 @@ void _loadSession() {
     required double topInset,
   }) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, defaultTargetPlatform == TargetPlatform.iOS ? (topInset / 2 + 30) : (topInset + 30), 20, 12),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        defaultTargetPlatform == TargetPlatform.iOS
+            ? (topInset / 2 + 30)
+            : (topInset + 30),
+        20,
+        12,
+      ),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.outline)),
@@ -171,8 +182,9 @@ void _loadSession() {
             child: Text(
               strings.newSessionTitle,
               textAlign: TextAlign.center,
-              style: textStyles.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: textStyles.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           IconButton(
@@ -194,11 +206,7 @@ void _loadSession() {
       // Session Type
       Row(
         children: [
-          Icon(
-            Icons.tune_rounded,
-            size: 18,
-            color: colors.primary,
-          ),
+          Icon(Icons.tune_rounded, size: 18, color: colors.primary),
           const Gap(8),
           Text(
             strings.sessionTypeLabel.toUpperCase(),
@@ -249,8 +257,9 @@ void _loadSession() {
               decoration: InputDecoration(
                 labelText: strings.sessionNameLabel,
                 hintText: strings.sessionNameHint,
-                hintStyle: textStyles.bodyMedium
-                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
+                hintStyle: textStyles.bodyMedium?.copyWith(
+                  color: colors.onSurface.withAlpha(100),
+                ),
                 errorText: null,
                 filled: true,
                 fillColor: colors.surface,
@@ -329,61 +338,65 @@ void _loadSession() {
           onSelected: (city) async {
             await _onCitySelected(city);
           },
-          fieldViewBuilder: (
-            BuildContext context,
-            TextEditingController textEditingController,
-            FocusNode focusNode,
-            VoidCallback onFieldSubmitted,
-          ) {
-            return TextFormField(
-              controller: textEditingController,
-              focusNode: focusNode,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => onFieldSubmitted(),
-              onChanged: (value) {
-                if (_isApplyingCitySelection) return;
+          fieldViewBuilder:
+              (
+                BuildContext context,
+                TextEditingController textEditingController,
+                FocusNode focusNode,
+                VoidCallback onFieldSubmitted,
+              ) {
+                return TextFormField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => onFieldSubmitted(),
+                  onChanged: (value) {
+                    if (_isApplyingCitySelection) return;
 
-                setState(() {
-                  if (_locationError && value.trim().isNotEmpty) {
-                    _locationError = false;
-                  }
+                    setState(() {
+                      if (_locationError && value.trim().isNotEmpty) {
+                        _locationError = false;
+                      }
 
-                  _citySearchError = false;
-                  _selectedCityLatitude = null;
-                  _selectedCityLongitude = null;
-                  _weatherEnabled = false;
-                  _tempController.clear();
-                  _windController.clear();
-                  _humidityController.clear();
-                  _pressureController.clear();
-                });
+                      _citySearchError = false;
+                      _selectedCityLatitude = null;
+                      _selectedCityLongitude = null;
+                      _weatherEnabled = false;
+                      _tempController.clear();
+                      _windController.clear();
+                      _humidityController.clear();
+                      _pressureController.clear();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: strings.locationLabel,
+                    hintText: strings.locationHint,
+                    hintStyle: textStyles.bodyMedium?.copyWith(
+                      color: colors.onSurface.withAlpha(100),
+                    ),
+                    errorText: _locationError
+                        ? strings.locationRequiredForWeather
+                        : (_citySearchError
+                              ? strings.citySearchUnavailable
+                              : null),
+                    prefixIcon: const Icon(Icons.place_rounded),
+                    filled: true,
+                    fillColor: colors.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide(color: colors.outline),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide(color: colors.outline),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide(color: colors.outline),
+                    ),
+                  ),
+                );
               },
-              decoration: InputDecoration(
-                labelText: strings.locationLabel,
-                hintText: strings.locationHint,
-                hintStyle: textStyles.bodyMedium
-                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
-                errorText: _locationError
-                    ? strings.locationRequiredForWeather
-                    : (_citySearchError ? strings.citySearchUnavailable : null),
-                prefixIcon: const Icon(Icons.place_rounded),
-                filled: true,
-                fillColor: colors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.outline),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.outline),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.outline),
-                ),
-              ),
-            );
-          },
         ),
       ),
 
@@ -394,8 +407,9 @@ void _loadSession() {
         decoration: InputDecoration(
           labelText: strings.shootingDistanceLabel,
           hintText: strings.shootingDistanceHint,
-          hintStyle: textStyles.bodyMedium
-              ?.copyWith(color: colors.onSurface.withAlpha(100)),
+          hintStyle: textStyles.bodyMedium?.copyWith(
+            color: colors.onSurface.withAlpha(100),
+          ),
           filled: true,
           fillColor: colors.surface,
           border: OutlineInputBorder(
@@ -414,7 +428,6 @@ void _loadSession() {
       ),
 
       const Gap(AppSpacing.md),
-
     ];
   }
 
@@ -431,10 +444,7 @@ void _loadSession() {
           'assets/images/seance.svg',
           width: 18,
           height: 18,
-          colorFilter: ColorFilter.mode(
-            colors.primary,
-            BlendMode.srcIn,
-          ),
+          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
         ),
         title: strings.sessionSummaryTitle,
       ),
@@ -474,17 +484,13 @@ void _loadSession() {
     required ThotProvider provider,
   }) {
     return [
-
-  // Exercises Section
+      // Exercises Section
       _SectionHeader(
         leading: SvgPicture.asset(
           'assets/images/train.svg',
           width: 18,
           height: 18,
-          colorFilter: ColorFilter.mode(
-            colors.primary,
-            BlendMode.srcIn,
-          ),
+          colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
         ),
         title: strings.exercisesSectionTitle,
       ),
@@ -504,7 +510,10 @@ void _loadSession() {
                 ),
               ),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
@@ -524,7 +533,10 @@ void _loadSession() {
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
@@ -568,9 +580,10 @@ void _loadSession() {
                           style: textStyles.bodyMedium?.copyWith(
                             color: _exercisesError
                                 ? colors.error
-                                : (Theme.of(context).brightness == Brightness.dark
-                                    ? colors.onSurface
-                                    : colors.outline),
+                                : (Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? colors.onSurface
+                                      : colors.outline),
                           ),
                         ),
                       ],
@@ -593,15 +606,15 @@ void _loadSession() {
                     }),
                     onMoveUp: index > 0
                         ? () => setState(() {
-                              final e = _exercises.removeAt(index);
-                              _exercises.insert(index - 1, e);
-                            })
+                            final e = _exercises.removeAt(index);
+                            _exercises.insert(index - 1, e);
+                          })
                         : null,
                     onMoveDown: index < _exercises.length - 1
                         ? () => setState(() {
-                              final e = _exercises.removeAt(index);
-                              _exercises.insert(index + 1, e);
-                            })
+                            final e = _exercises.removeAt(index);
+                            _exercises.insert(index + 1, e);
+                          })
                         : null,
                   );
                 }).toList(),
@@ -616,7 +629,6 @@ void _loadSession() {
     required TextTheme textStyles,
     required UnitConverter converter,
   }) {
-
     return [
       // Weather Section
       Row(
@@ -630,10 +642,7 @@ void _loadSession() {
             ),
             title: strings.weatherConditionsTitle,
           ),
-          Switch(
-            value: _weatherEnabled,
-            onChanged: _onWeatherToggled,
-          ),
+          Switch(value: _weatherEnabled, onChanged: _onWeatherToggled),
         ],
       ),
       if (_weatherEnabled) ...[
@@ -656,8 +665,9 @@ void _loadSession() {
                 Expanded(
                   child: Text(
                     strings.weatherLoadingText,
-                    style: textStyles.bodySmall
-                        ?.copyWith(color: colors.secondary),
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.secondary,
+                    ),
                   ),
                 ),
               ],
@@ -684,8 +694,8 @@ void _loadSession() {
                 hintText: '1013 hPa',
                 prefixIcon: Icons.compress_rounded,
                 enabled: _pressureEnabled,
-                onToggleEnabled: () => setState(
-                    () => _pressureEnabled = !_pressureEnabled),
+                onToggleEnabled: () =>
+                    setState(() => _pressureEnabled = !_pressureEnabled),
               ),
             ),
           ],
@@ -697,8 +707,7 @@ void _loadSession() {
               child: WeatherEditableField(
                 controller: _windController,
                 labelText: strings.windLabel,
-                hintText:
-                    converter.useMetric ? '12 km/h' : '7 mph',
+                hintText: converter.useMetric ? '12 km/h' : '7 mph',
                 prefixIcon: Icons.air_rounded,
                 enabled: _windEnabled,
                 onToggleEnabled: () =>
@@ -713,8 +722,8 @@ void _loadSession() {
                 hintText: '45%',
                 prefixIcon: Icons.water_drop_rounded,
                 enabled: _humidityEnabled,
-                onToggleEnabled: () => setState(
-                    () => _humidityEnabled = !_humidityEnabled),
+                onToggleEnabled: () =>
+                    setState(() => _humidityEnabled = !_humidityEnabled),
               ),
             ),
           ],
@@ -744,58 +753,57 @@ void _loadSession() {
         body: GestureDetector(
           onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: SafeArea(
-          top: false,
-          bottom: false,
-          child: Column(
-            children: [
-              _buildHeader(
-                colors: colors,
-                textStyles: textStyles,
-                topInset: MediaQuery.paddingOf(context).top,
-              ),
+            top: false,
+            bottom: false,
+            child: Column(
+              children: [
+                _buildHeader(
+                  colors: colors,
+                  textStyles: textStyles,
+                  topInset: MediaQuery.paddingOf(context).top,
+                ),
 
-              Expanded(
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  controller: _sessionScrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ..._buildGeneralInfoSection(
-                        context: context,
-                        colors: colors,
-                        textStyles: textStyles,
-                      ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    controller: _sessionScrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ..._buildGeneralInfoSection(
+                          context: context,
+                          colors: colors,
+                          textStyles: textStyles,
+                        ),
 
-                    ..._buildWeatherSection(
-                      colors: colors,
-                      textStyles: textStyles,
-                      converter: converter,
+                        ..._buildWeatherSection(
+                          colors: colors,
+                          textStyles: textStyles,
+                          converter: converter,
+                        ),
+
+                        ..._buildExercisesSection(
+                          colors: colors,
+                          textStyles: textStyles,
+                          provider: provider,
+                        ),
+
+                        ..._buildSummarySection(
+                          colors: colors,
+                          provider: provider,
+                        ),
+
+                        ..._buildSaveSection(colors: colors),
+                        SizedBox(height: MediaQuery.paddingOf(context).bottom),
+                      ],
                     ),
-
-                    ..._buildExercisesSection(
-                      colors: colors,
-                      textStyles: textStyles,
-                      provider: provider,
-                    ),
-
-                      ..._buildSummarySection(
-                        colors: colors,
-                        provider: provider,
-                      ),
-
-                      ..._buildSaveSection(colors: colors),
-                      SizedBox(
-                        height: MediaQuery.paddingOf(context).bottom,
-                      ),
-                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -911,7 +919,9 @@ void _loadSession() {
           child: Container(
             decoration: BoxDecoration(
               color: baseBackground,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: _ExerciseForm(
               exercise: template,
@@ -943,7 +953,9 @@ void _loadSession() {
           child: Container(
             decoration: BoxDecoration(
               color: baseBackground,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: _ExerciseForm(
               exercise: _exercises[index],
@@ -961,7 +973,6 @@ void _loadSession() {
       },
     );
   }
-
 
   void _saveSession() async {
     setState(() {
@@ -990,24 +1001,23 @@ void _loadSession() {
       return;
     }
 
-final session = Session(
-  id: widget.sessionId ??
-      DateTime.now().millisecondsSinceEpoch.toString(),
-  name: _nameController.text.trim(),
-  date: _selectedDate,
-  location: _locationController.text.trim(),
-  shootingDistance: _shootingDistanceController.text.isEmpty
-      ? null
-      : _shootingDistanceController.text,
-  locationLatitude: _selectedCityLatitude,
-  locationLongitude: _selectedCityLongitude,
-  sessionType: _sessionType,
-  exercises: _exercises,
-  weatherEnabled: _weatherEnabled,
-  temperature: _tempController.text,
-  wind: _windController.text,
-  humidity: _humidityController.text,
-  pressure: _pressureController.text,
+    final session = Session(
+      id: widget.sessionId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _nameController.text.trim(),
+      date: _selectedDate,
+      location: _locationController.text.trim(),
+      shootingDistance: _shootingDistanceController.text.isEmpty
+          ? null
+          : _shootingDistanceController.text,
+      locationLatitude: _selectedCityLatitude,
+      locationLongitude: _selectedCityLongitude,
+      sessionType: _sessionType,
+      exercises: _exercises,
+      weatherEnabled: _weatherEnabled,
+      temperature: _tempController.text,
+      wind: _windController.text,
+      humidity: _humidityController.text,
+      pressure: _pressureController.text,
       temperatureEnabled: _tempEnabled,
       windEnabled: _windEnabled,
       humidityEnabled: _humidityEnabled,
@@ -1015,7 +1025,8 @@ final session = Session(
       platformIds: {
         for (final ex in _exercises)
           ...ex.platformShotImpact.keys.where(
-            (wid) => wid.trim().isNotEmpty && wid != 'none' && wid != 'borrowed',
+            (wid) =>
+                wid.trim().isNotEmpty && wid != 'none' && wid != 'borrowed',
           ),
       }.toList(growable: false),
     );
@@ -1088,6 +1099,7 @@ final session = Session(
 
     context.pop();
   }
+
   @override
   void dispose() {
     _cityDebounce?.cancel();
@@ -1102,6 +1114,7 @@ final session = Session(
     _pressureController.dispose();
     super.dispose();
   }
+
   Future<List<_CitySuggestion>> _searchCitiesDebounced(String query) {
     _cityDebounce?.cancel();
     final completer = Completer<List<_CitySuggestion>>();
@@ -1122,107 +1135,104 @@ final session = Session(
   }
 
   Future<List<_CitySuggestion>> _searchCities(String query) async {
-  final trimmed = query.trim();
-  if (trimmed.length < 2) return const [];
+    final trimmed = query.trim();
+    if (trimmed.length < 2) return const [];
 
-  try {
-    final uri = Uri.https(
-      'geocoding-api.open-meteo.com',
-      '/v1/search',
-      <String, String>{
-        'name': trimmed,
-        'count': '8',
-        'format': 'json',
-      },
-    );
+    try {
+      final uri = Uri.https(
+        'geocoding-api.open-meteo.com',
+        '/v1/search',
+        <String, String>{'name': trimmed, 'count': '8', 'format': 'json'},
+      );
 
-    final res = await http.get(uri).timeout(const Duration(seconds: 10));
+      final res = await http.get(uri).timeout(const Duration(seconds: 10));
 
-    if (res.statusCode != 200) {
-      throw Exception('HTTP ${res.statusCode}');
-    }
+      if (res.statusCode != 200) {
+        throw Exception('HTTP ${res.statusCode}');
+      }
 
-    final decoded = jsonDecode(utf8.decode(res.bodyBytes));
-    final results =
-        decoded is Map<String, dynamic> ? decoded['results'] as List? : null;
+      final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+      final results = decoded is Map<String, dynamic>
+          ? decoded['results'] as List?
+          : null;
 
-    if (results == null) {
-      if (mounted) {
+      if (results == null) {
+        if (mounted) {
+          setState(() => _citySearchError = false);
+        }
+        return const [];
+      }
+
+      final suggestions = <_CitySuggestion>[];
+
+      for (final item in results) {
+        if (item is! Map<String, dynamic>) continue;
+
+        final name = (item['name'] as String?)?.trim();
+        final country =
+            (item['country'] as String?)?.trim() ??
+            (item['country_code'] as String?)?.trim().toUpperCase() ??
+            '';
+        final lat = (item['latitude'] as num?)?.toDouble();
+        final lon = (item['longitude'] as num?)?.toDouble();
+
+        if (name == null || name.isEmpty) continue;
+        if (country.isEmpty) continue;
+        if (lat == null || lon == null) continue;
+
+        suggestions.add(
+          _CitySuggestion(
+            name: name,
+            countryCode: country,
+            latitude: lat,
+            longitude: lon,
+          ),
+        );
+      }
+
+      if (mounted && _citySearchError) {
         setState(() => _citySearchError = false);
       }
+
+      debugPrint('City query "$trimmed" -> ${suggestions.length} result(s)');
+      return suggestions;
+    } catch (e) {
+      debugPrint('City search failed for "$trimmed": $e');
+
+      if (mounted) {
+        setState(() => _citySearchError = true);
+      }
+
       return const [];
     }
-
-    final suggestions = <_CitySuggestion>[];
-
-    for (final item in results) {
-      if (item is! Map<String, dynamic>) continue;
-
-      final name = (item['name'] as String?)?.trim();
-      final country =
-          (item['country'] as String?)?.trim() ??
-          (item['country_code'] as String?)?.trim().toUpperCase() ??
-          '';
-      final lat = (item['latitude'] as num?)?.toDouble();
-      final lon = (item['longitude'] as num?)?.toDouble();
-
-      if (name == null || name.isEmpty) continue;
-      if (country.isEmpty) continue;
-      if (lat == null || lon == null) continue;
-
-      suggestions.add(
-        _CitySuggestion(
-          name: name,
-          countryCode: country,
-          latitude: lat,
-          longitude: lon,
-        ),
-      );
-    }
-
-    if (mounted && _citySearchError) {
-      setState(() => _citySearchError = false);
-    }
-
-    debugPrint('City query "$trimmed" -> ${suggestions.length} result(s)');
-    return suggestions;
-  } catch (e) {
-    debugPrint('City search failed for "$trimmed": $e');
-
-    if (mounted) {
-      setState(() => _citySearchError = true);
-    }
-
-    return const [];
   }
-}
 
   Future<void> _onCitySelected(_CitySuggestion city) async {
-  _isApplyingCitySelection = true;
+    _isApplyingCitySelection = true;
 
-  _locationController.text = city.label;
-  _locationController.selection = TextSelection.collapsed(
-    offset: _locationController.text.length,
-  );
-
-  setState(() {
-    _selectedCityLatitude = city.latitude;
-    _selectedCityLongitude = city.longitude;
-    _locationError = false;
-    _citySearchError = false;
-  });
-
-  try {
-    await _autofillWeatherForCoordinates(
-      lat: city.latitude,
-      lon: city.longitude,
+    _locationController.text = city.label;
+    _locationController.selection = TextSelection.collapsed(
+      offset: _locationController.text.length,
     );
-  } finally {
-    _isApplyingCitySelection = false;
-  }
-}
 
-   Future<void> _onWeatherToggled(bool enabled) async {
+    setState(() {
+      _selectedCityLatitude = city.latitude;
+      _selectedCityLongitude = city.longitude;
+      _locationError = false;
+      _citySearchError = false;
+    });
+
+    try {
+      await _autofillWeatherForCoordinates(
+        lat: city.latitude,
+        lon: city.longitude,
+      );
+    } finally {
+      _isApplyingCitySelection = false;
+    }
+  }
+
+  Future<void> _onWeatherToggled(bool enabled) async {
     if (!enabled) {
       setState(() {
         _weatherEnabled = false;
@@ -1403,8 +1413,9 @@ class WeatherEditableField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        hintStyle: textStyles.bodyMedium
-            ?.copyWith(color: colors.onSurface.withAlpha(100)),
+        hintStyle: textStyles.bodyMedium?.copyWith(
+          color: colors.onSurface.withAlpha(100),
+        ),
         prefixIcon: Icon(prefixIcon, size: 20),
         filled: true,
         fillColor: colors.surface,
@@ -1463,15 +1474,14 @@ class _SectionHeader extends StatelessWidget {
           child: leading,
         ),
         const Gap(8),
-        Text(title.toUpperCase(),
-            style: Theme.of(context)
-                .textTheme
-                .labelLarge
-                ?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: colors.onSurface,
-                  letterSpacing: 1.1,
-                )),
+        Text(
+          title.toUpperCase(),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: colors.onSurface,
+            letterSpacing: 1.1,
+          ),
+        ),
       ],
     );
   }
@@ -1509,9 +1519,7 @@ class _SlidingSegmentedSelector extends StatelessWidget {
           decoration: BoxDecoration(
             color: chipGray,
             borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
-              color: subtleBorderColor,
-            ),
+            border: Border.all(color: subtleBorderColor),
           ),
           child: Stack(
             children: [
@@ -1543,8 +1551,9 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppRadius.full),
                           child: Center(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: Text(
                                 labels[i],
                                 maxLines: 1,
@@ -1639,8 +1648,9 @@ class _ExerciseCard extends StatelessWidget {
                     onPressed: () => Navigator.of(ctx).pop(),
                     color: dialogColors.onSurface,
                     style: IconButton.styleFrom(
-                      backgroundColor:
-                          dialogColors.surface.withValues(alpha: 0.85),
+                      backgroundColor: dialogColors.surface.withValues(
+                        alpha: 0.85,
+                      ),
                     ),
                   ),
                 ),
@@ -1661,10 +1671,7 @@ class _ExerciseCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.lg),
       border: isDark
           ? null
-          : Border.all(
-              color: LightColors.surfaceHighlight,
-              width: 1.35,
-            ),
+          : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
       boxShadow: AppShadows.cardPremium,
     );
 
@@ -1683,19 +1690,25 @@ class _ExerciseCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(exerciseTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textStyles.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      exerciseTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textStyles.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     if (exerciseSubtitle != null) ...[
                       const Gap(2),
-                      Text(exerciseSubtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textStyles.labelSmall?.copyWith(
-                              color: colors.secondary,
-                              fontWeight: FontWeight.w600)),
+                      Text(
+                        exerciseSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textStyles.labelSmall?.copyWith(
+                          color: colors.secondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -1705,7 +1718,10 @@ class _ExerciseCard extends StatelessWidget {
                   if (onMoveUp != null)
                     IconButton(
                       onPressed: onMoveUp,
-                      icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 20),
+                      icon: const Icon(
+                        Icons.keyboard_arrow_up_rounded,
+                        size: 20,
+                      ),
                       color: colors.secondary,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1713,7 +1729,10 @@ class _ExerciseCard extends StatelessWidget {
                   if (onMoveDown != null)
                     IconButton(
                       onPressed: onMoveDown,
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                      ),
                       color: colors.secondary,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1752,8 +1771,9 @@ class _ExerciseCard extends StatelessWidget {
               children: [
                 Text(
                   strings.shootingResultsTitle,
-                  style: textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: textStyles.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const Gap(AppSpacing.md),
                 Row(
@@ -1767,8 +1787,7 @@ class _ExerciseCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.sm),
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
                               child: SizedBox(
                                 width: 120,
                                 height: 120,
@@ -1798,11 +1817,7 @@ class _ExerciseCard extends StatelessWidget {
 
                     // Divider between photo and stats
                     if (primaryPhoto != null)
-                      Container(
-                        width: 1,
-                        height: 120,
-                        color: colors.outline,
-                      ),
+                      Container(width: 1, height: 120, color: colors.outline),
                     if (primaryPhoto != null) const Gap(AppSpacing.md),
 
                     // Right: shots & distance (and precision if counted)
@@ -1816,9 +1831,10 @@ class _ExerciseCard extends StatelessWidget {
                           ),
                           _InfoRow(
                             label: strings.shootingDistanceDetailLabel,
-value: provider.useMetric
+                            value: provider.useMetric
                                 ? '${exercise.distance} m'
-                                : '${(exercise.distance * 1.09361).round()} yd',                          ),
+                                : '${(exercise.distance * 1.09361).round()} yd',
+                          ),
                           if (exercise.targetName != null &&
                               exercise.targetName!.isNotEmpty)
                             _InfoRow(
@@ -1842,12 +1858,14 @@ value: provider.useMetric
 
           if (exercise.observations.isNotEmpty) ...[
             const Gap(AppSpacing.sm),
-            Text(strings.observationsTitle,
-                style:
-                    textStyles.labelSmall?.copyWith(color: colors.secondary)),
-            Text(exercise.observations,
-                style: textStyles.bodySmall
-                    ?.copyWith(color: colors.secondary)),
+            Text(
+              strings.observationsTitle,
+              style: textStyles.labelSmall?.copyWith(color: colors.secondary),
+            ),
+            Text(
+              exercise.observations,
+              style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+            ),
           ],
         ],
       ),
@@ -1877,8 +1895,7 @@ class _InfoRow extends StatelessWidget {
           const Gap(2),
           Text(
             value,
-            style:
-                textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            style: textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -1916,9 +1933,11 @@ class _ImportExerciseTemplateSheetState
     final query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) return templates;
     return templates
-        .where((template) =>
-            template.name.toLowerCase().contains(query) ||
-            template.observations.toLowerCase().contains(query))
+        .where(
+          (template) =>
+              template.name.toLowerCase().contains(query) ||
+              template.observations.toLowerCase().contains(query),
+        )
         .toList();
   }
 
@@ -1934,8 +1953,9 @@ class _ImportExerciseTemplateSheetState
     );
     final standardDrills = _filteredTemplates(StandardDrills.all(strings));
     final userTemplates = _filteredTemplates(widget.provider.exerciseTemplates);
-    final visibleTemplates =
-        _selectedSourceIndex == 0 ? standardDrills : userTemplates;
+    final visibleTemplates = _selectedSourceIndex == 0
+        ? standardDrills
+        : userTemplates;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
@@ -1963,8 +1983,9 @@ class _ImportExerciseTemplateSheetState
                 ),
                 const Gap(12),
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -1992,17 +2013,16 @@ class _ImportExerciseTemplateSheetState
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    colors.onSurface.withValues(alpha: 0.88),
+                                color: colors.onSurface.withValues(alpha: 0.88),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              textStyle: textStyles.bodySmall
-                                  ?.copyWith(color: colors.surface),
+                              textStyle: textStyles.bodySmall?.copyWith(
+                                color: colors.surface,
+                              ),
                               child: Icon(
                                 Icons.info_outline_rounded,
                                 size: 18,
-                                color:
-                                    colors.onSurface.withValues(alpha: 0.4),
+                                color: colors.onSurface.withValues(alpha: 0.4),
                               ),
                             ),
                           ],
@@ -2126,14 +2146,16 @@ class _ImportExerciseTemplateSheetState
                                 Icon(
                                   Icons.bookmark_border_rounded,
                                   size: 64,
-                                  color: colors.secondary
-                                      .withValues(alpha: 0.5),
+                                  color: colors.secondary.withValues(
+                                    alpha: 0.5,
+                                  ),
                                 ),
                                 const Gap(AppSpacing.md),
                                 Text(
                                   strings.noTemplatesAvailable,
-                                  style: textStyles.bodyMedium
-                                      ?.copyWith(color: colors.secondary),
+                                  style: textStyles.bodyMedium?.copyWith(
+                                    color: colors.secondary,
+                                  ),
                                   textAlign: TextAlign.center,
                                 ),
                               ],
@@ -2187,17 +2209,19 @@ class _ImportExerciseTemplateSheetState
                                                           style: textStyles
                                                               .titleSmall
                                                               ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                            color:
-                                                                colors.onSurface,
-                                                          ),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700,
+                                                                color: colors
+                                                                    .onSurface,
+                                                              ),
                                                         ),
                                                       ),
                                                       if (isStandard) ...[
                                                         const Gap(6),
                                                         Icon(
-                                                          Icons.verified_rounded,
+                                                          Icons
+                                                              .verified_rounded,
                                                           size: 16,
                                                           color: colors.primary,
                                                         ),
@@ -2209,8 +2233,9 @@ class _ImportExerciseTemplateSheetState
                                                     subtitle,
                                                     style: textStyles.bodySmall
                                                         ?.copyWith(
-                                                      color: colors.secondary,
-                                                    ),
+                                                          color:
+                                                              colors.secondary,
+                                                        ),
                                                   ),
                                                 ],
                                               ),
@@ -2219,17 +2244,19 @@ class _ImportExerciseTemplateSheetState
                                             FilledButton.icon(
                                               onPressed: () =>
                                                   widget.onSelected(template),
-                                              icon:
-                                                  const Icon(Icons.add, size: 16),
+                                              icon: const Icon(
+                                                Icons.add,
+                                                size: 16,
+                                              ),
                                               label: Text(
                                                 strings.templateImportButton,
                                               ),
                                               style: FilledButton.styleFrom(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                  horizontal: 12,
-                                                  vertical: 8,
-                                                ),
+                                                      horizontal: 12,
+                                                      vertical: 8,
+                                                    ),
                                                 visualDensity:
                                                     VisualDensity.compact,
                                                 shape: RoundedRectangleBorder(
@@ -2240,15 +2267,17 @@ class _ImportExerciseTemplateSheetState
                                             ),
                                           ],
                                         ),
-                                        if (template.observations.trim().isNotEmpty) ...[
+                                        if (template.observations
+                                            .trim()
+                                            .isNotEmpty) ...[
                                           const Gap(4),
                                           Text(
                                             '${strings.observationsTitle} : ${template.observations.trim()}',
-                                            style:
-                                                textStyles.bodySmall?.copyWith(
-                                              color: colors.secondary,
-                                              fontStyle: FontStyle.italic,
-                                            ),
+                                            style: textStyles.bodySmall
+                                                ?.copyWith(
+                                                  color: colors.secondary,
+                                                  fontStyle: FontStyle.italic,
+                                                ),
                                           ),
                                         ],
                                       ],
@@ -2277,14 +2306,21 @@ class _SessionSummary extends StatelessWidget {
 
   String _getCurrencySymbol(String? currency) {
     switch (currency) {
-      case 'USD': return '\$';
-      case 'CAD': return 'CA\$';
-      case 'GBP': return '£';
-      case 'CHF': return 'CHF';
-      case 'JPY': return '¥';
-      case 'AUD': return 'A\$';
+      case 'USD':
+        return '\$';
+      case 'CAD':
+        return 'CA\$';
+      case 'GBP':
+        return '£';
+      case 'CHF':
+        return 'CHF';
+      case 'JPY':
+        return '¥';
+      case 'AUD':
+        return 'A\$';
       case 'EUR':
-      default: return '€';
+      default:
+        return '€';
     }
   }
 
@@ -2312,7 +2348,8 @@ class _SessionSummary extends StatelessWidget {
       ex.platformShotImpact.forEach((platformId, shots) {
         final platform = provider.getPlatformById(platformId);
         if (platform == null) return;
-        platformImpact[platform.id] = (platformImpact[platform.id] ?? 0) + shots;
+        platformImpact[platform.id] =
+            (platformImpact[platform.id] ?? 0) + shots;
       });
     }
 
@@ -2345,7 +2382,9 @@ class _SessionSummary extends StatelessWidget {
           if (platformImpact.isNotEmpty) ...[
             Text(
               strings.platformsUsedLabel,
-              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const Gap(4),
             ...platformImpact.entries.map((e) {
@@ -2366,14 +2405,17 @@ class _SessionSummary extends StatelessWidget {
           if (ammoImpact.isNotEmpty) ...[
             Text(
               strings.consumablesUsedLabel,
-              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const Gap(4),
             ...ammoImpact.entries.map((e) {
               final ammo = provider.getAmmoById(e.key);
               if (ammo == null) return const SizedBox.shrink();
-              final remaining =
-                  (ammo.quantity - e.value).clamp(0, 1 << 30).toInt();
+              final remaining = (ammo.quantity - e.value)
+                  .clamp(0, 1 << 30)
+                  .toInt();
               final lineCost = ammo.unitPrice != null
                   ? (e.value * ammo.unitPrice!).toStringAsFixed(2)
                   : null;
@@ -2382,7 +2424,11 @@ class _SessionSummary extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
                   lineCost == null
-                      ? strings.sessionSummaryAmmoImpactLine(ammo.name, e.value, remaining)
+                      ? strings.sessionSummaryAmmoImpactLine(
+                          ammo.name,
+                          e.value,
+                          remaining,
+                        )
                       : strings.sessionSummaryAmmoImpactLineWithCost(
                           ammo.name,
                           e.value,
@@ -2401,7 +2447,9 @@ class _SessionSummary extends StatelessWidget {
           if (equipmentImpact.isNotEmpty) ...[
             Text(
               strings.sessionSummaryAccessoriesImpactTitle,
-              style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const Gap(4),
             ...equipmentImpact.entries.map((e) {
@@ -2432,7 +2480,11 @@ class _ExerciseForm extends StatefulWidget {
   final Function(Exercise) onSave;
   final ScrollController? scrollController;
 
-  const _ExerciseForm({this.exercise, required this.onSave, this.scrollController});
+  const _ExerciseForm({
+    this.exercise,
+    required this.onSave,
+    this.scrollController,
+  });
 
   @override
   State<_ExerciseForm> createState() => _ExerciseFormState();
@@ -2502,10 +2554,12 @@ class _ExerciseFormState extends State<_ExerciseForm> {
       _selectedEquipmentIds
         ..clear()
         ..addAll(widget.exercise!.equipmentIds);
-      
+
       // Si on est en mode édition avec une plateforme sélectionnée et aucun équipement personnalisé,
       // ajouter automatiquement les accessoires liés
-      if (_platformSource == 'inventory' && _selectedPlatformId != null && widget.exercise!.equipmentIds.isEmpty) {
+      if (_platformSource == 'inventory' &&
+          _selectedPlatformId != null &&
+          widget.exercise!.equipmentIds.isEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             final provider = Provider.of<ThotProvider>(context, listen: false);
@@ -2520,7 +2574,8 @@ class _ExerciseFormState extends State<_ExerciseForm> {
       for (var photo in _targetPhotos) {
         _photoControllers[photo.id] = TextEditingController(text: photo.name);
       }
-      _shotsFiredController.text = widget.exercise!.shotsFired.toString();      _distanceController.text = widget.exercise!.distance.toString();
+      _shotsFiredController.text = widget.exercise!.shotsFired.toString();
+      _distanceController.text = widget.exercise!.distance.toString();
       _observationsController.text = widget.exercise!.observations;
       _measurePrecision = widget.exercise!.precision != null;
       _precision = widget.exercise!.precision ?? 0;
@@ -2553,7 +2608,8 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     }
     final platform = provider.getPlatformById(_selectedPlatformId!);
     if (platform == null) return const {};
-    return provider.linkedAccessoriesForPlatform(platform.id)
+    return provider
+        .linkedAccessoriesForPlatform(platform.id)
         .map((a) => a.id)
         .toSet();
   }
@@ -2562,16 +2618,18 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     if (_platformSource != 'inventory' || _selectedPlatformId == null) {
       return;
     }
-    
+
     final platform = provider.getPlatformById(_selectedPlatformId!);
     if (platform == null) return;
-    
+
     // Récupérer les accessoires liés à cette plateforme
-    final linkedAccessories = provider.linkedAccessoriesForPlatform(platform.id);
-    
+    final linkedAccessories = provider.linkedAccessoriesForPlatform(
+      platform.id,
+    );
+
     // Réinitialiser les suppressions de liaison quand on change de plateforme
     _removedLinkedAccessoryIds.clear();
-    
+
     // Ajouter les accessoires liés à la sélection existante
     setState(() {
       _selectedEquipmentIds.clear();
@@ -2597,17 +2655,17 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     return [selected];
   }
 
-String _stepTitle(StepType type) {
+  String _stepTitle(StepType type) {
     return AppStrings.of(context).exerciseStepTypeLabel(type);
   }
 
-String _positionShort(ShootingPosition? pos) {
+  String _positionShort(ShootingPosition? pos) {
     if (pos == null) return '';
     final strings = AppStrings.of(context);
     return strings.exercisePositionLabel(pos);
   }
 
-String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
+  String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     final parts = <String>[];
     final provider = Provider.of<ThotProvider>(context, listen: false);
     if (s.type == StepType.tir && s.shots != null) {
@@ -2636,10 +2694,14 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     if ((s.target ?? '').trim().isNotEmpty) parts.add(s.target!.trim());
     if (s.type == StepType.transition) {
       if ((s.platformFrom ?? '').trim().isNotEmpty) {
-        parts.add('${strings.exerciseNarrativeFrom.trim()} ${s.platformFrom!.trim()}');
+        parts.add(
+          '${strings.exerciseNarrativeFrom.trim()} ${s.platformFrom!.trim()}',
+        );
       }
       if ((s.platformTo ?? '').trim().isNotEmpty) {
-        parts.add('${strings.exerciseNarrativeTo.trim()} ${s.platformTo!.trim()}');
+        parts.add(
+          '${strings.exerciseNarrativeTo.trim()} ${s.platformTo!.trim()}',
+        );
       }
     }
     if (s.type == StepType.rechargement && s.reloadType != null) {
@@ -2663,7 +2725,8 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
       if (!mounted) return;
       setState(() {
         if (_platformSource == 'inventory') {
-          final exists = _selectedPlatformId != null &&
+          final exists =
+              _selectedPlatformId != null &&
               provider.platforms.any((w) => w.id == _selectedPlatformId);
           final allowed = _selectedPlatformId != null
               ? provider.canUsePlatformId(_selectedPlatformId!)
@@ -2677,21 +2740,25 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
         }
 
         if (_ammoSource == 'inventory') {
-          final exists = _selectedAmmoId != null &&
+          final exists =
+              _selectedAmmoId != null &&
               provider.ammos.any((a) => a.id == _selectedAmmoId);
           final allowed = _selectedAmmoId != null
               ? provider.canUseAmmoId(_selectedAmmoId!)
               : true;
           if (!exists || !allowed) {
-            _selectedAmmoId =
-                provider.ammos.isNotEmpty ? provider.ammos.first.id : null;
+            _selectedAmmoId = provider.ammos.isNotEmpty
+                ? provider.ammos.first.id
+                : null;
             if (provider.ammos.isEmpty) _ammoSource = 'borrowed';
           }
         }
       });
 
       // Auto-ajouter les accessoires liés quand la plateforme est pré-sélectionnée
-      if (_platformSource == 'inventory' && _selectedPlatformId != null && _selectedEquipmentIds.isEmpty) {
+      if (_platformSource == 'inventory' &&
+          _selectedPlatformId != null &&
+          _selectedEquipmentIds.isEmpty) {
         _updateEquipmentForPlatform(provider);
       }
     });
@@ -2731,6 +2798,7 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     _exerciseScrollController.dispose();
     super.dispose();
   }
+
   Future<void> _pickTargetPhoto() async {
     final picked = await NativePicker.pick(context, mode: PickerMode.photoOnly);
     if (!mounted || picked.isCancelled) return;
@@ -2745,7 +2813,8 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     }
     if (path == null || path.isEmpty) return;
 
-    final id = DateTime.now().microsecondsSinceEpoch.toString() +
+    final id =
+        DateTime.now().microsecondsSinceEpoch.toString() +
         (picked.name ?? 'img');
     final photo = ExercisePhoto(
       id: id,
@@ -2759,7 +2828,6 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
       _targetPhotos.add(photo);
     });
   }
-
 
   void _renameTargetPhoto(String id, String newName) {
     final index = _targetPhotos.indexWhere((p) => p.id == id);
@@ -2784,585 +2852,112 @@ String _stepSummary(ExerciseStep s, AppStrings strings, bool useMetric) {
     final strings = AppStrings.of(context);
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
 
-return GestureDetector(
-  onTap: () => FocusScope.of(context).unfocus(),
-  child: Container(
-  decoration: BoxDecoration(
-    color: baseBackground,
-    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-  ),
-      child: Column(
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: LightColors.iconInactive.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const Gap(AppSpacing.md),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    strings.addExerciseTitle.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textStyles.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.onSurface,
-                    ),
-                  ),
-                ),
-                // Icône en forme de V pour fermer
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 28,
-                      color: colors.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Divider(color: colors.outline),
-          ),
-
-          Expanded(
-            child: SingleChildScrollView(
-controller: widget.scrollController ?? _exerciseScrollController,
-              padding: EdgeInsets.only(
-                left: AppSpacing.lg,
-                right: AppSpacing.lg,
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: baseBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: LightColors.iconInactive.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(2),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            ),
+            const Gap(AppSpacing.md),
+
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Gap(AppSpacing.lg),
-
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.edit_note_rounded,
-                        size: 18,
-                        color: colors.primary,
-                      ),
-                      const Gap(8),
-                      Text(
-                        strings.exerciseNameLabel.toUpperCase(),
-                        style: textStyles.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: colors.onSurface,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.sm),
-
-                  TextField(
-                    controller: _exerciseNameController,
-                    textInputAction: TextInputAction.next,
-                    onTap: () => _exerciseNameController.selection = TextSelection(baseOffset: 0, extentOffset: _exerciseNameController.text.length),
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'.*'))],
-                    decoration: InputDecoration(
-                      hintText: strings.exerciseNameHint,
-                      hintStyle: textStyles.bodyMedium
-                          ?.copyWith(color: colors.onSurface.withAlpha(100)),
-                      filled: true,
-                      fillColor: colors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.primary, width: 1.6),
+                  Expanded(
+                    child: Text(
+                      strings.addExerciseTitle.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textStyles.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colors.onSurface,
                       ),
                     ),
                   ),
-                  const Gap(AppSpacing.lg),
-
-                  // Platform Section
-                  Row(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/images/tube.svg',
-                        width: 18,
-                        height: 18,
-                        colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                  // Icône en forme de V pour fermer
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 28,
+                        color: colors.onSurface.withValues(alpha: 0.7),
                       ),
-                      const Gap(8),
-                      Text(
-                        strings.platformTitle.toUpperCase(),
-                        style: textStyles.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: colors.onSurface,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.sm),
-                  Container(
-                    padding: AppSpacing.paddingMd,
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: colors.outline),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Divider(color: colors.outline),
+            ),
+
+            Expanded(
+              child: SingleChildScrollView(
+                controller:
+                    widget.scrollController ?? _exerciseScrollController,
+                padding: EdgeInsets.only(
+                  left: AppSpacing.lg,
+                  right: AppSpacing.lg,
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Gap(AppSpacing.lg),
+
+                    Row(
                       children: [
-                        _SourceToggleRow(
-                          leftLabel: strings.myInventory,
-                          rightLabel: strings.borrowed,
-                          value: _platformSource,
-                          onChanged: (v) => setState(() {
-                            _platformSource = v;
-                            if (_platformSource == 'borrowed') {
-                              _selectedPlatformId = null;
-                              // Vider les équipements quand on passe en mode emprunté
-                              _selectedEquipmentIds.clear();
-                            }
-                            if (_platformSource != 'borrowed') {
-                              _borrowedPlatformController.text = '';
-                            }
-                          }),
+                        Icon(
+                          Icons.edit_note_rounded,
+                          size: 18,
+                          color: colors.primary,
                         ),
-                        const Gap(10),
-                        Container(
-                          key: _platformFieldKey,
-                        child: _platformSource == 'inventory'
-                            ? (provider.platforms.isEmpty
-                                ? Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.warning_amber_rounded,
-                                          size: 18,
-                                          color: colors.secondary,
-                                        ),
-                                        const Gap(8),
-                                        Expanded(
-                                          child: Text(
-                                            strings.noPlatformInStock,
-                                            style: textStyles.bodySmall?.copyWith(
-                                              color: colors.secondary,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : _SelectedSingleItemField(
-                                    leading: _selectedPlatformId == null
-                                        ? SvgPicture.asset(
-                                            'assets/images/tube.svg',
-                                            width: 18,
-                                            height: 18,
-                                            colorFilter: ColorFilter.mode(
-                                                colors.primary, BlendMode.srcIn),
-                                          )
-                                        : Icon(
-                                            Icons.radio_button_checked_rounded,
-                                            size: 18,
-                                            color: colors.primary,
-                                          ),
-                                    titleWhenEmpty:
-                                        strings.choosePlatformFromInventory,
-                                    titleWhenSet: (_selectedPlatformId == null
-                                            ? null
-                                            : provider.getPlatformById(
-                                                _selectedPlatformId!))
-                                        ?.name ??
-                                        strings.choosePlatformFromInventory,
-                                    subtitle: (_selectedPlatformId == null
-                                                ? null
-                                                : provider.getPlatformById(
-                                                    _selectedPlatformId!)) ==
-                                            null
-                                        ? null
-                                        : strings.tapToChange,
-                                    onTap: () async {
-                                      if (provider.platforms.isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                                strings.noPlatformInStockSwitchBorrowed),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      final selected =
-                                          await showModalBottomSheet<String>(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) =>
-                                            _SingleSelectSheet<Platform>(
-                                          title: strings.platformsTab,
-                                          items: provider.platforms,
-                                          initialId: _selectedPlatformId,
-                                          isLockedItem: (w) {
-                                            final idx = provider.platforms.indexOf(w);
-                                            return idx >= 0
-                                                ? provider.isPlatformLockedForFree(
-                                                    w, idx)
-                                                : false;
-                                          },
-                                          iconBuilder: (selected, colors) =>
-                                              SvgPicture.asset(
-                                            'assets/images/tube.svg',
-                                            width: 20,
-                                            height: 20,
-                                            colorFilter: ColorFilter.mode(
-                                              selected
-                                                  ? colors.primary
-                                                  : colors.outline,
-                                              BlendMode.srcIn,
-                                            ),
-                                          ),
-                                          primaryText: (w) => w.name,
-                                          secondaryText: (w) =>
-                                              [
-                                                strings.itemPlatformTypeLabel(
-                                                    w.type),
-                                                if (w.model.trim().isNotEmpty)
-                                                  w.model,
-                                                if (w.caliber.trim().isNotEmpty)
-                                                  w.caliber,
-                                              ].join(' • '),
-                                          matchesQuery: (w, q) {
-                                            final qq = q.toLowerCase();
-                                            return w.name
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.type
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.model
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.caliber
-                                                    .toLowerCase()
-                                                    .contains(qq) ||
-                                                w.serialNumber
-                                                    .toLowerCase()
-                                                    .contains(qq);
-                                          },
-                                          getId: (w) => w.id,
-                                        ),
-                                      );
-                                      if (!mounted || selected == null) return;
-                                      setState(() {
-                                        _selectedPlatformId = selected;
-                                        _platformError = false;
-                                      });
-                                      // Auto-ajouter les accessoires liés à la plateforme
-                                      _updateEquipmentForPlatform(provider);
-                                    },
-                                  ))
-                            : TextField(
-                                controller: _borrowedPlatformController,
-                                textInputAction: TextInputAction.next,
-                                onTap: () => _borrowedPlatformController.selection = TextSelection(baseOffset: 0, extentOffset: _borrowedPlatformController.text.length),
-                                decoration: InputDecoration(
-                                  labelText: strings.borrowedPlatformOptional,
-                                  hintText: strings.borrowedPlatformHint,
-                                  hintStyle: textStyles.bodyMedium?.copyWith(
-                                    color: colors.onSurface.withAlpha(100),
-                                  ),
-                                  prefixIcon: const Padding(
-                                    padding: EdgeInsets.all(12),
-                                    child: Icon(
-                                      Icons.radio_button_checked_rounded,
-                                      size: 18,
-                                    ),
-                                  ),
-                                  prefixIconConstraints: const BoxConstraints(
-                                    minWidth: 44,
-                                    minHeight: 44,
-                                  ),
-                                  filled: true,
-                                  fillColor: colors.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(color: colors.outline),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(color: colors.outline),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.lg),
-                                    borderSide: BorderSide(
-                                      color: colors.primary,
-                                      width: 1.6,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                        const Gap(8),
+                        Text(
+                          strings.exerciseNameLabel.toUpperCase(),
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: colors.onSurface,
+                            letterSpacing: 1.1,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                  const Gap(AppSpacing.lg),
+                    const Gap(AppSpacing.sm),
 
-                  // Équipement utilisé
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.inventory_2_rounded,
-                        size: 18,
-                        color: colors.primary,
-                      ),
-                      const Gap(8),
-                      Text(
-                        strings.usedEquipmentLabel.toUpperCase(),
-                        style: textStyles.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: colors.onSurface,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.sm),
-                  Container(
-                    padding: AppSpacing.paddingMd,
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: colors.outline),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SelectedEquipmentField(
-              accessories: provider.accessories,
-              selectedIds: _selectedEquipmentIds,
-              linkedIds: _getLinkedAccessoryIds(provider).difference(_removedLinkedAccessoryIds),
-              onTap: () => _editEquipments(provider),
-              onRemove: (id) =>
-                  setState(() => _selectedEquipmentIds.remove(id)),
-              onUnlinkForSession: (id) async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(strings.confirmDeleteTitle),
-                    content: Text(
-                      strings.unlinkAccessoryForSessionMessage,
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: Text(strings.actionCancel),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: colors.error,
-                        ),
-                        child: Text(strings.actionDelete),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirmed != true || !mounted) return;
-                setState(() {
-                  _removedLinkedAccessoryIds.add(id);
-                  _selectedEquipmentIds.remove(id);
-                });
-              },
-            ),
-                        ],
-                    ),
-                  ),
-                  const Gap(AppSpacing.lg),
-
-                  // Consommable Section
-                  Row(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/images/pointe.svg',
-                        width: 18,
-                        height: 18,
-                        colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
-                      ),
-                      const Gap(8),
-                      Text(
-                        strings.ammoTitle.toUpperCase(),
-                        style: textStyles.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: colors.onSurface,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.sm),
-                  Container(
-                    padding: AppSpacing.paddingMd,
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: colors.outline),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SourceToggleRow(
-                          leftLabel: strings.myInventory,
-                          rightLabel: strings.borrowed,
-                          value: _ammoSource,
-                          onChanged: (v) => setState(() {
-                            _ammoSource = v;
-                            if (_ammoSource == 'borrowed') _selectedAmmoId = null;
-                            if (_ammoSource != 'borrowed') _borrowedAmmoController.text = '';
-                          }),
-                        ),
-                        const Gap(10),
-                        Container(
-                          key: _ammoFieldKey,
-              child: _ammoSource == 'inventory'
-                  ? (provider.ammos.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                size: 18,
-                                color: colors.secondary,
-                              ),
-                              const Gap(8),
-                              Expanded(
-                                child: Text(
-                                  strings.noAmmoInStock,
-                                  style: textStyles.bodySmall?.copyWith(
-                                    color: colors.secondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _SelectedSingleItemField(
-                          leading: Icon(
-                            Icons.radio_button_checked_rounded,
-                            size: 18,
-                            color: colors.primary,
-                          ),
-                          titleWhenEmpty: strings.chooseAmmoFromInventory,
-                          titleWhenSet: (_selectedAmmoId == null
-                                  ? null
-                                  : provider.getAmmoById(_selectedAmmoId!))
-                              ?.name ??
-                              strings.chooseAmmoFromInventory,
-                          subtitle: (_selectedAmmoId == null
-                                      ? null
-                                      : provider.getAmmoById(
-                                          _selectedAmmoId!)) ==
-                                  null
-                              ? null
-                              : strings.tapToChange,
-                          onTap: () async {
-                            if (provider.ammos.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    strings.noAmmoInStockSwitchBorrowed,
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final selected =
-                                await showModalBottomSheet<String>(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => _SingleSelectSheet<Ammo>(
-                                title: strings.ammosTab,
-                                items: provider.ammos,
-                                initialId: _selectedAmmoId,
-                                isLockedItem: (a) {
-                                  final idx = provider.ammos.indexOf(a);
-                                  return idx >= 0
-                                      ? provider.isAmmoLockedForFree(a, idx)
-                                      : false;
-                                },
-                                icon: Icons.trip_origin_rounded,
-                                primaryText: (a) => a.name,
-                                secondaryText: (a) =>
-                                    [
-                                      a.caliber,
-                                      if (a.brand.trim().isNotEmpty) a.brand,
-                                      if (a.projectileType.trim().isNotEmpty)
-                                        strings.itemProjectileTypeLabel(
-                                          a.projectileType,
-                                        ),
-                                    ].join(' • '),
-                                matchesQuery: (a, q) {
-                                  final qq = q.toLowerCase();
-                                  return a.name.toLowerCase().contains(qq) ||
-                                      a.caliber.toLowerCase().contains(qq) ||
-                                      a.brand.toLowerCase().contains(qq) ||
-                                      a.projectileType
-                                          .toLowerCase()
-                                          .contains(qq);
-                                },
-                                getId: (a) => a.id,
-                              ),
-                            );
-
-                            if (!mounted || selected == null) return;
-                            setState(() {
-                              _selectedAmmoId = selected;
-                              _ammoError = false;
-                            });
-                          },
-                        ))
-                  : TextField(
-                      controller: _borrowedAmmoController,
+                    TextField(
+                      controller: _exerciseNameController,
                       textInputAction: TextInputAction.next,
-                      onTap: () => _borrowedAmmoController.selection = TextSelection(baseOffset: 0, extentOffset: _borrowedAmmoController.text.length),
+                      onTap: () =>
+                          _exerciseNameController.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: _exerciseNameController.text.length,
+                          ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'.*')),
+                      ],
                       decoration: InputDecoration(
-                        labelText: strings.borrowedAmmoOptional,
-                        hintText: strings.borrowedAmmoHint,
+                        hintText: strings.exerciseNameHint,
                         hintStyle: textStyles.bodyMedium?.copyWith(
                           color: colors.onSurface.withAlpha(100),
-                        ),
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.radio_button_checked_rounded,
-                            size: 18,
-                          ),
                         ),
                         filled: true,
                         fillColor: colors.surface,
@@ -3376,756 +2971,1630 @@ controller: widget.scrollController ?? _exerciseScrollController,
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide:
-                              BorderSide(color: colors.primary, width: 1.6),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 1.6,
+                          ),
                         ),
                       ),
                     ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Gap(AppSpacing.lg),
+                    const Gap(AppSpacing.lg),
 
-            // DÉROULÉ Section
-            Row(
-              children: [
-                Icon(
-                  Icons.tune_rounded,
-                  size: 18,
-                  color: colors.primary,
-                ),
-                const Gap(8),
-                Text(
-                  strings.exerciseModeLabel.toUpperCase(),
-                  style: textStyles.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: colors.onSurface,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ],
-            ),
-            const Gap(AppSpacing.sm),
-            Container(
-              padding: AppSpacing.paddingMd,
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: colors.outline),
-              ),
-              child: Column(
-                children: [
-                  _SlidingSegmentedSelector(
-                    selectedIndex: _detailedMode ? 1 : 0,
-                    labels: [
-                      strings.exerciseModeSimple,
-                      strings.exerciseModeDetailed,
-                    ],
-                    onSelected: (index) {
-                      setState(() {
-                        _detailedMode = index == 1;
-                      });
-                    },
-                  ),
-                  if (!_detailedMode) ...[
-                    const Gap(AppSpacing.md),
+                    // Platform Section
                     Row(
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/images/hit.svg',
-                                    width: 14,
-                                    height: 14,
-                                    colorFilter: ColorFilter.mode(
-                                        colors.primary, BlendMode.srcIn),
-                                  ),
-                                  const Gap(6),
-                                  Text(
-                                    strings.shotsCountLabel.toUpperCase(),
-                                    style: textStyles.labelLarge?.copyWith(
-                                      fontWeight: FontWeight.w900,
-                                      color: colors.onSurface,
-                                      letterSpacing: 1.1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(6),
-                              Container(
-                                key: _shotsFieldKey,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                  border: Border.all(
-                                    color: _shotsError
-                                        ? colors.error
-                                        : Colors.transparent,
-                                    width: 1.4,
-                                  ),
-                                ),
-                                child: TextField(
-                                  controller: _shotsFiredController,
-                                  keyboardType: TextInputType.number,
-                                  style: textStyles.titleMedium,
-                                  onTap: () => _shotsFiredController.selection = TextSelection(baseOffset: 0, extentOffset: _shotsFiredController.text.length),
-                                  onChanged: (_) {
-                                    final shots = int.tryParse(
-                                        _shotsFiredController.text.trim());
-                                    if (_shotsError &&
-                                        shots != null &&
-                                        shots > 0) {
-                                      setState(() => _shotsError = false);
-                                    }
-                                  },
-                                  decoration: InputDecoration(
-                                    hintText: '0',
-                                    hintStyle: textStyles.bodyMedium?.copyWith(
-                                      color: colors.onSurface.withAlpha(100),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    filled: true,
-                                    fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                                      borderSide: BorderSide(
-                                        color: colors.primary,
-                                        width: 1.6,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                        SvgPicture.asset(
+                          'assets/images/tube.svg',
+                          width: 18,
+                          height: 18,
+                          colorFilter: ColorFilter.mode(
+                            colors.primary,
+                            BlendMode.srcIn,
                           ),
                         ),
-                        const Gap(AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.straighten_rounded,
-                                    size: 14,
-                                    color: colors.primary,
-                                  ),
-                                  const Gap(6),
-                                  Text(
-                                    strings.distanceLabel.toUpperCase(),
-                                    style: textStyles.labelLarge?.copyWith(
-                                      fontWeight: FontWeight.w900,
-                                      color: colors.onSurface,
-                                      letterSpacing: 1.1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(6),
-                              Container(
-                                key: _distanceFieldKey,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                  border: Border.all(
-                                    color: _distanceError
-                                        ? colors.error
-                                        : Colors.transparent,
-                                    width: 1.4,
-                                  ),
-                                ),
-                                child: TextField(
-                                  controller: _distanceController,
-                                  keyboardType: TextInputType.number,
-                                  style: textStyles.titleMedium,
-                                  onTap: () => _distanceController.selection = TextSelection(baseOffset: 0, extentOffset: _distanceController.text.length),
-                                  onChanged: (_) {
-                                    final distance = int.tryParse(
-                                        _distanceController.text.trim());
-                                    if (_distanceError &&
-                                        distance != null &&
-                                        distance > 0) {
-                                      setState(() => _distanceError = false);
-                                    }
-                                  },
-                                  decoration: InputDecoration(
-                                    hintText: '0',
-                                    hintStyle: textStyles.bodyMedium?.copyWith(
-                                      color: colors.onSurface.withAlpha(100),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    suffixText: converter.useMetric ? 'm' : 'yd',
-                                    filled: true,
-                                    fillColor: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                                      borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                                      borderSide: BorderSide(
-                                        color: colors.primary,
-                                        width: 1.6,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_shotsError || _distanceError)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          _shotsError ? strings.shotsFiredError : strings.distanceError,
-                          style: textStyles.bodySmall?.copyWith(color: colors.error),
-                        ),
-                      ),
-                  ] else ...[
-                    const Gap(AppSpacing.md),
-                    // Badge Total
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: Color.alphaBlend(
-                          colors.primary.withValues(alpha: 0.1),
-                          colors.surface,
-                        ),
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colors.primary,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              strings.exerciseAutoBadge,
-                              style: textStyles.labelSmall?.copyWith(color: colors.onPrimary, fontWeight: FontWeight.w800),
-                            ),
-                          ),
-                          const Gap(10),
-                          Expanded(
-                            child: Text(
-                              strings.exerciseAutoTotals(
-                                _computedTotalShots(),
-                                _steps.length,
-                                _computedMaxDistance(),
-                                converter.useMetric ? 'm' : 'yd',
-                              ),
-                              style: textStyles.bodySmall?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Gap(AppSpacing.md),
-                    // Header Steps
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                        const Gap(8),
                         Text(
-                          strings.exerciseStepsTitle.toUpperCase(),
+                          strings.platformTitle.toUpperCase(),
                           style: textStyles.labelLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                             color: colors.onSurface,
                             letterSpacing: 1.1,
                           ),
                         ),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            final availablePlatforms = _availablePlatformsForStep(provider);
-                            final availableAmmos = _availableAmmosForStep(provider);
-                            final step = await showModalBottomSheet<ExerciseStep>(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => _AddExerciseStepSheet(
-                                availablePlatforms: availablePlatforms,
-                                availableAmmos: availableAmmos,
-                                defaultPlatformId: _platformSource == 'inventory' ? _selectedPlatformId : null,
-                                defaultAmmoId: _ammoSource == 'inventory' ? _selectedAmmoId : null,
-                              ),
-                            );
-                            if (!mounted || step == null) return;
-                            setState(() => _steps.add(step));
-                          },
-                          icon: const Icon(Icons.add_rounded, size: 14),
-                          label: Text(strings.exerciseAddStep, style: const TextStyle(fontSize: 11)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colors.primary,
-                            foregroundColor: colors.onPrimary,
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      ],
+                    ),
+                    const Gap(AppSpacing.sm),
+                    Container(
+                      padding: AppSpacing.paddingMd,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: colors.outline),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SourceToggleRow(
+                            leftLabel: strings.myInventory,
+                            rightLabel: strings.borrowed,
+                            value: _platformSource,
+                            onChanged: (v) => setState(() {
+                              _platformSource = v;
+                              if (_platformSource == 'borrowed') {
+                                _selectedPlatformId = null;
+                                // Vider les équipements quand on passe en mode emprunté
+                                _selectedEquipmentIds.clear();
+                              }
+                              if (_platformSource != 'borrowed') {
+                                _borrowedPlatformController.text = '';
+                              }
+                            }),
+                          ),
+                          const Gap(10),
+                          Container(
+                            key: _platformFieldKey,
+                            child: _platformSource == 'inventory'
+                                ? (provider.platforms.isEmpty
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.warning_amber_rounded,
+                                                size: 18,
+                                                color: colors.secondary,
+                                              ),
+                                              const Gap(8),
+                                              Expanded(
+                                                child: Text(
+                                                  strings.noPlatformInStock,
+                                                  style: textStyles.bodySmall
+                                                      ?.copyWith(
+                                                        color: colors.secondary,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : _SelectedSingleItemField(
+                                          leading: _selectedPlatformId == null
+                                              ? SvgPicture.asset(
+                                                  'assets/images/tube.svg',
+                                                  width: 18,
+                                                  height: 18,
+                                                  colorFilter: ColorFilter.mode(
+                                                    colors.primary,
+                                                    BlendMode.srcIn,
+                                                  ),
+                                                )
+                                              : Icon(
+                                                  Icons
+                                                      .radio_button_checked_rounded,
+                                                  size: 18,
+                                                  color: colors.primary,
+                                                ),
+                                          titleWhenEmpty: strings
+                                              .choosePlatformFromInventory,
+                                          titleWhenSet:
+                                              (_selectedPlatformId == null
+                                                      ? null
+                                                      : provider.getPlatformById(
+                                                          _selectedPlatformId!,
+                                                        ))
+                                                  ?.name ??
+                                              strings
+                                                  .choosePlatformFromInventory,
+                                          subtitle:
+                                              (_selectedPlatformId == null
+                                                      ? null
+                                                      : provider.getPlatformById(
+                                                          _selectedPlatformId!,
+                                                        )) ==
+                                                  null
+                                              ? null
+                                              : strings.tapToChange,
+                                          onTap: () async {
+                                            if (provider.platforms.isEmpty) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    strings
+                                                        .noPlatformInStockSwitchBorrowed,
+                                                  ),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            final selected = await showModalBottomSheet<String>(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              backgroundColor:
+                                                  Colors.transparent,
+                                              builder: (context) =>
+                                                  _SingleSelectSheet<Platform>(
+                                                    title: strings.platformsTab,
+                                                    items: provider.platforms,
+                                                    initialId:
+                                                        _selectedPlatformId,
+                                                    isLockedItem: (w) {
+                                                      final idx = provider
+                                                          .platforms
+                                                          .indexOf(w);
+                                                      return idx >= 0
+                                                          ? provider
+                                                                .isPlatformLockedForFree(
+                                                                  w,
+                                                                  idx,
+                                                                )
+                                                          : false;
+                                                    },
+                                                    iconBuilder:
+                                                        (
+                                                          selected,
+                                                          colors,
+                                                        ) => SvgPicture.asset(
+                                                          'assets/images/tube.svg',
+                                                          width: 20,
+                                                          height: 20,
+                                                          colorFilter:
+                                                              ColorFilter.mode(
+                                                                selected
+                                                                    ? colors
+                                                                          .primary
+                                                                    : colors
+                                                                          .outline,
+                                                                BlendMode.srcIn,
+                                                              ),
+                                                        ),
+                                                    primaryText: (w) => w.name,
+                                                    secondaryText: (w) => [
+                                                      strings
+                                                          .itemPlatformTypeLabel(
+                                                            w.type,
+                                                          ),
+                                                      if (w.model
+                                                          .trim()
+                                                          .isNotEmpty)
+                                                        w.model,
+                                                      if (w.caliber
+                                                          .trim()
+                                                          .isNotEmpty)
+                                                        w.caliber,
+                                                    ].join(' • '),
+                                                    matchesQuery: (w, q) {
+                                                      final qq = q
+                                                          .toLowerCase();
+                                                      return w.name
+                                                              .toLowerCase()
+                                                              .contains(qq) ||
+                                                          w.type
+                                                              .toLowerCase()
+                                                              .contains(qq) ||
+                                                          w.model
+                                                              .toLowerCase()
+                                                              .contains(qq) ||
+                                                          w.caliber
+                                                              .toLowerCase()
+                                                              .contains(qq) ||
+                                                          w.serialNumber
+                                                              .toLowerCase()
+                                                              .contains(qq);
+                                                    },
+                                                    getId: (w) => w.id,
+                                                  ),
+                                            );
+                                            if (!mounted || selected == null)
+                                              return;
+                                            setState(() {
+                                              _selectedPlatformId = selected;
+                                              _platformError = false;
+                                            });
+                                            // Auto-ajouter les accessoires liés à la plateforme
+                                            _updateEquipmentForPlatform(
+                                              provider,
+                                            );
+                                          },
+                                        ))
+                                : TextField(
+                                    controller: _borrowedPlatformController,
+                                    textInputAction: TextInputAction.next,
+                                    onTap: () =>
+                                        _borrowedPlatformController.selection =
+                                            TextSelection(
+                                              baseOffset: 0,
+                                              extentOffset:
+                                                  _borrowedPlatformController
+                                                      .text
+                                                      .length,
+                                            ),
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          strings.borrowedPlatformOptional,
+                                      hintText: strings.borrowedPlatformHint,
+                                      hintStyle: textStyles.bodyMedium
+                                          ?.copyWith(
+                                            color: colors.onSurface.withAlpha(
+                                              100,
+                                            ),
+                                          ),
+                                      prefixIcon: const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: Icon(
+                                          Icons.radio_button_checked_rounded,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      prefixIconConstraints:
+                                          const BoxConstraints(
+                                            minWidth: 44,
+                                            minHeight: 44,
+                                          ),
+                                      filled: true,
+                                      fillColor: colors.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.lg,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: colors.outline,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.lg,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: colors.outline,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.lg,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: colors.primary,
+                                          width: 1.6,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Gap(AppSpacing.lg),
+
+                    // Équipement utilisé
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.inventory_2_rounded,
+                          size: 18,
+                          color: colors.primary,
+                        ),
+                        const Gap(8),
+                        Text(
+                          strings.usedEquipmentLabel.toUpperCase(),
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: colors.onSurface,
+                            letterSpacing: 1.1,
                           ),
                         ),
                       ],
                     ),
                     const Gap(AppSpacing.sm),
-                    if (_steps.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(color: colors.outline),
-                        ),
-                        child: Text(
-                          strings.exerciseNoSteps,
-                          style: textStyles.bodyMedium?.copyWith(
-                            color: colors.secondary,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    else
-                      ReorderableListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        buildDefaultDragHandles: false,
-                        itemCount: _steps.length,
-                        onReorder: (oldIndex, newIndex) {
-                          setState(() {
-                            if (newIndex > oldIndex) newIndex -= 1;
-                            final item = _steps.removeAt(oldIndex);
-                            _steps.insert(newIndex, item);
-                          });
-                        },
-                        itemBuilder: (context, i) {
-                          final s = _steps[i];
-                          return Container(
-                            key: ValueKey(s.id),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.fromLTRB(12, 8, 2, 8),
-                            decoration: BoxDecoration(
-                              color: Color.alphaBlend(colors.onSurface.withValues(alpha: 0.03), colors.surface),
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
+                    Container(
+                      padding: AppSpacing.paddingMd,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: colors.outline),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SelectedEquipmentField(
+                            accessories: provider.accessories,
+                            selectedIds: _selectedEquipmentIds,
+                            linkedIds: _getLinkedAccessoryIds(
+                              provider,
+                            ).difference(_removedLinkedAccessoryIds),
+                            onTap: () => _editEquipments(provider),
+                            onRemove: (id) => setState(
+                              () => _selectedEquipmentIds.remove(id),
                             ),
-                            child: Row(
+                            onUnlinkForSession: (id) async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: Text(strings.confirmDeleteTitle),
+                                  content: Text(
+                                    strings.unlinkAccessoryForSessionMessage,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(false),
+                                      child: Text(strings.actionCancel),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(true),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: colors.error,
+                                      ),
+                                      child: Text(strings.actionDelete),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed != true || !mounted) return;
+                              setState(() {
+                                _removedLinkedAccessoryIds.add(id);
+                                _selectedEquipmentIds.remove(id);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Gap(AppSpacing.lg),
+
+                    // Consommable Section
+                    Row(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/images/pointe.svg',
+                          width: 18,
+                          height: 18,
+                          colorFilter: ColorFilter.mode(
+                            colors.primary,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        const Gap(8),
+                        Text(
+                          strings.ammoTitle.toUpperCase(),
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: colors.onSurface,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(AppSpacing.sm),
+                    Container(
+                      padding: AppSpacing.paddingMd,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: colors.outline),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SourceToggleRow(
+                            leftLabel: strings.myInventory,
+                            rightLabel: strings.borrowed,
+                            value: _ammoSource,
+                            onChanged: (v) => setState(() {
+                              _ammoSource = v;
+                              if (_ammoSource == 'borrowed')
+                                _selectedAmmoId = null;
+                              if (_ammoSource != 'borrowed')
+                                _borrowedAmmoController.text = '';
+                            }),
+                          ),
+                          const Gap(10),
+                          Container(
+                            key: _ammoFieldKey,
+                            child: _ammoSource == 'inventory'
+                                ? (provider.ammos.isEmpty
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.warning_amber_rounded,
+                                                size: 18,
+                                                color: colors.secondary,
+                                              ),
+                                              const Gap(8),
+                                              Expanded(
+                                                child: Text(
+                                                  strings.noAmmoInStock,
+                                                  style: textStyles.bodySmall
+                                                      ?.copyWith(
+                                                        color: colors.secondary,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : _SelectedSingleItemField(
+                                          leading: Icon(
+                                            Icons.radio_button_checked_rounded,
+                                            size: 18,
+                                            color: colors.primary,
+                                          ),
+                                          titleWhenEmpty:
+                                              strings.chooseAmmoFromInventory,
+                                          titleWhenSet:
+                                              (_selectedAmmoId == null
+                                                      ? null
+                                                      : provider.getAmmoById(
+                                                          _selectedAmmoId!,
+                                                        ))
+                                                  ?.name ??
+                                              strings.chooseAmmoFromInventory,
+                                          subtitle:
+                                              (_selectedAmmoId == null
+                                                      ? null
+                                                      : provider.getAmmoById(
+                                                          _selectedAmmoId!,
+                                                        )) ==
+                                                  null
+                                              ? null
+                                              : strings.tapToChange,
+                                          onTap: () async {
+                                            if (provider.ammos.isEmpty) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    strings
+                                                        .noAmmoInStockSwitchBorrowed,
+                                                  ),
+                                                ),
+                                              );
+                                              return;
+                                            }
+
+                                            final selected =
+                                                await showModalBottomSheet<
+                                                  String
+                                                >(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  builder: (context) =>
+                                                      _SingleSelectSheet<Ammo>(
+                                                        title: strings.ammosTab,
+                                                        items: provider.ammos,
+                                                        initialId:
+                                                            _selectedAmmoId,
+                                                        isLockedItem: (a) {
+                                                          final idx = provider
+                                                              .ammos
+                                                              .indexOf(a);
+                                                          return idx >= 0
+                                                              ? provider
+                                                                    .isAmmoLockedForFree(
+                                                                      a,
+                                                                      idx,
+                                                                    )
+                                                              : false;
+                                                        },
+                                                        icon: Icons
+                                                            .trip_origin_rounded,
+                                                        primaryText: (a) =>
+                                                            a.name,
+                                                        secondaryText: (a) => [
+                                                          a.caliber,
+                                                          if (a.brand
+                                                              .trim()
+                                                              .isNotEmpty)
+                                                            a.brand,
+                                                          if (a.projectileType
+                                                              .trim()
+                                                              .isNotEmpty)
+                                                            strings.itemProjectileTypeLabel(
+                                                              a.projectileType,
+                                                            ),
+                                                        ].join(' • '),
+                                                        matchesQuery: (a, q) {
+                                                          final qq = q
+                                                              .toLowerCase();
+                                                          return a.name
+                                                                  .toLowerCase()
+                                                                  .contains(
+                                                                    qq,
+                                                                  ) ||
+                                                              a.caliber
+                                                                  .toLowerCase()
+                                                                  .contains(
+                                                                    qq,
+                                                                  ) ||
+                                                              a.brand
+                                                                  .toLowerCase()
+                                                                  .contains(
+                                                                    qq,
+                                                                  ) ||
+                                                              a.projectileType
+                                                                  .toLowerCase()
+                                                                  .contains(qq);
+                                                        },
+                                                        getId: (a) => a.id,
+                                                      ),
+                                                );
+
+                                            if (!mounted || selected == null)
+                                              return;
+                                            setState(() {
+                                              _selectedAmmoId = selected;
+                                              _ammoError = false;
+                                            });
+                                          },
+                                        ))
+                                : TextField(
+                                    controller: _borrowedAmmoController,
+                                    textInputAction: TextInputAction.next,
+                                    onTap: () =>
+                                        _borrowedAmmoController
+                                            .selection = TextSelection(
+                                          baseOffset: 0,
+                                          extentOffset: _borrowedAmmoController
+                                              .text
+                                              .length,
+                                        ),
+                                    decoration: InputDecoration(
+                                      labelText: strings.borrowedAmmoOptional,
+                                      hintText: strings.borrowedAmmoHint,
+                                      hintStyle: textStyles.bodyMedium
+                                          ?.copyWith(
+                                            color: colors.onSurface.withAlpha(
+                                              100,
+                                            ),
+                                          ),
+                                      prefixIcon: const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: Icon(
+                                          Icons.radio_button_checked_rounded,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      filled: true,
+                                      fillColor: colors.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.lg,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: colors.outline,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.lg,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: colors.outline,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.lg,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: colors.primary,
+                                          width: 1.6,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Gap(AppSpacing.lg),
+
+                    // DÉROULÉ Section
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.tune_rounded,
+                          size: 18,
+                          color: colors.primary,
+                        ),
+                        const Gap(8),
+                        Text(
+                          strings.exerciseModeLabel.toUpperCase(),
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: colors.onSurface,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(AppSpacing.sm),
+                    Container(
+                      padding: AppSpacing.paddingMd,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: colors.outline),
+                      ),
+                      child: Column(
+                        children: [
+                          _SlidingSegmentedSelector(
+                            selectedIndex: _detailedMode ? 1 : 0,
+                            labels: [
+                              strings.exerciseModeSimple,
+                              strings.exerciseModeDetailed,
+                            ],
+                            onSelected: (index) {
+                              setState(() {
+                                _detailedMode = index == 1;
+                              });
+                            },
+                          ),
+                          if (!_detailedMode) ...[
+                            const Gap(AppSpacing.md),
+                            Row(
                               children: [
-                                Text((i + 1).toString().padLeft(2, '0'), style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w900)),
-                                const Gap(10),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                      Text(_stepTitle(s.type), style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800, fontSize: 13)),
-                                      Text(
-                                        '${_positionShort(s.position)}${_positionShort(s.position).isEmpty ? '' : ' · '}${_stepSummary(s, strings, provider.useMetric)}',
-                                        style: textStyles.bodySmall?.copyWith(color: colors.secondary, fontSize: 11),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      Row(
+                                        children: [
+                                          SvgPicture.asset(
+                                            'assets/images/hit.svg',
+                                            width: 14,
+                                            height: 14,
+                                            colorFilter: ColorFilter.mode(
+                                              colors.primary,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                          const Gap(6),
+                                          Text(
+                                            strings.shotsCountLabel
+                                                .toUpperCase(),
+                                            style: textStyles.labelLarge
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w900,
+                                                  color: colors.onSurface,
+                                                  letterSpacing: 1.1,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Gap(6),
+                                      Container(
+                                        key: _shotsFieldKey,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.lg,
+                                          ),
+                                          border: Border.all(
+                                            color: _shotsError
+                                                ? colors.error
+                                                : Colors.transparent,
+                                            width: 1.4,
+                                          ),
+                                        ),
+                                        child: TextField(
+                                          controller: _shotsFiredController,
+                                          keyboardType: TextInputType.number,
+                                          style: textStyles.titleMedium,
+                                          onTap: () =>
+                                              _shotsFiredController.selection =
+                                                  TextSelection(
+                                                    baseOffset: 0,
+                                                    extentOffset:
+                                                        _shotsFiredController
+                                                            .text
+                                                            .length,
+                                                  ),
+                                          onChanged: (_) {
+                                            final shots = int.tryParse(
+                                              _shotsFiredController.text.trim(),
+                                            );
+                                            if (_shotsError &&
+                                                shots != null &&
+                                                shots > 0) {
+                                              setState(
+                                                () => _shotsError = false,
+                                              );
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText: '0',
+                                            hintStyle: textStyles.bodyMedium
+                                                ?.copyWith(
+                                                  color: colors.onSurface
+                                                      .withAlpha(100),
+                                                ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 10,
+                                                ),
+                                            filled: true,
+                                            fillColor: Color.alphaBlend(
+                                              colors.onSurface.withValues(
+                                                alpha: 0.03,
+                                              ),
+                                              colors.surface,
+                                            ),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.lg,
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: colors.outline
+                                                    .withValues(alpha: 0.3),
+                                              ),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.lg,
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: colors.outline
+                                                    .withValues(alpha: 0.3),
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.lg,
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: colors.primary,
+                                                width: 1.6,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const Gap(2),
-                                ReorderableDragStartListener(
-                                  index: i,
-                                  child: Icon(Icons.drag_indicator_rounded, size: 20, color: colors.onSurface),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_rounded, size: 18),
-                                  onPressed: () => setState(() => _steps.removeAt(i)),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  splashRadius: 20,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                ],
-              ),
-            ),
-
-
-            const Gap(AppSpacing.lg),
-
-            // Cible utilisée
-            Row(
-              children: [
-                Icon(Icons.adjust_rounded, size: 18, color: colors.primary),
-                const Gap(8),
-                Text(
-                  strings.usedTargetLabel.toUpperCase(),
-                  style: textStyles.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: colors.onSurface,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ],
-            ),
-            const Gap(AppSpacing.sm),
-            TextField(
-              controller: _targetNameController,
-              onTap: () => _targetNameController.selection = TextSelection(baseOffset: 0, extentOffset: _targetNameController.text.length),
-              decoration: InputDecoration(
-                hintText: strings.targetNameHint,
-                hintStyle: textStyles.bodyMedium
-                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
-                filled: true,
-                fillColor: colors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.outline),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.outline),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.primary, width: 1.6),
-                ),
-              ),
-            ),
-            const Gap(AppSpacing.lg),
-
-            // Photo de la cible
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.photo_camera_rounded,
-                      size: 18,
-                      color: colors.primary,
-                    ),
-                    const Gap(8),
-                    Text(
-                      strings.targetPhotosTitle.toUpperCase(),
-                      style: textStyles.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: colors.onSurface,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                  ],
-                ),
-                FilledButton.icon(
-                  onPressed: _pickTargetPhoto,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text(strings.addButton),
-                  style: FilledButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                ),
-              ],
-            ),
-            const Gap(AppSpacing.sm),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: colors.outline),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_targetPhotos.isEmpty) ...[
-                      InkWell(
-                        onTap: _pickTargetPhoto,
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.add_a_photo_rounded,
-                                color: colors.outline,
-                                size: 40,
-                              ),
-                              const Gap(8),
-                              Text(
-                                strings.targetPhotosHint,
-                                style: textStyles.bodySmall?.copyWith(
-                                  color: colors.outline,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ] else ...[
-                      const Gap(8),
-
-                      ..._targetPhotos.map(
-                        (photo) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              border: Border.all(color: colors.outline),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _photoControllers[photo.id],
-                                        onChanged: (value) => setState(() {
-                                          _renameTargetPhoto(photo.id, value);
-                                        }),
-                                        decoration: InputDecoration(
-                                          labelText: strings.targetPhotoNameLabel,
-                                          isDense: true,
-                                          filled: true,
-                                          fillColor: colors.surface,
-                                          suffixIcon: (_photoControllers[photo.id]?.text.trim().isNotEmpty ?? false)
-                                              ? IconButton(
-                                                  icon: const Icon(Icons.clear_rounded, size: 18),
-                                                  splashRadius: 18,
-                                                  tooltip: strings.clear,
-                                                  onPressed: () {
-                                                    final c = _photoControllers[photo.id];
-                                                    if (c == null) return;
-                                                    c.clear();
-                                                    _renameTargetPhoto(photo.id, '');
-                                                    setState(() {});
-                                                  },
-                                                )
-                                              : null,
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                                            borderSide: BorderSide(color: colors.outline),
+                                const Gap(AppSpacing.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.straighten_rounded,
+                                            size: 14,
+                                            color: colors.primary,
                                           ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                                            borderSide: BorderSide(color: colors.outline),
+                                          const Gap(6),
+                                          Text(
+                                            strings.distanceLabel.toUpperCase(),
+                                            style: textStyles.labelLarge
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w900,
+                                                  color: colors.onSurface,
+                                                  letterSpacing: 1.1,
+                                                ),
                                           ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                                            borderSide: BorderSide(color: colors.primary, width: 1.6),
+                                        ],
+                                      ),
+                                      const Gap(6),
+                                      Container(
+                                        key: _distanceFieldKey,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.lg,
+                                          ),
+                                          border: Border.all(
+                                            color: _distanceError
+                                                ? colors.error
+                                                : Colors.transparent,
+                                            width: 1.4,
+                                          ),
+                                        ),
+                                        child: TextField(
+                                          controller: _distanceController,
+                                          keyboardType: TextInputType.number,
+                                          style: textStyles.titleMedium,
+                                          onTap: () =>
+                                              _distanceController.selection =
+                                                  TextSelection(
+                                                    baseOffset: 0,
+                                                    extentOffset:
+                                                        _distanceController
+                                                            .text
+                                                            .length,
+                                                  ),
+                                          onChanged: (_) {
+                                            final distance = int.tryParse(
+                                              _distanceController.text.trim(),
+                                            );
+                                            if (_distanceError &&
+                                                distance != null &&
+                                                distance > 0) {
+                                              setState(
+                                                () => _distanceError = false,
+                                              );
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText: '0',
+                                            hintStyle: textStyles.bodyMedium
+                                                ?.copyWith(
+                                                  color: colors.onSurface
+                                                      .withAlpha(100),
+                                                ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 10,
+                                                ),
+                                            suffixText: converter.useMetric
+                                                ? 'm'
+                                                : 'yd',
+                                            filled: true,
+                                            fillColor: Color.alphaBlend(
+                                              colors.onSurface.withValues(
+                                                alpha: 0.03,
+                                              ),
+                                              colors.surface,
+                                            ),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.lg,
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: colors.outline
+                                                    .withValues(alpha: 0.3),
+                                              ),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.lg,
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: colors.outline
+                                                    .withValues(alpha: 0.3),
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.lg,
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: colors.primary,
+                                                width: 1.6,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const Gap(8),
-                                    IconButton(
-                                      onPressed: () => _removeTargetPhoto(photo.id),
-                                      icon: Icon(
-                                        Icons.delete_rounded,
-                                      ),
-                                      tooltip: strings.removePhoto,
-                                      splashColor: Colors.transparent,
-                                      highlightColor: Colors.transparent,
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                                const Gap(8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                                  child: AspectRatio(
-                                    aspectRatio: 16 / 10,
-                                    child: CrossPlatformImage(
-                                      filePath: photo.path,
-                                      fit: BoxFit.cover,
+                              ],
+                            ),
+                            if (_shotsError || _distanceError)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  _shotsError
+                                      ? strings.shotsFiredError
+                                      : strings.distanceError,
+                                  style: textStyles.bodySmall?.copyWith(
+                                    color: colors.error,
+                                  ),
+                                ),
+                              ),
+                          ] else ...[
+                            const Gap(AppSpacing.md),
+                            // Badge Total
+                            Container(
+                              padding: const EdgeInsets.all(AppSpacing.sm),
+                              decoration: BoxDecoration(
+                                color: Color.alphaBlend(
+                                  colors.primary.withValues(alpha: 0.1),
+                                  colors.surface,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                border: Border.all(
+                                  color: colors.primary.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colors.primary,
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                    child: Text(
+                                      strings.exerciseAutoBadge,
+                                      style: textStyles.labelSmall?.copyWith(
+                                        color: colors.onPrimary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                  const Gap(10),
+                                  Expanded(
+                                    child: Text(
+                                      strings.exerciseAutoTotals(
+                                        _computedTotalShots(),
+                                        _steps.length,
+                                        _computedMaxDistance(),
+                                        converter.useMetric ? 'm' : 'yd',
+                                      ),
+                                      style: textStyles.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Gap(AppSpacing.md),
+                            // Header Steps
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  strings.exerciseStepsTitle.toUpperCase(),
+                                  style: textStyles.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: colors.onSurface,
+                                    letterSpacing: 1.1,
+                                  ),
+                                ),
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final availablePlatforms =
+                                        _availablePlatformsForStep(provider);
+                                    final availableAmmos =
+                                        _availableAmmosForStep(provider);
+                                    final step =
+                                        await showModalBottomSheet<
+                                          ExerciseStep
+                                        >(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (_) => _AddExerciseStepSheet(
+                                            availablePlatforms:
+                                                availablePlatforms,
+                                            availableAmmos: availableAmmos,
+                                            defaultPlatformId:
+                                                _platformSource == 'inventory'
+                                                ? _selectedPlatformId
+                                                : null,
+                                            defaultAmmoId:
+                                                _ammoSource == 'inventory'
+                                                ? _selectedAmmoId
+                                                : null,
+                                          ),
+                                        );
+                                    if (!mounted || step == null) return;
+                                    setState(() => _steps.add(step));
+                                  },
+                                  icon: const Icon(Icons.add_rounded, size: 14),
+                                  label: Text(
+                                    strings.exerciseAddStep,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: colors.primary,
+                                    foregroundColor: colors.onPrimary,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.lg,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
+                            const Gap(AppSpacing.sm),
+                            if (_steps.isEmpty)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Color.alphaBlend(
+                                    colors.onSurface.withValues(alpha: 0.03),
+                                    colors.surface,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                  border: Border.all(color: colors.outline),
+                                ),
+                                child: Text(
+                                  strings.exerciseNoSteps,
+                                  style: textStyles.bodyMedium?.copyWith(
+                                    color: colors.secondary,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              )
+                            else
+                              ReorderableListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                buildDefaultDragHandles: false,
+                                itemCount: _steps.length,
+                                onReorder: (oldIndex, newIndex) {
+                                  setState(() {
+                                    if (newIndex > oldIndex) newIndex -= 1;
+                                    final item = _steps.removeAt(oldIndex);
+                                    _steps.insert(newIndex, item);
+                                  });
+                                },
+                                itemBuilder: (context, i) {
+                                  final s = _steps[i];
+                                  return Container(
+                                    key: ValueKey(s.id),
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      12,
+                                      8,
+                                      2,
+                                      8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Color.alphaBlend(
+                                        colors.onSurface.withValues(
+                                          alpha: 0.03,
+                                        ),
+                                        colors.surface,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.lg,
+                                      ),
+                                      border: Border.all(
+                                        color: colors.outline.withValues(
+                                          alpha: 0.25,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          (i + 1).toString().padLeft(2, '0'),
+                                          style: textStyles.labelLarge
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                        ),
+                                        const Gap(10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _stepTitle(s.type),
+                                                style: textStyles.labelLarge
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      fontSize: 13,
+                                                    ),
+                                              ),
+                                              Text(
+                                                '${_positionShort(s.position)}${_positionShort(s.position).isEmpty ? '' : ' · '}${_stepSummary(s, strings, provider.useMetric)}',
+                                                style: textStyles.bodySmall
+                                                    ?.copyWith(
+                                                      color: colors.secondary,
+                                                      fontSize: 11,
+                                                    ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Gap(2),
+                                        ReorderableDragStartListener(
+                                          index: i,
+                                          child: Icon(
+                                            Icons.drag_indicator_rounded,
+                                            size: 20,
+                                            color: colors.onSurface,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_rounded,
+                                            size: 18,
+                                          ),
+                                          onPressed: () => setState(
+                                            () => _steps.removeAt(i),
+                                          ),
+                                          visualDensity: VisualDensity.compact,
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          splashRadius: 20,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    const Gap(AppSpacing.lg),
+
+                    // Cible utilisée
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.adjust_rounded,
+                          size: 18,
+                          color: colors.primary,
+                        ),
+                        const Gap(8),
+                        Text(
+                          strings.usedTargetLabel.toUpperCase(),
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: colors.onSurface,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(AppSpacing.sm),
+                    TextField(
+                      controller: _targetNameController,
+                      onTap: () =>
+                          _targetNameController.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: _targetNameController.text.length,
+                          ),
+                      decoration: InputDecoration(
+                        hintText: strings.targetNameHint,
+                        hintStyle: textStyles.bodyMedium?.copyWith(
+                          color: colors.onSurface.withAlpha(100),
+                        ),
+                        filled: true,
+                        fillColor: colors.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 1.6,
                           ),
                         ),
                       ),
-
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            const Gap(AppSpacing.lg),
-
-            // Mesurer la précision
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.insights_rounded,
-                      size: 18,
-                      color: colors.primary,
                     ),
-                    const Gap(8),
-                    Text(
-                      strings.measurePrecisionTitle.toUpperCase(),
-                      style: textStyles.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: colors.onSurface,
-                        letterSpacing: 1.1,
-                      ),
+                    const Gap(AppSpacing.lg),
+
+                    // Photo de la cible
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.photo_camera_rounded,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.targetPhotosTitle.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: colors.onSurface,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        FilledButton.icon(
+                          onPressed: _pickTargetPhoto,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(strings.addButton),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                Switch(
-                  value: _measurePrecision,
-                  onChanged: (val) => setState(() => _measurePrecision = val),
-                ),
-              ],
-            ),
-            if (_measurePrecision) ...[
-              const Gap(AppSpacing.sm),
-              Slider(
-                value: _precision,
-                min: 0,
-                max: 100,
-                divisions: 20,
-                label: "${_precision.toStringAsFixed(0)}%",
-                onChanged: (val) => setState(() => _precision = val),
-              ),
-              Text(
-                  strings.precisionValueLabel(
-                      '${_precision.toStringAsFixed(0)}%'),
-                  textAlign: TextAlign.center,
-                  style: textStyles.titleMedium?.copyWith(
-                      color: colors.primary, fontWeight: FontWeight.bold)),
-            ],
-            const Gap(AppSpacing.lg),
-
-            // Observations
-            Row(
-              children: [
-                Icon(
-                  Icons.edit_rounded,
-                  size: 18,
-                  color: colors.primary,
-                ),
-                const Gap(8),
-                Text(
-                  strings.observationsTitle.toUpperCase(),
-                  style: textStyles.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: colors.onSurface,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ],
-            ),
-            const Gap(AppSpacing.sm),
-            TextField(
-              controller: _observationsController,
-              maxLines: 3,
-              textAlignVertical: TextAlignVertical.top,
-              onTap: () => _observationsController.selection = TextSelection(baseOffset: 0, extentOffset: _observationsController.text.length),
-              decoration: InputDecoration(
-                hintText: strings.observationsExample,
-                hintStyle: textStyles.bodyMedium
-                    ?.copyWith(color: colors.onSurface.withAlpha(100)),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                filled: true,
-                fillColor: colors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.outline),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.outline),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: colors.primary, width: 1.6),
-                ),
-              ),
-            ),
-            const Gap(AppSpacing.lg),
-
-            // Save buttons row
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: Container(
+                    const Gap(AppSpacing.sm),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
                       decoration: BoxDecoration(
+                        color: colors.surface,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        boxShadow: AppShadows.cardPremium,
+                        border: Border.all(color: colors.outline),
                       ),
-                      child: FilledButton(
-                        onPressed: _save,
-                        style: FilledButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_targetPhotos.isEmpty) ...[
+                              InkWell(
+                                onTap: _pickTargetPhoto,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.sm,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.add_a_photo_rounded,
+                                        color: colors.outline,
+                                        size: 40,
+                                      ),
+                                      const Gap(8),
+                                      Text(
+                                        strings.targetPhotosHint,
+                                        style: textStyles.bodySmall?.copyWith(
+                                          color: colors.outline,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              const Gap(8),
+
+                              ..._targetPhotos.map(
+                                (photo) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: colors.surface,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.sm,
+                                      ),
+                                      border: Border.all(color: colors.outline),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: TextField(
+                                                controller:
+                                                    _photoControllers[photo.id],
+                                                onChanged: (value) =>
+                                                    setState(() {
+                                                      _renameTargetPhoto(
+                                                        photo.id,
+                                                        value,
+                                                      );
+                                                    }),
+                                                decoration: InputDecoration(
+                                                  labelText: strings
+                                                      .targetPhotoNameLabel,
+                                                  isDense: true,
+                                                  filled: true,
+                                                  fillColor: colors.surface,
+                                                  suffixIcon:
+                                                      (_photoControllers[photo
+                                                                  .id]
+                                                              ?.text
+                                                              .trim()
+                                                              .isNotEmpty ??
+                                                          false)
+                                                      ? IconButton(
+                                                          icon: const Icon(
+                                                            Icons.clear_rounded,
+                                                            size: 18,
+                                                          ),
+                                                          splashRadius: 18,
+                                                          tooltip:
+                                                              strings.clear,
+                                                          onPressed: () {
+                                                            final c =
+                                                                _photoControllers[photo
+                                                                    .id];
+                                                            if (c == null)
+                                                              return;
+                                                            c.clear();
+                                                            _renameTargetPhoto(
+                                                              photo.id,
+                                                              '',
+                                                            );
+                                                            setState(() {});
+                                                          },
+                                                        )
+                                                      : null,
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          AppRadius.sm,
+                                                        ),
+                                                    borderSide: BorderSide(
+                                                      color: colors.outline,
+                                                    ),
+                                                  ),
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              AppRadius.sm,
+                                                            ),
+                                                        borderSide: BorderSide(
+                                                          color: colors.outline,
+                                                        ),
+                                                      ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              AppRadius.sm,
+                                                            ),
+                                                        borderSide: BorderSide(
+                                                          color: colors.primary,
+                                                          width: 1.6,
+                                                        ),
+                                                      ),
+                                                ),
+                                              ),
+                                            ),
+                                            const Gap(8),
+                                            IconButton(
+                                              onPressed: () =>
+                                                  _removeTargetPhoto(photo.id),
+                                              icon: Icon(Icons.delete_rounded),
+                                              tooltip: strings.removePhoto,
+                                              splashColor: Colors.transparent,
+                                              highlightColor:
+                                                  Colors.transparent,
+                                            ),
+                                          ],
+                                        ),
+                                        const Gap(8),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.sm,
+                                          ),
+                                          child: AspectRatio(
+                                            aspectRatio: 16 / 10,
+                                            child: CrossPlatformImage(
+                                              filePath: photo.path,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const Gap(AppSpacing.lg),
+
+                    // Mesurer la précision
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.insights_rounded,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.measurePrecisionTitle.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: colors.onSurface,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Switch(
+                          value: _measurePrecision,
+                          onChanged: (val) =>
+                              setState(() => _measurePrecision = val),
+                        ),
+                      ],
+                    ),
+                    if (_measurePrecision) ...[
+                      const Gap(AppSpacing.sm),
+                      Slider(
+                        value: _precision,
+                        min: 0,
+                        max: 100,
+                        divisions: 20,
+                        label: "${_precision.toStringAsFixed(0)}%",
+                        onChanged: (val) => setState(() => _precision = val),
+                      ),
+                      Text(
+                        strings.precisionValueLabel(
+                          '${_precision.toStringAsFixed(0)}%',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: textStyles.titleMedium?.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                    const Gap(AppSpacing.lg),
+
+                    // Observations
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.edit_rounded,
+                          size: 18,
+                          color: colors.primary,
+                        ),
+                        const Gap(8),
+                        Text(
+                          strings.observationsTitle.toUpperCase(),
+                          style: textStyles.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: colors.onSurface,
+                            letterSpacing: 1.1,
                           ),
                         ),
-                        child: Text(strings.saveExerciseButton),
+                      ],
+                    ),
+                    const Gap(AppSpacing.sm),
+                    TextField(
+                      controller: _observationsController,
+                      maxLines: 3,
+                      textAlignVertical: TextAlignVertical.top,
+                      onTap: () =>
+                          _observationsController.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: _observationsController.text.length,
+                          ),
+                      decoration: InputDecoration(
+                        hintText: strings.observationsExample,
+                        hintStyle: textStyles.bodyMedium?.copyWith(
+                          color: colors.onSurface.withAlpha(100),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        filled: true,
+                        fillColor: colors.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 1.6,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const Gap(10),
-                SizedBox(
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: _saveAsTemplate,
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                      ),
-                      side: BorderSide(color: colors.primary, width: 1.6),
+                    const Gap(AppSpacing.lg),
+
+                    // Save buttons row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                boxShadow: AppShadows.cardPremium,
+                              ),
+                              child: FilledButton(
+                                onPressed: _save,
+                                style: FilledButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(strings.saveExerciseButton),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Gap(10),
+                        SizedBox(
+                          height: 50,
+                          child: OutlinedButton(
+                            onPressed: _saveAsTemplate,
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                              ),
+                              side: BorderSide(
+                                color: colors.primary,
+                                width: 1.6,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.bookmark_add_outlined,
+                              size: 22,
+                              color: colors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Icon(Icons.bookmark_add_outlined, size: 22, color: colors.primary),
-                  ),
+                    const Gap(AppSpacing.lg),
+                    const Gap(AppSpacing.sm),
+                  ],
                 ),
-              ],
+              ),
             ),
-            const Gap(AppSpacing.lg),
-            const Gap(AppSpacing.sm),
           ],
         ),
       ),
-    ),
-        ],
-      ),
-    ),
-  );
+    );
   }
 
   void _saveAsTemplate() {
@@ -4141,8 +4610,8 @@ controller: widget.scrollController ?? _exerciseScrollController,
           decoration: InputDecoration(
             hintText: strings.templateNameHint,
             hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
-                ),
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
+            ),
           ),
         ),
         actions: [
@@ -4170,8 +4639,10 @@ controller: widget.scrollController ?? _exerciseScrollController,
                 steps: _detailedMode ? List<ExerciseStep>.from(_steps) : null,
                 observations: _observationsController.text.trim(),
               );
-              Provider.of<ThotProvider>(context, listen: false)
-                  .saveExerciseTemplate(template);
+              Provider.of<ThotProvider>(
+                context,
+                listen: false,
+              ).saveExerciseTemplate(template);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -4192,19 +4663,25 @@ controller: widget.scrollController ?? _exerciseScrollController,
     final distance = int.tryParse(_distanceController.text.trim());
 
     final computedShots = _detailedMode ? _computedTotalShots() : (shots ?? 0);
-    final computedDistance =
-        _detailedMode ? _computedMaxDistance() : (distance ?? 0);
-    final hasTirStep = _detailedMode &&
+    final computedDistance = _detailedMode
+        ? _computedMaxDistance()
+        : (distance ?? 0);
+    final hasTirStep =
+        _detailedMode &&
         _steps.any((s) => s.type == StepType.tir && (s.shots ?? 0) > 0);
-    final hasUnattributedTirStep = _detailedMode &&
-        _steps.any((s) =>
-            s.type == StepType.tir &&
-            (s.shots ?? 0) > 0 &&
-            ((s.usedPlatformId ?? '').trim().isEmpty ||
-                (s.usedAmmoId ?? '').trim().isEmpty));
+    final hasUnattributedTirStep =
+        _detailedMode &&
+        _steps.any(
+          (s) =>
+              s.type == StepType.tir &&
+              (s.shots ?? 0) > 0 &&
+              ((s.usedPlatformId ?? '').trim().isEmpty ||
+                  (s.usedAmmoId ?? '').trim().isEmpty),
+        );
 
     setState(() {
-      _platformError = _platformSource == 'inventory' && _selectedPlatformId == null;
+      _platformError =
+          _platformSource == 'inventory' && _selectedPlatformId == null;
       _ammoError = _ammoSource == 'inventory' && _selectedAmmoId == null;
       _shotsError = _detailedMode
           ? (hasTirStep && computedShots <= 0)
@@ -4256,22 +4733,25 @@ controller: widget.scrollController ?? _exerciseScrollController,
 
     if (hasUnattributedTirStep) {
       ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(
-  content: Text(AppStrings.of(context).stepPlatformAmmoRequired),
-  duration: const Duration(seconds: 3),
-),
+        SnackBar(
+          content: Text(AppStrings.of(context).stepPlatformAmmoRequired),
+          duration: const Duration(seconds: 3),
+        ),
       );
       return;
     }
 
-    final effectivePlatformId =
-        _platformSource == 'borrowed' ? 'borrowed' : _selectedPlatformId!;
+    final effectivePlatformId = _platformSource == 'borrowed'
+        ? 'borrowed'
+        : _selectedPlatformId!;
 
-    final effectiveAmmoId =
-        _ammoSource == 'borrowed' ? 'borrowed' : _selectedAmmoId!;
+    final effectiveAmmoId = _ammoSource == 'borrowed'
+        ? 'borrowed'
+        : _selectedAmmoId!;
 
-    final effectiveSteps =
-        _detailedMode ? List<ExerciseStep>.from(_steps) : null;
+    final effectiveSteps = _detailedMode
+        ? List<ExerciseStep>.from(_steps)
+        : null;
     final provider = Provider.of<ThotProvider>(context, listen: false);
 
     final effectivePlatformAssignments = <ExercisePlatformAssignment>[];
@@ -4289,7 +4769,7 @@ SnackBar(
         ..._selectedEquipmentIds,
       };
       effectiveAccessoryIds.removeAll(_removedLinkedAccessoryIds);
-      
+
       effectivePlatformAssignments.add(
         ExercisePlatformAssignment(
           platformId: effectivePlatformId,
@@ -4312,8 +4792,8 @@ SnackBar(
         if (step.type != StepType.tir) continue;
         final stepShots = step.shots ?? 0;
         if (stepShots <= 0) continue;
-        final usedPlatformId =
-            (step.usedPlatformId ?? effectivePlatformId).trim();
+        final usedPlatformId = (step.usedPlatformId ?? effectivePlatformId)
+            .trim();
         final usedAmmoId = (step.usedAmmoId ?? effectiveAmmoId).trim();
         if (usedPlatformId.isEmpty ||
             usedPlatformId == 'none' ||
@@ -4348,15 +4828,21 @@ SnackBar(
     }
 
     final exercise = Exercise(
-      id: widget.exercise?.id ??
+      id:
+          widget.exercise?.id ??
           DateTime.now().microsecondsSinceEpoch.toString(),
       name: _exerciseNameController.text.trim(),
       platformId: effectivePlatformId,
-      platformLabel:
-          effectivePlatformId == 'borrowed' ? _borrowedPlatformController.text.trim() : null,
+      platformLabel: effectivePlatformId == 'borrowed'
+          ? _borrowedPlatformController.text.trim()
+          : null,
       ammoId: effectiveAmmoId,
-      ammoLabel: effectiveAmmoId == 'borrowed' ? _borrowedAmmoController.text.trim() : null,
-      equipmentIds: _selectedEquipmentIds.where((id) => !_removedLinkedAccessoryIds.contains(id)).toList(),
+      ammoLabel: effectiveAmmoId == 'borrowed'
+          ? _borrowedAmmoController.text.trim()
+          : null,
+      equipmentIds: _selectedEquipmentIds
+          .where((id) => !_removedLinkedAccessoryIds.contains(id))
+          .toList(),
       targetName: _targetNameController.text.isEmpty
           ? null
           : _targetNameController.text,
@@ -4390,16 +4876,16 @@ class _SourceToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-return SizedBox(
-  height: 44,
-  child: _SlidingSegmentedSelector(
-    selectedIndex: value == 'borrowed' ? 1 : 0,
-    labels: [leftLabel, rightLabel],
-    onSelected: (index) {
-      onChanged(index == 1 ? 'borrowed' : 'inventory');
-    },
-  ),
-);
+    return SizedBox(
+      height: 44,
+      child: _SlidingSegmentedSelector(
+        selectedIndex: value == 'borrowed' ? 1 : 0,
+        labels: [leftLabel, rightLabel],
+        onSelected: (index) {
+          onChanged(index == 1 ? 'borrowed' : 'inventory');
+        },
+      ),
+    );
   }
 }
 
@@ -4418,8 +4904,10 @@ class _SelectedSingleItemField extends StatelessWidget {
     required this.titleWhenSet,
     required this.onTap,
     this.subtitle,
-  }) : assert(icon != null || leading != null,
-            'Provide either icon or leading');
+  }) : assert(
+         icon != null || leading != null,
+         'Provide either icon or leading',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -4455,7 +4943,8 @@ class _SelectedSingleItemField extends StatelessWidget {
                       width: 18,
                       height: 18,
                       child: Center(
-                        child: leading ??
+                        child:
+                            leading ??
                             Icon(icon!, size: 18, color: colors.primary),
                       ),
                     ),
@@ -4463,28 +4952,37 @@ class _SelectedSingleItemField extends StatelessWidget {
                     Expanded(
                       child: Text(
                         isEmpty ? titleWhenEmpty : titleWhenSet,
-                        style: textStyles.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: textStyles.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const Gap(8),
-                    Icon(Icons.keyboard_arrow_down_rounded,
-                        color: colors.outline),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: colors.outline,
+                    ),
                   ],
                 ),
                 if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
                   const Gap(6),
-                  Text(subtitle!,
-                      style: textStyles.bodySmall
-                          ?.copyWith(color: colors.secondary)),
+                  Text(
+                    subtitle!,
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.secondary,
+                    ),
+                  ),
                 ],
                 if (subtitle == null || subtitle!.trim().isEmpty) ...[
                   const Gap(6),
-                  Text(strings.tapToChooseFromInventory,
-                      style: textStyles.bodySmall
-                          ?.copyWith(color: colors.outline)),
+                  Text(
+                    strings.tapToChooseFromInventory,
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.outline,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -4518,8 +5016,10 @@ class _SingleSelectSheet<T> extends StatefulWidget {
     required this.matchesQuery,
     required this.getId,
     this.isLockedItem,
-  }) : assert(icon != null || iconBuilder != null,
-            'Provide either icon or iconBuilder');
+  }) : assert(
+         icon != null || iconBuilder != null,
+         'Provide either icon or iconBuilder',
+       );
 
   @override
   State<_SingleSelectSheet<T>> createState() => _SingleSelectSheetState<T>();
@@ -4555,11 +5055,14 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
     final canValidate = _selection != null;
 
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.lg),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -4571,9 +5074,12 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(widget.title,
-                        style: textStyles.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w900)),
+                    child: Text(
+                      widget.title,
+                      style: textStyles.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
                   IconButton(
                     onPressed: () => context.pop(),
@@ -4586,9 +5092,7 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: TextField(
-                style: textStyles.bodyMedium?.copyWith(
-                  fontSize: 14,
-                ),
+                style: textStyles.bodyMedium?.copyWith(fontSize: 14),
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
                   hintText: strings.searchSessionsHint,
@@ -4636,9 +5140,12 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
               child: filtered.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Text(strings.noResults,
-                          style: textStyles.bodyMedium
-                              ?.copyWith(color: colors.secondary)),
+                      child: Text(
+                        strings.noResults,
+                        style: textStyles.bodyMedium?.copyWith(
+                          color: colors.secondary,
+                        ),
+                      ),
                     )
                   : ListView.separated(
                       shrinkWrap: true,
@@ -4662,26 +5169,35 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
                                 opacity: isLocked ? 0.45 : 1,
                                 child: Theme(
                                   data: Theme.of(context).copyWith(
-                                      splashFactory: NoSplash.splashFactory),
+                                    splashFactory: NoSplash.splashFactory,
+                                  ),
                                   child: RadioListTile<String>(
                                     value: id,
                                     groupValue: _selection,
                                     onChanged: isLocked
                                         ? null
                                         : (v) => setState(() => _selection = v),
-                                    fillColor: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return colors.primary;
-                        }
-                        return Colors.transparent;
-                      }),
-                                    title: Text(widget.primaryText(it),
-                                        style: textStyles.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w700)),
+                                    fillColor: WidgetStateProperty.resolveWith((
+                                      states,
+                                    ) {
+                                      if (states.contains(
+                                        WidgetState.selected,
+                                      )) {
+                                        return colors.primary;
+                                      }
+                                      return Colors.transparent;
+                                    }),
+                                    title: Text(
+                                      widget.primaryText(it),
+                                      style: textStyles.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                     subtitle: Text(
                                       widget.secondaryText(it),
-                                      style: textStyles.bodySmall
-                                          ?.copyWith(color: colors.secondary),
+                                      style: textStyles.bodySmall?.copyWith(
+                                        color: colors.secondary,
+                                      ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -4697,7 +5213,9 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
                                   right: 10,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: colors.primary,
                                       borderRadius: BorderRadius.circular(999),
@@ -4725,8 +5243,7 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () => context.push('/pro'),
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.lg),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             child: tile,
                           ),
                         );
@@ -4746,15 +5263,19 @@ class _SingleSelectSheetState<T> extends State<_SingleSelectSheet<T>> {
                       boxShadow: canValidate ? AppShadows.cardPremium : null,
                     ),
                     child: FilledButton(
-                      onPressed: canValidate ? () => context.pop(_selection) : null,
+                      onPressed: canValidate
+                          ? () => context.pop(_selection)
+                          : null,
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
-                        disabledBackgroundColor:
-                            colors.outline.withValues(alpha: 0.18),
-                        disabledForegroundColor:
-                            colors.outline.withValues(alpha: 0.85),
+                        disabledBackgroundColor: colors.outline.withValues(
+                          alpha: 0.18,
+                        ),
+                        disabledForegroundColor: colors.outline.withValues(
+                          alpha: 0.85,
+                        ),
                         overlayColor: Colors.transparent,
                       ),
                       child: Text(strings.validate),
@@ -4828,15 +5349,18 @@ class _SelectedEquipmentField extends StatelessWidget {
                         selected.isEmpty
                             ? strings.noEquipmentSelected
                             : strings.selectedEquipmentCount(selected.length),
-                        style: textStyles.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: textStyles.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const Gap(8),
-                    Icon(Icons.keyboard_arrow_down_rounded,
-                        color: colors.outline),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: colors.outline,
+                    ),
                   ],
                 ),
                 if (selected.isNotEmpty) ...[
@@ -4844,41 +5368,44 @@ class _SelectedEquipmentField extends StatelessWidget {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: selected
-                        .map(
-                          (a) {
-                            final isLinked = linkedIds.contains(a.id);
-                            return InputChip(
-                              avatar: isLinked
-                                  ? Icon(Icons.link_rounded,
-                                      size: 16, color: colors.primary)
-                                  : null,
-                              label:
-                                  Text(a.name, overflow: TextOverflow.ellipsis),
-                              onDeleted: () {
-                                if (isLinked && onUnlinkForSession != null) {
-                                  onUnlinkForSession!(a.id);
-                                } else {
-                                  onRemove(a.id);
-                                }
-                              },
-                              deleteIcon: Icon(Icons.close_rounded,
-                                  size: 18, color: colors.onSurface),
-                              backgroundColor: isLinked
-                                  ? colors.primary.withValues(alpha: 0.1)
-                                  : colors.surface,
-                              shape: StadiumBorder(
-                                  side: BorderSide(
-                                    color: isLinked
-                                        ? colors.primary.withValues(alpha: 0.4)
-                                        : colors.outline,
-                                  )),
-                              labelStyle: textStyles.labelLarge
-                                  ?.copyWith(color: colors.onSurface),
-                            );
-                          },
-                        )
-                        .toList(),
+                    children: selected.map((a) {
+                      final isLinked = linkedIds.contains(a.id);
+                      return InputChip(
+                        avatar: isLinked
+                            ? Icon(
+                                Icons.link_rounded,
+                                size: 16,
+                                color: colors.primary,
+                              )
+                            : null,
+                        label: Text(a.name, overflow: TextOverflow.ellipsis),
+                        onDeleted: () {
+                          if (isLinked && onUnlinkForSession != null) {
+                            onUnlinkForSession!(a.id);
+                          } else {
+                            onRemove(a.id);
+                          }
+                        },
+                        deleteIcon: Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: colors.onSurface,
+                        ),
+                        backgroundColor: isLinked
+                            ? colors.primary.withValues(alpha: 0.1)
+                            : colors.surface,
+                        shape: StadiumBorder(
+                          side: BorderSide(
+                            color: isLinked
+                                ? colors.primary.withValues(alpha: 0.4)
+                                : colors.outline,
+                          ),
+                        ),
+                        labelStyle: textStyles.labelLarge?.copyWith(
+                          color: colors.onSurface,
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ] else ...[
                   const Gap(6),
@@ -4896,8 +5423,9 @@ class _SelectedEquipmentField extends StatelessWidget {
                           accessories.isEmpty
                               ? strings.noAccessoryInStock
                               : strings.tapToChooseFromInventory,
-                          style: textStyles.bodySmall
-                              ?.copyWith(color: colors.outline),
+                          style: textStyles.bodySmall?.copyWith(
+                            color: colors.outline,
+                          ),
                         ),
                       ),
                     ],
@@ -4993,33 +5521,36 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
     final provider = Provider.of<ThotProvider>(context, listen: false);
-final distUnit = provider.useMetric ? 'm' : 'yd';
+    final distUnit = provider.useMetric ? 'm' : 'yd';
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
-    final availablePlatformIds =
-        widget.availablePlatforms.map((w) => w.id).toSet();
+    final availablePlatformIds = widget.availablePlatforms
+        .map((w) => w.id)
+        .toSet();
     final availableAmmoIds = widget.availableAmmos.map((a) => a.id).toSet();
-    final selectedPlatformValue =
-        availablePlatformIds.contains(_usedPlatformId) ? _usedPlatformId : null;
-    final selectedAmmoValue =
-        availableAmmoIds.contains(_usedAmmoId) ? _usedAmmoId : null;
+    final selectedPlatformValue = availablePlatformIds.contains(_usedPlatformId)
+        ? _usedPlatformId
+        : null;
+    final selectedAmmoValue = availableAmmoIds.contains(_usedAmmoId)
+        ? _usedAmmoId
+        : null;
 
     InputDecoration decoration(String label) => InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: colors.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: BorderSide(color: colors.outline),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: BorderSide(color: colors.outline),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: BorderSide(color: colors.primary, width: 1.6),
-          ),
-        );
+      labelText: label,
+      filled: true,
+      fillColor: colors.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderSide: BorderSide(color: colors.outline),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderSide: BorderSide(color: colors.outline),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderSide: BorderSide(color: colors.primary, width: 1.6),
+      ),
+    );
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -5049,8 +5580,9 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                     widget.initialStep == null
                         ? strings.exerciseNewStepTitle
                         : strings.exerciseEditStepTitle,
-                    style: textStyles.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w900),
+                    style: textStyles.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -5066,15 +5598,17 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
               padding: EdgeInsets.only(
                 left: AppSpacing.lg,
                 right: AppSpacing.lg,
-                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     strings.exerciseStepTypeTitle,
-                    style: textStyles.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Gap(8),
                   Wrap(
@@ -5093,16 +5627,18 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                             color: selected ? colors.primary : colors.outline,
                           ),
                         ),
-                        labelStyle: textStyles.labelLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        labelStyle: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       );
                     }).toList(),
                   ),
                   const Gap(AppSpacing.md),
                   Text(
                     strings.exerciseStepPositionTitle,
-                    style: textStyles.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: textStyles.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Gap(8),
                   Wrap(
@@ -5133,8 +5669,7 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                           backgroundColor: colors.surface,
                           shape: StadiumBorder(
                             side: BorderSide(
-                              color:
-                                  selected ? colors.primary : colors.outline,
+                              color: selected ? colors.primary : colors.outline,
                             ),
                           ),
                         );
@@ -5175,30 +5710,39 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                     TextField(
                       controller: _shotsController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldShots}${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldShots}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(10),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(10),
                     TextField(
                       controller: _targetController,
-                      decoration: decoration('${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ] else if (_type == StepType.deplacement) ...[
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ] else if (_type == StepType.rechargement) ...[
                     Text(
                       strings.exerciseFieldReloadType,
-                      style: textStyles.labelLarge
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: textStyles.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const Gap(8),
                     Wrap(
@@ -5214,8 +5758,7 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                           backgroundColor: colors.surface,
                           shape: StadiumBorder(
                             side: BorderSide(
-                              color:
-                                  selected ? colors.primary : colors.outline,
+                              color: selected ? colors.primary : colors.outline,
                             ),
                           ),
                         );
@@ -5224,9 +5767,12 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                   ] else if (_type == StepType.transition) ...[
                     TextField(
                       controller: _platformFromController,
-                      decoration: decoration('${strings.exerciseFieldPlatformFrom}${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldPlatformFrom}${strings.exerciseOptionalHint}',
+                      ),
                     ),
-                    if (_platformFromController.text.isNotEmpty && widget.defaultPlatformId == null) ...[
+                    if (_platformFromController.text.isNotEmpty &&
+                        widget.defaultPlatformId == null) ...[
                       const SizedBox(height: 4),
                       Text(
                         strings.exercisePlatformSelectionHint,
@@ -5239,9 +5785,12 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                     const Gap(10),
                     TextField(
                       controller: _platformToController,
-                      decoration: decoration('${strings.exerciseFieldPlatformTo}${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldPlatformTo}${strings.exerciseOptionalHint}',
+                      ),
                     ),
-                    if (_platformToController.text.isNotEmpty && widget.defaultPlatformId == null) ...[
+                    if (_platformToController.text.isNotEmpty &&
+                        widget.defaultPlatformId == null) ...[
                       const SizedBox(height: 4),
                       Text(
                         strings.exercisePlatformSelectionHint,
@@ -5254,30 +5803,40 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                   ] else if (_type == StepType.miseEnJoue) ...[
                     TextField(
                       controller: _targetController,
-                      decoration: decoration('${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldTarget}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(10),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ] else if (_type == StepType.attente) ...[
                     TextField(
                       controller: _durationController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDuration} (s)${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldDuration} (s)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(10),
                     TextField(
                       controller: _distanceController,
                       keyboardType: TextInputType.number,
-                      decoration: decoration('${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldDistance} ($distUnit)${strings.exerciseOptionalHint}',
+                      ),
                     ),
                     const Gap(10),
                     TextField(
                       controller: _triggerController,
-                      decoration: decoration('${strings.exerciseFieldTrigger}${strings.exerciseOptionalHint}'),
+                      decoration: decoration(
+                        '${strings.exerciseFieldTrigger}${strings.exerciseOptionalHint}',
+                      ),
                     ),
                   ],
 
@@ -5299,12 +5858,15 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                       ),
                       child: FilledButton(
                         onPressed: () {
-                          final distanceM =
-                              int.tryParse(_distanceController.text.trim());
-                          final shots =
-                              int.tryParse(_shotsController.text.trim());
-                          final durationSeconds =
-                              int.tryParse(_durationController.text.trim());
+                          final distanceM = int.tryParse(
+                            _distanceController.text.trim(),
+                          );
+                          final shots = int.tryParse(
+                            _shotsController.text.trim(),
+                          );
+                          final durationSeconds = int.tryParse(
+                            _durationController.text.trim(),
+                          );
 
                           if (_type == StepType.tir &&
                               ((shots ?? 0) > 0) &&
@@ -5320,9 +5882,9 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                           }
 
                           final step = ExerciseStep(
-                            id: widget.initialStep?.id ??
-                                DateTime.now()
-                                    .microsecondsSinceEpoch
+                            id:
+                                widget.initialStep?.id ??
+                                DateTime.now().microsecondsSinceEpoch
                                     .toString(),
                             type: _type,
                             position: _position,
@@ -5333,12 +5895,14 @@ final distUnit = provider.useMetric ? 'm' : 'yd';
                                 : _targetController.text.trim(),
                             platformFrom:
                                 _platformFromController.text.trim().isEmpty
-                                    ? null
-                                    : _platformFromController.text.trim(),
-                            platformTo: _platformToController.text.trim().isEmpty
+                                ? null
+                                : _platformFromController.text.trim(),
+                            platformTo:
+                                _platformToController.text.trim().isEmpty
                                 ? null
                                 : _platformToController.text.trim(),
-                            usedPlatformId: (_usedPlatformId ?? '').trim().isEmpty
+                            usedPlatformId:
+                                (_usedPlatformId ?? '').trim().isEmpty
                                 ? null
                                 : _usedPlatformId!.trim(),
                             usedAmmoId: (_usedAmmoId ?? '').trim().isEmpty
@@ -5385,8 +5949,10 @@ class _EquipmentMultiSelectSheet extends StatefulWidget {
   final List<Accessory> accessories;
   final Set<String> initialSelection;
 
-  const _EquipmentMultiSelectSheet(
-      {required this.accessories, required this.initialSelection});
+  const _EquipmentMultiSelectSheet({
+    required this.accessories,
+    required this.initialSelection,
+  });
 
   @override
   State<_EquipmentMultiSelectSheet> createState() =>
@@ -5430,12 +5996,14 @@ class _EquipmentMultiSelectSheetState
     final canValidate = _selection.isNotEmpty;
 
     return Container(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.lg),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -5447,9 +6015,12 @@ class _EquipmentMultiSelectSheetState
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(strings.equipmentsTitle,
-                        style: textStyles.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w900)),
+                    child: Text(
+                      strings.equipmentsTitle,
+                      style: textStyles.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
                   IconButton(
                     onPressed: () => context.pop(),
@@ -5462,9 +6033,7 @@ class _EquipmentMultiSelectSheetState
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: TextField(
-                style: textStyles.bodyMedium?.copyWith(
-                  fontSize: 14,
-                ),
+                style: textStyles.bodyMedium?.copyWith(fontSize: 14),
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
                   hintText: strings.searchEquipmentHint,
@@ -5512,9 +6081,12 @@ class _EquipmentMultiSelectSheetState
               child: filtered.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Text(strings.noEquipmentFound,
-                          style: textStyles.bodyMedium
-                              ?.copyWith(color: colors.secondary)),
+                      child: Text(
+                        strings.noEquipmentFound,
+                        style: textStyles.bodyMedium?.copyWith(
+                          color: colors.secondary,
+                        ),
+                      ),
                     )
                   : ListView.separated(
                       shrinkWrap: true,
@@ -5542,13 +6114,15 @@ class _EquipmentMultiSelectSheetState
                                 opacity: isLocked ? 0.45 : 1,
                                 child: Theme(
                                   data: Theme.of(context).copyWith(
-                                      splashFactory: NoSplash.splashFactory),
+                                    splashFactory: NoSplash.splashFactory,
+                                  ),
                                   child: ListTile(
                                     enabled: !isLocked,
                                     leading: Icon(
                                       selected
                                           ? Icons.radio_button_checked_rounded
-                                          : Icons.radio_button_unchecked_rounded,
+                                          : Icons
+                                                .radio_button_unchecked_rounded,
                                       size: 20,
                                       color: selected
                                           ? colors.primary
@@ -5564,10 +6138,11 @@ class _EquipmentMultiSelectSheetState
                                       [
                                         strings.itemAccessoryTypeLabel(a.type),
                                         if (a.brand.trim().isNotEmpty) a.brand,
-                                        if (a.model.trim().isNotEmpty) a.model
+                                        if (a.model.trim().isNotEmpty) a.model,
                                       ].join(' • '),
-                                      style: textStyles.bodySmall
-                                          ?.copyWith(color: colors.secondary),
+                                      style: textStyles.bodySmall?.copyWith(
+                                        color: colors.secondary,
+                                      ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -5592,7 +6167,9 @@ class _EquipmentMultiSelectSheetState
                                   right: 10,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: colors.primary,
                                       borderRadius: BorderRadius.circular(999),
@@ -5620,8 +6197,7 @@ class _EquipmentMultiSelectSheetState
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () => context.push('/pro'),
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.lg),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             child: tile,
                           ),
                         );
@@ -5641,16 +6217,19 @@ class _EquipmentMultiSelectSheetState
                       boxShadow: canValidate ? AppShadows.cardPremium : null,
                     ),
                     child: FilledButton(
-                      onPressed:
-                          canValidate ? () => context.pop(_selection) : null,
+                      onPressed: canValidate
+                          ? () => context.pop(_selection)
+                          : null,
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
-                        disabledBackgroundColor:
-                            colors.outline.withValues(alpha: 0.18),
-                        disabledForegroundColor:
-                            colors.outline.withValues(alpha: 0.85),
+                        disabledBackgroundColor: colors.outline.withValues(
+                          alpha: 0.18,
+                        ),
+                        disabledForegroundColor: colors.outline.withValues(
+                          alpha: 0.85,
+                        ),
                         overlayColor: Colors.transparent,
                       ),
                       child: Text(strings.validate),

@@ -63,7 +63,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
     if (_enteredPin == _confirmPin) {
       final provider = Provider.of<ThotProvider>(context, listen: false);
       await provider.setPinCode(_enteredPin);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -86,7 +86,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    
+
     final currentPin = _isConfirming ? _confirmPin : _enteredPin;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -98,135 +98,147 @@ class _SetPinScreenState extends State<SetPinScreen> {
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            // Header clair
-            Container(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                MediaQuery.paddingOf(context).top + 12,
-                20,
-                12,
-              ),
-              decoration: BoxDecoration(
-                color: colors.surface,
-                border: Border(bottom: BorderSide(color: colors.outline)),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    color: colors.onSurface,
-                    onPressed: () => context.pop(),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        strings.configurePinCode,
-                        style: textStyles.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
-            // Body
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              // Header clair
+              Container(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  MediaQuery.paddingOf(context).top + 12,
+                  20,
+                  12,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  border: Border(bottom: BorderSide(color: colors.outline)),
+                ),
+                child: Row(
                   children: [
-                    const Spacer(),
-
-                    Icon(Icons.lock_outline_rounded, size: 64, color: colors.primary),
-                    const Gap(16),
-                    Text(
-                      _isConfirming ? strings.confirmPin : strings.choosePin,
-                      style: textStyles.titleLarge?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      color: colors.onSurface,
+                      onPressed: () => context.pop(),
                     ),
-                    const Gap(8),
-                    Text(
-                      strings.pin6Digits,
-                      style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
-                    ),
-                    const Gap(48),
-
-                    // PIN Indicators
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(6, (index) {
-                        final isFilled = index < currentPin.length;
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isFilled
-                                ? (_isError ? colors.error : colors.primary)
-                                : Colors.transparent,
-                            border: Border.all(
-                              color: _isError ? colors.error : colors.outline,
-                              width: 2,
-                            ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          strings.configurePinCode,
+                          style: textStyles.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
                           ),
-                        );
-                      }),
-                    ),
-
-                    if (_isError) ...[
-                      const Gap(16),
-                      Text(
-                        strings.pinsDoNotMatch,
-                        style: textStyles.bodySmall?.copyWith(color: colors.error),
-                      ),
-                    ],
-
-                    const Gap(48),
-
-                    // Number Pad
-                    SizedBox(
-                      width: 300,
-                      child: Column(
-                        children: [
-                          _buildNumberRow(['1', '2', '3']),
-                          const Gap(16),
-                          _buildNumberRow(['4', '5', '6']),
-                          const Gap(16),
-                          _buildNumberRow(['7', '8', '9']),
-                          const Gap(16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              const SizedBox(width: 72),
-                              _NumberButton(label: '0', onPressed: () => _onNumberPressed('0')),
-                              _NumberButton(
-                                icon: Icons.backspace_outlined,
-                                onPressed: _onDeletePressed,
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-
-                    const Spacer(),
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
-            ),
-          ],
+              // Body
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 64,
+                        color: colors.primary,
+                      ),
+                      const Gap(16),
+                      Text(
+                        _isConfirming ? strings.confirmPin : strings.choosePin,
+                        style: textStyles.titleLarge?.copyWith(
+                          color: colors.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Gap(8),
+                      Text(
+                        strings.pin6Digits,
+                        style: textStyles.bodyMedium?.copyWith(
+                          color: colors.secondary,
+                        ),
+                      ),
+                      const Gap(48),
+
+                      // PIN Indicators
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(6, (index) {
+                          final isFilled = index < currentPin.length;
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 12),
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isFilled
+                                  ? (_isError ? colors.error : colors.primary)
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: _isError ? colors.error : colors.outline,
+                                width: 2,
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+
+                      if (_isError) ...[
+                        const Gap(16),
+                        Text(
+                          strings.pinsDoNotMatch,
+                          style: textStyles.bodySmall?.copyWith(
+                            color: colors.error,
+                          ),
+                        ),
+                      ],
+
+                      const Gap(48),
+
+                      // Number Pad
+                      SizedBox(
+                        width: 300,
+                        child: Column(
+                          children: [
+                            _buildNumberRow(['1', '2', '3']),
+                            const Gap(16),
+                            _buildNumberRow(['4', '5', '6']),
+                            const Gap(16),
+                            _buildNumberRow(['7', '8', '9']),
+                            const Gap(16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                const SizedBox(width: 72),
+                                _NumberButton(
+                                  label: '0',
+                                  onPressed: () => _onNumberPressed('0'),
+                                ),
+                                _NumberButton(
+                                  icon: Icons.backspace_outlined,
+                                  onPressed: _onDeletePressed,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -235,8 +247,12 @@ class _SetPinScreenState extends State<SetPinScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: numbers
-          .map((digit) =>
-              _NumberButton(label: digit, onPressed: () => _onNumberPressed(digit)))
+          .map(
+            (digit) => _NumberButton(
+              label: digit,
+              onPressed: () => _onNumberPressed(digit),
+            ),
+          )
           .toList(),
     );
   }

@@ -9,6 +9,34 @@ class AchievementDefinition {
   final int target;
   final int Function(ThotProvider provider) progress;
 
+  String get category {
+    if (id.contains('precision') || id.contains('perfect')) return 'precision';
+    if (id.contains('reflex')) return 'speed';
+    if (id.contains('cleaning') || id.contains('revision'))
+      return 'maintenance';
+    if (id.contains('history')) return 'diagnostic';
+    if (id.contains('platform') ||
+        id.contains('ammo') ||
+        id.contains('accessory') ||
+        id.contains('ecosystem') ||
+        id.contains('data_builder') ||
+        id.contains('round')) {
+      return 'tools';
+    }
+    return 'regularity';
+  }
+
+  String get rarity {
+    if (target >= 500 ||
+        id.contains('thousand') ||
+        id.contains('ten_thousand')) {
+      return 'elite';
+    }
+    if (tier == 'gold') return 'expert';
+    if (tier == 'silver') return 'advanced';
+    return 'common';
+  }
+
   const AchievementDefinition({
     required this.id,
     required this.title,

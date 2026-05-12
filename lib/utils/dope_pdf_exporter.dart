@@ -15,9 +15,11 @@ class DopePdfExporter {
     AppStrings strings,
   ) async {
     final now = DateTime.now();
-    final localeTag = (provider.appLocale ?? const Locale('fr')).toLanguageTag();
+    final localeTag = (provider.appLocale ?? const Locale('fr'))
+        .toLanguageTag();
     final dateFormat = DateFormat('dd/MM/yyyy', localeTag);
-    final filename = 'THOT_DOPE_${_sanitizeFileName(table.name)}_${_dfFile.format(now)}.pdf';
+    final filename =
+        'THOT_DOPE_${_sanitizeFileName(table.name)}_${_dfFile.format(now)}.pdf';
 
     final doc = pw.Document(
       title: table.name.trim().isEmpty ? 'THOT DOPE Card' : table.name,
@@ -50,7 +52,9 @@ class DopePdfExporter {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      table.name.trim().isEmpty ? _label('untitled_table', localeTag) : table.name,
+                      table.name.trim().isEmpty
+                          ? _label('untitled_table', localeTag)
+                          : table.name,
                       style: pw.TextStyle(
                         fontSize: 18,
                         fontWeight: pw.FontWeight.bold,
@@ -88,7 +92,9 @@ class DopePdfExporter {
                 children: [
                   // Header row
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
                     children: [
                       _tableCell(_label('distance', localeTag), isHeader: true),
                       _tableCell(_label('drop', localeTag), isHeader: true),
@@ -151,10 +157,7 @@ class DopePdfExporter {
       ),
     );
 
-    await Printing.sharePdf(
-      bytes: await doc.save(),
-      filename: filename,
-    );
+    await Printing.sharePdf(bytes: await doc.save(), filename: filename);
   }
 
   static pw.Widget _tableCell(String text, {bool isHeader = false}) {
@@ -200,7 +203,12 @@ class DopePdfExporter {
     return platform.name;
   }
 
-  static String _ammoName(ThotProvider provider, String? ammoId, AppStrings strings, String localeTag) {
+  static String _ammoName(
+    ThotProvider provider,
+    String? ammoId,
+    AppStrings strings,
+    String localeTag,
+  ) {
     if (ammoId == null) return strings.shootingTableNoAmmo;
     final ammo = provider.ammos.firstWhere(
       (a) => a.id == ammoId,
@@ -233,43 +241,68 @@ class DopePdfExporter {
     switch (key) {
       case 'untitled_table':
         switch (lang) {
-          case 'en': return 'Untitled table';
-          case 'de': return 'Unbenannte Tabelle';
-          case 'it': return 'Tabella senza nome';
-          case 'es': return 'Tabla sin nombre';
-          default: return 'Table sans nom';
+          case 'en':
+            return 'Untitled table';
+          case 'de':
+            return 'Unbenannte Tabelle';
+          case 'it':
+            return 'Tabella senza nome';
+          case 'es':
+            return 'Tabla sin nombre';
+          default:
+            return 'Table sans nom';
         }
       case 'distance':
         switch (lang) {
-          case 'en': return 'Distance';
-          case 'de': return 'Entfernung';
-          case 'it': return 'Distanza';
-          case 'es': return 'Distancia';
-          default: return 'Distance';
+          case 'en':
+            return 'Distance';
+          case 'de':
+            return 'Entfernung';
+          case 'it':
+            return 'Distanza';
+          case 'es':
+            return 'Distancia';
+          default:
+            return 'Distance';
         }
       case 'drop':
         switch (lang) {
-          case 'en': return 'Drop';
-          case 'de': return 'Abfall';
-          case 'it': return 'Caduta';
-          case 'es': return 'Caída';
-          default: return 'Drop';
+          case 'en':
+            return 'Drop';
+          case 'de':
+            return 'Abfall';
+          case 'it':
+            return 'Caduta';
+          case 'es':
+            return 'Caída';
+          default:
+            return 'Drop';
         }
       case 'wind':
         switch (lang) {
-          case 'en': return 'Wind';
-          case 'de': return 'Drift';
-          case 'it': return 'Deriva';
-          case 'es': return 'Deriva';
-          default: return 'Dérive';
+          case 'en':
+            return 'Wind';
+          case 'de':
+            return 'Drift';
+          case 'it':
+            return 'Deriva';
+          case 'es':
+            return 'Deriva';
+          default:
+            return 'Dérive';
         }
       case 'unknown':
         switch (lang) {
-          case 'en': return 'Unknown';
-          case 'de': return 'Unbekannt';
-          case 'it': return 'Sconosciuto';
-          case 'es': return 'Desconocido';
-          default: return 'Inconnu';
+          case 'en':
+            return 'Unknown';
+          case 'de':
+            return 'Unbekannt';
+          case 'it':
+            return 'Sconosciuto';
+          case 'es':
+            return 'Desconocido';
+          default:
+            return 'Inconnu';
         }
       default:
         return key;

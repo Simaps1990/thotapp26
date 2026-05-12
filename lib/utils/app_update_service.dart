@@ -44,9 +44,15 @@ class AppUpdateService {
     AppUpdateInfo? result;
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      result = await _checkIos(packageName: packageName, currentVersion: currentVersion);
+      result = await _checkIos(
+        packageName: packageName,
+        currentVersion: currentVersion,
+      );
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      result = await _checkAndroid(packageName: packageName, currentVersion: currentVersion);
+      result = await _checkAndroid(
+        packageName: packageName,
+        currentVersion: currentVersion,
+      );
     }
 
     _cachedUpdate = result; // null = app is up-to-date, clears the cache
@@ -58,7 +64,9 @@ class AppUpdateService {
     required String currentVersion,
   }) async {
     try {
-      final lookupUri = Uri.parse('https://itunes.apple.com/lookup?bundleId=$packageName');
+      final lookupUri = Uri.parse(
+        'https://itunes.apple.com/lookup?bundleId=$packageName',
+      );
       final response = await http.get(lookupUri);
       if (response.statusCode != 200) return null;
 
@@ -95,21 +103,26 @@ class AppUpdateService {
   }) async {
     try {
       final updateInfo = await InAppUpdate.checkForUpdate();
-      
+
       if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
         if (kDebugMode) {
-          debugPrint('[AppUpdateService] Android update available via in_app_update');
+          debugPrint(
+            '[AppUpdateService] Android update available via in_app_update',
+          );
         }
         return AppUpdateInfo(
           currentVersion: currentVersion,
-          latestVersion: 'Update Available', // in_app_update doesn't provide the exact version string
+          latestVersion:
+              'Update Available', // in_app_update doesn't provide the exact version string
           storeUrl: Uri.parse('market://details?id=$packageName'),
         );
       }
       return null;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[AppUpdateService] in_app_update failed: $e. Falling back to null.');
+        debugPrint(
+          '[AppUpdateService] in_app_update failed: $e. Falling back to null.',
+        );
       }
       return null;
     }
@@ -136,7 +149,9 @@ class AppUpdateService {
   static int _compareVersions(String a, String b) {
     final aParts = _numericVersionParts(a);
     final bParts = _numericVersionParts(b);
-    final maxLen = aParts.length > bParts.length ? aParts.length : bParts.length;
+    final maxLen = aParts.length > bParts.length
+        ? aParts.length
+        : bParts.length;
 
     for (var i = 0; i < maxLen; i++) {
       final av = i < aParts.length ? aParts[i] : 0;

@@ -3,7 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:pointycastle/export.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -148,7 +149,13 @@ class ThotFileStore {
     final legacyFile = await _getLegacyDocumentsDataFile();
     final recoveryFile = await _getRecoveryFile();
 
-    for (final candidate in [file, tempFile, backupFile, legacyFile, recoveryFile]) {
+    for (final candidate in [
+      file,
+      tempFile,
+      backupFile,
+      legacyFile,
+      recoveryFile,
+    ]) {
       if (await candidate.exists()) {
         try {
           await candidate.delete();
@@ -211,9 +218,7 @@ class _LegacyEncryptedReader {
     synchronizable: true,
   );
 
-  static const _androidOpts = AndroidOptions(
-    resetOnError: true,
-  );
+  static const _androidOpts = AndroidOptions(resetOnError: true);
 
   bool get _isApple =>
       !kIsWeb &&
@@ -333,7 +338,9 @@ class _LegacyEncryptedReader {
     const legacyDerivedSecureKey = 'thot_data_encryption_key_v1';
 
     try {
-      final legacyDerived = await _secureStorage.read(key: legacyDerivedSecureKey);
+      final legacyDerived = await _secureStorage.read(
+        key: legacyDerivedSecureKey,
+      );
       if (legacyDerived != null && legacyDerived.isNotEmpty) {
         await _secureWrite(_masterKeySecureKey, legacyDerived);
         await prefs.setString(_masterKeyPrefsKey, _obfuscate(legacyDerived));
@@ -404,7 +411,9 @@ class _LegacyEncryptedReader {
     return utf8.decode(plainBytes);
   }
 
-  Future<Map<String, dynamic>?> tryDecryptDomainData(String encryptedPayload) async {
+  Future<Map<String, dynamic>?> tryDecryptDomainData(
+    String encryptedPayload,
+  ) async {
     try {
       final decoded = jsonDecode(encryptedPayload);
       if (decoded is! Map<String, dynamic>) return null;

@@ -1011,10 +1011,13 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                     : (primaryFromAvg.isFinite ? primaryFromAvg : double.nan);
                 return _ReflexSessionRecord(
                   mode: _ReflexesMode.stroop,
-                  date: DateTime.tryParse(e['date']?.toString() ?? '') ?? DateTime.now(),
+                  date:
+                      DateTime.tryParse(e['date']?.toString() ?? '') ??
+                      DateTime.now(),
                   primaryScore: primary,
                   stats: e.map<String, String>(
-                    (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
+                    (key, value) =>
+                        MapEntry(key.toString(), value?.toString() ?? ''),
                   ),
                 );
               })
@@ -1629,8 +1632,9 @@ class _MemoryInputBoxesDisplay extends StatelessWidget {
                 borderColor = const Color(0xFF00C853);
                 textColor = const Color(0xFF00E676);
               } else if (showResult && char.isNotEmpty) {
-                final expectedChar =
-                    index < correct.length ? correct[index] : '';
+                final expectedChar = index < correct.length
+                    ? correct[index]
+                    : '';
                 if (char == expectedChar) {
                   boxBg = const Color(0xFF0D3A28);
                   borderColor = const Color(0xFF00C853);
@@ -1654,7 +1658,10 @@ class _MemoryInputBoxesDisplay extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: boxBg,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: borderColor, width: isAnswer ? 2.0 : 1.2),
+                    border: Border.all(
+                      color: borderColor,
+                      width: isAnswer ? 2.0 : 1.2,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: isAnswer
@@ -2499,13 +2506,15 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.of(context).pop(_currentResult),
+                          onTap: () =>
+                              Navigator.of(context).pop(_currentResult),
                           child: Container(
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
                               color:
-                                  Theme.of(context).brightness == Brightness.dark
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.grey.shade300
                                   : LightColors.primary,
                               borderRadius: BorderRadius.circular(10),
@@ -2513,7 +2522,8 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                             child: Icon(
                               Icons.arrow_back_rounded,
                               color:
-                                  Theme.of(context).brightness == Brightness.dark
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.black
                                   : Colors.white,
                               size: 22,
@@ -3578,13 +3588,15 @@ class _MathRunScreenState extends State<_MathRunScreen>
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.of(context).pop(_currentResult),
+                          onTap: () =>
+                              Navigator.of(context).pop(_currentResult),
                           child: Container(
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
                               color:
-                                  Theme.of(context).brightness == Brightness.dark
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.grey.shade300
                                   : LightColors.primary,
                               borderRadius: BorderRadius.circular(10),
@@ -3592,7 +3604,8 @@ class _MathRunScreenState extends State<_MathRunScreen>
                             child: Icon(
                               Icons.arrow_back_rounded,
                               color:
-                                  Theme.of(context).brightness == Brightness.dark
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.black
                                   : Colors.white,
                               size: 22,
@@ -4372,49 +4385,52 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.of(context).pop(_currentResult),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.grey.shade300
-                                : LightColors.primary,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.arrow_back_rounded,
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.black
-                                : Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      const Gap(AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          strings.reflexesResultsTitle,
-                          textAlign: TextAlign.center,
-                          style: texts.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
+                          onTap: () =>
+                              Navigator.of(context).pop(_currentResult),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey.shade300
+                                  : LightColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.arrow_back_rounded,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.black
+                                  : Colors.white,
+                              size: 22,
+                            ),
                           ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: _closeToTools,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 32,
-                            color: colors.onSurface.withValues(alpha: 0.7),
+                        const Gap(AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            strings.reflexesResultsTitle,
+                            textAlign: TextAlign.center,
+                            style: texts.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
                           ),
                         ),
-                      ),
+                        GestureDetector(
+                          onTap: _closeToTools,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 32,
+                              color: colors.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -4452,31 +4468,31 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                               ..._currentResult!.stats.entries
                                   .where((e) => !e.key.startsWith('_'))
                                   .map(
-                                (e) => Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: AppSpacing.md,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          e.key,
-                                          style: texts.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
+                                    (e) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: AppSpacing.md,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              e.key,
+                                              style: texts.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                          Text(
+                                            e.value,
+                                            style: texts.titleMedium?.copyWith(
+                                              color: colors.primary,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        e.value,
-                                        style: texts.titleMedium?.copyWith(
-                                          color: colors.primary,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -5047,21 +5063,21 @@ class _MotRunScreenState extends State<_MotRunScreen>
     );
   }
 
-void _nextLevel() {
-  final current = _currentResult;
-  if (current == null) return;
-  _keepLandscapeForNextLevel = true;
-  final flaggedStats = Map<String, String>.from(current.stats)
-    ..['_next_level'] = '1';
-  Navigator.of(context).pop(
-    _ReflexSessionRecord(
-      mode: current.mode,
-      date: current.date,
-      primaryScore: current.primaryScore,
-      stats: flaggedStats,
-    ),
-  );
-}
+  void _nextLevel() {
+    final current = _currentResult;
+    if (current == null) return;
+    _keepLandscapeForNextLevel = true;
+    final flaggedStats = Map<String, String>.from(current.stats)
+      ..['_next_level'] = '1';
+    Navigator.of(context).pop(
+      _ReflexSessionRecord(
+        mode: current.mode,
+        date: current.date,
+        primaryScore: current.primaryScore,
+        stats: flaggedStats,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -5742,14 +5758,16 @@ void _nextLevel() {
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? Colors.grey.shade300
                                 : LightColors.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             Icons.arrow_back_rounded,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? Colors.black
                                 : Colors.white,
                             size: 22,
@@ -5813,34 +5831,36 @@ void _nextLevel() {
                             ..._currentResult!.stats.entries
                                 .where((e) => !e.key.startsWith('_'))
                                 .map(
-                              (e) => Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.md,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        e.key,
-                                        style: textStyles.bodyMedium?.copyWith(
-                                          color: colors.secondary,
+                                  (e) => Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.md,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            e.key,
+                                            style: textStyles.bodyMedium
+                                                ?.copyWith(
+                                                  color: colors.secondary,
+                                                ),
+                                          ),
                                         ),
-                                      ),
+                                        const Gap(AppSpacing.md),
+                                        Text(
+                                          e.value,
+                                          style: textStyles.titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: colors.onSurface,
+                                              ),
+                                        ),
+                                      ],
                                     ),
-                                    const Gap(AppSpacing.md),
-                                    Text(
-                                      e.value,
-                                      style: textStyles.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: colors.onSurface,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -6075,11 +6095,13 @@ class _ReflexSessionRecord {
           (e) => e.name == (json['mode'] ?? 'visual'),
           orElse: () => _ReflexesMode.visual,
         ),
-        date: DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
+        date:
+            DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
         primaryScore: (json['primaryScore'] as num?)?.toDouble() ?? 0,
         stats: json['stats'] is Map
             ? (json['stats'] as Map<dynamic, dynamic>).map<String, String>(
-                (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
+                (key, value) =>
+                    MapEntry(key.toString(), value?.toString() ?? ''),
               )
             : const <String, String>{},
       );

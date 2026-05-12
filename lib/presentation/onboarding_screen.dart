@@ -70,7 +70,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
-    final isPhotoPage = _currentPage == 0 || _currentPage == 1 || _currentPage == 2;
+    final isPhotoPage =
+        _currentPage == 0 || _currentPage == 1 || _currentPage == 2;
     final indicatorActiveColor = isPhotoPage ? Colors.white : colors.primary;
     final indicatorInactiveColor = isPhotoPage
         ? Colors.white.withValues(alpha: 0.35)
@@ -127,14 +128,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           // Bouton top-bar: "Ne plus afficher" (gauche)
           Padding(
-            padding: EdgeInsets.only(
-              top: Platform.isIOS ? 0 : AppSpacing.sm,
-            ),
+            padding: EdgeInsets.only(top: Platform.isIOS ? 0 : AppSpacing.sm),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                  ),
                   child: TextButton(
                     onPressed: _finishOnboarding,
                     child: Text(
@@ -319,10 +320,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset(
-          backgroundAsset,
-          fit: BoxFit.cover,
-        ),
+        Image.asset(backgroundAsset, fit: BoxFit.cover),
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

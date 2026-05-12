@@ -21,8 +21,10 @@ import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'session_list_screen.dart';
 
-BoxDecoration _sessionCardDecoration(BuildContext context,
-    {double radius = 16}) {
+BoxDecoration _sessionCardDecoration(
+  BuildContext context, {
+  double radius = 16,
+}) {
   final colors = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return BoxDecoration(
@@ -30,10 +32,7 @@ BoxDecoration _sessionCardDecoration(BuildContext context,
     borderRadius: BorderRadius.circular(radius),
     border: isDark
         ? null
-        : Border.all(
-            color: LightColors.surfaceHighlight,
-            width: 1.35,
-          ),
+        : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
     boxShadow: AppShadows.cardPremium,
   );
 }
@@ -72,11 +71,26 @@ class SessionExercisesScreen extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.error_outline_rounded, size: 56, color: colors.error),
+                        Icon(
+                          Icons.error_outline_rounded,
+                          size: 56,
+                          color: colors.error,
+                        ),
                         const Gap(AppSpacing.md),
-                        Text(strings.sessionOpenFailedTitle, style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          strings.sessionOpenFailedTitle,
+                          style: textStyles.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const Gap(AppSpacing.xs),
-                        Text(strings.sessionOpenFailedSubtitle, style: textStyles.bodyMedium?.copyWith(color: colors.secondary), textAlign: TextAlign.center),
+                        Text(
+                          strings.sessionOpenFailedSubtitle,
+                          style: textStyles.bodyMedium?.copyWith(
+                            color: colors.secondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   ),
@@ -106,102 +120,123 @@ class SessionExercisesScreen extends StatelessWidget {
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
-              child: _Header(
-                title: session.name,
-                subtitle: subtitle,
-                onBack: () => context.pop(),
-                trailing: PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded),
-                  onSelected: (value) async {
-                    if (value == 'edit') {
-                      context.push(
-                        '/sessions/new?sessionId=${Uri.encodeComponent(session.id)}',
-                      );
-                    } else if (value == 'share') {
-                      final summary = SessionTextExporter.buildSummary(
-                        context: context,
-                        session: session,
-                        provider: provider,
-                        converter: converter,
-                      );
+                child: _Header(
+                  title: session.name,
+                  subtitle: subtitle,
+                  onBack: () => context.pop(),
+                  trailing: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded),
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        context.push(
+                          '/sessions/new?sessionId=${Uri.encodeComponent(session.id)}',
+                        );
+                      } else if (value == 'share') {
+                        final summary = SessionTextExporter.buildSummary(
+                          context: context,
+                          session: session,
+                          provider: provider,
+                          converter: converter,
+                        );
 
-                      if (kIsWeb) {
-                        await showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          showDragHandle: true,
-                          builder: (_) => SessionShareSheet(session: session, summary: summary),
-                        );
-                      } else {
-                        await SharePlus.instance.share(
-                          ShareParams(
-                            text: summary,
-                            subject: '${strings.sessionShareSubjectPrefix}${session.name}',
-                          ),
-                        );
-                      }
-                    } else if (value == 'delete') {
-                      Future<void>.delayed(Duration.zero, () async {
-                        if (!context.mounted) return;
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          useRootNavigator: true,
-                          builder: (dialogContext) => AlertDialog(
-                            title: Text(strings.confirmDeleteTitle),
-                            content: Text(
-                              strings.confirmDeleteSessionMessage(session.name),
+                        if (kIsWeb) {
+                          await showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            showDragHandle: true,
+                            builder: (_) => SessionShareSheet(
+                              session: session,
+                              summary: summary,
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(dialogContext).pop(false),
-                                child: Text(strings.actionCancel),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.of(dialogContext).pop(true),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                          );
+                        } else {
+                          await SharePlus.instance.share(
+                            ShareParams(
+                              text: summary,
+                              subject:
+                                  '${strings.sessionShareSubjectPrefix}${session.name}',
+                            ),
+                          );
+                        }
+                      } else if (value == 'delete') {
+                        Future<void>.delayed(Duration.zero, () async {
+                          if (!context.mounted) return;
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            useRootNavigator: true,
+                            builder: (dialogContext) => AlertDialog(
+                              title: Text(strings.confirmDeleteTitle),
+                              content: Text(
+                                strings.confirmDeleteSessionMessage(
+                                  session.name,
                                 ),
-                                child: Text(strings.actionDelete),
                               ),
-                            ],
-                          ),
-                        );
-                        if (confirmed != true || !context.mounted) return;
-                        provider.deleteSession(session.id);
-                        context.pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(strings.sessionDeletedSnack(session.name)),
-                            duration: const Duration(seconds: 3),
-                          ),
-                        );
-                      });
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<String>(
-                      value: 'edit',
-                      child: Text(strings.sessionMenuEdit),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'share',
-                      child: Text(strings.sessionMenuShare),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Text(strings.sessionMenuDelete),
-                    ),
-                  ],
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(false),
+                                  child: Text(strings.actionCancel),
+                                ),
+                                FilledButton(
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(true),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Theme.of(
+                                      dialogContext,
+                                    ).colorScheme.error,
+                                  ),
+                                  child: Text(strings.actionDelete),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true || !context.mounted) return;
+                          provider.deleteSession(session.id);
+                          context.pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                strings.sessionDeletedSnack(session.name),
+                              ),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        });
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Text(strings.sessionMenuEdit),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'share',
+                        child: Text(strings.sessionMenuShare),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text(strings.sessionMenuDelete),
+                      ),
+                    ],
+                  ),
                 ),
-
               ),
-            ),
-            SliverToBoxAdapter(child: _StatsRow(session: session)),
-            if (session.weatherEnabled) SliverToBoxAdapter(child: _WeatherCard(session: session, converter: converter)),
-            SliverToBoxAdapter(child: _ExercisesSection(session: session, provider: provider, converter: converter)),
-            if (session.exercises.isNotEmpty) SliverToBoxAdapter(child: _ProgressChart(session: session)),
-            const SliverToBoxAdapter(child: Gap(AppSpacing.xl)),
-          ],
+              SliverToBoxAdapter(child: _StatsRow(session: session)),
+              if (session.weatherEnabled)
+                SliverToBoxAdapter(
+                  child: _WeatherCard(session: session, converter: converter),
+                ),
+              SliverToBoxAdapter(
+                child: _ExercisesSection(
+                  session: session,
+                  provider: provider,
+                  converter: converter,
+                ),
+              ),
+              if (session.exercises.isNotEmpty)
+                SliverToBoxAdapter(child: _ProgressChart(session: session)),
+              const SliverToBoxAdapter(child: Gap(AppSpacing.xl)),
+            ],
           ),
         ),
       ),
@@ -235,7 +270,12 @@ class _Header extends StatelessWidget {
   final VoidCallback onBack;
   final Widget? trailing;
 
-  const _Header({required this.title, required this.subtitle, required this.onBack, this.trailing});
+  const _Header({
+    required this.title,
+    required this.subtitle,
+    required this.onBack,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -245,22 +285,45 @@ class _Header extends StatelessWidget {
     final topPadding = MediaQuery.paddingOf(context).top;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg, topPadding + 20.0, AppSpacing.lg, 32.0),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        topPadding + 20.0,
+        AppSpacing.lg,
+        32.0,
+      ),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.outline)),
       ),
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: onBack, color: colors.onSurface),
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            onPressed: onBack,
+            color: colors.onSurface,
+          ),
           const Gap(AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: textStyles.titleLarge?.copyWith(fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: textStyles.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const Gap(2),
-                Text(subtitle, style: textStyles.labelSmall?.copyWith(color: colors.secondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  subtitle,
+                  style: textStyles.labelSmall?.copyWith(
+                    color: colors.secondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -289,8 +352,9 @@ class _StatsRow extends StatelessWidget {
       ),
       child: _StatsStrip(
         shotsValue: '$totalRounds',
-        precisionValue:
-            hasPrecision ? '${avgPrecision.toStringAsFixed(0)}%' : '—',
+        precisionValue: hasPrecision
+            ? '${avgPrecision.toStringAsFixed(0)}%'
+            : '—',
         exercisesValue: '${session.exercises.length}',
         shotsLabel: strings.statsShotsLabelUpper,
         precisionLabel: strings.statsAvgPrecisionLabelUpper,
@@ -322,10 +386,7 @@ class _StatsStrip extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Container(
-      decoration: _sessionCardDecoration(
-        context,
-        radius: 18,
-      ),
+      decoration: _sessionCardDecoration(context, radius: 18),
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(
@@ -470,10 +531,7 @@ class _WeatherCard extends StatelessWidget {
         AppSpacing.lg,
       ),
       padding: AppSpacing.paddingLg,
-      decoration: _sessionCardDecoration(
-        context,
-        radius: AppRadius.sm,
-      ),
+      decoration: _sessionCardDecoration(context, radius: AppRadius.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -483,8 +541,9 @@ class _WeatherCard extends StatelessWidget {
               const Gap(8),
               Text(
                 strings.weatherTitleShort,
-                style:
-                    textStyles.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                style: textStyles.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ],
           ),
@@ -521,9 +580,18 @@ class _WeatherChip extends StatelessWidget {
         children: [
           Icon(item.icon, size: 18, color: colors.secondary),
           const Gap(8),
-          Text(item.label, style: textStyles.labelSmall?.copyWith(color: colors.secondary, fontWeight: FontWeight.w700)),
+          Text(
+            item.label,
+            style: textStyles.labelSmall?.copyWith(
+              color: colors.secondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const Gap(6),
-          Text(item.value, style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            item.value,
+            style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
         ],
       ),
     );
@@ -534,7 +602,11 @@ class _WeatherItem {
   final IconData icon;
   final String label;
   final String value;
-  const _WeatherItem({required this.icon, required this.label, required this.value});
+  const _WeatherItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 }
 
 class _ExercisesSection extends StatelessWidget {
@@ -542,7 +614,11 @@ class _ExercisesSection extends StatelessWidget {
   final ThotProvider provider;
   final UnitConverter converter;
 
-  const _ExercisesSection({required this.session, required this.provider, required this.converter});
+  const _ExercisesSection({
+    required this.session,
+    required this.provider,
+    required this.converter,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -552,9 +628,8 @@ class _ExercisesSection extends StatelessWidget {
 
     // Utiliser la session fraîche depuis le provider pour que les cartes
     // d'exercices reflètent toujours les dernières modifications.
-    final freshSession = provider.sessions
-        .where((s) => s.id == session.id)
-        .firstOrNull ??
+    final freshSession =
+        provider.sessions.where((s) => s.id == session.id).firstOrNull ??
         session;
 
     final exercises = freshSession.exercises;
@@ -570,14 +645,14 @@ class _ExercisesSection extends StatelessWidget {
                 'assets/images/train.svg',
                 width: 16,
                 height: 16,
-                colorFilter:
-                    ColorFilter.mode(colors.primary, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
               ),
               const Gap(8),
               Text(
                 strings.exercisesSectionTitle,
-                style: textStyles.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w900),
+                style: textStyles.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ],
           ),
@@ -585,18 +660,20 @@ class _ExercisesSection extends StatelessWidget {
           if (exercises.isEmpty)
             Container(
               padding: const EdgeInsets.all(AppSpacing.xl),
-              decoration: _sessionCardDecoration(
-                context,
-                radius: AppRadius.sm,
-              ),
+              decoration: _sessionCardDecoration(context, radius: AppRadius.sm),
               child: Column(
                 children: [
-                  Icon(Icons.fitness_center_rounded, color: colors.outline, size: 40),
+                  Icon(
+                    Icons.fitness_center_rounded,
+                    color: colors.outline,
+                    size: 40,
+                  ),
                   const Gap(8),
                   Text(
                     strings.noExerciseForSession,
-                    style: textStyles.bodyMedium
-                        ?.copyWith(color: colors.secondary),
+                    style: textStyles.bodyMedium?.copyWith(
+                      color: colors.secondary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -631,7 +708,13 @@ class _ExerciseCard extends StatelessWidget {
   final ThotProvider provider;
   final UnitConverter converter;
 
-  const _ExerciseCard({required this.sessionId, required this.index, required this.exercise, required this.provider, required this.converter});
+  const _ExerciseCard({
+    required this.sessionId,
+    required this.index,
+    required this.exercise,
+    required this.provider,
+    required this.converter,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -681,8 +764,9 @@ class _ExerciseCard extends StatelessWidget {
                     onPressed: () => Navigator.of(ctx).pop(),
                     color: dialogColors.onSurface,
                     style: IconButton.styleFrom(
-                      backgroundColor:
-                          dialogColors.surface.withValues(alpha: 0.85),
+                      backgroundColor: dialogColors.surface.withValues(
+                        alpha: 0.85,
+                      ),
                     ),
                   ),
                 ),
@@ -703,10 +787,7 @@ class _ExerciseCard extends StatelessWidget {
         : null;
     return Container(
       padding: AppSpacing.paddingMd,
-      decoration: _sessionCardDecoration(
-        context,
-        radius: 18,
-      ),
+      decoration: _sessionCardDecoration(context, radius: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -719,8 +800,9 @@ class _ExerciseCard extends StatelessWidget {
                   children: [
                     Text(
                       exerciseTitle,
-                      style: textStyles.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w900),
+                      style: textStyles.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -740,16 +822,24 @@ class _ExerciseCard extends StatelessWidget {
               if (exercise.precision != null) ...[
                 const Gap(10),
                 Theme(
-                  data: Theme.of(context).copyWith(splashFactory: NoSplash.splashFactory),
+                  data: Theme.of(
+                    context,
+                  ).copyWith(splashFactory: NoSplash.splashFactory),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => provider.toggleExercisePrecisionEnabled(sessionId: sessionId, exerciseId: exercise.id),
+                      onTap: () => provider.toggleExercisePrecisionEnabled(
+                        sessionId: sessionId,
+                        exerciseId: exercise.id,
+                      ),
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       borderRadius: BorderRadius.circular(14),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: colors.primary,
                           borderRadius: BorderRadius.circular(14),
@@ -766,10 +856,17 @@ class _ExerciseCard extends StatelessWidget {
                                 'assets/images/target.svg',
                                 width: 16,
                                 height: 16,
-                                colorFilter: ColorFilter.mode(colors.onPrimary, BlendMode.srcIn),
+                                colorFilter: ColorFilter.mode(
+                                  colors.onPrimary,
+                                  BlendMode.srcIn,
+                                ),
                               )
                             else
-                              Icon(Icons.visibility_off_rounded, size: 16, color: colors.secondary),
+                              Icon(
+                                Icons.visibility_off_rounded,
+                                size: 16,
+                                color: colors.secondary,
+                              ),
                             if (exercise.isPrecisionCounted) ...[
                               const Gap(6),
                               Text(
@@ -853,7 +950,7 @@ class _ExerciseCard extends StatelessWidget {
           ),
           const Gap(AppSpacing.md),
 
-// Card 1: platform & equipment details
+          // Card 1: platform & equipment details
           Text(
             strings.sessionPlatformAndEquipmentDetailsTitle,
             style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
@@ -866,7 +963,7 @@ class _ExerciseCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: colors.outline),
             ),
-child: IntrinsicHeight(
+            child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -875,21 +972,24 @@ child: IntrinsicHeight(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _InfoRow(label: strings.sessionLabelPlatform, value: platformName),
+                        _InfoRow(
+                          label: strings.sessionLabelPlatform,
+                          value: platformName,
+                        ),
                       ],
                     ),
                   ),
-                  Container(
-                    width: 1,
-                    color: colors.outline,
-                  ),
+                  Container(width: 1, color: colors.outline),
                   const Gap(AppSpacing.md),
                   // Right column: ammo & equipment
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _InfoRow(label: strings.sessionLabelAmmo, value: ammoName),
+                        _InfoRow(
+                          label: strings.sessionLabelAmmo,
+                          value: ammoName,
+                        ),
                         if (accessories.isNotEmpty)
                           _InfoRow(
                             label: strings.equipmentsTitle,
@@ -902,11 +1002,10 @@ child: IntrinsicHeight(
               ),
             ),
           ),
-            
 
           const Gap(AppSpacing.md),
 
-// Card 2: shooting results (target photo + shots & distance)
+          // Card 2: shooting results (target photo + shots & distance)
           Text(
             strings.sessionShootingResultsTitle,
             style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w800),
@@ -915,149 +1014,163 @@ child: IntrinsicHeight(
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                if (exercise.steps != null && exercise.steps!.isNotEmpty) ...[
-SizedBox(
-  height: 320,
-  child: steps_ui.ExerciseStepsCarousel(steps: exercise.steps!, useMetric: provider.useMetric),
-),
-                  const Gap(AppSpacing.sm),
-summary_ui.ExerciseSummaryText(steps: exercise.steps!, useMetric: provider.useMetric),
-                  const Gap(AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Color.alphaBlend(
-                        colors.primary.withValues(alpha: 0.12),
-                        colors.surface,
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.25),
-                        width: 1.1,
-                      ),
+              if (exercise.steps != null && exercise.steps!.isNotEmpty) ...[
+                SizedBox(
+                  height: 320,
+                  child: steps_ui.ExerciseStepsCarousel(
+                    steps: exercise.steps!,
+                    useMetric: provider.useMetric,
+                  ),
+                ),
+                const Gap(AppSpacing.sm),
+                summary_ui.ExerciseSummaryText(
+                  steps: exercise.steps!,
+                  useMetric: provider.useMetric,
+                ),
+                const Gap(AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Color.alphaBlend(
+                      colors.primary.withValues(alpha: 0.12),
+                      colors.surface,
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: colors.primary,
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: LightColors.surfaceHighlight,
-                              width: 1.35,
-                            ),
-                          ),
-                          child: Text(
-                            strings.exerciseAutoBadge,
-                            style: textStyles.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: colors.onPrimary,
-                            ),
-                          ),
-                        ),
-                        const Gap(10),
-                        Expanded(
-                          child: Text(
-strings.exerciseAutoTotals(
-                              exercise.detailedTotalShots,
-                              exercise.steps!.length,
-                              (exercise.detailedMaxDistance ?? 0),
-                              converter.useMetric ? 'm' : 'yd',
-                            ),
-                            style: textStyles.bodySmall?.copyWith(
-                              color: colors.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(
+                      color: colors.primary.withValues(alpha: 0.25),
+                      width: 1.1,
                     ),
                   ),
-                ] else
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      // Left: main target photo (if any)
-                      if (primaryPhoto != null) ...[
-                        GestureDetector(
-                          onTap: () => openTargetPhoto(primaryPhoto),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.sm),
-                                child: SizedBox(
-                                  width: 120,
-                                  height: 120,
-                                  child: CrossPlatformImage(
-                                    filePath: primaryPhoto.path,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              const Gap(4),
-                              SizedBox(
-                                width: 120,
-                                child: Text(
-                                  primaryPhoto.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: textStyles.labelSmall?.copyWith(
-                                    color: colors.secondary,
-                                  ),
-                                ),
-                              ),
-                            ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.primary,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: LightColors.surfaceHighlight,
+                            width: 1.35,
                           ),
                         ),
-                        const Gap(AppSpacing.md),
-                      ],
-
-                      // Divider between photo and stats
-                      if (primaryPhoto != null)
-                        Container(
-                          width: 1,
-                          height: 120,
-                          color: colors.outline,
+                        child: Text(
+                          strings.exerciseAutoBadge,
+                          style: textStyles.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: colors.onPrimary,
+                          ),
                         ),
-                      if (primaryPhoto != null) const Gap(AppSpacing.md),
-
-                      // Right: shots & distance
+                      ),
+                      const Gap(10),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _InfoRow(
-                              label: strings.sessionLabelShots,
-                              value: '${exercise.shotsFired}',
-                            ),
-                            _InfoRow(
-                              label: strings.sessionLabelDistance,
-                              value: converter.formatDistance(exercise.distance),
-                            ),
-                            if (exercise.targetName != null &&
-                                exercise.targetName!.trim().isNotEmpty)
-                              _InfoRow(
-                                label: strings.sessionLabelTarget,
-                                value: exercise.targetName!,
-                              ),
-                          ],
+                        child: Text(
+                          strings.exerciseAutoTotals(
+                            exercise.detailedTotalShots,
+                            exercise.steps!.length,
+                            (exercise.detailedMaxDistance ?? 0),
+                            converter.useMetric ? 'm' : 'yd',
+                          ),
+                          style: textStyles.bodySmall?.copyWith(
+                            color: colors.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
                   ),
-              ],
-            ),
-          
+                ),
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left: main target photo (if any)
+                    if (primaryPhoto != null) ...[
+                      GestureDetector(
+                        onTap: () => openTargetPhoto(primaryPhoto),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              child: SizedBox(
+                                width: 120,
+                                height: 120,
+                                child: CrossPlatformImage(
+                                  filePath: primaryPhoto.path,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const Gap(4),
+                            SizedBox(
+                              width: 120,
+                              child: Text(
+                                primaryPhoto.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: textStyles.labelSmall?.copyWith(
+                                  color: colors.secondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                    ],
 
+                    // Divider between photo and stats
+                    if (primaryPhoto != null)
+                      Container(width: 1, height: 120, color: colors.outline),
+                    if (primaryPhoto != null) const Gap(AppSpacing.md),
+
+                    // Right: shots & distance
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _InfoRow(
+                            label: strings.sessionLabelShots,
+                            value: '${exercise.shotsFired}',
+                          ),
+                          _InfoRow(
+                            label: strings.sessionLabelDistance,
+                            value: converter.formatDistance(exercise.distance),
+                          ),
+                          if (exercise.targetName != null &&
+                              exercise.targetName!.trim().isNotEmpty)
+                            _InfoRow(
+                              label: strings.sessionLabelTarget,
+                              value: exercise.targetName!,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
 
           if (exercise.observations.trim().isNotEmpty) ...[
             const Gap(AppSpacing.md),
-            Text(strings.observationsTitle, style: textStyles.labelSmall?.copyWith(color: colors.secondary, fontWeight: FontWeight.w700)),
+            Text(
+              strings.observationsTitle,
+              style: textStyles.labelSmall?.copyWith(
+                color: colors.secondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const Gap(4),
-            Text(exercise.observations, style: textStyles.bodySmall?.copyWith(height: 1.4)),
+            Text(
+              exercise.observations,
+              style: textStyles.bodySmall?.copyWith(height: 1.4),
+            ),
           ],
         ],
       ),
@@ -1122,7 +1235,12 @@ class _ProgressChart extends StatelessWidget {
     if (spots.length < 2) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       padding: AppSpacing.paddingLg,
       decoration: BoxDecoration(
         color: colors.surface,
@@ -1132,7 +1250,10 @@ class _ProgressChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(strings.progressionPrecisionTitle, style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
+          Text(
+            strings.progressionPrecisionTitle,
+            style: textStyles.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+          ),
           const Gap(AppSpacing.md),
           SizedBox(
             height: 180,
@@ -1143,9 +1264,18 @@ class _ProgressChart extends StatelessWidget {
                 borderData: FlBorderData(show: false),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => colors.onSurface.withValues(alpha: 0.75),
+                    getTooltipColor: (_) =>
+                        colors.onSurface.withValues(alpha: 0.75),
                     getTooltipItems: (touchedSpots) => touchedSpots
-                        .map((s) => LineTooltipItem('${s.y.toStringAsFixed(0)}%', textStyles.labelLarge!.copyWith(color: colors.surface, fontWeight: FontWeight.w900)))
+                        .map(
+                          (s) => LineTooltipItem(
+                            '${s.y.toStringAsFixed(0)}%',
+                            textStyles.labelLarge!.copyWith(
+                              color: colors.surface,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                 ),
@@ -1157,7 +1287,10 @@ class _ProgressChart extends StatelessWidget {
                     barWidth: 3,
                     isStrokeCapRound: true,
                     dotData: FlDotData(show: true),
-                    belowBarData: BarAreaData(show: true, color: colors.primary.withValues(alpha: 0.10)),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: colors.primary.withValues(alpha: 0.10),
+                    ),
                   ),
                 ],
               ),

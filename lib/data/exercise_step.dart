@@ -11,28 +11,12 @@ enum StepType {
 }
 
 /// Position de tir ou de déplacement.
-enum ShootingPosition {
-  debout,
-  genou,
-  couche,
-  assis,
-  autre,
-}
+enum ShootingPosition { debout, genou, couche, assis, autre }
 
-enum MovementType {
-  marche,
-  course,
-  lateral,
-  repli,
-  autre,
-}
+enum MovementType { marche, course, lateral, repli, autre }
 
 /// Type de rechargement.
-enum ReloadType {
-  tactique,
-  urgence,
-  aVide,
-}
+enum ReloadType { tactique, urgence, aVide }
 
 /// Étape détaillée d'un exercice.
 class ExerciseStep {
@@ -50,8 +34,7 @@ class ExerciseStep {
   final int? durationSeconds; // attente
   final String? trigger; // attente : déclencheur
   final String? comment;
-final MovementType? movementType;
-
+  final MovementType? movementType;
 
   const ExerciseStep({
     required this.id,
@@ -69,7 +52,6 @@ final MovementType? movementType;
     this.trigger,
     this.comment,
     this.movementType,
-
   });
 
   ExerciseStep copyWith({
@@ -109,22 +91,22 @@ final MovementType? movementType;
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.name,
-        'position': position?.name,
-        'distanceM': distanceM,
-        'shots': shots,
-        'target': target,
-        'platformFrom': platformFrom,
-        'platformTo': platformTo,
-        'usedPlatformId': usedPlatformId,
-        'usedAmmoId': usedAmmoId,
-        'reloadType': reloadType?.name,
-        'durationSeconds': durationSeconds,
-        'trigger': trigger,
-        'comment': comment,
-        'movementType': movementType?.name,
-      };
+    'id': id,
+    'type': type.name,
+    'position': position?.name,
+    'distanceM': distanceM,
+    'shots': shots,
+    'target': target,
+    'platformFrom': platformFrom,
+    'platformTo': platformTo,
+    'usedPlatformId': usedPlatformId,
+    'usedAmmoId': usedAmmoId,
+    'reloadType': reloadType?.name,
+    'durationSeconds': durationSeconds,
+    'trigger': trigger,
+    'comment': comment,
+    'movementType': movementType?.name,
+  };
 
   static ExerciseStep fromJson(Map<String, dynamic> json) {
     StepType parseStepType(String? raw) {
@@ -142,7 +124,7 @@ final MovementType? movementType;
       );
     }
 
-ReloadType? parseReloadType(String? raw) {
+    ReloadType? parseReloadType(String? raw) {
       if (raw == null) return null;
       return ReloadType.values.firstWhere(
         (e) => e.name == raw,
@@ -172,7 +154,7 @@ ReloadType? parseReloadType(String? raw) {
       reloadType: parseReloadType(json['reloadType'] as String?),
       durationSeconds: json['durationSeconds'] as int?,
       trigger: json['trigger'] as String?,
-comment: json['comment'] as String?,
+      comment: json['comment'] as String?,
       movementType: parseMovementType(json['movementType'] as String?),
     );
   }

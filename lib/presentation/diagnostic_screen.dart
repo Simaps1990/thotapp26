@@ -105,13 +105,20 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
                       message: AppStringsDiagnostic.diagnosticToolSubtitle,
                       triggerMode: TooltipTriggerMode.tap,
                       showDuration: const Duration(seconds: 4),
-                      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: colors.onSurface.withValues(alpha: 0.88),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      textStyle: textStyles.bodySmall?.copyWith(color: colors.surface),
+                      textStyle: textStyles.bodySmall?.copyWith(
+                        color: colors.surface,
+                      ),
                       child: Icon(
                         Icons.info_outline_rounded,
                         size: 18,
@@ -155,10 +162,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     );
 
     if (widget.embedded) {
-      return Container(
-        color: baseBackground,
-        child: content,
-      );
+      return Container(color: baseBackground, child: content);
     }
 
     return AnimatedContainer(
@@ -177,7 +181,7 @@ class DiagnosticHistoryView extends StatelessWidget {
   final VoidCallback onStartNew;
 
   const DiagnosticHistoryView({Key? key, required this.onStartNew})
-      : super(key: key);
+    : super(key: key);
 
   void _showDiagnosticDetails(BuildContext context, Diagnostic diagnostic) {
     showModalBottomSheet(
@@ -240,7 +244,12 @@ class DiagnosticHistoryView extends StatelessWidget {
       children: [
         // New diagnostic button
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            0,
+          ),
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -249,8 +258,9 @@ class DiagnosticHistoryView extends StatelessWidget {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: Text(AppStringsDiagnostic.diagnosticDisclaimerTitle),
-                    content:
-                        Text(AppStringsDiagnostic.diagnosticDisclaimerBody),
+                    content: Text(
+                      AppStringsDiagnostic.diagnosticDisclaimerBody,
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(false),
@@ -259,7 +269,8 @@ class DiagnosticHistoryView extends StatelessWidget {
                       FilledButton(
                         onPressed: () => Navigator.of(ctx).pop(true),
                         child: Text(
-                            AppStringsDiagnostic.diagnosticDisclaimerConfirm),
+                          AppStringsDiagnostic.diagnosticDisclaimerConfirm,
+                        ),
                       ),
                     ],
                   ),
@@ -289,44 +300,55 @@ class DiagnosticHistoryView extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.medical_services_outlined,
-                          size: 64, color: colors.secondary),
+                      Icon(
+                        Icons.medical_services_outlined,
+                        size: 64,
+                        color: colors.secondary,
+                      ),
                       const Gap(AppSpacing.md),
                       Text(
                         AppStringsDiagnostic.diagnosticEmptyTitle,
-                        style: textStyles.bodyLarge
-                            ?.copyWith(color: colors.secondary),
+                        style: textStyles.bodyLarge?.copyWith(
+                          color: colors.secondary,
+                        ),
                       ),
                       const Gap(AppSpacing.xs),
                       Text(
                         AppStringsDiagnostic.diagnosticEmptySubtitle,
-                        style: textStyles.bodySmall
-                            ?.copyWith(color: colors.secondary),
+                        style: textStyles.bodySmall?.copyWith(
+                          color: colors.secondary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
                   itemCount: provider.diagnostics.length,
                   separatorBuilder: (_, __) => const Gap(AppSpacing.md),
                   itemBuilder: (context, index) {
                     final diagnostic = provider.diagnostics[index];
-                    final platform =
-                        provider.getPlatformById(diagnostic.platformId);
-                    final platformName = diagnostic
-                            .platformNameSnapshot.isNotEmpty
+                    final platform = provider.getPlatformById(
+                      diagnostic.platformId,
+                    );
+                    final platformName =
+                        diagnostic.platformNameSnapshot.isNotEmpty
                         ? diagnostic.platformNameSnapshot
                         : (diagnostic.platformId == 'none'
-                            ? AppStringsDiagnostic.diagnosticOfUnknownPlatform
-                            : (platform?.name ??
-                                AppStringsDiagnostic
-                                    .diagnosticOfUnknownPlatform));
+                              ? AppStringsDiagnostic.diagnosticOfUnknownPlatform
+                              : (platform?.name ??
+                                    AppStringsDiagnostic
+                                        .diagnosticOfUnknownPlatform));
                     final platformType =
                         diagnostic.platformTypeSnapshot.isNotEmpty
-                            ? diagnostic.platformTypeSnapshot
-                            : (platform?.type ?? '-');
+                        ? diagnostic.platformTypeSnapshot
+                        : (platform?.type ?? '-');
                     return Dismissible(
                       key: Key(diagnostic.id),
                       direction: DismissDirection.endToStart,
@@ -335,9 +357,11 @@ class DiagnosticHistoryView extends StatelessWidget {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: Text(
-                                AppStringsDiagnostic.diagnosticDeleteTitle),
+                              AppStringsDiagnostic.diagnosticDeleteTitle,
+                            ),
                             content: Text(
-                                AppStringsDiagnostic.diagnosticDeleteMessage),
+                              AppStringsDiagnostic.diagnosticDeleteMessage,
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () =>
@@ -348,7 +372,8 @@ class DiagnosticHistoryView extends StatelessWidget {
                                 onPressed: () =>
                                     Navigator.of(context).pop(true),
                                 style: TextButton.styleFrom(
-                                    foregroundColor: colors.error),
+                                  foregroundColor: colors.error,
+                                ),
                                 child: Text(strings.delete),
                               ),
                             ],
@@ -362,20 +387,27 @@ class DiagnosticHistoryView extends StatelessWidget {
                           color: colors.error,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child:
-                            Icon(Icons.delete_rounded),
+                        child: Icon(Icons.delete_rounded),
                       ),
                       onDismissed: (_) =>
                           provider.deleteDiagnostic(diagnostic.id),
                       child: GestureDetector(
-                        onTap: () => _showDiagnosticDetails(context, diagnostic),
+                        onTap: () =>
+                            _showDiagnosticDetails(context, diagnostic),
                         child: Container(
-                          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.lg),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.xs,
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                          ),
                           decoration: BoxDecoration(
                             color: colors.surface,
-                                borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isDark ? colors.outline : LightColors.surfaceHighlight,
+                              color: isDark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
                               width: 1.2,
                             ),
                             boxShadow: AppShadows.cardPremium,
@@ -384,12 +416,14 @@ class DiagnosticHistoryView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       AppStringsDiagnostic.diagnosticOfPlatform(
-                                          platformName),
+                                        platformName,
+                                      ),
                                       style: textStyles.titleMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: colors.onSurface,
@@ -403,24 +437,32 @@ class DiagnosticHistoryView extends StatelessWidget {
                                         showDialog(
                                           context: context,
                                           builder: (context) => AlertDialog(
-                                            title: Text(AppStringsDiagnostic
-                                                .diagnosticDeleteTitle),
-                                            content: Text(AppStringsDiagnostic
-                                                .diagnosticDeleteMessage),
+                                            title: Text(
+                                              AppStringsDiagnostic
+                                                  .diagnosticDeleteTitle,
+                                            ),
+                                            content: Text(
+                                              AppStringsDiagnostic
+                                                  .diagnosticDeleteMessage,
+                                            ),
                                             actions: [
                                               TextButton(
                                                 onPressed: () =>
                                                     Navigator.of(context).pop(),
-                                                child: Text(strings.actionCancel),
+                                                child: Text(
+                                                  strings.actionCancel,
+                                                ),
                                               ),
                                               TextButton(
                                                 onPressed: () {
                                                   provider.deleteDiagnostic(
-                                                      diagnostic.id);
+                                                    diagnostic.id,
+                                                  );
                                                   Navigator.of(context).pop();
                                                 },
                                                 style: TextButton.styleFrom(
-                                                    foregroundColor: colors.error),
+                                                  foregroundColor: colors.error,
+                                                ),
                                                 child: Text(strings.delete),
                                               ),
                                             ],
@@ -438,63 +480,81 @@ class DiagnosticHistoryView extends StatelessWidget {
                               const Gap(2),
                               Row(
                                 children: [
-                                  Icon(Icons.calendar_today,
-                                      size: 14, color: colors.secondary),
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 14,
+                                    color: colors.secondary,
+                                  ),
                                   const Gap(AppSpacing.xs),
                                   Text(
                                     '$platformType • ${AppDateFormats.formatDateTimeShort(context, diagnostic.date)}',
-                                    style: textStyles.labelSmall
-                                        ?.copyWith(color: colors.secondary),
+                                    style: textStyles.labelSmall?.copyWith(
+                                      color: colors.secondary,
+                                    ),
                                   ),
                                 ],
                               ),
                               const Gap(AppSpacing.sm),
                               SingleChildScrollView(
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: AppSpacing.xs,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: colors.surface,
-                                    borderRadius:
-                                        BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                    const Gap(AppSpacing.xs),
-                                    Divider(height: 1, color: const Color(0xFFC2A14A).withValues(alpha: 0.25)),
-                                    const Gap(AppSpacing.md),
-                                    Text(
-                                      AppStringsDiagnostic.diagnosticSuspectedIssueTitle,
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                        fontWeight: FontWeight.bold,
+                                      const Gap(AppSpacing.xs),
+                                      Divider(
+                                        height: 1,
+                                        color: const Color(
+                                          0xFFC2A14A,
+                                        ).withValues(alpha: 0.25),
                                       ),
-                                    ),
-                                    const Gap(AppSpacing.xs),
-                                    Text(
-                                      diagnostic.finalDecision,
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        color: colors.primary,
-                                        fontWeight: FontWeight.bold,
+                                      const Gap(AppSpacing.md),
+                                      Text(
+                                        AppStringsDiagnostic
+                                            .diagnosticSuspectedIssueTitle,
+                                        style: textStyles.labelSmall?.copyWith(
+                                          color: colors.secondary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    const Gap(AppSpacing.md),
-                                    Divider(height: 1, color: const Color(0xFFC2A14A).withValues(alpha: 0.25)),
-                                    const Gap(AppSpacing.md),
-                                    Text(
-                                      strings.summaryLabel,
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                        fontWeight: FontWeight.bold,
+                                      const Gap(AppSpacing.xs),
+                                      Text(
+                                        diagnostic.finalDecision,
+                                        style: textStyles.bodyMedium?.copyWith(
+                                          color: colors.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    const Gap(AppSpacing.xs),
-                                    Text(
-                                      diagnostic.summary,
-                                      style: textStyles.bodySmall
-                                          ?.copyWith(color: colors.onSurface),
-                                    ),
-                                  ],
+                                      const Gap(AppSpacing.md),
+                                      Divider(
+                                        height: 1,
+                                        color: const Color(
+                                          0xFFC2A14A,
+                                        ).withValues(alpha: 0.25),
+                                      ),
+                                      const Gap(AppSpacing.md),
+                                      Text(
+                                        strings.summaryLabel,
+                                        style: textStyles.labelSmall?.copyWith(
+                                          color: colors.secondary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const Gap(AppSpacing.xs),
+                                      Text(
+                                        diagnostic.summary,
+                                        style: textStyles.bodySmall?.copyWith(
+                                          color: colors.onSurface,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -515,7 +575,7 @@ class DiagnosticTreeView extends StatefulWidget {
   final VoidCallback onComplete;
 
   const DiagnosticTreeView({Key? key, required this.onComplete})
-      : super(key: key);
+    : super(key: key);
 
   @override
   State<DiagnosticTreeView> createState() => _DiagnosticTreeViewState();
@@ -612,8 +672,8 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
     final provider = Provider.of<ThotProvider>(context, listen: false);
     final platform =
         (_selectedPlatformId != null && _selectedPlatformId != 'none')
-            ? provider.getPlatformById(_selectedPlatformId!)
-            : null;
+        ? provider.getPlatformById(_selectedPlatformId!)
+        : null;
     final result = _evaluateResult(platform);
 
     final diagnostic = Diagnostic(
@@ -659,7 +719,9 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
     if (probabilities.isEmpty) return probabilities;
     final total = probabilities.values.reduce((a, b) => a + b);
     if (total == 0) return probabilities;
-    return probabilities.map((key, value) => MapEntry(key, ((value / total) * 100).round()));
+    return probabilities.map(
+      (key, value) => MapEntry(key, ((value / total) * 100).round()),
+    );
   }
 
   _DiagnosticResult _evaluateResult(Platform? platform) {
@@ -878,7 +940,6 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -990,9 +1051,9 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
             Text(
               AppStringsDiagnostic.diagnosticOrSelectPlatform,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const Gap(AppSpacing.md),
             ...provider.platforms.map((platform) {
@@ -1013,334 +1074,380 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
   }
 
   Widget _buildQ1() => _QuestionCard(
-        title: AppStrings.of(context).diagnosticQuestion1,
-        subtitle: AppStrings.of(context).diagnosticSafetyPhase,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q1', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                isWarning: true,
-                onTap: () => _answer('q1', kNo)),
-          ],
+    title: AppStrings.of(context).diagnosticQuestion1,
+    subtitle: AppStrings.of(context).diagnosticSafetyPhase,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q1', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          isWarning: true,
+          onTap: () => _answer('q1', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ2() => _QuestionCard(
-        title: AppStrings.of(context).diagnosticQuestion2,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q2', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                isWarning: true,
-                onTap: () => _answer('q2', kNo)),
-          ],
+    title: AppStrings.of(context).diagnosticQuestion2,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q2', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          isWarning: true,
+          onTap: () => _answer('q2', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ3() => _QuestionCard(
-        title: AppStrings.of(context).diagnosticQuestion3,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).diagnosticPlatformPossiblyLoaded,
-                onTap: () => _answer('q3', 'loaded')),
-            _OptionButton(
-                text: AppStrings.of(context).diagnosticPlatformOpenedSafe,
-                onTap: () => _answer('q3', 'safe_open')),
-            _OptionButton(
-                text: AppStrings.of(context).diagnosticUnknownState,
-                isWarning: true,
-                onTap: () => _answer('q3', kUnknown)),
-          ],
+    title: AppStrings.of(context).diagnosticQuestion3,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).diagnosticPlatformPossiblyLoaded,
+          onTap: () => _answer('q3', 'loaded'),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).diagnosticPlatformOpenedSafe,
+          onTap: () => _answer('q3', 'safe_open'),
+        ),
+        _OptionButton(
+          text: AppStrings.of(context).diagnosticUnknownState,
+          isWarning: true,
+          onTap: () => _answer('q3', kUnknown),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ4() => _QuestionCard(
-        title: AppStringsDiagnostic.questionIncidentTitle,
-        subtitle: AppStrings.of(context).diagnosticClassification,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStringsDiagnostic.incidentNoFireLabel,
-                onTap: () => _answer('q4', kIncidentNoFire)),
-            _OptionButton(
-                text: AppStringsDiagnostic.incidentDelayedFireLabel,
-                onTap: () => _answer('q4', kIncidentDelayedFire)),
-            _OptionButton(
-                text: AppStringsDiagnostic.incidentCycleLabel,
-                onTap: () => _answer('q4', kIncidentCycle)),
-            _OptionButton(
-                text: AppStringsDiagnostic.incidentAccuracyLabel,
-                onTap: () => _answer('q4', kIncidentAccuracy)),
-            _OptionButton(
-                text: AppStringsDiagnostic.incidentAbnormalDepartureLabel,
-                isWarning: true,
-                onTap: () => _answer('q4', kIncidentAbnormalDeparture)),
-          ],
+    title: AppStringsDiagnostic.questionIncidentTitle,
+    subtitle: AppStrings.of(context).diagnosticClassification,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStringsDiagnostic.incidentNoFireLabel,
+          onTap: () => _answer('q4', kIncidentNoFire),
         ),
-      );
+        _OptionButton(
+          text: AppStringsDiagnostic.incidentDelayedFireLabel,
+          onTap: () => _answer('q4', kIncidentDelayedFire),
+        ),
+        _OptionButton(
+          text: AppStringsDiagnostic.incidentCycleLabel,
+          onTap: () => _answer('q4', kIncidentCycle),
+        ),
+        _OptionButton(
+          text: AppStringsDiagnostic.incidentAccuracyLabel,
+          onTap: () => _answer('q4', kIncidentAccuracy),
+        ),
+        _OptionButton(
+          text: AppStringsDiagnostic.incidentAbnormalDepartureLabel,
+          isWarning: true,
+          onTap: () => _answer('q4', kIncidentAbnormalDeparture),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ5() => _QuestionCard(
-        title: AppStringsDiagnostic.q5MarkOnPrimer,
-        subtitle: AppStringsDiagnostic.incidentNoFireLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q5', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q5', kNo)),
-          ],
+    title: AppStringsDiagnostic.q5MarkOnPrimer,
+    subtitle: AppStringsDiagnostic.incidentNoFireLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q5', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q5', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ6() => _QuestionCard(
-        title: AppStringsDiagnostic.q6RepeatsOtherAmmo,
-        subtitle: AppStringsDiagnostic.incidentNoFireLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q6', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q6', kNo)),
-          ],
+    title: AppStringsDiagnostic.q6RepeatsOtherAmmo,
+    subtitle: AppStringsDiagnostic.incidentNoFireLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q6', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q6', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ7() => _QuestionCard(
-        title: AppStringsDiagnostic.q7CycleAbnormal,
-        subtitle: AppStringsDiagnostic.incidentNoFireLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q7', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q7', kNo)),
-          ],
+    title: AppStringsDiagnostic.q7CycleAbnormal,
+    subtitle: AppStringsDiagnostic.incidentNoFireLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q7', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q7', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ8() => _QuestionCard(
-        title: AppStringsDiagnostic.q8RecentCleaning,
-        subtitle: AppStringsDiagnostic.incidentNoFireLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q8', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q8', kNo)),
-          ],
+    title: AppStringsDiagnostic.q8RecentCleaning,
+    subtitle: AppStringsDiagnostic.incidentNoFireLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q8', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q8', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ9() => _QuestionCard(
-        title: AppStringsDiagnostic.q9RealDelay,
-        subtitle: AppStringsDiagnostic.incidentDelayedFireLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q9', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q9', kNo)),
-          ],
+    title: AppStringsDiagnostic.q9RealDelay,
+    subtitle: AppStringsDiagnostic.incidentDelayedFireLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q9', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q9', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ10() => _QuestionCard(
-        title: AppStringsDiagnostic.q10SingleRound,
-        subtitle: AppStringsDiagnostic.incidentDelayedFireLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q10', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q10', kNo)),
-          ],
+    title: AppStringsDiagnostic.q10SingleRound,
+    subtitle: AppStringsDiagnostic.incidentDelayedFireLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q10', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q10', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ11() => _QuestionCard(
-        title: AppStringsDiagnostic.q11AlreadySeen,
-        subtitle: AppStringsDiagnostic.incidentDelayedFireLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q11', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q11', kNo)),
-          ],
+    title: AppStringsDiagnostic.q11AlreadySeen,
+    subtitle: AppStringsDiagnostic.incidentDelayedFireLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q11', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q11', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ12() => _QuestionCard(
-        title: AppStringsDiagnostic.q12RepeatedCycleIssue,
-        subtitle: AppStringsDiagnostic.incidentCycleLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q12', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q12', kNo)),
-          ],
+    title: AppStringsDiagnostic.q12RepeatedCycleIssue,
+    subtitle: AppStringsDiagnostic.incidentCycleLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q12', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q12', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ13() => _QuestionCard(
-        title: AppStringsDiagnostic.q13ChangesWithOtherAmmo,
-        subtitle: AppStringsDiagnostic.incidentCycleLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q13', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q13', kNo)),
-          ],
+    title: AppStringsDiagnostic.q13ChangesWithOtherAmmo,
+    subtitle: AppStringsDiagnostic.incidentCycleLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q13', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q13', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ14() => _QuestionCard(
-        title: AppStringsDiagnostic.q14ChangesWithOtherMag,
-        subtitle: AppStringsDiagnostic.incidentCycleLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q14', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q14', kNo)),
-          ],
+    title: AppStringsDiagnostic.q14ChangesWithOtherMag,
+    subtitle: AppStringsDiagnostic.incidentCycleLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q14', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q14', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ15() => _QuestionCard(
-        title: AppStringsDiagnostic.q15DirtyOrDry,
-        subtitle: AppStringsDiagnostic.incidentCycleLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q15', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q15', kNo)),
-          ],
+    title: AppStringsDiagnostic.q15DirtyOrDry,
+    subtitle: AppStringsDiagnostic.incidentCycleLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q15', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q15', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ16() => _QuestionCard(
-        title: AppStringsDiagnostic.q16SuddenAccuracyDrop,
-        subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q16', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q16', kNo)),
-          ],
+    title: AppStringsDiagnostic.q16SuddenAccuracyDrop,
+    subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q16', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q16', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ17() => _QuestionCard(
-        title: AppStringsDiagnostic.q17RecentChange,
-        subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q17', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q17', kNo)),
-          ],
+    title: AppStringsDiagnostic.q17RecentChange,
+    subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q17', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q17', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ18() => _QuestionCard(
-        title: AppStringsDiagnostic.q18VisibleMovement,
-        subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q18', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q18', kNo)),
-          ],
+    title: AppStringsDiagnostic.q18VisibleMovement,
+    subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q18', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q18', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ19() => _QuestionCard(
-        title: AppStringsDiagnostic.q19HighRoundsSinceCleaning,
-        subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q19', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q19', kNo)),
-          ],
+    title: AppStringsDiagnostic.q19HighRoundsSinceCleaning,
+    subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q19', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q19', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ20() => _QuestionCard(
-        title: AppStringsDiagnostic.q20DependsOnSupport,
-        subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStrings.of(context).yesUpper,
-                onTap: () => _answer('q20', kYes)),
-            _OptionButton(
-                text: AppStrings.of(context).noUpper,
-                onTap: () => _answer('q20', kNo)),
-          ],
+    title: AppStringsDiagnostic.q20DependsOnSupport,
+    subtitle: AppStringsDiagnostic.incidentAccuracyLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStrings.of(context).yesUpper,
+          onTap: () => _answer('q20', kYes),
         ),
-      );
+        _OptionButton(
+          text: AppStrings.of(context).noUpper,
+          onTap: () => _answer('q20', kNo),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildQ21() => _QuestionCard(
-        title: AppStringsDiagnostic.q21ConfirmedOrSuspected,
-        subtitle: AppStringsDiagnostic.incidentAbnormalDepartureLabel,
-        child: Column(
-          children: [
-            _OptionButton(
-                text: AppStringsDiagnostic.answerConfirmed,
-                isWarning: true,
-                onTap: () => _answer('q21', 'confirmed')),
-            _OptionButton(
-                text: AppStringsDiagnostic.answerSuspected,
-                onTap: () => _answer('q21', 'suspected')),
-          ],
+    title: AppStringsDiagnostic.q21ConfirmedOrSuspected,
+    subtitle: AppStringsDiagnostic.incidentAbnormalDepartureLabel,
+    child: Column(
+      children: [
+        _OptionButton(
+          text: AppStringsDiagnostic.answerConfirmed,
+          isWarning: true,
+          onTap: () => _answer('q21', 'confirmed'),
         ),
-      );
+        _OptionButton(
+          text: AppStringsDiagnostic.answerSuspected,
+          onTap: () => _answer('q21', 'suspected'),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildStopScreen() {
     final colors = Theme.of(context).colorScheme;
@@ -1407,7 +1514,7 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
     final String platformName;
     final String platformType;
     final DateTime date;
-    
+
     final Map<String, int> probabilities;
     final String suspectedIssueKey;
     final String riskLevelKey;
@@ -1417,12 +1524,14 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
 
     if (savedDiag != null) {
       final platform = provider.getPlatformById(savedDiag.platformId);
-      platformName = platform?.name ?? (savedDiag.platformNameSnapshot.isNotEmpty 
-          ? savedDiag.platformNameSnapshot 
-          : strings.platformNotSpecified);
+      platformName =
+          platform?.name ??
+          (savedDiag.platformNameSnapshot.isNotEmpty
+              ? savedDiag.platformNameSnapshot
+              : strings.platformNotSpecified);
       platformType = platform?.type ?? savedDiag.platformTypeSnapshot;
       date = savedDiag.date;
-      
+
       probabilities = savedDiag.probabilities;
       suspectedIssueKey = savedDiag.suspectedIssueKey;
       riskLevelKey = savedDiag.riskLevelKey;
@@ -1430,13 +1539,14 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
       finalDecision = savedDiag.finalDecision;
       summaryText = savedDiag.summary;
     } else {
-      final platform = (_selectedPlatformId != null && _selectedPlatformId != 'none')
+      final platform =
+          (_selectedPlatformId != null && _selectedPlatformId != 'none')
           ? provider.getPlatformById(_selectedPlatformId!)
           : null;
       platformName = platform?.name ?? 'plateforme non spécifiée';
       platformType = platform?.type ?? '-';
       date = DateTime.now();
-      
+
       final result = _evaluateResult(platform);
       probabilities = result.probabilities;
       suspectedIssueKey = result.suspectedIssueKey;
@@ -1455,7 +1565,10 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
 
     final sortedProbabilities = probabilities.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final iconColor = DiagnosticResultUIHelper.issueColor(suspectedIssueKey, colors);
+    final iconColor = DiagnosticResultUIHelper.issueColor(
+      suspectedIssueKey,
+      colors,
+    );
     final riskLabel = DiagnosticResultUIHelper.riskLabel(riskLevelKey);
     final incidentLabel = DiagnosticResultUIHelper.incidentLabel(incidentKey);
 
@@ -1479,7 +1592,7 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
           textAlign: TextAlign.center,
         ),
         const Gap(AppSpacing.md),
-        
+
         // 1. CARTE PRINCIPALE : Incident et Cause
         Container(
           padding: AppSpacing.paddingLg,
@@ -1499,7 +1612,8 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppStringsDiagnostic.diagnosticIdentifiedIncidentTitle.toUpperCase(),
+                AppStringsDiagnostic.diagnosticIdentifiedIncidentTitle
+                    .toUpperCase(),
                 style: textStyles.labelSmall?.copyWith(
                   color: colors.secondary,
                   letterSpacing: 1.2,
@@ -1519,7 +1633,8 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
                 child: Divider(),
               ),
               Text(
-                AppStringsDiagnostic.diagnosticSuspectedIssueTitle.toUpperCase(),
+                AppStringsDiagnostic.diagnosticSuspectedIssueTitle
+                    .toUpperCase(),
                 style: textStyles.labelSmall?.copyWith(
                   color: colors.secondary,
                   letterSpacing: 1.2,
@@ -1535,7 +1650,11 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
                       color: iconColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.build_circle_rounded, color: iconColor, size: 24),
+                    child: Icon(
+                      Icons.build_circle_rounded,
+                      color: iconColor,
+                      size: 24,
+                    ),
                   ),
                   const Gap(AppSpacing.sm),
                   Expanded(
@@ -1553,7 +1672,9 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
                 const Gap(AppSpacing.sm),
                 Text(
                   AppStringsDiagnostic.issueComponentDamageHint,
-                  style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
+                  style: textStyles.bodyMedium?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ],
             ],
@@ -1591,31 +1712,34 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: riskLevelKey == 'high' 
-                          ? colors.error.withValues(alpha: 0.1) 
+                      color: riskLevelKey == 'high'
+                          ? colors.error.withValues(alpha: 0.1)
                           : riskLevelKey == 'medium'
-                              ? Colors.orange.withValues(alpha: 0.1)
-                              : Colors.green.withValues(alpha: 0.1),
+                          ? Colors.orange.withValues(alpha: 0.1)
+                          : Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: riskLevelKey == 'high' 
-                            ? colors.error 
+                        color: riskLevelKey == 'high'
+                            ? colors.error
                             : riskLevelKey == 'medium'
-                                ? Colors.orange
-                                : Colors.green,
+                            ? Colors.orange
+                            : Colors.green,
                       ),
                     ),
                     child: Text(
                       riskLabel,
                       style: textStyles.labelMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: riskLevelKey == 'high' 
-                            ? colors.error 
+                        color: riskLevelKey == 'high'
+                            ? colors.error
                             : riskLevelKey == 'medium'
-                                ? Colors.orange
-                                : Colors.green,
+                            ? Colors.orange
+                            : Colors.green,
                       ),
                     ),
                   ),
@@ -1634,15 +1758,17 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
                 ),
               ),
               const Gap(AppSpacing.sm),
-              ...sortedProbabilities.map((entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: DiagnosticResultUIHelper.buildProbabilityRow(
-                      issueKey: entry.key,
-                      value: entry.value,
-                      colors: colors,
-                      textStyles: textStyles,
-                    ),
-                  )),
+              ...sortedProbabilities.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: DiagnosticResultUIHelper.buildProbabilityRow(
+                    issueKey: entry.key,
+                    value: entry.value,
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -1659,14 +1785,19 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.lightbulb_outline_rounded, color: colors.primary, size: 24),
+              Icon(
+                Icons.lightbulb_outline_rounded,
+                color: colors.primary,
+                size: 24,
+              ),
               const Gap(AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppStringsDiagnostic.diagnosticImmediateActionsTitle.toUpperCase(),
+                      AppStringsDiagnostic.diagnosticImmediateActionsTitle
+                          .toUpperCase(),
                       style: textStyles.labelSmall?.copyWith(
                         color: colors.primary,
                         letterSpacing: 1.2,
@@ -1675,7 +1806,9 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
                     ),
                     const Gap(AppSpacing.xs),
                     Text(
-                      AppStringsDiagnostic.diagnosticRecommendedActions(riskLevelKey),
+                      AppStringsDiagnostic.diagnosticRecommendedActions(
+                        riskLevelKey,
+                      ),
                       style: textStyles.bodyLarge?.copyWith(
                         color: colors.onSurface,
                         height: 1.4,
@@ -1700,7 +1833,11 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.do_not_disturb_alt_rounded, color: colors.error, size: 24),
+              Icon(
+                Icons.do_not_disturb_alt_rounded,
+                color: colors.error,
+                size: 24,
+              ),
               const Gap(AppSpacing.md),
               Expanded(
                 child: Column(
@@ -1762,7 +1899,7 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
           ),
         ),
         const Gap(AppSpacing.xl),
-        
+
         if (savedDiag == null)
           SizedBox(
             width: double.infinity,
@@ -1779,7 +1916,10 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
               ),
               child: Text(
                 strings.saveDiagnosticUpper,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           )
@@ -1797,7 +1937,10 @@ class _DiagnosticTreeViewState extends State<DiagnosticTreeView> {
               ),
               child: Text(
                 strings.closeUpper,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -1912,24 +2055,36 @@ class _OptionButton extends StatelessWidget {
 }
 
 class DiagnosticResultUIHelper {
-  static String incidentLabel(String key) => AppStringsDiagnostic.incidentLabel(key);
+  static String incidentLabel(String key) =>
+      AppStringsDiagnostic.incidentLabel(key);
 
   static String riskLabel(String key) => AppStringsDiagnostic.riskLabel(key);
 
   static Color issueColor(String key, ColorScheme colors) {
     switch (key) {
-      case 'component_damage': return colors.error;
-      case 'ammo_defective': return const Color(0xFFC27A1A);
-      case 'fouling_dirty': return const Color(0xFF8A6A3B);
-      case 'configuration_issue': return const Color(0xFF356AE6);
-      case 'optic_or_mount': return const Color(0xFF7B4CE0);
-      case 'human_factor': return const Color(0xFF2F8F83);
-      default: return colors.secondary;
+      case 'component_damage':
+        return colors.error;
+      case 'ammo_defective':
+        return const Color(0xFFC27A1A);
+      case 'fouling_dirty':
+        return const Color(0xFF8A6A3B);
+      case 'configuration_issue':
+        return const Color(0xFF356AE6);
+      case 'optic_or_mount':
+        return const Color(0xFF7B4CE0);
+      case 'human_factor':
+        return const Color(0xFF2F8F83);
+      default:
+        return colors.secondary;
     }
   }
 
   static Widget issueDot(Color color) {
-    return Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
   }
 
   static Widget buildProbabilityRow({
@@ -1964,18 +2119,25 @@ class DiagnosticResultSheet extends StatelessWidget {
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
 
-    final platformName = diagnostic.platformNameSnapshot.isNotEmpty 
-        ? diagnostic.platformNameSnapshot 
+    final platformName = diagnostic.platformNameSnapshot.isNotEmpty
+        ? diagnostic.platformNameSnapshot
         : 'plateforme non spécifiée';
     final platformType = diagnostic.platformTypeSnapshot;
     final date = diagnostic.date;
-    
+
     final sortedProbabilities = diagnostic.probabilities.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
-    final iconColor = DiagnosticResultUIHelper.issueColor(diagnostic.suspectedIssueKey, colors);
-    final riskLabel = DiagnosticResultUIHelper.riskLabel(diagnostic.riskLevelKey);
-    final incidentLabel = DiagnosticResultUIHelper.incidentLabel(diagnostic.incidentKey);
+
+    final iconColor = DiagnosticResultUIHelper.issueColor(
+      diagnostic.suspectedIssueKey,
+      colors,
+    );
+    final riskLabel = DiagnosticResultUIHelper.riskLabel(
+      diagnostic.riskLevelKey,
+    );
+    final incidentLabel = DiagnosticResultUIHelper.incidentLabel(
+      diagnostic.incidentKey,
+    );
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1997,7 +2159,7 @@ class DiagnosticResultSheet extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const Gap(AppSpacing.md),
-        
+
         // 1. CARTE PRINCIPALE : Incident et Cause
         Container(
           padding: AppSpacing.paddingLg,
@@ -2017,7 +2179,8 @@ class DiagnosticResultSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppStringsDiagnostic.diagnosticIdentifiedIncidentTitle.toUpperCase(),
+                AppStringsDiagnostic.diagnosticIdentifiedIncidentTitle
+                    .toUpperCase(),
                 style: textStyles.labelSmall?.copyWith(
                   color: colors.secondary,
                   letterSpacing: 1.2,
@@ -2037,7 +2200,8 @@ class DiagnosticResultSheet extends StatelessWidget {
                 child: Divider(),
               ),
               Text(
-                AppStringsDiagnostic.diagnosticSuspectedIssueTitle.toUpperCase(),
+                AppStringsDiagnostic.diagnosticSuspectedIssueTitle
+                    .toUpperCase(),
                 style: textStyles.labelSmall?.copyWith(
                   color: colors.secondary,
                   letterSpacing: 1.2,
@@ -2053,7 +2217,11 @@ class DiagnosticResultSheet extends StatelessWidget {
                       color: iconColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.build_circle_rounded, color: iconColor, size: 24),
+                    child: Icon(
+                      Icons.build_circle_rounded,
+                      color: iconColor,
+                      size: 24,
+                    ),
                   ),
                   const Gap(AppSpacing.sm),
                   Expanded(
@@ -2071,7 +2239,9 @@ class DiagnosticResultSheet extends StatelessWidget {
                 const Gap(AppSpacing.sm),
                 Text(
                   AppStringsDiagnostic.issueComponentDamageHint,
-                  style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
+                  style: textStyles.bodyMedium?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ],
             ],
@@ -2109,31 +2279,34 @@ class DiagnosticResultSheet extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: diagnostic.riskLevelKey == 'high' 
-                          ? colors.error.withValues(alpha: 0.1) 
+                      color: diagnostic.riskLevelKey == 'high'
+                          ? colors.error.withValues(alpha: 0.1)
                           : diagnostic.riskLevelKey == 'medium'
-                              ? Colors.orange.withValues(alpha: 0.1)
-                              : Colors.green.withValues(alpha: 0.1),
+                          ? Colors.orange.withValues(alpha: 0.1)
+                          : Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: diagnostic.riskLevelKey == 'high' 
-                            ? colors.error 
+                        color: diagnostic.riskLevelKey == 'high'
+                            ? colors.error
                             : diagnostic.riskLevelKey == 'medium'
-                                ? Colors.orange
-                                : Colors.green,
+                            ? Colors.orange
+                            : Colors.green,
                       ),
                     ),
                     child: Text(
                       riskLabel,
                       style: textStyles.labelMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: diagnostic.riskLevelKey == 'high' 
-                            ? colors.error 
+                        color: diagnostic.riskLevelKey == 'high'
+                            ? colors.error
                             : diagnostic.riskLevelKey == 'medium'
-                                ? Colors.orange
-                                : Colors.green,
+                            ? Colors.orange
+                            : Colors.green,
                       ),
                     ),
                   ),
@@ -2152,15 +2325,17 @@ class DiagnosticResultSheet extends StatelessWidget {
                 ),
               ),
               const Gap(AppSpacing.sm),
-              ...sortedProbabilities.map((entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: DiagnosticResultUIHelper.buildProbabilityRow(
-                      issueKey: entry.key,
-                      value: entry.value,
-                      colors: colors,
-                      textStyles: textStyles,
-                    ),
-                  )),
+              ...sortedProbabilities.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: DiagnosticResultUIHelper.buildProbabilityRow(
+                    issueKey: entry.key,
+                    value: entry.value,
+                    colors: colors,
+                    textStyles: textStyles,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -2177,14 +2352,19 @@ class DiagnosticResultSheet extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.lightbulb_outline_rounded, color: colors.primary, size: 24),
+              Icon(
+                Icons.lightbulb_outline_rounded,
+                color: colors.primary,
+                size: 24,
+              ),
               const Gap(AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppStringsDiagnostic.diagnosticImmediateActionsTitle.toUpperCase(),
+                      AppStringsDiagnostic.diagnosticImmediateActionsTitle
+                          .toUpperCase(),
                       style: textStyles.labelSmall?.copyWith(
                         color: colors.primary,
                         letterSpacing: 1.2,
@@ -2193,7 +2373,9 @@ class DiagnosticResultSheet extends StatelessWidget {
                     ),
                     const Gap(AppSpacing.xs),
                     Text(
-                      AppStringsDiagnostic.diagnosticRecommendedActions(diagnostic.riskLevelKey),
+                      AppStringsDiagnostic.diagnosticRecommendedActions(
+                        diagnostic.riskLevelKey,
+                      ),
                       style: textStyles.bodyLarge?.copyWith(
                         color: colors.onSurface,
                         height: 1.4,
@@ -2218,7 +2400,11 @@ class DiagnosticResultSheet extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.do_not_disturb_alt_rounded, color: colors.error, size: 24),
+              Icon(
+                Icons.do_not_disturb_alt_rounded,
+                color: colors.error,
+                size: 24,
+              ),
               const Gap(AppSpacing.md),
               Expanded(
                 child: Column(
@@ -2280,7 +2466,7 @@ class DiagnosticResultSheet extends StatelessWidget {
           ),
         ),
         const Gap(AppSpacing.xl),
-        
+
         SizedBox(
           width: double.infinity,
           child: TextButton(

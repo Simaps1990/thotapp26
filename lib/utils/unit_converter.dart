@@ -18,14 +18,13 @@ class UnitConverter {
     // Remove unit and parse number
     final numStr = distanceStr.replaceAll(RegExp(r'[^0-9.]'), '');
     final value = int.tryParse(numStr) ?? 0;
-    
+
     if (distanceStr.toLowerCase().contains('yd')) {
       // Convert yards to meters
       return (value / 1.09361).round();
     }
     return value;
   }
-
 
   // Temperature conversions
   String formatTemperature(double celsius) {
@@ -48,7 +47,7 @@ class UnitConverter {
   double parseTemperature(String tempStr) {
     final numStr = tempStr.replaceAll(RegExp(r'[^0-9.-]'), '');
     final value = double.tryParse(numStr) ?? 20;
-    
+
     if (tempStr.contains('°F') || tempStr.toLowerCase().contains('f')) {
       // Convert Fahrenheit to Celsius
       return (value - 32) * 5 / 9;
@@ -76,7 +75,7 @@ class UnitConverter {
   double parseWindSpeed(String windStr) {
     final numStr = windStr.replaceAll(RegExp(r'[^0-9.]'), '');
     final value = double.tryParse(numStr) ?? 0;
-    
+
     if (windStr.toLowerCase().contains('mph')) {
       // Convert mph to km/h
       return value / 0.621371;
@@ -104,7 +103,7 @@ class UnitConverter {
   double parsePressure(String pressureStr) {
     final numStr = pressureStr.replaceAll(RegExp(r'[^0-9.]'), '');
     final value = double.tryParse(numStr) ?? 1013;
-    
+
     if (pressureStr.toLowerCase().contains('inhg')) {
       // Convert inHg to hPa
       return value / 0.02953;

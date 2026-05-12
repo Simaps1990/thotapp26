@@ -6,10 +6,14 @@ import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
 
 abstract interface class WebTextExporterImpl {
-  static Future<void> downloadTextFile({required String filename, required String content}) {
+  static Future<void> downloadTextFile({
+    required String filename,
+    required String content,
+  }) {
     try {
-      final normalizedName =
-          filename.trim().isEmpty ? 'export.txt' : filename.trim();
+      final normalizedName = filename.trim().isEmpty
+          ? 'export.txt'
+          : filename.trim();
       final bytes = utf8.encode(content);
       final blob = web.Blob(
         [bytes.toJS].toJS,

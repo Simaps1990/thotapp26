@@ -74,10 +74,12 @@ String generateExerciseShareText({
     }
     if ((st.platformFrom ?? '').trim().isNotEmpty ||
         (st.platformTo ?? '').trim().isNotEmpty) {
-      details.add(strings.exerciseSharePlatformTransfer(
-        st.platformFrom ?? '—',
-        st.platformTo ?? '—',
-      ));
+      details.add(
+        strings.exerciseSharePlatformTransfer(
+          st.platformFrom ?? '—',
+          st.platformTo ?? '—',
+        ),
+      );
     }
     if (st.reloadType != null) {
       details.add(strings.exerciseShareReload(st.reloadType!.name));

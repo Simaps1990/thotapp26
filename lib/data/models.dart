@@ -4,8 +4,10 @@ class ItemDocument {
   final String path;
   final String name;
   final String type;
+
   /// Optional expiry date for the document (e.g. permit, certificate).
   final DateTime? expiryDate;
+
   /// How many days before expiry to show the alert. 0 = no notification.
   final int notifyBeforeDays;
 
@@ -25,20 +27,20 @@ class ItemDocument {
     bool clearExpiryDate = false,
     int? notifyBeforeDays,
   }) => ItemDocument(
-        path: path ?? this.path,
-        name: name ?? this.name,
-        type: type ?? this.type,
-        expiryDate: clearExpiryDate ? null : (expiryDate ?? this.expiryDate),
-        notifyBeforeDays: notifyBeforeDays ?? this.notifyBeforeDays,
-      );
+    path: path ?? this.path,
+    name: name ?? this.name,
+    type: type ?? this.type,
+    expiryDate: clearExpiryDate ? null : (expiryDate ?? this.expiryDate),
+    notifyBeforeDays: notifyBeforeDays ?? this.notifyBeforeDays,
+  );
 
   Map<String, dynamic> toJson() => {
-        'path': path,
-        'name': name,
-        'type': type,
-        if (expiryDate != null) 'expiryDate': expiryDate!.toIso8601String(),
-        'notifyBeforeDays': notifyBeforeDays,
-      };
+    'path': path,
+    'name': name,
+    'type': type,
+    if (expiryDate != null) 'expiryDate': expiryDate!.toIso8601String(),
+    'notifyBeforeDays': notifyBeforeDays,
+  };
 
   static ItemDocument fromJson(dynamic json) {
     if (json is String) {
@@ -50,8 +52,9 @@ class ItemDocument {
       final name = (json['name'] ?? '') as String;
       final type = (json['type'] ?? 'Document') as String;
       final expiryRaw = json['expiryDate'];
-      final DateTime? expiryDate =
-          expiryRaw != null ? DateTime.tryParse(expiryRaw as String) : null;
+      final DateTime? expiryDate = expiryRaw != null
+          ? DateTime.tryParse(expiryRaw as String)
+          : null;
       final notifyBeforeDays = (json['notifyBeforeDays'] as int?) ?? 0;
       return ItemDocument(
         path: path,
@@ -72,11 +75,11 @@ class ItemDocument {
   }
 }
 
-
 /// Represents a restock / consumption event in an ammo's history.
 class AmmoHistoryEntry {
   final String id;
   final DateTime date;
+
   /// 'restock' | 'consumption'
   final String type;
   final String label;
@@ -93,13 +96,13 @@ class AmmoHistoryEntry {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'date': date.toIso8601String(),
-        'type': type,
-        'label': label,
-        'quantity': quantity,
-        'comment': comment,
-      };
+    'id': id,
+    'date': date.toIso8601String(),
+    'type': type,
+    'label': label,
+    'quantity': quantity,
+    'comment': comment,
+  };
 
   static AmmoHistoryEntry fromJson(Map<String, dynamic> json) {
     return AmmoHistoryEntry(
@@ -112,7 +115,6 @@ class AmmoHistoryEntry {
     );
   }
 }
-
 
 class PlatformHistoryEntry {
   final String id;
@@ -146,12 +148,12 @@ class PlatformHistoryEntry {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'date': date.toIso8601String(),
-        'type': type,
-        'label': label,
-        'details': details,
-      };
+    'id': id,
+    'date': date.toIso8601String(),
+    'type': type,
+    'label': label,
+    'details': details,
+  };
 
   static PlatformHistoryEntry fromJson(dynamic json) {
     return PlatformHistoryEntry(
@@ -164,12 +166,75 @@ class PlatformHistoryEntry {
   }
 }
 
+class PlatformReplacementPart {
+  final String id;
+  final String name;
+  final DateTime changedAt;
+  final int roundsAtChange;
+  final int platformRoundsAtChange;
+  final String comment;
+
+  const PlatformReplacementPart({
+    required this.id,
+    required this.name,
+    required this.changedAt,
+    required this.roundsAtChange,
+    required this.platformRoundsAtChange,
+    this.comment = '',
+  });
+
+  PlatformReplacementPart copyWith({
+    String? id,
+    String? name,
+    DateTime? changedAt,
+    int? roundsAtChange,
+    int? platformRoundsAtChange,
+    String? comment,
+  }) {
+    return PlatformReplacementPart(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      changedAt: changedAt ?? this.changedAt,
+      roundsAtChange: roundsAtChange ?? this.roundsAtChange,
+      platformRoundsAtChange:
+          platformRoundsAtChange ?? this.platformRoundsAtChange,
+      comment: comment ?? this.comment,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'changedAt': changedAt.toIso8601String(),
+    'roundsAtChange': roundsAtChange,
+    'platformRoundsAtChange': platformRoundsAtChange,
+    'comment': comment,
+  };
+
+  static PlatformReplacementPart fromJson(dynamic json) {
+    final roundsAtChange = (json['roundsAtChange'] as num?)?.toInt() ?? 0;
+    return PlatformReplacementPart(
+      id: json['id'] as String,
+      name: (json['name'] ?? '') as String,
+      changedAt:
+          DateTime.tryParse((json['changedAt'] ?? '') as String) ??
+          DateTime.now(),
+      roundsAtChange: roundsAtChange,
+      platformRoundsAtChange:
+          (json['platformRoundsAtChange'] as num?)?.toInt() ?? roundsAtChange,
+      comment: (json['comment'] ?? '') as String,
+    );
+  }
+}
+
 class Platform {
   final String id;
   final String name;
   final String model;
+
   /// Free-form user note shown in item details.
   final String comment;
+
   /// Domain type shown in inventory badges (e.g. PA, FA, FM, FP...).
   final String type;
   final String caliber;
@@ -183,6 +248,7 @@ class Platform {
   final String category; // 'Plateforme'
   final List<ItemDocument> documents;
   final List<PlatformHistoryEntry> history;
+  final List<PlatformReplacementPart> replacementParts;
   final String? photoPath; // Path to item photo
   final bool isHidden;
   final List<String> linkedAccessoryIds;
@@ -191,9 +257,10 @@ class Platform {
   final bool trackWear;
   final bool trackCleanliness;
   final bool trackRounds;
-  
+
   // Tracking thresholds
-  final int cleaningRoundsThreshold; // Number of rounds before cleaning reminder
+  final int
+  cleaningRoundsThreshold; // Number of rounds before cleaning reminder
   final int wearRoundsThreshold; // Number of rounds for wear calculation
 
   /// Rounds counter snapshots to compute maintenance progress.
@@ -227,16 +294,19 @@ class Platform {
     int? roundsAtLastRevision,
     this.documents = const [],
     this.history = const [],
+    this.replacementParts = const [],
     this.photoPath,
     this.isHidden = false,
     this.linkedAccessoryIds = const [],
-  })  : lastRevised = lastRevised ?? lastCleaned,
-        roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
-        roundsAtLastRevision = roundsAtLastRevision ?? totalRounds;
+  }) : lastRevised = lastRevised ?? lastCleaned,
+       roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
+       roundsAtLastRevision = roundsAtLastRevision ?? totalRounds;
 
-  int get roundsSinceCleaning => (totalRounds - roundsAtLastCleaning).clamp(0, 1 << 30);
+  int get roundsSinceCleaning =>
+      (totalRounds - roundsAtLastCleaning).clamp(0, 1 << 30);
 
-  int get roundsSinceRevision => (totalRounds - roundsAtLastRevision).clamp(0, 1 << 30);
+  int get roundsSinceRevision =>
+      (totalRounds - roundsAtLastRevision).clamp(0, 1 << 30);
 
   /// 0.0 = just cleaned, 1.0 = reached / exceeded cleaning threshold.
   double get cleaningProgress {
@@ -269,6 +339,7 @@ class Platform {
     String? category,
     List<ItemDocument>? documents,
     List<PlatformHistoryEntry>? history,
+    List<PlatformReplacementPart>? replacementParts,
     String? photoPath,
     bool? trackWear,
     bool? trackCleanliness,
@@ -297,11 +368,13 @@ class Platform {
       category: category ?? this.category,
       documents: documents ?? this.documents,
       history: history ?? this.history,
+      replacementParts: replacementParts ?? this.replacementParts,
       photoPath: photoPath ?? this.photoPath,
       trackWear: trackWear ?? this.trackWear,
       trackCleanliness: trackCleanliness ?? this.trackCleanliness,
       trackRounds: trackRounds ?? this.trackRounds,
-      cleaningRoundsThreshold: cleaningRoundsThreshold ?? this.cleaningRoundsThreshold,
+      cleaningRoundsThreshold:
+          cleaningRoundsThreshold ?? this.cleaningRoundsThreshold,
       wearRoundsThreshold: wearRoundsThreshold ?? this.wearRoundsThreshold,
       roundsAtLastCleaning: roundsAtLastCleaning ?? this.roundsAtLastCleaning,
       roundsAtLastRevision: roundsAtLastRevision ?? this.roundsAtLastRevision,
@@ -316,13 +389,16 @@ class Ammo {
   final String name;
   final String brand;
   final String caliber;
+
   /// Free-form user note shown in item details.
   final String comment;
+
   /// Projectile / bullet type (e.g. FMJ, Pointe creuse, Gold Dot...).
   ///
   /// Stored as free text so the dropdown can evolve over time.
   final String projectileType;
   int quantity;
+
   /// Initial stock quantity (used to compute stock criticality over time).
   ///
   /// This value should remain stable even when sessions consume ammo.
@@ -413,18 +489,22 @@ class Ammo {
 
 class Accessory {
   final String id;
+
   /// Display name (used across most UI).
   ///
   /// For new items we build it from `brand` + `model`.
   final String name;
   final String brand;
   final String model;
+
   /// Free-form user note shown in item details.
   final String comment;
+
   /// Domain type shown in inventory badges (e.g. Optique, Holster, Protection...).
   final String type;
   final String imageUrl;
   DateTime? lastUsed;
+
   /// Total number of shots fired while this accessory was selected in exercises.
   ///
   /// This is used for accessory follow-up (it does NOT participate in critical indicators).
@@ -449,7 +529,7 @@ class Accessory {
   final List<ItemDocument> documents;
   final String? photoPath; // Path to item photo
   final bool isHidden;
-  
+
   // Tracking options
   final bool trackBattery;
   final List<String> linkedPlatformIds;
@@ -478,9 +558,9 @@ class Accessory {
     this.photoPath,
     this.isHidden = false,
     this.linkedPlatformIds = const [],
-  })  : lastRevised = lastRevised ?? lastCleaned,
-        roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
-        roundsAtLastRevision = roundsAtLastRevision ?? totalRounds;
+  }) : lastRevised = lastRevised ?? lastCleaned,
+       roundsAtLastCleaning = roundsAtLastCleaning ?? totalRounds,
+       roundsAtLastRevision = roundsAtLastRevision ?? totalRounds;
 
   int get roundsSinceCleaning =>
       (totalRounds - roundsAtLastCleaning).clamp(0, 1 << 30);
@@ -554,15 +634,9 @@ class Accessory {
   }
 }
 
-enum AdjustmentDistanceUnit {
-  meter,
-  yard,
-}
+enum AdjustmentDistanceUnit { meter, yard }
 
-enum AdjustmentOffsetUnit {
-  centimeter,
-  inch,
-}
+enum AdjustmentOffsetUnit { centimeter, inch }
 
 class ShootingAdjustmentEntry {
   final String id;
@@ -616,17 +690,17 @@ class ShootingAdjustmentEntry {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'distance': distance,
-        'distanceUnit': distanceUnit.name,
-        'horizontalOffset': horizontalOffset,
-        'verticalOffset': verticalOffset,
-        'offsetUnit': offsetUnit.name,
-        'correction': correction,
-        'note': note,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'distance': distance,
+    'distanceUnit': distanceUnit.name,
+    'horizontalOffset': horizontalOffset,
+    'verticalOffset': verticalOffset,
+    'offsetUnit': offsetUnit.name,
+    'correction': correction,
+    'note': note,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   factory ShootingAdjustmentEntry.fromJson(Map<String, dynamic> json) {
     final distanceUnitRaw = (json['distanceUnit'] ?? 'meter') as String;
@@ -647,9 +721,11 @@ class ShootingAdjustmentEntry {
       ),
       correction: (json['correction'] ?? '') as String,
       note: (json['note'] ?? '') as String,
-      createdAt: DateTime.tryParse((json['createdAt'] ?? '') as String) ??
+      createdAt:
+          DateTime.tryParse((json['createdAt'] ?? '') as String) ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse((json['updatedAt'] ?? '') as String) ??
+      updatedAt:
+          DateTime.tryParse((json['updatedAt'] ?? '') as String) ??
           DateTime.now(),
     );
   }
@@ -721,20 +797,21 @@ class ShootingAdjustmentTable {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'platformId': platformId,
-        if (customPlatformName != null) 'customPlatformName': customPlatformName,
-        'ammoId': ammoId,
-        if (customAmmoName != null) 'customAmmoName': customAmmoName,
-        'accessoriesCustomized': accessoriesCustomized,
-        'accessoryIds': accessoryIds,
-        if (customAccessoryNames.isNotEmpty) 'customAccessoryNames': customAccessoryNames,
-        'entries': entries.map((e) => e.toJson()).toList(),
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'isDope': isDope,
-      };
+    'id': id,
+    'name': name,
+    'platformId': platformId,
+    if (customPlatformName != null) 'customPlatformName': customPlatformName,
+    'ammoId': ammoId,
+    if (customAmmoName != null) 'customAmmoName': customAmmoName,
+    'accessoriesCustomized': accessoriesCustomized,
+    'accessoryIds': accessoryIds,
+    if (customAccessoryNames.isNotEmpty)
+      'customAccessoryNames': customAccessoryNames,
+    'entries': entries.map((e) => e.toJson()).toList(),
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'isDope': isDope,
+  };
 
   factory ShootingAdjustmentTable.fromJson(Map<String, dynamic> json) {
     final entriesRaw = (json['entries'] as List?) ?? const [];
@@ -743,7 +820,8 @@ class ShootingAdjustmentTable {
     final rawAmmoId = json['ammoId'];
     final rawCustomPlatformName = json['customPlatformName'];
     final rawCustomAmmoName = json['customAmmoName'];
-    final rawCustomAccessoryNames = (json['customAccessoryNames'] as List?) ?? const [];
+    final rawCustomAccessoryNames =
+        (json['customAccessoryNames'] as List?) ?? const [];
     return ShootingAdjustmentTable(
       id: (json['id'] ?? '').toString(),
       name: rawName == null ? '' : rawName.toString(),
@@ -751,18 +829,24 @@ class ShootingAdjustmentTable {
       customPlatformName: rawCustomPlatformName?.toString(),
       ammoId: rawAmmoId?.toString(),
       customAmmoName: rawCustomAmmoName?.toString(),
-      customAccessoryNames: rawCustomAccessoryNames.map((e) => e.toString()).toList(),
+      customAccessoryNames: rawCustomAccessoryNames
+          .map((e) => e.toString())
+          .toList(),
       accessoriesCustomized: (json['accessoriesCustomized'] ?? false) == true,
       accessoryIds: ((json['accessoryIds'] as List?) ?? const [])
           .whereType<String>()
           .toList(),
       entries: entriesRaw
           .whereType<Map>()
-          .map((e) => ShootingAdjustmentEntry.fromJson(e.cast<String, dynamic>()))
+          .map(
+            (e) => ShootingAdjustmentEntry.fromJson(e.cast<String, dynamic>()),
+          )
           .toList(),
-      createdAt: DateTime.tryParse((json['createdAt'] ?? '') as String) ??
+      createdAt:
+          DateTime.tryParse((json['createdAt'] ?? '') as String) ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse((json['updatedAt'] ?? '') as String) ??
+      updatedAt:
+          DateTime.tryParse((json['updatedAt'] ?? '') as String) ??
           DateTime.now(),
       isDope: (json['isDope'] ?? false) == true,
     );
@@ -780,11 +864,7 @@ class ExercisePhoto {
     required this.path,
   });
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'path': path,
-      };
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'path': path};
 
   factory ExercisePhoto.fromJson(Map<String, dynamic> json) {
     return ExercisePhoto(
@@ -794,11 +874,7 @@ class ExercisePhoto {
     );
   }
 
-  ExercisePhoto copyWith({
-    String? id,
-    String? name,
-    String? path,
-  }) {
+  ExercisePhoto copyWith({String? id, String? name, String? path}) {
     return ExercisePhoto(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -887,8 +963,10 @@ class Exercise {
   /// Distance maximale renseignée dans les étapes (en mètres), en mode détaillé.
   int? get detailedMaxDistance {
     if (steps == null || steps!.isEmpty) return null;
-    final distances =
-        steps!.map((s) => s.distanceM).where((d) => d != null).cast<int>();
+    final distances = steps!
+        .map((s) => s.distanceM)
+        .where((d) => d != null)
+        .cast<int>();
     if (distances.isEmpty) return null;
     return distances.reduce((a, b) => a > b ? a : b);
   }
@@ -1027,7 +1105,7 @@ class Session {
   final double? locationLongitude;
   final String sessionType; // Personnel, Professionnel, Compétition
   final List<Exercise> exercises;
-  
+
   // Weather (optional)
   final bool weatherEnabled;
   final String temperature;
@@ -1051,7 +1129,7 @@ class Session {
     required this.location,
     this.shootingDistance,
     this.locationLatitude,
-this.locationLongitude,
+    this.locationLongitude,
     this.sessionType = 'Personnel',
     this.exercises = const [],
     this.weatherEnabled = false,
@@ -1118,15 +1196,18 @@ this.locationLongitude,
   /// Use this for UI decisions (show/hide precision), instead of relying on
   /// `averagePrecision == 0`, because a real precision can legitimately be 0%.
   bool get hasCountedPrecision => exercises.any((e) => e.isPrecisionCounted);
-  
+
   double get averagePrecision {
     if (exercises.isEmpty) return 0.0;
     final withPrecision = exercises.where((e) => e.isPrecisionCounted);
     if (withPrecision.isEmpty) return 0.0;
-    double totalScore = withPrecision.fold(0.0, (sum, ex) => sum + (ex.precision ?? 0));
+    double totalScore = withPrecision.fold(
+      0.0,
+      (sum, ex) => sum + (ex.precision ?? 0),
+    );
     return totalScore / withPrecision.length;
   }
-  
+
   // Impact on platforms (count of shots per platform)
   Map<String, int> get platformImpact {
     Map<String, int> impact = {};
@@ -1137,7 +1218,7 @@ this.locationLongitude,
     }
     return impact;
   }
-  
+
   // Impact on ammo (count of shots per ammo)
   Map<String, int> get ammoImpact {
     Map<String, int> impact = {};
@@ -1148,7 +1229,7 @@ this.locationLongitude,
     }
     return impact;
   }
-  
+
   // Impact on equipment (count of shots per equipment)
   Map<String, int> get equipmentImpact {
     Map<String, int> impact = {};
@@ -1214,11 +1295,14 @@ class Diagnostic {
 class UserDocument {
   final String id;
   final String name;
-  final String type; // "Permis de chasse", "Licence FFT", "Carte identité", etc.
+  final String
+  type; // "Permis de chasse", "Licence FFT", "Carte identité", etc.
   final String filePath;
   final DateTime addedDate;
+
   /// Optional expiry date for the document (e.g. permit, licence).
   final DateTime? expiryDate;
+
   /// How many days before expiry to show the alert. 0 = no notification.
   final int notifyBeforeDays;
 
@@ -1233,19 +1317,20 @@ class UserDocument {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'type': type,
-        'filePath': filePath,
-        'addedDate': addedDate.toIso8601String(),
-        if (expiryDate != null) 'expiryDate': expiryDate!.toIso8601String(),
-        'notifyBeforeDays': notifyBeforeDays,
-      };
+    'id': id,
+    'name': name,
+    'type': type,
+    'filePath': filePath,
+    'addedDate': addedDate.toIso8601String(),
+    if (expiryDate != null) 'expiryDate': expiryDate!.toIso8601String(),
+    'notifyBeforeDays': notifyBeforeDays,
+  };
 
   static UserDocument fromJson(Map<String, dynamic> json) {
     final expiryRaw = json['expiryDate'];
-    final DateTime? expiryDate =
-        expiryRaw != null ? DateTime.tryParse(expiryRaw as String) : null;
+    final DateTime? expiryDate = expiryRaw != null
+        ? DateTime.tryParse(expiryRaw as String)
+        : null;
     final notifyBeforeDays = (json['notifyBeforeDays'] as int?) ?? 0;
 
     return UserDocument(
@@ -1282,15 +1367,15 @@ class ExerciseTemplate {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'createdAt': createdAt.toIso8601String(),
-        'shotsFired': shotsFired,
-        'distance': distance,
-        'detailedMode': detailedMode,
-        'steps': steps?.map((s) => s.toJson()).toList(),
-        'observations': observations,
-      };
+    'id': id,
+    'name': name,
+    'createdAt': createdAt.toIso8601String(),
+    'shotsFired': shotsFired,
+    'distance': distance,
+    'detailedMode': detailedMode,
+    'steps': steps?.map((s) => s.toJson()).toList(),
+    'observations': observations,
+  };
 
   static ExerciseTemplate fromJson(Map<String, dynamic> json) {
     final rawSteps = json['steps'] as List<dynamic>?;
@@ -1301,7 +1386,9 @@ class ExerciseTemplate {
       shotsFired: (json['shotsFired'] as num).toInt(),
       distance: (json['distance'] as num).toInt(),
       detailedMode: json['detailedMode'] as bool? ?? false,
-      steps: rawSteps?.map((e) => ExerciseStep.fromJson(e as Map<String, dynamic>)).toList(),
+      steps: rawSteps
+          ?.map((e) => ExerciseStep.fromJson(e as Map<String, dynamic>))
+          .toList(),
       observations: (json['observations'] as String?) ?? '',
     );
   }

@@ -9,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/services/stats_service.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/utils/app_date_formats.dart';
 
@@ -67,6 +68,8 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
+  final StatsService _statsService = StatsService();
+
   BoxDecoration _statsCardDecoration(
     BuildContext context, {
     double radius = 16,
@@ -79,7 +82,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       color: colors.surface,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? (isDark ? colors.outline : LightColors.surfaceHighlight),
+        color:
+            borderColor ??
+            (isDark ? colors.outline : LightColors.surfaceHighlight),
         width: 1.2,
       ),
       boxShadow: AppShadows.cardPremium,
@@ -104,11 +109,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final recentAvg =
         recent.map<double>((s) => s.averagePrecision).reduce((a, b) => a + b) /
-            recent.length;
+        recent.length;
 
     final previousAvg =
-        previous.map<double>((s) => s.averagePrecision).reduce((a, b) => a + b) /
-            previous.length;
+        previous
+            .map<double>((s) => s.averagePrecision)
+            .reduce((a, b) => a + b) /
+        previous.length;
 
     return recentAvg - previousAvg;
   }
@@ -116,12 +123,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int? _computeRegularityScore(List<Session> sessionsWithPrecision) {
     if (sessionsWithPrecision.length < 2) return null;
 
-    final values =
-        sessionsWithPrecision.map<double>((s) => s.averagePrecision).toList();
+    final values = sessionsWithPrecision
+        .map<double>((s) => s.averagePrecision)
+        .toList();
 
     final mean = values.reduce((a, b) => a + b) / values.length;
     final variance =
-        values.map((v) => math.pow(v - mean, 2)).reduce((a, b) => a + b) / values.length;
+        values.map((v) => math.pow(v - mean, 2)).reduce((a, b) => a + b) /
+        values.length;
     final stdDev = math.sqrt(variance);
 
     final score = (100 - (stdDev * 2.4)).clamp(0, 100).round();
@@ -168,7 +177,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (delta == null) return strings.statisticsTrendStableLabel;
     if (delta.abs() < 0.5) return strings.statisticsTrendStableLabel;
     final sign = delta > 0 ? '+' : '';
-    return strings.statisticsTrendPointsLabel('$sign${delta.toStringAsFixed(0)}');
+    return strings.statisticsTrendPointsLabel(
+      '$sign${delta.toStringAsFixed(0)}',
+    );
   }
 
   Color _trendTone(BuildContext context, double? delta) {
@@ -189,38 +200,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final sessionsWithPrecision =
         sessions.where((s) => s.hasCountedPrecision).toList()
           ..sort((a, b) => a.date.compareTo(b.date));
+    final snapshot = _statsService.buildSnapshot(sessions);
 
-    final totalShots = provider.totalRoundsFired;
-    final totalSessions = provider.totalSessions;
+    final totalShots = snapshot.totalRounds;
+    final totalSessions = snapshot.sessionCount;
     final totalPlatforms = provider.platforms.length;
     final totalAmmos = provider.ammos.length;
     final totalAccessories = provider.accessories.length;
 
-    final avgPrecision = sessionsWithPrecision.isEmpty
-        ? null
-        : sessionsWithPrecision
-                .map((s) => s.averagePrecision)
-                .reduce((a, b) => a + b) /
-            sessionsWithPrecision.length;
-
-    final bestSession = sessionsWithPrecision.isEmpty
-        ? null
-        : ([...sessionsWithPrecision]
-              ..sort((a, b) => b.averagePrecision.compareTo(a.averagePrecision)))
-            .first;
-
-    final longestSession = sessions.isEmpty
-        ? null
-        : ([...sessions]..sort((a, b) => b.totalRounds.compareTo(a.totalRounds))).first;
-
-    final lastSession = sessions.isEmpty
-        ? null
-        : ([...sessions]..sort((a, b) => b.date.compareTo(a.date))).first;
+    final avgPrecision = snapshot.averagePrecision;
+    final bestSession = snapshot.bestPrecisionSession;
+    final longestSession = snapshot.longestSession;
+    final lastSession = snapshot.lastSession;
 
     final mostUsedPlatform = provider.platforms.isEmpty
         ? null
-        : ([...provider.platforms]..sort((a, b) => b.totalRounds.compareTo(a.totalRounds)))
-            .first;
+        : ([
+            ...provider.platforms,
+          ]..sort((a, b) => b.totalRounds.compareTo(a.totalRounds))).first;
 
     final topPlatforms = [...provider.platforms]
       ..sort((a, b) => b.totalRounds.compareTo(a.totalRounds));
@@ -228,8 +225,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final lowestAmmo = provider.ammos.isEmpty
         ? null
-        : ([...provider.ammos]
-              ..sort((a, b) {
+        : ([...provider.ammos]..sort((a, b) {
                 final aRatio = a.lowStockThreshold <= 0
                     ? double.infinity
                     : a.quantity / a.lowStockThreshold;
@@ -238,7 +234,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     : b.quantity / b.lowStockThreshold;
                 return aRatio.compareTo(bRatio);
               }))
-            .first;
+              .first;
 
     final perfectSessions = sessions
         .where((s) => s.hasCountedPrecision && s.averagePrecision >= 100)
@@ -254,32 +250,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         .where((h) => h.type == 'revision')
         .length;
 
-    final sessionsThisMonth = sessions.where((s) {
-      final now = DateTime.now();
-      return s.date.year == now.year && s.date.month == now.month;
-    }).length;
-
-    final sessionsThisWeek = sessions.where((s) {
-      final now = DateTime.now();
-      final startOfWeek = _startOfWeek(now);
-      return !s.date.isBefore(startOfWeek);
-    }).length;
+    final sessionsThisMonth = snapshot.sessionsThisMonth;
+    final sessionsThisWeek = snapshot.sessionsThisWeek;
 
     final platformNeedingRevision = provider.platforms.isEmpty
         ? null
-        : ([...provider.platforms]
-              ..sort((a, b) => b.revisionProgress.compareTo(a.revisionProgress)))
-            .first;
+        : ([...provider.platforms]..sort(
+                (a, b) => b.revisionProgress.compareTo(a.revisionProgress),
+              ))
+              .first;
 
     final platformNeedingCleaning = provider.platforms.isEmpty
         ? null
-        : ([...provider.platforms]
-              ..sort((a, b) => b.cleaningProgress.compareTo(a.cleaningProgress)))
-            .first;
+        : ([...provider.platforms]..sort(
+                (a, b) => b.cleaningProgress.compareTo(a.cleaningProgress),
+              ))
+              .first;
 
     final platformTypeCounts = <String, int>{};
     for (final platform in provider.platforms) {
-      platformTypeCounts[platform.type] = (platformTypeCounts[platform.type] ?? 0) + 1;
+      platformTypeCounts[platform.type] =
+          (platformTypeCounts[platform.type] ?? 0) + 1;
     }
 
     final precisionDelta = _computeRecentPrecisionDelta(sessionsWithPrecision);
@@ -296,9 +287,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 child: Text(
                   strings.statisticsPageTitle,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colors.onSurface,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  ),
                 ),
               ),
             ],
@@ -310,9 +301,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               strings.statisticsPageSubtitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colors.secondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colors.secondary),
             ),
           ),
         ),
@@ -334,14 +325,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     _KpiCard(
                       title: strings.statisticsSessionsLabel,
                       value: '$totalSessions',
-                      footnote: '${strings.statisticsThisMonthLabel}: $sessionsThisMonth',
+                      footnote:
+                          '${strings.statisticsThisMonthLabel}: $sessionsThisMonth',
                       icon: Icons.timeline_rounded,
                       tone: colors.primary,
                     ),
                     _KpiCard(
                       title: strings.statisticsShotsFiredLabel,
                       value: '$totalShots',
-                      footnote: '${strings.statisticsThisWeekLabel}: $sessionsThisWeek',
+                      footnote:
+                          '${strings.statisticsThisWeekLabel}: $sessionsThisWeek',
                       icon: Icons.gps_fixed_rounded,
                       tone: colors.primary,
                     ),
@@ -404,7 +397,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const Gap(AppSpacing.md),
                 _AnalyticsLineCard(
                   title: strings.statisticsAveragePrecisionLabel,
-                  value: avgPrecision == null ? '—' : '${avgPrecision.toStringAsFixed(0)}%',
+                  value: avgPrecision == null
+                      ? '—'
+                      : '${avgPrecision.toStringAsFixed(0)}%',
                   badge: _trendLabel(strings, precisionDelta),
                   badgeTone: _trendTone(context, precisionDelta),
                   tone: colors.tertiary,
@@ -416,9 +411,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         ),
                       )
                       .toList(),
-                  footerLeft: '${sessionsWithPrecision.length} ${strings.statisticsSessionsWithPrecisionLabel}',
-                  footerRight:
-                      regularityScore == null ? null : strings.statisticsRegularityScoreValue(regularityScore),
+                  footerLeft:
+                      '${sessionsWithPrecision.length} ${strings.statisticsSessionsWithPrecisionLabel}',
+                  footerRight: regularityScore == null
+                      ? null
+                      : strings.statisticsRegularityScoreValue(regularityScore),
                   emptyLabel: strings.statisticsPrecisionChartEmptyLabel,
                 ),
                 const Gap(AppSpacing.md),
@@ -428,7 +425,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     _KpiCard(
                       title: strings.statisticsPerfectSessionsLabel,
                       value: '$perfectSessions',
-                      footnote: totalSessions == 0 ? '0%' : '${((perfectSessions / totalSessions) * 100).round()}%',
+                      footnote: totalSessions == 0
+                          ? '0%'
+                          : '${((perfectSessions / totalSessions) * 100).round()}%',
                       icon: Icons.workspace_premium_rounded,
                       tone: colors.primary,
                     ),
@@ -453,7 +452,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   subtitle: strings.statisticsSessionsPerWeekLabel,
                   tone: colors.primary,
                   buckets: weeklyBuckets,
-                  totalLabel: '${strings.statisticsThisMonthLabel}: $sessionsThisMonth',
+                  totalLabel:
+                      '${strings.statisticsThisMonthLabel}: $sessionsThisMonth',
                   emptyLabel: strings.statisticsRhythmChartEmptyLabel,
                 ),
                 const Gap(AppSpacing.md),
@@ -483,8 +483,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   cleaningLabel: strings.statisticsClosestCleaningPlatformLabel,
                   revisionPlatform: platformNeedingRevision?.name ?? '—',
                   cleaningPlatform: platformNeedingCleaning?.name ?? '—',
-                  revisionProgress: platformNeedingRevision?.revisionProgress ?? 0,
-                  cleaningProgress: platformNeedingCleaning?.cleaningProgress ?? 0,
+                  revisionProgress:
+                      platformNeedingRevision?.revisionProgress ?? 0,
+                  cleaningProgress:
+                      platformNeedingCleaning?.cleaningProgress ?? 0,
                   revisionCount: totalRevisions,
                   cleaningCount: totalMaintenances,
                 ),
@@ -530,85 +532,111 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const Gap(AppSpacing.lg),
 
                 // ── Cost statistics ───────────────────────────────
-                Builder(builder: (_) {
-                  final monthlyCosts = provider.getMonthlyCosts(6);
-                  final totalCost6m = monthlyCosts.fold<double>(0, (s, m) => s + ((m['cost'] as double?) ?? 0));
-                  final hasCosts = totalCost6m > 0;
-                  final topAmmos = provider.getTopAmmosByCost(6);
+                Builder(
+                  builder: (_) {
+                    final monthlyCosts = provider.getMonthlyCosts(6);
+                    final totalCost6m = monthlyCosts.fold<double>(
+                      0,
+                      (s, m) => s + ((m['cost'] as double?) ?? 0),
+                    );
+                    final hasCosts = totalCost6m > 0;
+                    final topAmmos = provider.getTopAmmosByCost(6);
 
-                  // Derive currency symbol from user's ammo data.
-                  String currencySymbol(String code) {
-                    switch (code) {
-                      case 'USD': return '\$';
-                      case 'CAD': return 'CA\$';
-                      case 'GBP': return '£';
-                      case 'CHF': return 'CHF';
-                      case 'JPY': return '¥';
-                      case 'AUD': return 'A\$';
-                      case 'EUR':
-                      default: return '€';
+                    // Derive currency symbol from user's ammo data.
+                    String currencySymbol(String code) {
+                      switch (code) {
+                        case 'USD':
+                          return '\$';
+                        case 'CAD':
+                          return 'CA\$';
+                        case 'GBP':
+                          return '£';
+                        case 'CHF':
+                          return 'CHF';
+                        case 'JPY':
+                          return '¥';
+                        case 'AUD':
+                          return 'A\$';
+                        case 'EUR':
+                        default:
+                          return '€';
+                      }
                     }
-                  }
-                  // Use the dominant currency among priced ammos.
-                  final pricedAmmos = provider.ammos.where((a) => a.unitPrice != null && a.unitPrice! > 0).toList();
-                  final dominantCurrency = pricedAmmos.isEmpty
-                      ? 'EUR'
-                      : (pricedAmmos
-                            .fold<Map<String, int>>({}, (m, a) {
-                              m[a.currency] = (m[a.currency] ?? 0) + 1;
-                              return m;
-                            })
-                            .entries
-                            .reduce((a, b) => a.value >= b.value ? a : b)
-                          ).key;
-                  final sym = currencySymbol(dominantCurrency);
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _SectionTitle(title: strings.statisticsCostTitle),
-                      const Gap(AppSpacing.md),
-                      if (!hasCosts)
-                        Container(
-                          padding: AppSpacing.paddingLg,
-                          decoration: (context.findAncestorStateOfType<_StatisticsScreenState>())
-                                  ?._statsCardDecoration(context) ??
-                              BoxDecoration(
-                                color: colors.surface,
-                                borderRadius: BorderRadius.circular(AppRadius.lg),
-                                border: Border.all(color: colors.outline),
-                              ),
-                          child: Column(
-                            children: [
-                              Icon(Icons.attach_money_rounded, size: 40, color: colors.secondary.withValues(alpha: 0.5)),
-                              const Gap(AppSpacing.sm),
-                              Text(
-                                strings.statisticsCostChartEmptyLabel,
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.secondary),
-                              ),
-                            ],
+                    // Use the dominant currency among priced ammos.
+                    final pricedAmmos = provider.ammos
+                        .where((a) => a.unitPrice != null && a.unitPrice! > 0)
+                        .toList();
+                    final dominantCurrency = pricedAmmos.isEmpty
+                        ? 'EUR'
+                        : (pricedAmmos
+                                  .fold<Map<String, int>>({}, (m, a) {
+                                    m[a.currency] = (m[a.currency] ?? 0) + 1;
+                                    return m;
+                                  })
+                                  .entries
+                                  .reduce((a, b) => a.value >= b.value ? a : b))
+                              .key;
+                    final sym = currencySymbol(dominantCurrency);
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _SectionTitle(title: strings.statisticsCostTitle),
+                        const Gap(AppSpacing.md),
+                        if (!hasCosts)
+                          Container(
+                            padding: AppSpacing.paddingLg,
+                            decoration:
+                                (context
+                                        .findAncestorStateOfType<
+                                          _StatisticsScreenState
+                                        >())
+                                    ?._statsCardDecoration(context) ??
+                                BoxDecoration(
+                                  color: colors.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                  border: Border.all(color: colors.outline),
+                                ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.attach_money_rounded,
+                                  size: 40,
+                                  color: colors.secondary.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                                const Gap(AppSpacing.sm),
+                                Text(
+                                  strings.statisticsCostChartEmptyLabel,
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: colors.secondary),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          _CostDashboardCard(
+                            monthlyCosts: monthlyCosts,
+                            topAmmos: topAmmos,
+                            provider: provider,
+                            totalCost: totalCost6m,
+                            currencySymbol: sym,
                           ),
-                        )
-                      else ...[
-                        _CostDashboardCard(
-                          monthlyCosts: monthlyCosts,
-                          topAmmos: topAmmos,
-                          provider: provider,
-                          totalCost: totalCost6m,
-                          currencySymbol: sym,
-                        ),
+                        ],
+                        const Gap(AppSpacing.lg),
                       ],
-                      const Gap(AppSpacing.lg),
-                    ],
-                  );
-                }),
+                    );
+                  },
+                ),
 
                 _SectionTitle(title: strings.statisticsPlatformsByTypeTitle),
                 const Gap(AppSpacing.md),
-                _ModernDonutCard(
-                  counts: platformTypeCounts,
-                ),
+                _ModernDonutCard(counts: platformTypeCounts),
                 const Gap(AppSpacing.md),
                 _TopPlatformsBarsCard(
                   title: strings.statisticsTopPlatformsTitle,
@@ -653,10 +681,7 @@ class _StatsGrid extends StatelessWidget {
   final List<Widget> children;
   final double childAspectRatio;
 
-  const _StatsGrid({
-    required this.children,
-    this.childAspectRatio = 1.55,
-  });
+  const _StatsGrid({required this.children, this.childAspectRatio = 1.55});
 
   @override
   Widget build(BuildContext context) {
@@ -696,12 +721,12 @@ class _KpiCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colors.outline),
+        );
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -818,12 +843,12 @@ class _AnalyticsLineCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colors.outline),
+        );
 
     final chartPoints = points.isEmpty
         ? <FlSpot>[]
@@ -834,10 +859,9 @@ class _AnalyticsLineCard extends StatelessWidget {
 
     final double minY = points.isEmpty
         ? 0.0
-        : math.max(
-            0.0,
-            points.map((e) => e.value).reduce(math.min) - 8,
-          ).toDouble();
+        : math
+              .max(0.0, points.map((e) => e.value).reduce(math.min) - 8)
+              .toDouble();
 
     final maxPointValue = points.isEmpty
         ? 100.0
@@ -871,7 +895,10 @@ class _AnalyticsLineCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: badgeTone.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(999),
@@ -970,7 +997,9 @@ class _AnalyticsLineCard extends StatelessWidget {
                             sideTitles: SideTitles(
                               showTitles: true,
                               reservedSize: 24,
-                              interval: points.length > 3 ? (points.length - 1) / 2 : 1,
+                              interval: points.length > 3
+                                  ? (points.length - 1) / 2
+                                  : 1,
                               getTitlesWidget: (value, meta) {
                                 final index = value.round();
                                 if (index < 0 || index >= points.length) {
@@ -1004,12 +1033,13 @@ class _AnalyticsLineCard extends StatelessWidget {
                             barWidth: 3,
                             dotData: FlDotData(
                               show: true,
-                              getDotPainter: (spot, xPercent, barData, index) => FlDotCirclePainter(
-                                radius: 3.2,
-                                color: tone,
-                                strokeWidth: 2,
-                                strokeColor: colors.surface,
-                              ),
+                              getDotPainter: (spot, xPercent, barData, index) =>
+                                  FlDotCirclePainter(
+                                    radius: 3.2,
+                                    color: tone,
+                                    strokeWidth: 2,
+                                    strokeColor: colors.surface,
+                                  ),
                             ),
                             belowBarData: BarAreaData(
                               show: true,
@@ -1062,12 +1092,12 @@ class _CostDashboardCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colors.outline),
+        );
     final maxCost = monthlyCosts.fold<double>(
       0,
       (max, month) => ((month['cost'] as double?) ?? 0) > max
@@ -1225,12 +1255,12 @@ class _ActivityBarsCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colors.outline),
+        );
 
     final maxValue = buckets.isEmpty
         ? 1
@@ -1256,7 +1286,9 @@ class _ActivityBarsCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   subtitle,
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ),
               Text(
@@ -1341,31 +1373,30 @@ class _ActivityBarsCard extends StatelessWidget {
                           },
                         ),
                       ),
-                      barGroups: List.generate(
-                        buckets.length,
-                        (i) {
-                          final bucket = buckets[i];
-                          final isLatest = i == buckets.length - 1;
-                          return BarChartGroupData(
-                            x: i,
-                            barRods: [
-                              BarChartRodData(
-                                toY: bucket.sessions.toDouble(),
-                                width: 20,
-                                color: isLatest ? tone : tone.withValues(alpha: 0.35),
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(8),
-                                ),
-                                backDrawRodData: BackgroundBarChartRodData(
-                                  show: true,
-                                  toY: maxValue.toDouble() + 1,
-                                  color: colors.outline.withValues(alpha: 0.10),
-                                ),
+                      barGroups: List.generate(buckets.length, (i) {
+                        final bucket = buckets[i];
+                        final isLatest = i == buckets.length - 1;
+                        return BarChartGroupData(
+                          x: i,
+                          barRods: [
+                            BarChartRodData(
+                              toY: bucket.sessions.toDouble(),
+                              width: 20,
+                              color: isLatest
+                                  ? tone
+                                  : tone.withValues(alpha: 0.35),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(8),
                               ),
-                            ],
-                          );
-                        },
-                      ),
+                              backDrawRodData: BackgroundBarChartRodData(
+                                show: true,
+                                toY: maxValue.toDouble() + 1,
+                                color: colors.outline.withValues(alpha: 0.10),
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
                     ),
                   ),
           ),
@@ -1414,12 +1445,12 @@ class _MaintenanceOverviewCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colors.outline),
+        );
 
     return Container(
       padding: AppSpacing.paddingLg,
@@ -1482,9 +1513,7 @@ class _MaintenanceOverviewCard extends StatelessWidget {
 class _ModernDonutCard extends StatelessWidget {
   final Map<String, int> counts;
 
-  const _ModernDonutCard({
-    required this.counts,
-  });
+  const _ModernDonutCard({required this.counts});
 
   @override
   Widget build(BuildContext context) {
@@ -1494,12 +1523,12 @@ class _ModernDonutCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colors.outline),
+        );
 
     final palette = [
       colors.primary,
@@ -1510,7 +1539,9 @@ class _ModernDonutCard extends StatelessWidget {
       colors.tertiary.withValues(alpha: 0.60),
     ];
 
-    final total = counts.values.isEmpty ? 1 : counts.values.reduce((a, b) => a + b);
+    final total = counts.values.isEmpty
+        ? 1
+        : counts.values.reduce((a, b) => a + b);
     int i = 0;
 
     final sections = counts.entries.map((e) {
@@ -1550,7 +1581,9 @@ class _ModernDonutCard extends StatelessWidget {
                               ? [
                                   PieChartSectionData(
                                     value: 1,
-                                    color: colors.outline.withValues(alpha: 0.25),
+                                    color: colors.outline.withValues(
+                                      alpha: 0.25,
+                                    ),
                                     radius: 18,
                                     title: '',
                                   ),
@@ -1599,7 +1632,8 @@ class _ModernDonutCard extends StatelessWidget {
                             final index = item.key;
                             final entry = item.value;
                             final tone = palette[index % palette.length];
-                            final percent = ((entry.value / total) * 100).round();
+                            final percent = ((entry.value / total) * 100)
+                                .round();
 
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
@@ -1666,12 +1700,12 @@ class _TopPlatformsBarsCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colors.outline),
+        );
 
     final maxRounds = platforms.isEmpty
         ? 1
@@ -1744,7 +1778,9 @@ class _TopPlatformsBarsCard extends StatelessWidget {
                         child: LinearProgressIndicator(
                           minHeight: 10,
                           value: ratio.clamp(0.0, 1.0),
-                          backgroundColor: colors.outline.withValues(alpha: 0.12),
+                          backgroundColor: colors.outline.withValues(
+                            alpha: 0.12,
+                          ),
                           valueColor: AlwaysStoppedAnimation(tone),
                         ),
                       ),
@@ -1786,12 +1822,12 @@ class _MiniMetric extends StatelessWidget {
             border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
           )
         : (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+                  ?._statsCardDecoration(context) ??
+              BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: colors.outline),
+              );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -1851,12 +1887,12 @@ class _ProgressInsight extends StatelessWidget {
             border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
           )
         : (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: colors.outline),
-            );
+                  ?._statsCardDecoration(context) ??
+              BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: colors.outline),
+              );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -1938,12 +1974,12 @@ class _InsightRow extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context, radius: 16) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context, radius: 16) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.outline),
+        );
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -2027,12 +2063,12 @@ class _EquipmentStatCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-                ?._statsCardDecoration(context, radius: 16) ??
-            BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.outline),
-            );
+            ?._statsCardDecoration(context, radius: 16) ??
+        BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.outline),
+        );
 
     return Container(
       decoration: decoration,
@@ -2052,7 +2088,10 @@ class _EquipmentStatCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2102,9 +2141,9 @@ class _ChartEmptyState extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colors.secondary,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: colors.secondary),
       ),
     );
   }
@@ -2114,10 +2153,7 @@ class _LinePoint {
   final String label;
   final double value;
 
-  const _LinePoint({
-    required this.label,
-    required this.value,
-  });
+  const _LinePoint({required this.label, required this.value});
 }
 
 class _WeeklyBucket {

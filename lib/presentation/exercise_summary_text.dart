@@ -5,20 +5,24 @@ import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
 
 class ExerciseSummaryText extends StatelessWidget {
-final List<ExerciseStep> steps;
+  final List<ExerciseStep> steps;
   final bool useMetric;
 
-  const ExerciseSummaryText({super.key, required this.steps, required this.useMetric});
+  const ExerciseSummaryText({
+    super.key,
+    required this.steps,
+    required this.useMetric,
+  });
 
   @override
-  Widget build(BuildContext context) { 
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
 
     if (steps.isEmpty) return const SizedBox.shrink();
 
-final spans = _buildNarrativeSpans(textStyles, steps, strings, useMetric);
+    final spans = _buildNarrativeSpans(textStyles, steps, strings, useMetric);
 
     final bg = Color.alphaBlend(
       colors.primary.withValues(alpha: 0.14),
@@ -47,14 +51,21 @@ final spans = _buildNarrativeSpans(textStyles, steps, strings, useMetric);
     );
   }
 
-List<TextSpan> _buildNarrativeSpans(TextTheme textStyles, List<ExerciseStep> steps, AppStrings strings, bool useMetric) {
-      final spans = <TextSpan>[];
+  List<TextSpan> _buildNarrativeSpans(
+    TextTheme textStyles,
+    List<ExerciseStep> steps,
+    AppStrings strings,
+    bool useMetric,
+  ) {
+    final spans = <TextSpan>[];
 
     void add(String text) => spans.add(TextSpan(text: text));
-    void addBold(String text) => spans.add(TextSpan(
-          text: text,
-          style: textStyles.bodySmall?.copyWith(fontWeight: FontWeight.w800),
-        ));
+    void addBold(String text) => spans.add(
+      TextSpan(
+        text: text,
+        style: textStyles.bodySmall?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
 
     add(strings.exerciseNarrativeIntro);
 
@@ -73,20 +84,24 @@ List<TextSpan> _buildNarrativeSpans(TextTheme textStyles, List<ExerciseStep> ste
       }
 
       switch (s.type) {
-case StepType.deplacement:
+        case StepType.deplacement:
           add(strings.exerciseNarrativeMovementPrefix);
           if (s.movementType != null) {
             add(strings.exerciseMovementTypeNarrative(s.movementType!));
           }
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeMovementUntil);
-            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
+            addBold(
+              useMetric
+                  ? '${s.distanceM} m'
+                  : '${(s.distanceM! * 1.09361).round()} yd',
+            );
           } else {
             addBold('—');
           }
           add('.');
           break;
-case StepType.miseEnJoue:
+        case StepType.miseEnJoue:
           add(strings.exerciseNarrativeAimPrefix);
           if (s.position != null) {
             add(strings.exerciseNarrativePositionPrefix);
@@ -99,16 +114,24 @@ case StepType.miseEnJoue:
           }
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeAtDistance);
-            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
+            addBold(
+              useMetric
+                  ? '${s.distanceM} m'
+                  : '${(s.distanceM! * 1.09361).round()} yd',
+            );
           }
           add('.');
           break;
-case StepType.tir:
+        case StepType.tir:
           add(strings.exerciseNarrativeShooterEngages);
           addBold('${s.shots ?? 0} ${strings.exerciseNarrativeShotsWord}');
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeAtDistance);
-            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
+            addBold(
+              useMetric
+                  ? '${s.distanceM} m'
+                  : '${(s.distanceM! * 1.09361).round()} yd',
+            );
           }
           if ((s.target ?? '').trim().isNotEmpty) {
             add(strings.exerciseNarrativeOnTarget);
@@ -121,19 +144,23 @@ case StepType.tir:
           }
           add('.');
           break;
-case StepType.rechargement:
-  add(strings.exerciseNarrativeReloadPrefix);
-addBold(s.reloadType == null ? '—' : strings.exerciseReloadTypeNarrative(s.reloadType!));
-  add('.');
-  break;
+        case StepType.rechargement:
+          add(strings.exerciseNarrativeReloadPrefix);
+          addBold(
+            s.reloadType == null
+                ? '—'
+                : strings.exerciseReloadTypeNarrative(s.reloadType!),
+          );
+          add('.');
+          break;
         case StepType.transition:
           add(strings.exerciseNarrativeTransitionPrefix);
           if ((s.platformFrom ?? '').trim().isNotEmpty) {
-add(strings.exerciseNarrativeFrom);
+            add(strings.exerciseNarrativeFrom);
             addBold(s.platformFrom!.trim());
           }
           if ((s.platformTo ?? '').trim().isNotEmpty) {
-add(strings.exerciseNarrativeTo);
+            add(strings.exerciseNarrativeTo);
             addBold(s.platformTo!.trim());
           }
           add('.');
@@ -144,12 +171,16 @@ add(strings.exerciseNarrativeTo);
           addBold(s.durationSeconds == null ? '—' : '${s.durationSeconds} s');
           if (s.distanceM != null) {
             add(strings.exerciseNarrativeAtDistance);
-            addBold(useMetric ? '${s.distanceM} m' : '${(s.distanceM! * 1.09361).round()} yd');
+            addBold(
+              useMetric
+                  ? '${s.distanceM} m'
+                  : '${(s.distanceM! * 1.09361).round()} yd',
+            );
           }
-if ((s.trigger ?? '').trim().isNotEmpty) {
-  add(strings.exerciseNarrativeWaitUntil);
-  addBold(s.trigger!.trim());
-}
+          if ((s.trigger ?? '').trim().isNotEmpty) {
+            add(strings.exerciseNarrativeWaitUntil);
+            addBold(s.trigger!.trim());
+          }
           add('.');
           break;
         case StepType.securite:
@@ -163,6 +194,4 @@ if ((s.trigger ?? '').trim().isNotEmpty) {
 
     return spans;
   }
-
-
 }

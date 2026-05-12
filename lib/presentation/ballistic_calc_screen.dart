@@ -31,12 +31,19 @@ class _BallisticCalcScreenState extends State<BallisticCalcScreen>
 
     for (final match in regex.allMatches(text)) {
       if (match.start > lastIndex) {
-        spans.add(TextSpan(text: text.substring(lastIndex, match.start), style: baseStyle));
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
       }
-      spans.add(TextSpan(
-        text: match.group(1),
-        style: baseStyle.copyWith(fontWeight: FontWeight.bold),
-      ));
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+        ),
+      );
       lastIndex = match.end;
     }
 
@@ -106,12 +113,26 @@ class _BallisticCalcScreenState extends State<BallisticCalcScreen>
                       const Gap(4),
                       Tooltip(
                         richMessage: TextSpan(
-                          children: _parseBoldText(strings.ballisticCalcTooltip, textStyles.bodySmall?.copyWith(color: colors.surface) ?? const TextStyle(color: Colors.white, fontSize: 12)),
+                          children: _parseBoldText(
+                            strings.ballisticCalcTooltip,
+                            textStyles.bodySmall?.copyWith(
+                                  color: colors.surface,
+                                ) ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                          ),
                         ),
                         triggerMode: TooltipTriggerMode.tap,
                         showDuration: const Duration(seconds: 6),
-                        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: colors.onSurface.withValues(alpha: 0.88),
                           borderRadius: BorderRadius.circular(10),
@@ -149,7 +170,10 @@ class _BallisticCalcScreenState extends State<BallisticCalcScreen>
             child: Divider(color: colors.outline),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
             child: _SlidingSegmentedSelector(
               selectedIndex: _tabController.index,
               labels: [
@@ -179,10 +203,7 @@ class _BallisticCalcScreenState extends State<BallisticCalcScreen>
     );
 
     if (widget.embedded) {
-      return Container(
-        color: baseBackground,
-        child: content,
-      );
+      return Container(color: baseBackground, child: content);
     }
 
     return AnimatedContainer(
@@ -233,9 +254,9 @@ class _MilliemeTabState extends State<_MilliemeTab> {
   void _showFieldDisabledHint(BuildContext context, Offset? tapPosition) {
     final strings = AppStrings.of(context);
     final overlay = Overlay.of(context);
-    
+
     _hintOverlay?.remove();
-    
+
     _hintOverlay = OverlayEntry(
       builder: (context) => Positioned(
         top: (tapPosition?.dy ?? MediaQuery.of(context).size.height * 0.3) - 60,
@@ -268,9 +289,9 @@ class _MilliemeTabState extends State<_MilliemeTab> {
         ),
       ),
     );
-    
+
     overlay.insert(_hintOverlay!);
-    
+
     Future.delayed(const Duration(seconds: 2), () {
       _hintOverlay?.remove();
       _hintOverlay = null;
@@ -288,9 +309,12 @@ class _MilliemeTabState extends State<_MilliemeTab> {
     if (filledCount < 2) return false;
 
     // If 2 fields are filled, disable the third
-    if (fieldName == 'front' && milText.isNotEmpty && distText.isNotEmpty) return true;
-    if (fieldName == 'millieme' && frontText.isNotEmpty && distText.isNotEmpty) return true;
-    if (fieldName == 'distance' && frontText.isNotEmpty && milText.isNotEmpty) return true;
+    if (fieldName == 'front' && milText.isNotEmpty && distText.isNotEmpty)
+      return true;
+    if (fieldName == 'millieme' && frontText.isNotEmpty && distText.isNotEmpty)
+      return true;
+    if (fieldName == 'distance' && frontText.isNotEmpty && milText.isNotEmpty)
+      return true;
 
     return false;
   }
@@ -443,26 +467,17 @@ class _MilliemeTabState extends State<_MilliemeTab> {
     double? newDist = dist;
 
     if (newFront == null && newMil != null && newDist != null && newMil != 0) {
-      newFront = _computeFront(
-        millieme: newMil,
-        distanceMeters: newDist,
-      );
+      newFront = _computeFront(millieme: newMil, distanceMeters: newDist);
     } else if (newMil == null &&
         newFront != null &&
         newDist != null &&
         newDist != 0) {
-      newMil = _computeMillieme(
-        frontMeters: newFront,
-        distanceMeters: newDist,
-      );
+      newMil = _computeMillieme(frontMeters: newFront, distanceMeters: newDist);
     } else if (newDist == null &&
         newFront != null &&
         newMil != null &&
         newMil != 0) {
-      newDist = _computeDistanceMeters(
-        frontMeters: newFront,
-        millieme: newMil,
-      );
+      newDist = _computeDistanceMeters(frontMeters: newFront, millieme: newMil);
     } else if (filledCount == 3) {
       if (newFront != null && newMil != null && newMil != 0) {
         newDist = _computeDistanceMeters(
@@ -562,7 +577,10 @@ class _MilliemeTabState extends State<_MilliemeTab> {
 
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: 4,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -588,16 +606,25 @@ class _MilliemeTabState extends State<_MilliemeTab> {
           const Gap(AppSpacing.lg),
           Text(
             strings.milliemeFrontLabel,
-            style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary),
+            style: textStyles.labelLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colors.secondary,
+            ),
           ),
           const Gap(AppSpacing.xs),
           Stack(
             children: [
               TextField(
                 controller: _frontController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: false,
+                ),
                 onChanged: (_) => setState(() {}),
-                decoration: fieldDecoration.copyWith(hintText: strings.milliemeFrontField, suffixText: 'm'),
+                decoration: fieldDecoration.copyWith(
+                  hintText: strings.milliemeFrontField,
+                  suffixText: 'm',
+                ),
               ),
               if (_isFieldDisabled('front'))
                 Positioned.fill(
@@ -642,7 +669,12 @@ class _MilliemeTabState extends State<_MilliemeTab> {
                               : Colors.white,
                         ),
                       ),
-                      Icon(_presetsExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: Colors.white),
+                      Icon(
+                        _presetsExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        color: Colors.white,
+                      ),
                     ],
                   ),
                 ),
@@ -652,7 +684,9 @@ class _MilliemeTabState extends State<_MilliemeTab> {
                     builder: (context, constraints) {
                       const columns = 4;
                       const spacing = 8.0;
-                      final tileWidth = (constraints.maxWidth - (spacing * (columns - 1))) / columns;
+                      final tileWidth =
+                          (constraints.maxWidth - (spacing * (columns - 1))) /
+                          columns;
                       return Wrap(
                         spacing: spacing,
                         runSpacing: spacing,
@@ -677,16 +711,25 @@ class _MilliemeTabState extends State<_MilliemeTab> {
           const Gap(AppSpacing.lg),
           Text(
             strings.milliemeMilliemeLabel,
-            style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary),
+            style: textStyles.labelLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colors.secondary,
+            ),
           ),
           const Gap(AppSpacing.xs),
           Stack(
             children: [
               TextField(
                 controller: _milliemeController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: false,
+                ),
                 onChanged: (_) => setState(() {}),
-                decoration: fieldDecoration.copyWith(hintText: strings.milliemeMilliemeField, suffixText: 'mil'),
+                decoration: fieldDecoration.copyWith(
+                  hintText: strings.milliemeMilliemeField,
+                  suffixText: 'mil',
+                ),
               ),
               if (_isFieldDisabled('millieme'))
                 Positioned.fill(
@@ -706,16 +749,25 @@ class _MilliemeTabState extends State<_MilliemeTab> {
           const Gap(AppSpacing.lg),
           Text(
             strings.milliemeDistanceLabel,
-            style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary),
+            style: textStyles.labelLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colors.secondary,
+            ),
           ),
           const Gap(AppSpacing.xs),
           Stack(
             children: [
               TextField(
                 controller: _distanceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: false,
+                ),
                 onChanged: (_) => setState(() {}),
-                decoration: fieldDecoration.copyWith(hintText: strings.milliemeDistanceField, suffixText: 'm'),
+                decoration: fieldDecoration.copyWith(
+                  hintText: strings.milliemeDistanceField,
+                  suffixText: 'm',
+                ),
               ),
               if (_isFieldDisabled('distance'))
                 Positioned.fill(
@@ -746,8 +798,12 @@ class _MilliemeTabState extends State<_MilliemeTab> {
                   style: FilledButton.styleFrom(
                     backgroundColor: colors.secondary.withValues(alpha: 0.85),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: Text(strings.milliemeResetAll),
                 ),
@@ -757,8 +813,12 @@ class _MilliemeTabState extends State<_MilliemeTab> {
                 child: FilledButton(
                   onPressed: _calculate,
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: Text(strings.milliemeCalculate),
                 ),
@@ -796,18 +856,13 @@ class _MilliemePresetButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: 64,
-          ),
+          constraints: const BoxConstraints(minHeight: 64),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
             decoration: BoxDecoration(
               color: background,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: borderColor,
-                width: selected ? 1.5 : 1,
-              ),
+              border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -820,7 +875,8 @@ class _MilliemePresetButton extends StatelessWidget {
                     Transform.rotate(
                       angle: preset.isVertical ? 0 : math.pi / 2,
                       child: Icon(
-                        Icons.height_rounded, // flèche double, une pointe à chaque extrémité
+                        Icons
+                            .height_rounded, // flèche double, une pointe à chaque extrémité
                         color: colors.secondary,
                         size: 18,
                       ),
@@ -881,9 +937,7 @@ class _SlidingSegmentedSelector extends StatelessWidget {
           decoration: BoxDecoration(
             color: chipGray,
             borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
-              color: subtleBorderColor,
-            ),
+            border: Border.all(color: subtleBorderColor),
           ),
           child: Stack(
             children: [
@@ -923,11 +977,14 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                           labels[index],
                           style: textStyles.labelMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isSelected && Theme.of(context).brightness == Brightness.dark
+                            color:
+                                isSelected &&
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
                                 ? Colors.black
                                 : isSelected
-                                    ? Colors.white
-                                    : colors.onSurface.withValues(alpha: 0.8),
+                                ? Colors.white
+                                : colors.onSurface.withValues(alpha: 0.8),
                           ),
                         ),
                       ),
@@ -954,11 +1011,21 @@ class _HitFactorTab extends StatefulWidget {
 
 class _HitFactorTabState extends State<_HitFactorTab> {
   final TextEditingController _timeController = TextEditingController();
-  final TextEditingController _zoneAController = TextEditingController(text: '0');
-  final TextEditingController _zoneCController = TextEditingController(text: '0');
-  final TextEditingController _zoneDController = TextEditingController(text: '0');
-  final TextEditingController _missController = TextEditingController(text: '0');
-  final TextEditingController _noShootController = TextEditingController(text: '0');
+  final TextEditingController _zoneAController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController _zoneCController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController _zoneDController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController _missController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController _noShootController = TextEditingController(
+    text: '0',
+  );
 
   bool _isMajor = false;
 
@@ -973,7 +1040,11 @@ class _HitFactorTabState extends State<_HitFactorTab> {
     final coefA = 5;
     final coefC = _isMajor ? 4 : 3;
     final coefD = _isMajor ? 2 : 1;
-    return (_zoneA * coefA) + (_zoneC * coefC) + (_zoneD * coefD) + (_miss * -10) + (_noShoot * -10);
+    return (_zoneA * coefA) +
+        (_zoneC * coefC) +
+        (_zoneD * coefD) +
+        (_miss * -10) +
+        (_noShoot * -10);
   }
 
   double get _hitFactor {
@@ -1030,7 +1101,10 @@ class _HitFactorTabState extends State<_HitFactorTab> {
 
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: 4,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1052,12 +1126,17 @@ class _HitFactorTabState extends State<_HitFactorTab> {
               children: [
                 Text(
                   strings.hitFactorTimeLabel,
-                  style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary),
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
                 ),
                 const Gap(AppSpacing.xs),
                 TextField(
                   controller: _timeController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: fieldDecoration.copyWith(
                     suffixText: 's',
                     suffixStyle: textStyles.bodyMedium?.copyWith(
@@ -1071,11 +1150,15 @@ class _HitFactorTabState extends State<_HitFactorTab> {
                 const Gap(AppSpacing.md),
                 Container(
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.4),
+                    color: colors.surfaceContainerHighest.withValues(
+                      alpha: 0.4,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: SwitchListTile.adaptive(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
                     title: Text('Major / Minor'),
                     subtitle: Text(_isMajor ? 'Major' : 'Minor'),
                     value: _isMajor,
@@ -1102,7 +1185,13 @@ class _HitFactorTabState extends State<_HitFactorTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Zone A', style: textStyles.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: colors.secondary)),
+                          Text(
+                            'Zone A',
+                            style: textStyles.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.secondary,
+                            ),
+                          ),
                           const Gap(AppSpacing.xs),
                           TextField(
                             controller: _zoneAController,
@@ -1118,7 +1207,13 @@ class _HitFactorTabState extends State<_HitFactorTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Zone C', style: textStyles.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: colors.secondary)),
+                          Text(
+                            'Zone C',
+                            style: textStyles.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.secondary,
+                            ),
+                          ),
                           const Gap(AppSpacing.xs),
                           TextField(
                             controller: _zoneCController,
@@ -1138,7 +1233,13 @@ class _HitFactorTabState extends State<_HitFactorTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Zone D', style: textStyles.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: colors.secondary)),
+                          Text(
+                            'Zone D',
+                            style: textStyles.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.secondary,
+                            ),
+                          ),
                           const Gap(AppSpacing.xs),
                           TextField(
                             controller: _zoneDController,
@@ -1154,7 +1255,13 @@ class _HitFactorTabState extends State<_HitFactorTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(strings.hitFactorMike, style: textStyles.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: colors.secondary)),
+                          Text(
+                            strings.hitFactorMike,
+                            style: textStyles.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.secondary,
+                            ),
+                          ),
                           const Gap(AppSpacing.xs),
                           TextField(
                             controller: _missController,
@@ -1168,7 +1275,13 @@ class _HitFactorTabState extends State<_HitFactorTab> {
                   ],
                 ),
                 const Gap(AppSpacing.md),
-                Text('No-shoot (NS)', style: textStyles.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: colors.secondary)),
+                Text(
+                  'No-shoot (NS)',
+                  style: textStyles.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colors.secondary,
+                  ),
+                ),
                 const Gap(AppSpacing.xs),
                 TextField(
                   controller: _noShootController,
@@ -1192,12 +1305,18 @@ class _HitFactorTabState extends State<_HitFactorTab> {
               children: [
                 Text(
                   'Score : ${_score.toStringAsFixed(0)} points',
-                  style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface),
+                  style: textStyles.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  ),
                 ),
                 const Gap(AppSpacing.sm),
                 Text(
                   'Hit Factor : ${_hitFactor.toStringAsFixed(4)}',
-                  style: textStyles.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: colors.primary),
+                  style: textStyles.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colors.primary,
+                  ),
                 ),
               ],
             ),
@@ -1215,12 +1334,18 @@ class _HitFactorTabState extends State<_HitFactorTab> {
               children: [
                 Text(
                   strings.hitFactorCoefficientsLegend,
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
                 const Gap(AppSpacing.xs),
                 Text(
-                  _isMajor ? 'Major : A=5, C=4, D=2, M=-10, NS=-10' : 'Minor : A=5, C=3, D=1, M=-10, NS=-10',
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                  _isMajor
+                      ? 'Major : A=5, C=4, D=2, M=-10, NS=-10'
+                      : 'Minor : A=5, C=3, D=1, M=-10, NS=-10',
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ],
             ),
@@ -1232,7 +1357,9 @@ class _HitFactorTabState extends State<_HitFactorTab> {
               backgroundColor: colors.secondary.withValues(alpha: 0.85),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             child: Text(strings.hitFactorReset.toUpperCase()),
           ),
@@ -1271,7 +1398,9 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
   }
 
   double _powerFactor(ThotProvider provider) =>
-      (_velocityFps(provider.velocityUnit) * _weightGrain(provider.weightUnit)) / 1000;
+      (_velocityFps(provider.velocityUnit) *
+          _weightGrain(provider.weightUnit)) /
+      1000;
 
   String _classification(AppStrings strings) {
     final provider = Provider.of<ThotProvider>(context, listen: false);
@@ -1285,7 +1414,8 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
     final provider = Provider.of<ThotProvider>(context, listen: false);
     final powerFactor = _powerFactor(provider);
     if (powerFactor >= 165) return colors.primary;
-    if (powerFactor >= 125) return const Color(0xFFFFA726).withValues(alpha: 0.9);
+    if (powerFactor >= 125)
+      return const Color(0xFFFFA726).withValues(alpha: 0.9);
     return const Color(0xFFE53935).withValues(alpha: 0.9);
   }
 
@@ -1302,13 +1432,14 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
     final provider = Provider.of<ThotProvider>(context);
-    final velocitySuffix =
-        provider.velocityUnit == VelocityUnit.metersPerSecond ? 'm/s' : 'fps';
+    final velocitySuffix = provider.velocityUnit == VelocityUnit.metersPerSecond
+        ? 'm/s'
+        : 'fps';
     final weightSuffix = provider.weightUnit == WeightUnit.grain
         ? 'gr'
         : provider.weightUnit == WeightUnit.ounce
-            ? 'oz'
-            : 'g';
+        ? 'oz'
+        : 'g';
     final powerFactor = _powerFactor(provider);
 
     final fieldDecoration = InputDecoration(
@@ -1332,7 +1463,10 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
 
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: 4,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1354,7 +1488,10 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
               children: [
                 Text(
                   strings.powerFactorVelocityLabel,
-                  style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary),
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
                 ),
                 const Gap(AppSpacing.xs),
                 Row(
@@ -1364,7 +1501,9 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                         height: 40,
                         child: TextField(
                           controller: _velocityController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: fieldDecoration.copyWith(
                             hintText: strings.powerFactorVelocityHint,
                             suffixText: velocitySuffix,
@@ -1378,7 +1517,10 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                 const Gap(AppSpacing.md),
                 Text(
                   strings.powerFactorWeightLabel,
-                  style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary),
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
                 ),
                 const Gap(AppSpacing.xs),
                 Row(
@@ -1388,7 +1530,9 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
                         height: 40,
                         child: TextField(
                           controller: _weightController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: fieldDecoration.copyWith(
                             hintText: strings.powerFactorWeightHint,
                             suffixText: weightSuffix,
@@ -1415,12 +1559,18 @@ class _PowerFactorTabState extends State<_PowerFactorTab> {
               children: [
                 Text(
                   strings.powerFactorResultLabel,
-                  style: textStyles.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.secondary),
+                  style: textStyles.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
                 ),
                 const Gap(AppSpacing.sm),
                 Text(
                   powerFactor.toStringAsFixed(1),
-                  style: textStyles.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: colors.primary),
+                  style: textStyles.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colors.primary,
+                  ),
                 ),
                 const Gap(AppSpacing.md),
                 ClipRRect(

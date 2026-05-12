@@ -10,16 +10,18 @@ import 'package:gap/gap.dart';
 class AchievementToastLayer extends StatefulWidget {
   final Widget child;
 
-  const AchievementToastLayer({Key? key, required this.child}) : super(key: key);
+  const AchievementToastLayer({Key? key, required this.child})
+    : super(key: key);
 
   @override
   State<AchievementToastLayer> createState() => _AchievementToastLayerState();
 }
 
-class _AchievementToastLayerState extends State<AchievementToastLayer> with SingleTickerProviderStateMixin {
+class _AchievementToastLayerState extends State<AchievementToastLayer>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<Offset> _offsetAnim;
-  
+
   AchievementDefinition? _currentlyShowing;
   bool _isAnimatingOut = false;
   Timer? _timer;
@@ -27,11 +29,14 @@ class _AchievementToastLayerState extends State<AchievementToastLayer> with Sing
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
-    _offsetAnim = Tween<Offset>(begin: const Offset(0, -1.5), end: Offset.zero).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutBack,
-    ));
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _offsetAnim = Tween<Offset>(begin: const Offset(0, -1.5), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+        );
     _animController.addStatusListener(_onAnimStatus);
   }
 
@@ -43,7 +48,7 @@ class _AchievementToastLayerState extends State<AchievementToastLayer> with Sing
       });
       // Notifier le provider que l'alerte a été montrée, on passe au suivant
       if (mounted) {
-         Provider.of<ThotProvider>(context, listen: false).popAchievement();
+        Provider.of<ThotProvider>(context, listen: false).popAchievement();
       }
     }
   }
@@ -56,7 +61,9 @@ class _AchievementToastLayerState extends State<AchievementToastLayer> with Sing
     if (_currentlyShowing == null && provider.achievementQueue.isNotEmpty) {
       // Pour éviter de setState en plein build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _currentlyShowing == null && provider.achievementQueue.isNotEmpty) {
+        if (mounted &&
+            _currentlyShowing == null &&
+            provider.achievementQueue.isNotEmpty) {
           _showToast(provider.achievementQueue.first);
         }
       });
@@ -87,9 +94,12 @@ class _AchievementToastLayerState extends State<AchievementToastLayer> with Sing
 
   Color _tierColor(String tier) {
     switch (tier) {
-      case 'gold': return const Color(0xFFC2A14A);
-      case 'silver': return const Color(0xFF8C97A8);
-      default: return const Color(0xFF8A5A3C);
+      case 'gold':
+        return const Color(0xFFC2A14A);
+      case 'silver':
+        return const Color(0xFF8C97A8);
+      default:
+        return const Color(0xFF8A5A3C);
     }
   }
 
@@ -102,11 +112,7 @@ class _AchievementToastLayerState extends State<AchievementToastLayer> with Sing
         return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            light,
-            baseColor,
-            dark,
-          ],
+          colors: [light, baseColor, dark],
           stops: const [0.0, 0.55, 1.0],
         ).createShader(bounds);
       },
@@ -146,14 +152,21 @@ class _AchievementToastLayerState extends State<AchievementToastLayer> with Sing
                           offset: Offset(0, 4),
                         ),
                       ],
-                      border: Border.all(color: _tierColor(_currentlyShowing!.tier).withValues(alpha: 0.5), width: 1.5),
+                      border: Border.all(
+                        color: _tierColor(
+                          _currentlyShowing!.tier,
+                        ).withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: _tierColor(_currentlyShowing!.tier).withValues(alpha: 0.1),
+                            color: _tierColor(
+                              _currentlyShowing!.tier,
+                            ).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: _gradientTrophyIcon(
@@ -169,18 +182,22 @@ class _AchievementToastLayerState extends State<AchievementToastLayer> with Sing
                             children: [
                               Text(
                                 strings.achievementUnlockedToastTitle,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: _tierColor(_currentlyShowing!.tier),
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: _tierColor(
+                                        _currentlyShowing!.tier,
+                                      ),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                               const Gap(4),
                               Text(
                                 strings.achievementTitle(_currentlyShowing!.id),
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colors.onSurface,
-                                ),
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colors.onSurface,
+                                    ),
                               ),
                             ],
                           ),

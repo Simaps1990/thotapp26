@@ -13,13 +13,14 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   double _opacity = 1.0;
   List<String> _warmupSvgs = const [];
   late VideoPlayerController _videoController;
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -33,24 +34,28 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       duration: const Duration(seconds: 2),
       vsync: this,
     )..forward();
-    
-    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
-    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.85,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
   }
 
   void _initializeVideo() {
-    _videoController = VideoPlayerController.asset('assets/video/fumee_loading.mp4')
-      ..initialize().then((_) {
-        if (mounted) {
-          _videoController.setLooping(true);
-          _videoController.play();
-          debugPrint('Video initialized and playing');
-          setState(() {});
-        }
-      }).catchError((error) {
-        debugPrint('Video initialization error: $error');
-      });
+    _videoController =
+        VideoPlayerController.asset('assets/video/fumee_loading.mp4')
+          ..initialize()
+              .then((_) {
+                if (mounted) {
+                  _videoController.setLooping(true);
+                  _videoController.play();
+                  debugPrint('Video initialized and playing');
+                  setState(() {});
+                }
+              })
+              .catchError((error) {
+                debugPrint('Video initialization error: $error');
+              });
   }
 
   @override
@@ -112,11 +117,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Column(
                   children: [
                     for (final p in _warmupSvgs)
-                      SvgPicture.asset(
-                        p,
-                        width: 1,
-                        height: 1,
-                      ),
+                      SvgPicture.asset(p, width: 1, height: 1),
                   ],
                 ),
               ),
@@ -160,7 +161,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       height: 44,
                       child: CircularProgressIndicator(
                         strokeWidth: 4,
-                        valueColor: AlwaysStoppedAnimation<Color>(colors.primary.withValues(alpha: 0.95)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colors.primary.withValues(alpha: 0.95),
+                        ),
                       ),
                     ),
                   ],

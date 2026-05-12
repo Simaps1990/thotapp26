@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 /// A lightweight, consistent page header matching the Home screen style.
 ///
 /// Displays a primary [title] (brand / page name) and a secondary [subtitle]

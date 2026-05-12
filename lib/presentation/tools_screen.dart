@@ -31,12 +31,12 @@ class ToolsScreen extends StatefulWidget {
 }
 
 class _ToolsScreenState extends State<ToolsScreen> {
-  static const Color _timerColor = Color(0xFF4E7896);
-  static const Color _visualStimuliColor = Color(0xFFA64D4D);
-  static const Color _reflexesColor = Color(0xFFC9852B);
-  static const Color _calculationsColor = Color(0xFF725A8C);
-  static const Color _tablesColor = Color(0xFF6F8F5F);
-  static const Color _diagnosticColor = Color(0xFFB14A3E);
+  static const Color _timerColor = Color(0xFF5A88A8);
+  static const Color _visualStimuliColor = Color(0xFFBE5E5E);
+  static const Color _reflexesColor = Color(0xFFD99A3E);
+  static const Color _calculationsColor = Color(0xFF856AA0);
+  static const Color _tablesColor = Color(0xFF80A66C);
+  static const Color _diagnosticColor = Color(0xFFC95A52);
 
   static const double _toolSheetInitialSize = 0.9;
   static const double _toolSheetMinSize = 0.5;
@@ -187,33 +187,20 @@ class _ToolsScreenState extends State<ToolsScreen> {
           top: AppSpacing.sm,
           bottom: AppSpacing.sm,
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 18,
-              decoration: BoxDecoration(
-                color: colors.primary,
-                borderRadius: BorderRadius.circular(999),
+        child: SizedBox(
+          height: 24,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title.toUpperCase(),
+                style: textStyles.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colors.secondary,
+                ),
               ),
-            ),
-            const Gap(8),
-            Text(
-              title.toUpperCase(),
-              style: textStyles.labelMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.1,
-                color: colors.secondary,
-              ),
-            ),
-            const Gap(12),
-            Expanded(
-              child: Divider(
-                color: colors.outline.withValues(alpha: 0.55),
-                height: 1,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }

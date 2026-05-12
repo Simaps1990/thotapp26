@@ -15,5 +15,8 @@ class PdfExportOptions {
   });
 
   bool get isEmpty =>
-      !includePlatforms && !includeAmmos && !includeAccessories && !includeSessions;
+      !includePlatforms &&
+      !includeAmmos &&
+      !includeAccessories &&
+      !includeSessions;
 }

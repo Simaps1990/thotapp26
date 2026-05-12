@@ -110,7 +110,11 @@ class _DrillResultsScreenState extends State<DrillResultsScreen> {
                   _StatCard(
                     title: widget.mode,
                     rows: [
-                      if (widget.difficulty.isNotEmpty) _StatRow(label: strings.reflexesDifficultyLabel, value: widget.difficulty),
+                      if (widget.difficulty.isNotEmpty)
+                        _StatRow(
+                          label: strings.reflexesDifficultyLabel,
+                          value: widget.difficulty,
+                        ),
                       ...widget.stats.entries
                           .where((e) => !e.key.startsWith('_'))
                           .map((e) => _StatRow(label: e.key, value: e.value)),

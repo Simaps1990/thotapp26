@@ -1,13 +1,16 @@
-import 'package:flutter/foundation.dart' show VoidCallback, kDebugMode, kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart'
+    show VoidCallback, kDebugMode, kIsWeb, debugPrint;
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThotPremiumService {
-  ThotPremiumService({required VoidCallback onChanged}) : _onChanged = onChanged;
+  ThotPremiumService({required VoidCallback onChanged})
+    : _onChanged = onChanged;
 
   static const String proEntitlementId = 'THOT Pro';
-  static const String _lastPremiumValidationAtKey = 'last_premium_validation_at';
+  static const String _lastPremiumValidationAtKey =
+      'last_premium_validation_at';
 
   // Grace period: offline fallback.
   static const Duration _premiumGracePeriod = Duration(days: 35);
@@ -62,9 +65,7 @@ class ThotPremiumService {
         throw StateError('No package found for $type');
       }
 
-      final result = await Purchases.purchase(
-        PurchaseParams.package(package),
-      );
+      final result = await Purchases.purchase(PurchaseParams.package(package));
       // Refresh cached prices in case something changed on the store side
       await _loadCurrentOfferingPrices();
       await _updatePremiumStatus(result.customerInfo);
@@ -84,13 +85,15 @@ class ThotPremiumService {
   }
 
   bool _isWithinGracePeriod() {
-    if (_lastPremiumValidationAt == null || _lastPremiumValidationAt!.isEmpty) return false;
+    if (_lastPremiumValidationAt == null || _lastPremiumValidationAt!.isEmpty)
+      return false;
     final date = DateTime.tryParse(_lastPremiumValidationAt!);
     if (date == null) return false;
     return DateTime.now().difference(date) < _premiumGracePeriod;
   }
 
-  bool get isPremium => _isPremium || (_allowGracePeriodFallback && _isWithinGracePeriod());
+  bool get isPremium =>
+      _isPremium || (_allowGracePeriodFallback && _isWithinGracePeriod());
 
   void loadMetadataFromPrefs(SharedPreferences prefs) {
     _lastPremiumValidationAt = prefs.getString(_lastPremiumValidationAtKey);
@@ -149,7 +152,8 @@ class ThotPremiumService {
   }
 
   Future<void> _updatePremiumStatus(CustomerInfo customerInfo) async {
-    final isPro = customerInfo.entitlements.all[proEntitlementId]?.isActive ?? false;
+    final isPro =
+        customerInfo.entitlements.all[proEntitlementId]?.isActive ?? false;
 
     if (isPro) {
       _isPremium = true;
@@ -178,7 +182,10 @@ class ThotPremiumService {
     if (_lastPremiumValidationAt == null) {
       await prefs.remove(_lastPremiumValidationAtKey);
     } else {
-      await prefs.setString(_lastPremiumValidationAtKey, _lastPremiumValidationAt!);
+      await prefs.setString(
+        _lastPremiumValidationAtKey,
+        _lastPremiumValidationAt!,
+      );
     }
   }
 
@@ -205,7 +212,9 @@ class ThotPremiumService {
       _monthlyPrice = monthlyPackage?.storeProduct.priceString;
 
       if (kDebugMode) {
-        debugPrint('💰 Loaded prices: yearly=$_yearlyPrice, monthly=$_monthlyPrice');
+        debugPrint(
+          '💰 Loaded prices: yearly=$_yearlyPrice, monthly=$_monthlyPrice',
+        );
       }
     } catch (e) {
       // Non bloquant : en cas d’erreur on garde simplement les valeurs nulles

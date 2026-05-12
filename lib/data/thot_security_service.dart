@@ -3,7 +3,8 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show VoidCallback, debugPrint, kDebugMode;
+import 'package:flutter/foundation.dart'
+    show VoidCallback, debugPrint, kDebugMode;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:pointycastle/key_derivators/api.dart' show Pbkdf2Parameters;
@@ -17,9 +18,9 @@ class ThotSecurityService {
     required FlutterSecureStorage secureStorage,
     required LocalAuthentication localAuth,
     required VoidCallback onChanged,
-  })  : _secureStorage = secureStorage,
-        _localAuth = localAuth,
-        _onChanged = onChanged;
+  }) : _secureStorage = secureStorage,
+       _localAuth = localAuth,
+       _onChanged = onChanged;
 
   static const int pinLength = 6;
   static const int maxPinAttempts = 5;
@@ -58,7 +59,9 @@ class ThotSecurityService {
         if ((v2Hash == null || v2Hash.isEmpty) &&
             (v1Hash == null || v1Hash.isEmpty)) {
           if (kDebugMode) {
-            debugPrint('PIN enabled without stored hash; disabling local PIN state.');
+            debugPrint(
+              'PIN enabled without stored hash; disabling local PIN state.',
+            );
           }
           _pinEnabled = false;
           await prefs.setBool('pinEnabled', false);
@@ -195,7 +198,7 @@ class ThotSecurityService {
       if (kDebugMode) {
         debugPrint('Biometric auth error: ${e.code} - ${e.toString()}');
       }
-      
+
       // Handle specific error codes for better UX
       switch (e.code) {
         case LocalAuthExceptionCode.biometricLockout:
@@ -209,7 +212,7 @@ class ThotSecurityService {
           // Other errors
           break;
       }
-      
+
       return false;
     } catch (e) {
       if (kDebugMode) {
@@ -224,7 +227,9 @@ class ThotSecurityService {
       final normalized = pin.trim();
 
       if (normalized.length != pinLength || int.tryParse(normalized) == null) {
-        throw ArgumentError('Le PIN doit contenir exactement $pinLength chiffres.');
+        throw ArgumentError(
+          'Le PIN doit contenir exactement $pinLength chiffres.',
+        );
       }
 
       final salt = _generateSalt();
@@ -357,11 +362,13 @@ class ThotSecurityService {
     final pinBytes = utf8.encode(pin);
 
     final pbkdf2 = PBKDF2KeyDerivator(pc_hmac.HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(
-        Uint8List.fromList(saltBytes),
-        _pbkdf2Iterations,
-        _pbkdf2KeyLength,
-      ));
+      ..init(
+        Pbkdf2Parameters(
+          Uint8List.fromList(saltBytes),
+          _pbkdf2Iterations,
+          _pbkdf2KeyLength,
+        ),
+      );
 
     final derived = pbkdf2.process(Uint8List.fromList(pinBytes));
     return base64Encode(derived);

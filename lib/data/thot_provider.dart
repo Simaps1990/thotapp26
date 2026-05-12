@@ -307,6 +307,19 @@ class ThotProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void importShootingAdjustmentTable(ShootingAdjustmentTable table) {
+    final existingIndex = _shootingAdjustmentTables.indexWhere(
+      (t) => t.id == table.id,
+    );
+    if (existingIndex == -1) {
+      _shootingAdjustmentTables.insert(0, table);
+    } else {
+      _shootingAdjustmentTables[existingIndex] = table;
+    }
+    _scheduleSave();
+    notifyListeners();
+  }
+
   List<String> adjustmentAccessoryIdsForTable(String tableId) {
     final table = adjustmentTableById(tableId);
     if (table == null) return const [];
@@ -594,18 +607,65 @@ class ThotProvider extends ChangeNotifier {
     required String partName,
     required DateTime date,
     String? comment,
+    int? roundsAtChange,
   }) {
     final index = _platforms.indexWhere((w) => w.id == platformId);
     if (index == -1) return;
     final current = _platforms[index];
+    final idSeed = DateTime.now().microsecondsSinceEpoch;
     final entry = PlatformHistoryEntry(
-      id: 'piece-${date.microsecondsSinceEpoch}',
+      id: 'piece-$idSeed',
       date: date,
       type: 'piece',
       label: 'Changement de pièce: $partName',
       details: (comment ?? '').trim().isEmpty ? null : comment,
     );
-    _platforms[index] = current.copyWith(history: [...current.history, entry]);
+    final part = PlatformReplacementPart(
+      id: 'part-$idSeed',
+      name: partName.trim(),
+      changedAt: date,
+      roundsAtChange: roundsAtChange ?? 0,
+      platformRoundsAtChange: current.totalRounds,
+      comment: (comment ?? '').trim(),
+    );
+    _platforms[index] = current.copyWith(
+      history: [...current.history, entry],
+      replacementParts: [...current.replacementParts, part],
+    );
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void updatePlatformReplacementPart({
+    required String platformId,
+    required PlatformReplacementPart part,
+  }) {
+    final index = _platforms.indexWhere((w) => w.id == platformId);
+    if (index == -1) return;
+    final current = _platforms[index];
+    if (!current.replacementParts.any((p) => p.id == part.id)) return;
+    _platforms[index] = current.copyWith(
+      replacementParts: current.replacementParts
+          .map((p) => p.id == part.id ? part : p)
+          .toList(growable: false),
+    );
+    _scheduleSave();
+    notifyListeners();
+  }
+
+  void deletePlatformReplacementPart({
+    required String platformId,
+    required String partId,
+  }) {
+    final index = _platforms.indexWhere((w) => w.id == platformId);
+    if (index == -1) return;
+    final current = _platforms[index];
+    if (!current.replacementParts.any((p) => p.id == partId)) return;
+    _platforms[index] = current.copyWith(
+      replacementParts: current.replacementParts
+          .where((p) => p.id != partId)
+          .toList(growable: false),
+    );
     _scheduleSave();
     notifyListeners();
   }
@@ -2193,6 +2253,9 @@ class ThotProvider extends ChangeNotifier {
               'roundsAtLastRevision': w.roundsAtLastRevision,
               'documents': w.documents.map((d) => d.toJson()).toList(),
               'history': w.history.map((h) => h.toJson()).toList(),
+              'replacementParts': w.replacementParts
+                  .map((p) => p.toJson())
+                  .toList(),
               'photoPath': w.photoPath,
               'isHidden': w.isHidden,
               'linkedAccessoryIds': w.linkedAccessoryIds,
@@ -2434,6 +2497,16 @@ class ThotProvider extends ChangeNotifier {
                       }
                     })
                     .whereType<PlatformHistoryEntry>()
+                    .toList(),
+                replacementParts: ((w['replacementParts'] as List?) ?? const [])
+                    .map((p) {
+                      try {
+                        return PlatformReplacementPart.fromJson(p);
+                      } catch (_) {
+                        return null;
+                      }
+                    })
+                    .whereType<PlatformReplacementPart>()
                     .toList(),
                 photoPath: w['photoPath'] as String?,
                 isHidden: w['isHidden'] as bool? ?? false,

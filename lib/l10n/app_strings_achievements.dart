@@ -766,4 +766,96 @@ extension AppStringsAchievements on AppStrings {
         );
     }
   }
+
+  String get achievementCategoryAll =>
+      _pick(fr: 'Tous', en: 'All', de: 'Alle', it: 'Tutti', es: 'Todos');
+  String get achievementCategoryRegularity => _pick(
+    fr: 'Régularité',
+    en: 'Regularity',
+    de: 'Regelmäßigkeit',
+    it: 'Regolarità',
+    es: 'Regularidad',
+  );
+  String get achievementCategoryPrecision => _pick(
+    fr: 'Précision',
+    en: 'Precision',
+    de: 'Präzision',
+    it: 'Precisione',
+    es: 'Precisión',
+  );
+  String get achievementCategorySpeed => _pick(
+    fr: 'Vitesse',
+    en: 'Speed',
+    de: 'Geschwindigkeit',
+    it: 'Velocità',
+    es: 'Velocidad',
+  );
+  String get achievementCategoryMaintenance => _pick(
+    fr: 'Maintenance',
+    en: 'Maintenance',
+    de: 'Wartung',
+    it: 'Manutenzione',
+    es: 'Mantenimiento',
+  );
+  String get achievementCategoryDiagnostic => _pick(
+    fr: 'Diagnostic',
+    en: 'Diagnostic',
+    de: 'Diagnose',
+    it: 'Diagnostica',
+    es: 'Diagnóstico',
+  );
+  String get achievementCategoryTools => _pick(
+    fr: 'Maîtrise outils',
+    en: 'Tool mastery',
+    de: 'Werkzeugbeherrschung',
+    it: 'Padronanza strumenti',
+    es: 'Dominio de herramientas',
+  );
+  String get achievementRarityCommon => _pick(
+    fr: 'commun',
+    en: 'common',
+    de: 'gewöhnlich',
+    it: 'comune',
+    es: 'común',
+  );
+  String get achievementRarityAdvanced => _pick(
+    fr: 'avancé',
+    en: 'advanced',
+    de: 'fortgeschritten',
+    it: 'avanzato',
+    es: 'avanzado',
+  );
+  String get achievementRarityExpert => _pick(
+    fr: 'expert',
+    en: 'expert',
+    de: 'Experte',
+    it: 'esperto',
+    es: 'experto',
+  );
+  String get achievementRarityElite =>
+      _pick(fr: 'élite', en: 'elite', de: 'Elite', it: 'élite', es: 'élite');
+
+  String get achievementsInfoTooltip => _pick(
+    fr: 'Débloquez des trophées en complétant des sessions, en gérant votre matériel, en mesurant votre précision et en vous entraînant régulièrement. Filtrez par catégorie ou rareté pour suivre votre progression.',
+    en: 'Unlock trophies by completing sessions, managing your equipment, measuring your precision, and training regularly. Filter by category or rarity to track your progress.',
+    de: 'Schalten Sie Trophäen frei, indem Sie Sitzungen abschließen, Ihre Ausrüstung verwalten, Ihre Präzision messen und regelmäßig trainieren. Filtern Sie nach Kategorie oder Seltenheit, um Ihren Fortschritt zu verfolgen.',
+    it: 'Sblocca trofei completando session, gestendo le tue attrezzature, misurando la tua precisione e allenandoti regolarmente. Filtra per categoria o rarità per monitorare i tuoi progressi.',
+    es: 'Desbloquea trofeos completando sesiones, gestionando tu equipo, midiendo tu precisión y entrenando regularmente. Filtra por categoría o rareza para seguir tu progreso.',
+  );
+
+  String get achievementsUnlockedFilter => _pick(
+    fr: 'Débloqués',
+    en: 'Unlocked',
+    de: 'Freigeschaltet',
+    it: 'Sbloccati',
+    es: 'Desbloqueados',
+  );
+
+  String get achievementsInProgressFilter => _pick(
+    fr: 'En cours',
+    en: 'In progress',
+    de: 'In Arbeit',
+    it: 'In corso',
+    es: 'En curso',
+  );
 }

@@ -15,6 +15,7 @@ class MaintenanceNotifications {
 
   static const _docChannelId = 'thot_documents';
   static const _scheduledDocIdsKey = 'scheduled_document_notification_ids_v1';
+
   /// IDs of document reminders that have already been scheduled (and therefore
   /// will fire exactly once). Persisted across launches so that subsequent
   /// sync passes don't re-queue a "catch-up" reminder for a document whose
@@ -37,7 +38,9 @@ class MaintenanceNotifications {
       _timezoneInitialized = true;
     }
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -104,15 +107,19 @@ class MaintenanceNotifications {
 
     var granted = true;
 
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     final androidGranted = await android?.requestNotificationsPermission();
     if (androidGranted == false) {
       granted = false;
     }
 
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     final iosGranted = await ios?.requestPermissions(
       alert: true,
       badge: true,
@@ -138,8 +145,10 @@ class MaintenanceNotifications {
     if (!_initialized) return;
 
     // Create or update the Android notification channel with localized strings
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(
         AndroidNotificationChannel(
@@ -283,8 +292,10 @@ class MaintenanceNotifications {
           title: title,
           body: body,
           scheduledDate: scheduledDate,
-          notificationDetails:
-              NotificationDetails(android: androidDetails, iOS: iosDetails),
+          notificationDetails: NotificationDetails(
+            android: androidDetails,
+            iOS: iosDetails,
+          ),
           androidScheduleMode: scheduleMode,
           payload: 'document_expiry',
         );
@@ -292,7 +303,9 @@ class MaintenanceNotifications {
         newFiredIds.add(id);
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('[MaintenanceNotifications] schedule failed for "$documentName": $e');
+          debugPrint(
+            '[MaintenanceNotifications] schedule failed for "$documentName": $e',
+          );
         }
       }
     }
@@ -383,8 +396,10 @@ class MaintenanceNotifications {
     if (!_initialized) return false;
 
     // Create or update the Android notification channel with localized strings
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(
         AndroidNotificationChannel(
@@ -424,8 +439,10 @@ class MaintenanceNotifications {
         id: _stablePositiveId('test_notification'),
         title: testTitle,
         body: testBody,
-        notificationDetails:
-            NotificationDetails(android: androidDetails, iOS: iosDetails),
+        notificationDetails: NotificationDetails(
+          android: androidDetails,
+          iOS: iosDetails,
+        ),
         payload: 'test_notification',
       );
       return true;
@@ -469,8 +486,6 @@ class MaintenanceNotifications {
     }
   }
 
-
-
   /// Annule toutes les notifications de maintenance
   static Future<void> cancelAll() async {
     if (kIsWeb || !_initialized) return;
@@ -491,10 +506,7 @@ class MaintenanceNotifications {
   /// Dart/Flutter releases, unlike String.hashCode.
   static int _stablePositiveId(String input) {
     final bytes = md5.convert(utf8.encode(input)).bytes;
-    return ((bytes[0] << 24) |
-            (bytes[1] << 16) |
-            (bytes[2] << 8) |
-            bytes[3]) &
+    return ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) &
         0x7FFFFFFF;
   }
 
@@ -505,13 +517,20 @@ class MaintenanceNotifications {
     return '$day/$month/$year';
   }
 
-  static String _documentReminderTitle(String? localeCode, String documentType) {
+  static String _documentReminderTitle(
+    String? localeCode,
+    String documentType,
+  ) {
     final locale = (localeCode ?? '').toLowerCase();
     final type = documentType.toLowerCase();
-    
+
     // Permis et certificats - messages plus personnels
-    if (type.contains('permis') || type.contains('permit') || type.contains('licence') || type.contains('license') || 
-        type.contains('certificat') || type.contains('certificate')) {
+    if (type.contains('permis') ||
+        type.contains('permit') ||
+        type.contains('licence') ||
+        type.contains('license') ||
+        type.contains('certificat') ||
+        type.contains('certificate')) {
       switch (locale) {
         case 'en':
           return 'Permit reminder';
@@ -525,7 +544,7 @@ class MaintenanceNotifications {
           return 'Rappel permis';
       }
     }
-    
+
     // Garanties
     if (type.contains('garantie') || type.contains('warranty')) {
       switch (locale) {
@@ -541,7 +560,7 @@ class MaintenanceNotifications {
           return 'Rappel garantie';
       }
     }
-    
+
     // Messages génériques pour autres types
     switch (locale) {
       case 'en':
@@ -634,6 +653,4 @@ class MaintenanceNotifications {
     }
     await prefs.remove(_scheduledDocIdsKey);
   }
-
-
 }

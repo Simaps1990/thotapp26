@@ -26,27 +26,23 @@ class TrainingHistory {
     final next = _nextRolloverInstant();
     final delay = next.difference(DateTime.now());
 
-    _rolloverTimer = Timer(
-      delay.isNegative ? Duration.zero : delay,
-      () {
-        updates.value++;
-        _scheduleRolloverRefresh();
-      },
-    );
+    _rolloverTimer = Timer(delay.isNegative ? Duration.zero : delay, () {
+      updates.value++;
+      _scheduleRolloverRefresh();
+    });
   }
 
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Load training history
     final raw = prefs.getString(_key);
     if (raw != null && raw.isNotEmpty) {
       try {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        _dailyTraining = decoded.map((k, v) => MapEntry(
-          k,
-          (v as List).cast<String>().toSet(),
-        ));
+        _dailyTraining = decoded.map(
+          (k, v) => MapEntry(k, (v as List).cast<String>().toSet()),
+        );
       } catch (e) {
         _dailyTraining = {};
       }
@@ -57,11 +53,12 @@ class TrainingHistory {
 
   static Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Save training history
-    await prefs.setString(_key, jsonEncode(
-      _dailyTraining.map((k, v) => MapEntry(k, v.toList()))
-    ));
+    await prefs.setString(
+      _key,
+      jsonEncode(_dailyTraining.map((k, v) => MapEntry(k, v.toList()))),
+    );
   }
 
   static Future<void> clear() async {
@@ -93,12 +90,12 @@ class TrainingHistory {
     final now = DateTime.now();
     final start = now.subtract(const Duration(days: 6));
     final weekly = <bool>[];
-    
+
     for (int i = 0; i < 7; i++) {
       final day = DateFormat('yyyy-MM-dd').format(start.add(Duration(days: i)));
       weekly.add((_dailyTraining[day]?.length ?? 0) > 0);
     }
-    
+
     return weekly;
   }
 
@@ -114,7 +111,7 @@ class TrainingHistory {
     final now = DateTime.now();
     int streak = 0;
     DateTime current = now;
-    
+
     while (true) {
       final key = DateFormat('yyyy-MM-dd').format(current);
       if (_dailyTraining[key]?.isNotEmpty ?? false) {
@@ -124,19 +121,20 @@ class TrainingHistory {
         break;
       }
     }
-    
+
     return streak;
   }
 
   static int getDailyStreakWithGrace({int graceDays = 2}) {
     if (_dailyTraining.isEmpty) return 0;
 
-    final trainingDays = _dailyTraining.entries
-        .where((entry) => entry.value.isNotEmpty)
-        .map((entry) => DateFormat('yyyy-MM-dd').parse(entry.key))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
+    final trainingDays =
+        _dailyTraining.entries
+            .where((entry) => entry.value.isNotEmpty)
+            .map((entry) => DateFormat('yyyy-MM-dd').parse(entry.key))
+            .toSet()
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
 
     if (trainingDays.isEmpty) return 0;
 

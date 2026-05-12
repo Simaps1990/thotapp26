@@ -9,7 +9,10 @@ abstract interface class WebDocumentOpenerImpl {
   /// IMPORTANT (Safari): keep the `window.open(...)` call in the same user
   /// gesture tick. Even an `await` (microtask) before `window.open` can cause
   /// Safari to open a blank tab or fail with `WebKitBlobResourceError 1`.
-  static Future<void> openDataUrlInNewTab(String dataUrl, {String windowName = '_blank'}) {
+  static Future<void> openDataUrlInNewTab(
+    String dataUrl, {
+    String windowName = '_blank',
+  }) {
     try {
       final objectUrl = createObjectUrlFromDataUrlSync(dataUrl);
       web.window.open(objectUrl, windowName);
@@ -48,7 +51,9 @@ abstract interface class WebDocumentOpenerImpl {
       throw UnsupportedError('Only base64 data URLs are supported');
     }
 
-    final mime = meta.split(';').first.trim().isEmpty ? 'application/octet-stream' : meta.split(';').first.trim();
+    final mime = meta.split(';').first.trim().isEmpty
+        ? 'application/octet-stream'
+        : meta.split(';').first.trim();
 
     Uint8List bytes;
     try {
@@ -58,10 +63,7 @@ abstract interface class WebDocumentOpenerImpl {
       rethrow;
     }
 
-    final blob = web.Blob(
-      [bytes.toJS].toJS,
-      web.BlobPropertyBag(type: mime),
-    );
+    final blob = web.Blob([bytes.toJS].toJS, web.BlobPropertyBag(type: mime));
     final objectUrl = web.URL.createObjectURL(blob);
 
     return objectUrl;

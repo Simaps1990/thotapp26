@@ -32,7 +32,10 @@ class DashboardWidgetService {
     final sessionsToday = sessions.where((s) => !s.date.isBefore(todayStart));
     final sessionsThisWeek = sessions.where((s) => !s.date.isBefore(weekStart));
 
-    final shotsToday = sessionsToday.fold<int>(0, (sum, s) => sum + s.totalRounds);
+    final shotsToday = sessionsToday.fold<int>(
+      0,
+      (sum, s) => sum + s.totalRounds,
+    );
     final totalSessions = sessions.length;
     final totalShots = sessions.fold<int>(0, (sum, s) => sum + s.totalRounds);
 
@@ -41,18 +44,26 @@ class DashboardWidgetService {
         : sessions.reduce((a, b) => a.date.isAfter(b.date) ? a : b);
     final lastActivityDays = lastSession == null
         ? -1
-        : todayStart.difference(
-            DateTime(lastSession.date.year, lastSession.date.month, lastSession.date.day),
-          ).inDays;
+        : todayStart
+              .difference(
+                DateTime(
+                  lastSession.date.year,
+                  lastSession.date.month,
+                  lastSession.date.day,
+                ),
+              )
+              .inDays;
 
-    final sessionsWithPrecision = sessions.where((s) => s.hasCountedPrecision).toList();
+    final sessionsWithPrecision = sessions
+        .where((s) => s.hasCountedPrecision)
+        .toList();
     final avgPrecision = sessionsWithPrecision.isEmpty
         ? 0.0
         : sessionsWithPrecision.fold<double>(
-              0,
-              (sum, s) => sum + s.averagePrecision,
-            ) /
-            sessionsWithPrecision.length;
+                0,
+                (sum, s) => sum + s.averagePrecision,
+              ) /
+              sessionsWithPrecision.length;
 
     final wearProgress = <double>[
       ...platforms.where((p) => p.trackWear).map((p) => p.revisionProgress),
@@ -68,19 +79,18 @@ class DashboardWidgetService {
           .map((a) => a.cleaningProgress),
     ];
 
-    final stockProgress = ammos
-        .where((a) => a.trackStock)
-        .map((a) {
-          final threshold = a.lowStockThreshold.toDouble();
-          final initial = a.initialQuantity.toDouble();
-          final current = a.quantity.toDouble();
-          if (initial <= threshold) {
-            return current <= threshold ? 1.0 : 0.0;
-          }
-          return (1.0 - ((current - threshold) / (initial - threshold)))
-              .clamp(0.0, 1.0);
-        })
-        .toList();
+    final stockProgress = ammos.where((a) => a.trackStock).map((a) {
+      final threshold = a.lowStockThreshold.toDouble();
+      final initial = a.initialQuantity.toDouble();
+      final current = a.quantity.toDouble();
+      if (initial <= threshold) {
+        return current <= threshold ? 1.0 : 0.0;
+      }
+      return (1.0 - ((current - threshold) / (initial - threshold))).clamp(
+        0.0,
+        1.0,
+      );
+    }).toList();
 
     double avg(List<double> list) {
       if (list.isEmpty) return 0.0;
@@ -156,18 +166,27 @@ class DashboardWidgetService {
         level(foulingAvg),
       ),
       HomeWidget.saveWidgetData<String>('widget_stock_level', level(stockAvg)),
-      HomeWidget.saveWidgetData<int>('widget_due_documents_count', docsDueSoon.length),
+      HomeWidget.saveWidgetData<int>(
+        'widget_due_documents_count',
+        docsDueSoon.length,
+      ),
       HomeWidget.saveWidgetData<int>(
         'widget_next_doc_due_days',
         nextDocDueDays,
       ),
-      HomeWidget.saveWidgetData<int>('widget_total_platforms', platforms.length),
+      HomeWidget.saveWidgetData<int>(
+        'widget_total_platforms',
+        platforms.length,
+      ),
       HomeWidget.saveWidgetData<int>('widget_total_ammos', ammos.length),
       HomeWidget.saveWidgetData<int>(
         'widget_total_accessories',
         accessories.length,
       ),
-      HomeWidget.saveWidgetData<int>('widget_last_activity_days', lastActivityDays),
+      HomeWidget.saveWidgetData<int>(
+        'widget_last_activity_days',
+        lastActivityDays,
+      ),
       HomeWidget.saveWidgetData<int>(
         'widget_last_sync_epoch_ms',
         now.millisecondsSinceEpoch,
@@ -175,7 +194,10 @@ class DashboardWidgetService {
     ]);
 
     await Future.wait([
-      HomeWidget.updateWidget(name: _androidStatsProvider, iOSName: _iosStatsKind),
+      HomeWidget.updateWidget(
+        name: _androidStatsProvider,
+        iOSName: _iosStatsKind,
+      ),
       HomeWidget.updateWidget(
         name: _androidMaintenanceProvider,
         iOSName: _iosMaintenanceKind,
@@ -184,7 +206,10 @@ class DashboardWidgetService {
         name: _androidDocumentsProvider,
         iOSName: _iosDocumentsKind,
       ),
-      HomeWidget.updateWidget(name: _androidActivityProvider, iOSName: _iosActivityKind),
+      HomeWidget.updateWidget(
+        name: _androidActivityProvider,
+        iOSName: _iosActivityKind,
+      ),
     ]);
   }
 }

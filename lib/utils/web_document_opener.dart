@@ -8,8 +8,13 @@ import 'package:thot/utils/web_document_opener_stub.dart'
 abstract interface class WebDocumentOpener {
   /// Opens a base64 `data:` URL (e.g. `data:application/pdf;base64,...`) in a
   /// new tab/window.
-  static Future<void> openDataUrlInNewTab(String dataUrl, {String windowName = '_blank'}) =>
-      WebDocumentOpenerImpl.openDataUrlInNewTab(dataUrl, windowName: windowName);
+  static Future<void> openDataUrlInNewTab(
+    String dataUrl, {
+    String windowName = '_blank',
+  }) => WebDocumentOpenerImpl.openDataUrlInNewTab(
+    dataUrl,
+    windowName: windowName,
+  );
 
   /// Converts a base64 `data:` URL to a `blob:` object URL and returns it.
   ///

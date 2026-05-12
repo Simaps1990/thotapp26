@@ -27,6 +27,7 @@ part 'app_strings_home_screen.dart';
 part 'app_strings_pin.dart';
 part 'app_strings_colorpod.dart';
 part 'app_strings_misc.dart';
+part 'app_strings_legal.dart';
 
 /// Simple in-app string provider for manual i18n.
 ///
@@ -52,7 +53,8 @@ class AppStrings {
   }
 
   static AppStrings of(BuildContext context) {
-    return maybeOf(context) ?? AppStrings.forLocale(Localizations.localeOf(context));
+    return maybeOf(context) ??
+        AppStrings.forLocale(Localizations.localeOf(context));
   }
 
   static AppStrings forLocale(Locale locale) {
@@ -70,8 +72,7 @@ class AppStrings {
   bool get _isIt => languageCode == 'it';
   bool get _isEs => languageCode == 'es';
 
-
-  String _pick({ 
+  String _pick({
     required String fr,
     required String en,
     required String de,
@@ -92,8 +93,9 @@ class _AppStringsDelegate extends LocalizationsDelegate<AppStrings> {
 
   @override
   bool isSupported(Locale locale) {
-    return AppStrings.supportedLocales
-        .any((l) => l.languageCode == locale.languageCode);
+    return AppStrings.supportedLocales.any(
+      (l) => l.languageCode == locale.languageCode,
+    );
   }
 
   @override

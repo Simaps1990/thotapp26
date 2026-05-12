@@ -1,20 +1,35 @@
 import 'dart:math' as math;
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/data/thot_provider.dart';
-import 'package:thot/theme.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/presentation/shooting_table_qr_scanner_screen.dart';
+import 'package:thot/theme.dart';
+import 'package:thot/utils/shooting_table_share_codec.dart';
 
 class ShootingTablesScreen extends StatefulWidget {
   const ShootingTablesScreen({super.key});
 
   @override
   State<ShootingTablesScreen> createState() => _ShootingTablesScreenState();
+}
+
+class _AccessoryPickerResult {
+  final Set<String> accessoryIds;
+  final List<String> customAccessoryNames;
+
+  const _AccessoryPickerResult({
+    required this.accessoryIds,
+    required this.customAccessoryNames,
+  });
 }
 
 class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
@@ -44,7 +59,6 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
   Set<String> _editorAccessoryIds = <String>{};
   List<String> _editorCustomAccessoryNames = <String>[];
   bool _editorAccessoriesCustomized = false;
-  bool _editorAccessoriesIncludeOther = false;
   List<ShootingAdjustmentEntry> _editorEntries = <ShootingAdjustmentEntry>[];
   bool _editorIsDope = false;
 
@@ -63,8 +77,11 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
       _useMetric ? AdjustmentOffsetUnit.centimeter : AdjustmentOffsetUnit.inch;
 
   // Conversion functions
-  double _convertDistance(double distance, AdjustmentDistanceUnit fromUnit,
-      AdjustmentDistanceUnit toUnit) {
+  double _convertDistance(
+    double distance,
+    AdjustmentDistanceUnit fromUnit,
+    AdjustmentDistanceUnit toUnit,
+  ) {
     if (fromUnit == toUnit) return distance;
 
     // Convert to meters first, then to target unit
@@ -79,8 +96,11 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
     return inMeters; // meters
   }
 
-  double _convertOffset(double offset, AdjustmentOffsetUnit fromUnit,
-      AdjustmentOffsetUnit toUnit) {
+  double _convertOffset(
+    double offset,
+    AdjustmentOffsetUnit fromUnit,
+    AdjustmentOffsetUnit toUnit,
+  ) {
     if (fromUnit == toUnit) return offset;
 
     // Convert to centimeters first, then to target unit
@@ -96,12 +116,16 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
   }
 
   double _getDistanceInDefaultUnit(
-      double distance, AdjustmentDistanceUnit storedUnit) {
+    double distance,
+    AdjustmentDistanceUnit storedUnit,
+  ) {
     return _convertDistance(distance, storedUnit, _defaultDistanceUnit);
   }
 
   double _getOffsetInDefaultUnit(
-      double offset, AdjustmentOffsetUnit storedUnit) {
+    double offset,
+    AdjustmentOffsetUnit storedUnit,
+  ) {
     return _convertOffset(offset, storedUnit, _defaultOffsetUnit);
   }
 
@@ -112,8 +136,11 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
     if (provider.shootingAdjustmentTables.isNotEmpty &&
         _editingTableId == null &&
         _pageIndex == 0) {
-      _openEditorForTable(provider, provider.shootingAdjustmentTables.first,
-          openPage: false);
+      _openEditorForTable(
+        provider,
+        provider.shootingAdjustmentTables.first,
+        openPage: false,
+      );
     }
   }
 
@@ -143,7 +170,11 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
     return 'Table';
   }
 
-  String _platformName(ThotProvider provider, String platformId, {String? customPlatformName}) {
+  String _platformName(
+    ThotProvider provider,
+    String platformId, {
+    String? customPlatformName,
+  }) {
     if (customPlatformName != null && customPlatformName.isNotEmpty) {
       return customPlatformName;
     }
@@ -151,13 +182,88 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
     return platform?.name ?? '-';
   }
 
-  String _ammoName(ThotProvider provider, String? ammoId, AppStrings strings, {String? customAmmoName}) {
+  String _ammoName(
+    ThotProvider provider,
+    String? ammoId,
+    AppStrings strings, {
+    String? customAmmoName,
+  }) {
     if (customAmmoName != null && customAmmoName.isNotEmpty) {
       return customAmmoName;
     }
     if (ammoId == null || ammoId.isEmpty) return strings.shootingTableNoAmmo;
     final ammo = provider.getAmmoById(ammoId);
     return ammo?.name ?? strings.shootingTableNoAmmo;
+  }
+
+  ShootingAdjustmentTable _asImportedCustomTable(
+    ShootingAdjustmentTable table,
+    AppStrings strings,
+  ) {
+    final accessoryNames = <String>{
+      ...table.customAccessoryNames
+          .map((name) => name.trim())
+          .where((name) => name.isNotEmpty),
+    }.toList(growable: false);
+
+    return table.copyWith(
+      platformId: '',
+      customPlatformName: table.customPlatformName?.trim().isNotEmpty == true
+          ? table.customPlatformName!.trim()
+          : '-',
+      clearAmmoId: true,
+      customAmmoName: table.customAmmoName?.trim().isNotEmpty == true
+          ? table.customAmmoName!.trim()
+          : strings.shootingTableNoAmmo,
+      accessoryIds: const [],
+      customAccessoryNames: accessoryNames,
+      accessoriesCustomized: true,
+    );
+  }
+
+  Widget _svgFieldIcon(String asset, Color color) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: SvgPicture.asset(
+        asset,
+        width: 20,
+        height: 20,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      ),
+    );
+  }
+
+  Widget _tableInfoLine({
+    required String asset,
+    required String text,
+    required Color color,
+    required TextStyle? style,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: SvgPicture.asset(
+            asset,
+            width: 12,
+            height: 12,
+            colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+          ),
+        ),
+        const Gap(6),
+        Expanded(child: Text(text, style: style)),
+      ],
+    );
+  }
+
+  TextStyle? _hintStyle(BuildContext context, {double? fontSize}) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    return textStyles.bodyMedium?.copyWith(
+      fontSize: fontSize,
+      color: colors.onSurface.withAlpha(100),
+    );
   }
 
   bool _tableMatchesSearch(
@@ -169,8 +275,17 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) return true;
 
-    final platform = _platformName(provider, table.platformId, customPlatformName: table.customPlatformName).toLowerCase();
-    final ammo = _ammoName(provider, table.ammoId, strings, customAmmoName: table.customAmmoName).toLowerCase();
+    final platform = _platformName(
+      provider,
+      table.platformId,
+      customPlatformName: table.customPlatformName,
+    ).toLowerCase();
+    final ammo = _ammoName(
+      provider,
+      table.ammoId,
+      strings,
+      customAmmoName: table.customAmmoName,
+    ).toLowerCase();
     final name = _tableDisplayName(table).toLowerCase();
     final accessoryNames = [
       ...provider.accessories
@@ -179,9 +294,11 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
       ...table.customAccessoryNames.map((n) => n.toLowerCase()),
     ].join(' ');
     final distances = table.entries
-        .map((e) =>
-            _formatNumber(_getDistanceInDefaultUnit(e.distance, e.distanceUnit))
-                .toLowerCase())
+        .map(
+          (e) => _formatNumber(
+            _getDistanceInDefaultUnit(e.distance, e.distanceUnit),
+          ).toLowerCase(),
+        )
         .join(' ');
 
     return name.contains(normalized) ||
@@ -196,9 +313,11 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
     AppStrings strings,
   ) {
     var tables = [...provider.shootingAdjustmentTables]
-        .where((t) =>
-        t.platformId.trim().isNotEmpty ||
-        (t.customPlatformName?.trim().isNotEmpty ?? false))
+        .where(
+          (t) =>
+              t.platformId.trim().isNotEmpty ||
+              (t.customPlatformName?.trim().isNotEmpty ?? false),
+        )
         .where((t) => _tableMatchesSearch(provider, strings, t, _searchQuery))
         .toList(growable: false);
 
@@ -218,9 +337,9 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
       int cmp;
       switch (_sortBy) {
         case _TableSort.name:
-          cmp = _tableDisplayName(a)
-              .toLowerCase()
-              .compareTo(_tableDisplayName(b).toLowerCase());
+          cmp = _tableDisplayName(
+            a,
+          ).toLowerCase().compareTo(_tableDisplayName(b).toLowerCase());
           break;
         case _TableSort.distance:
           cmp = byMaxDistance(a).compareTo(byMaxDistance(b));
@@ -236,13 +355,15 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
   }
 
   void _openEditorForCreate(ThotProvider provider) {
-    final defaultPlatform = provider.platforms.isEmpty ? '' : provider.platforms.first.id;
+    final defaultPlatform = provider.platforms.isEmpty
+        ? ''
+        : provider.platforms.first.id;
     final linkedAccessoryIds = provider.platforms.isEmpty
         ? <String>{}
         : provider
-            .linkedAccessoriesForPlatform(defaultPlatform)
-            .map((a) => a.id)
-            .toSet();
+              .linkedAccessoriesForPlatform(defaultPlatform)
+              .map((a) => a.id)
+              .toSet();
 
     setState(() {
       _editingTableId = null;
@@ -256,7 +377,6 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
       _editorAccessoryIds = linkedAccessoryIds;
       _editorCustomAccessoryNames = <String>[];
       _editorAccessoriesCustomized = false;
-      _editorAccessoriesIncludeOther = false;
       _editorEntries = <ShootingAdjustmentEntry>[];
       _editorIsDope = false;
       _activeDistance = null;
@@ -278,14 +398,17 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
       _tableNameController.text = table.name;
       _editorPlatformId = table.platformId;
       _editorCustomPlatformName = table.customPlatformName;
-      _editorPlatformIsOther = table.customPlatformName != null && table.customPlatformName!.trim().isNotEmpty;
+      _editorPlatformIsOther =
+          table.customPlatformName != null &&
+          table.customPlatformName!.trim().isNotEmpty;
       _editorAmmoId = table.ammoId;
       _editorCustomAmmoName = table.customAmmoName;
-      _editorAmmoIsOther = table.customAmmoName != null && table.customAmmoName!.trim().isNotEmpty;
+      _editorAmmoIsOther =
+          table.customAmmoName != null &&
+          table.customAmmoName!.trim().isNotEmpty;
       _editorAccessoryIds = table.accessoryIds.toSet();
       _editorCustomAccessoryNames = table.customAccessoryNames.toList();
       _editorAccessoriesCustomized = table.accessoriesCustomized;
-      _editorAccessoriesIncludeOther = table.customAccessoryNames.isNotEmpty;
       _editorEntries = [...table.entries]
         ..sort((a, b) => a.distance.compareTo(b.distance));
       _editorIsDope = table.isDope;
@@ -366,7 +489,8 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(strings.confirmDeleteTitle),
         content: Text(
-            strings.shootingTableDeleteTableConfirm(_tableDisplayName(table))),
+          strings.shootingTableDeleteTableConfirm(_tableDisplayName(table)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -385,6 +509,352 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
       if (_editingTableId == table.id) {
         _cancelEditor();
       }
+    }
+  }
+
+  Future<void> _showShareTableDialog(ShootingAdjustmentTable table) async {
+    final strings = AppStrings.of(context);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final exportAccessoryNames = <String>{
+      ...provider.accessories
+          .where((a) => table.accessoryIds.contains(a.id))
+          .map((a) => a.name.trim())
+          .where((name) => name.isNotEmpty),
+      ...table.customAccessoryNames
+          .map((name) => name.trim())
+          .where((name) => name.isNotEmpty),
+    }.toList(growable: false);
+    final exportTable = table.copyWith(
+      customPlatformName: table.customPlatformName?.trim().isNotEmpty == true
+          ? table.customPlatformName
+          : _platformName(provider, table.platformId),
+      clearAmmoId: true,
+      customAmmoName: table.customAmmoName?.trim().isNotEmpty == true
+          ? table.customAmmoName
+          : _ammoName(provider, table.ammoId, strings),
+      accessoryIds: const [],
+      customAccessoryNames: exportAccessoryNames,
+      accessoriesCustomized: true,
+    );
+    final code = ShootingTableShareCodec.encode(exportTable);
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final colors = Theme.of(dialogContext).colorScheme;
+        final textStyles = Theme.of(dialogContext).textTheme;
+        Future<void> copyCode() async {
+          await Clipboard.setData(ClipboardData(text: code));
+          if (!dialogContext.mounted) return;
+          unawaited(
+            showDialog<void>(
+              context: dialogContext,
+              barrierColor: Colors.transparent,
+              builder: (toastContext) {
+                Future.delayed(const Duration(milliseconds: 850), () {
+                  if (toastContext.mounted) {
+                    Navigator.of(toastContext).pop();
+                  }
+                });
+                return Center(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.inverseSurface,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        strings.shootingTableShareCopied,
+                        style: textStyles.labelMedium?.copyWith(
+                          color: colors.onInverseSurface,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        }
+
+        return AlertDialog(
+          titlePadding: EdgeInsets.zero,
+          contentPadding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+          actionsPadding: EdgeInsets.zero,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        strings.shootingTableShareTitle.toUpperCase(),
+                        style: textStyles.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Divider(
+                  height: 1,
+                  color: colors.outline.withValues(alpha: 0.55),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 360,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    strings.shootingTableShareSubtitle,
+                    style: textStyles.bodyMedium?.copyWith(
+                      color: colors.secondary,
+                      height: 1.35,
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(1),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      child: QrImageView(
+                        data: code,
+                        version: QrVersions.auto,
+                        size: 220,
+                      ),
+                    ),
+                  ),
+                  const Gap(AppSpacing.lg),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.copy_rounded,
+                        size: 16,
+                        color: colors.onSurface,
+                      ),
+                      const Gap(6),
+                      Text(
+                        strings.shootingTableEncryptedCodeTitle,
+                        style: textStyles.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: copyCode,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      child: Container(
+                        constraints: const BoxConstraints(maxHeight: 120),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colors.surfaceContainerHighest.withValues(
+                            alpha: 0.45,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: colors.outline.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: SingleChildScrollView(
+                          child: SelectableText(
+                            code,
+                            style: textStyles.bodySmall,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Gap(2),
+                  Align(
+                    alignment: Alignment.center,
+                    child: TextButton.icon(
+                      onPressed: copyCode,
+                      icon: const Icon(Icons.copy_rounded),
+                      label: Text(strings.shootingTableShareCopyCode),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showImportTableCodeDialog(ThotProvider provider) async {
+    final strings = AppStrings.of(context);
+    final controller = TextEditingController();
+    ShootingAdjustmentTable? imported;
+    try {
+      imported = await showDialog<ShootingAdjustmentTable>(
+        context: context,
+        builder: (dialogContext) {
+          final colors = Theme.of(dialogContext).colorScheme;
+          final textStyles = Theme.of(dialogContext).textTheme;
+          String? errorText;
+
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.xl,
+                ),
+                title: Text(
+                  strings.shootingTableImportTitle.toUpperCase(),
+                  style: textStyles.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                content: SizedBox(
+                  width: 520,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        strings.shootingTableImportDescription,
+                        style: textStyles.bodyMedium?.copyWith(
+                          color: colors.secondary,
+                          height: 1.35,
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      TextField(
+                        controller: controller,
+                        maxLines: null,
+                        decoration: InputDecoration(
+                          hintText: strings.shootingTableImportCodeHint,
+                          hintStyle: _hintStyle(dialogContext),
+                          errorText: errorText,
+                          filled: true,
+                          fillColor: colors.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(color: colors.outline),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(color: colors.outline),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(
+                              color: colors.primary,
+                              width: 1.4,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(color: colors.error),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(color: colors.error),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(strings.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      final code = controller.text.trim();
+                      if (code.isEmpty) {
+                        setDialogState(() {
+                          errorText = strings.shootingTableImportEmptyCode;
+                        });
+                        return;
+                      }
+
+                      try {
+                        final decoded = ShootingTableShareCodec.decode(code);
+                        Navigator.of(dialogContext).pop(decoded);
+                      } catch (_) {
+                        setDialogState(() {
+                          errorText = strings.shootingTableImportInvalidCode;
+                        });
+                      }
+                    },
+                    child: Text(strings.shootingTableImportAction),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      controller.dispose();
+    }
+    if (!mounted || imported == null) return;
+    provider.importShootingAdjustmentTable(
+      _asImportedCustomTable(imported, strings),
+    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(strings.shootingTableImportSuccess)));
+  }
+
+  Future<void> _showScanTableQrDialog(ThotProvider provider) async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const ShootingTableQrScannerScreen()),
+    );
+    if (!mounted || code == null || code.trim().isEmpty) return;
+    _importTableCode(provider, code);
+  }
+
+  void _importTableCode(ThotProvider provider, String code) {
+    final strings = AppStrings.of(context);
+    try {
+      final imported = _asImportedCustomTable(
+        ShootingTableShareCodec.decode(code),
+        strings,
+      );
+      provider.importShootingAdjustmentTable(imported);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.shootingTableImportSuccess)),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.shootingTableImportInvalidCode)),
+      );
     }
   }
 
@@ -456,8 +926,9 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
   ) async {
     if (_editorPlatformId == null) return;
     final selected = Set<String>.from(_editorAccessoryIds);
+    final customNames = List<String>.from(_editorCustomAccessoryNames);
 
-    final result = await showModalBottomSheet<Set<String>>(
+    final result = await showModalBottomSheet<_AccessoryPickerResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -465,6 +936,8 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
         final colors = Theme.of(sheetContext).colorScheme;
         final textStyles = Theme.of(sheetContext).textTheme;
         final localSelected = Set<String>.from(selected);
+        final localCustomNames = List<String>.from(customNames);
+        final customController = TextEditingController();
 
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -475,8 +948,9 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(28)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(28),
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -485,7 +959,9 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: LightColors.iconInactive.withValues(alpha: 0.5),
+                          color: LightColors.iconInactive.withValues(
+                            alpha: 0.5,
+                          ),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -494,58 +970,148 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                         padding: AppSpacing.paddingLg,
                         child: Row(
                           children: [
-                            Icon(Icons.link_rounded,
-                                color: colors.primary, size: 20),
+                            SvgPicture.asset(
+                              'assets/images/tube.svg',
+                              width: 20,
+                              height: 20,
+                              colorFilter: ColorFilter.mode(
+                                colors.primary,
+                                BlendMode.srcIn,
+                              ),
+                            ),
                             const Gap(8),
                             Expanded(
                               child: Text(
-                                strings.shootingTableAccessoryPickerTitle,
-                                style: textStyles.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                                strings.shootingTableAccessoryPickerTitle
+                                    .toUpperCase(),
+                                style: textStyles.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.1,
+                                  color: colors.onSurface.withValues(
+                                    alpha: 0.82,
+                                  ),
                                 ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(
+                                Icons.keyboard_arrow_down_rounded,
                               ),
                             ),
                           ],
                         ),
                       ),
                       Expanded(
-                        child: provider.accessories.isEmpty
-                            ? Center(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
+                          children: [
+                            if (provider.accessories.isEmpty)
+                              Padding(
+                                padding: AppSpacing.paddingMd,
                                 child: Text(
                                   strings.shootingTableNoAccessory,
-                                  style: textStyles.bodyMedium
-                                      ?.copyWith(color: colors.secondary),
+                                  style: textStyles.bodyMedium?.copyWith(
+                                    color: colors.secondary,
+                                  ),
                                 ),
                               )
-                            : ListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.lg,
-                                ),
-                                itemCount: provider.accessories.length,
-                                itemBuilder: (context, index) {
-                                  final accessory = provider.accessories[index];
-                                  final isChecked =
-                                      localSelected.contains(accessory.id);
-                                  return CheckboxListTile(
-                                    value: isChecked,
-                                    title: Text(accessory.name),
-                                    subtitle: accessory.type.trim().isEmpty
-                                        ? null
-                                        : Text(accessory.type),
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                    onChanged: (value) {
-                                      setModalState(() {
-                                        if (value == true) {
-                                          localSelected.add(accessory.id);
-                                        } else {
-                                          localSelected.remove(accessory.id);
-                                        }
-                                      });
-                                    },
-                                  );
-                                },
+                            else
+                              ...provider.accessories.map((accessory) {
+                                final isChecked = localSelected.contains(
+                                  accessory.id,
+                                );
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Material(
+                                    color: isChecked
+                                        ? colors.primary.withValues(alpha: 0.1)
+                                        : colors.surface,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.md,
+                                    ),
+                                    child: CheckboxListTile(
+                                      value: isChecked,
+                                      title: Text(accessory.name),
+                                      subtitle: accessory.type.trim().isEmpty
+                                          ? null
+                                          : Text(accessory.type),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.md,
+                                        ),
+                                      ),
+                                      controlAffinity:
+                                          ListTileControlAffinity.leading,
+                                      onChanged: (value) {
+                                        setModalState(() {
+                                          if (value == true) {
+                                            localSelected.add(accessory.id);
+                                          } else {
+                                            localSelected.remove(accessory.id);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                );
+                              }),
+                            const Gap(AppSpacing.md),
+                            TextField(
+                              controller: customController,
+                              decoration: InputDecoration(
+                                labelText:
+                                    strings.shootingTableCustomAccessoryHint,
+                                hintText: strings.shootingTableAddAccessory,
+                                hintStyle: _hintStyle(context),
+                                prefixIcon: const Icon(Icons.add_rounded),
                               ),
+                              onSubmitted: (value) {
+                                final trimmed = value.trim();
+                                if (trimmed.isEmpty) return;
+                                setModalState(() {
+                                  localCustomNames.add(trimmed);
+                                  customController.clear();
+                                });
+                              },
+                            ),
+                            const Gap(AppSpacing.xs),
+                            Text(
+                              strings.shootingTableCustomAccessoryHelper,
+                              style: textStyles.bodySmall?.copyWith(
+                                color: colors.secondary,
+                              ),
+                            ),
+                            if (localCustomNames.isNotEmpty) ...[
+                              const Gap(AppSpacing.sm),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: localCustomNames
+                                    .map(
+                                      (name) => Chip(
+                                        side: BorderSide.none,
+                                        backgroundColor: colors.primary
+                                            .withValues(alpha: 0.12),
+                                        label: Text(name),
+                                        deleteIcon: const Icon(
+                                          Icons.close,
+                                          size: 16,
+                                        ),
+                                        onDeleted: () {
+                                          setModalState(() {
+                                            localCustomNames.remove(name);
+                                          });
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                       Padding(
                         padding: AppSpacing.paddingLg,
@@ -560,8 +1126,12 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                             const Gap(AppSpacing.sm),
                             Expanded(
                               child: FilledButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(localSelected),
+                                onPressed: () => Navigator.of(context).pop(
+                                  _AccessoryPickerResult(
+                                    accessoryIds: localSelected,
+                                    customAccessoryNames: localCustomNames,
+                                  ),
+                                ),
                                 child: Text(strings.confirm),
                               ),
                             ),
@@ -580,14 +1150,13 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
 
     if (!mounted || result == null) return;
     setState(() {
-      _editorAccessoryIds = result;
+      _editorAccessoryIds = result.accessoryIds;
+      _editorCustomAccessoryNames = result.customAccessoryNames;
       _editorAccessoriesCustomized = true;
     });
   }
 
-  Future<void> _addOrEditEntry({
-    ShootingAdjustmentEntry? existing,
-  }) async {
+  Future<void> _addOrEditEntry({ShootingAdjustmentEntry? existing}) async {
     if (_editorPlatformId == null) return;
     final provider = Provider.of<ThotProvider>(context, listen: false);
     final defaultDistanceUnit = provider.useMetric
@@ -652,8 +1221,9 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
     if (confirmed != true) return;
 
     setState(() {
-      _editorEntries =
-          _editorEntries.where((e) => e.id != entry.id).toList(growable: false);
+      _editorEntries = _editorEntries
+          .where((e) => e.id != entry.id)
+          .toList(growable: false);
       if (_selectedEntryId == entry.id) {
         _selectedEntryId = null;
       }
@@ -703,28 +1273,35 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
         ammoItems.add(ammo);
       }
     }
-    final safePlatformId = (_editorPlatformId != null &&
+    final safePlatformId =
+        (_editorPlatformId != null &&
             platformItems.any((p) => p.id == _editorPlatformId))
         ? _editorPlatformId
         : null;
     final safeAmmoId =
         (selectedAmmoId != null && ammoItems.any((a) => a.id == selectedAmmoId))
-            ? selectedAmmoId
-            : null;
+        ? selectedAmmoId
+        : null;
+    final selectedAccessoryNames = [
+      ...provider.accessories
+          .where((a) => selectedAccessoryIds.contains(a.id))
+          .map((a) => a.name),
+      ..._editorCustomAccessoryNames,
+    ];
 
     final distances = _extractDistances(entries);
     final activeEntries = _showAllImpacts
         ? entries
         : (_activeDistance == null
-            ? const <ShootingAdjustmentEntry>[]
-            : entries
-                .where((e) => _sameDistance(e.distance, _activeDistance!))
-                .toList(growable: false));
+              ? const <ShootingAdjustmentEntry>[]
+              : entries
+                    .where((e) => _sameDistance(e.distance, _activeDistance!))
+                    .toList(growable: false));
     final entriesForTarget = _fitAllImpactsInFrame
         ? activeEntries
         : activeEntries
-            .where((e) => _entryRadiusMillimeters(e) <= _c50OuterRadiusMm)
-            .toList(growable: false);
+              .where((e) => _entryRadiusMillimeters(e) <= _c50OuterRadiusMm)
+              .toList(growable: false);
     final selectedEntry = _selectedEntry(entriesForTarget);
 
     return ClipRRect(
@@ -735,9 +1312,7 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           height: MediaQuery.of(context).size.height * 0.8,
-          decoration: BoxDecoration(
-            color: baseBackground,
-          ),
+          decoration: BoxDecoration(color: baseBackground),
           child: Column(
             children: [
               const SizedBox(height: 12),
@@ -763,14 +1338,18 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.grey.shade300
                                   : LightColors.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
                               Icons.arrow_back_rounded,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.black
                                   : Colors.white,
                               size: 20,
@@ -778,270 +1357,347 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                           ),
                         ),
                       if (_pageIndex == 1) const Gap(AppSpacing.sm),
-                    if (_pageIndex == 1 && _editingTableId != null) const Gap(AppSpacing.sm),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: _pageIndex == 1 ? MainAxisAlignment.center : MainAxisAlignment.start,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              _pageIndex == 1
-                                  ? strings.newTableLabel
-                                  : strings.shootingTablesToolTitle,
-                              style: textStyles.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colors.onSurface,
+                      if (_pageIndex == 1 && _editingTableId != null)
+                        const Gap(AppSpacing.sm),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: _pageIndex == 1
+                              ? MainAxisAlignment.center
+                              : MainAxisAlignment.start,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _pageIndex == 1
+                                    ? strings.newTableLabel
+                                    : strings.shootingTablesToolTitle,
+                                style: textStyles.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
-                          ),
-                          const Gap(6),
-                          Tooltip(
-                            message: _pageIndex == 0
-                                ? strings.shootingTablesListSubtitle
-                                : strings.shootingTablesToolSubtitle,
-                            triggerMode: TooltipTriggerMode.tap,
-                            showDuration: const Duration(seconds: 4),
-                            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: colors.onSurface.withValues(alpha: 0.88),
-                              borderRadius: BorderRadius.circular(10),
+                            const Gap(6),
+                            Tooltip(
+                              message: _pageIndex == 0
+                                  ? strings.shootingTablesListSubtitle
+                                  : strings.shootingTablesToolSubtitle,
+                              triggerMode: TooltipTriggerMode.tap,
+                              showDuration: const Duration(seconds: 4),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colors.onSurface.withValues(alpha: 0.88),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              textStyle: textStyles.bodySmall?.copyWith(
+                                color: colors.surface,
+                              ),
+                              child: Icon(
+                                Icons.info_outline_rounded,
+                                size: 18,
+                                color: colors.onSurface.withValues(alpha: 0.45),
+                              ),
                             ),
-                            textStyle: textStyles.bodySmall?.copyWith(color: colors.surface),
-                            child: Icon(
-                              Icons.info_outline_rounded,
-                              size: 18,
-                              color: colors.onSurface.withValues(alpha: 0.45),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_pageIndex == 0) const Gap(AppSpacing.xs),
-                    if (_pageIndex == 0)
-                      GestureDetector(
-                        onTap: () {
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 28,
-                            color: colors.onSurface.withValues(alpha: 0.7),
-                          ),
+                          ],
                         ),
                       ),
-                  ],
+                      if (_pageIndex == 0) const Gap(AppSpacing.xs),
+                      if (_pageIndex == 1) const Gap(AppSpacing.xs),
+                      if (_pageIndex == 1)
+                        PopupMenuButton<String>(
+                          tooltip: strings.shootingTableImportTitle,
+                          icon: Icon(
+                            Icons.file_upload_outlined,
+                            color: colors.onSurface.withValues(alpha: 0.72),
+                          ),
+                          onSelected: (value) {
+                            if (value == 'paste_code') {
+                              _showImportTableCodeDialog(provider);
+                            } else if (value == 'scan_qr') {
+                              _showScanTableQrDialog(provider);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem<String>(
+                              value: 'paste_code',
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.content_paste_rounded,
+                                ),
+                                title: Text(
+                                  strings.shootingTableImportPasteCode,
+                                ),
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'scan_qr',
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.qr_code_scanner_rounded,
+                                ),
+                                title: Text(strings.shootingTableImportScanQr),
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (_pageIndex == 0) const Gap(AppSpacing.xs),
+                      if (_pageIndex == 0)
+                        GestureDetector(
+                          onTap: () {
+                            if (Navigator.canPop(context)) {
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 28,
+                              color: colors.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Divider(color: colors.outline),
-            ),
-            const Gap(AppSpacing.xs),
-            Expanded(
-              child: Stack(
-                children: [
-                  IndexedStack(
-                    index: _pageIndex,
-                    children: [
-                      Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.lg,
-                              0,
-                              AppSpacing.lg,
-                              10,
-                            ),
-                            child: SizedBox(
-                              height: 44,
-                              child: _SlidingSegmentedSelector(
-                                selectedIndex: _sortIndex(),
-                                labels: [
-                                  strings.shootingTableSortDate,
-                                  strings.shootingTableSortName,
-                                  strings.shootingTableSortDistance,
-                                ],
-                                onSelected: (index) {
-                                  setState(() {
-                                    if (index == 0) {
-                                      if (_sortBy == _TableSort.updatedAt) {
-                                        _sortDescending = !_sortDescending;
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Divider(color: colors.outline),
+              ),
+              const Gap(AppSpacing.sm),
+              Expanded(
+                child: Stack(
+                  children: [
+                    IndexedStack(
+                      index: _pageIndex,
+                      children: [
+                        Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                0,
+                                AppSpacing.lg,
+                                10,
+                              ),
+                              child: SizedBox(
+                                height: 44,
+                                child: _SlidingSegmentedSelector(
+                                  selectedIndex: _sortIndex(),
+                                  labels: [
+                                    strings.shootingTableSortDate,
+                                    strings.shootingTableSortName,
+                                    strings.shootingTableSortDistance,
+                                  ],
+                                  onSelected: (index) {
+                                    setState(() {
+                                      if (index == 0) {
+                                        if (_sortBy == _TableSort.updatedAt) {
+                                          _sortDescending = !_sortDescending;
+                                        } else {
+                                          _sortBy = _TableSort.updatedAt;
+                                          _sortDescending = true;
+                                        }
+                                      } else if (index == 1) {
+                                        if (_sortBy == _TableSort.name) {
+                                          _sortDescending = !_sortDescending;
+                                        } else {
+                                          _sortBy = _TableSort.name;
+                                          _sortDescending = false;
+                                        }
                                       } else {
-                                        _sortBy = _TableSort.updatedAt;
-                                        _sortDescending = true;
+                                        if (_sortBy == _TableSort.distance) {
+                                          _sortDescending = !_sortDescending;
+                                        } else {
+                                          _sortBy = _TableSort.distance;
+                                          _sortDescending = true;
+                                        }
                                       }
-                                    } else if (index == 1) {
-                                      if (_sortBy == _TableSort.name) {
-                                        _sortDescending = !_sortDescending;
-                                      } else {
-                                        _sortBy = _TableSort.name;
-                                        _sortDescending = false;
-                                      }
-                                    } else {
-                                      if (_sortBy == _TableSort.distance) {
-                                        _sortDescending = !_sortDescending;
-                                      } else {
-                                        _sortBy = _TableSort.distance;
-                                        _sortDescending = true;
-                                      }
-                                    }
-                                  });
-                                },
+                                    });
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.lg,
-                              0,
-                              AppSpacing.lg,
-                              8,
-                            ),
-                            child: SizedBox(
-                              height: 44,
-                              child: _SlidingSegmentedSelector(
-                                selectedIndex: _showDopeOnly ? 1 : 0,
-                                labels: [
-                                  strings.dopeFilterAll,
-                                  strings.dopeFilterDopeOnly,
-                                ],
-                                onSelected: (index) {
-                                  setState(() {
-                                    _showDopeOnly = index == 1;
-                                  });
-                                },
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                0,
+                                AppSpacing.lg,
+                                8,
+                              ),
+                              child: SizedBox(
+                                height: 44,
+                                child: _SlidingSegmentedSelector(
+                                  selectedIndex: _showDopeOnly ? 1 : 0,
+                                  labels: [
+                                    strings.dopeFilterAll,
+                                    strings.dopeFilterDopeOnly,
+                                  ],
+                                  onSelected: (index) {
+                                    setState(() {
+                                      _showDopeOnly = index == 1;
+                                    });
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.lg,
-                              0,
-                              AppSpacing.lg,
-                              8,
-                            ),
-                            child: TextField(
-                              controller: _searchController,
-                              style:
-                                  textStyles.bodyMedium?.copyWith(fontSize: 14),
-                              onChanged: (value) =>
-                                  setState(() => _searchQuery = value),
-                              decoration: InputDecoration(
-                                hintText: strings.shootingTablesSearchHint,
-                                hintStyle: textStyles.bodyMedium?.copyWith(
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                0,
+                                AppSpacing.lg,
+                                8,
+                              ),
+                              child: TextField(
+                                controller: _searchController,
+                                style: textStyles.bodyMedium?.copyWith(
                                   fontSize: 14,
-                                  color: colors.secondary,
                                 ),
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                                prefixIcon: const Icon(Icons.search, size: 20),
-                                prefixIconConstraints: const BoxConstraints(
-                                  minWidth: 40,
-                                  minHeight: 40,
-                                ),
-                                suffixIcon: _searchQuery.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear, size: 18),
-                                        splashRadius: 18,
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          setState(() => _searchQuery = '');
-                                        },
-                                      )
-                                    : null,
-                                suffixIconConstraints: const BoxConstraints(
-                                  minWidth: 40,
-                                  minHeight: 40,
-                                ),
-                                filled: true,
-                                fillColor: searchFillColor,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide:
-                                      BorderSide(color: subtleBorderColor),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide:
-                                      BorderSide(color: subtleBorderColor),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                      color: colors.primary, width: 1.6),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Gap(AppSpacing.sm),
-                          tables.isEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.only(top: 180),
-                                  child: Center(
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.table_chart_rounded,
-                                          size: 64,
-                                          color: colors.secondary.withValues(alpha: 0.5),
-                                        ),
-                                        const Gap(AppSpacing.md),
-                                        Text(
-                                          strings.shootingTableNoTable,
-                                          style: textStyles.bodyMedium
-                                              ?.copyWith(color: colors.secondary),
-                                        ),
-                                      ],
+                                onChanged: (value) =>
+                                    setState(() => _searchQuery = value),
+                                decoration: InputDecoration(
+                                  hintText: strings.shootingTablesSearchHint,
+                                  hintStyle: _hintStyle(context, fontSize: 14),
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.search,
+                                    size: 20,
+                                  ),
+                                  prefixIconConstraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                  suffixIcon: _searchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(
+                                            Icons.clear,
+                                            size: 18,
+                                          ),
+                                          splashRadius: 18,
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            setState(() => _searchQuery = '');
+                                          },
+                                        )
+                                      : null,
+                                  suffixIconConstraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                  filled: true,
+                                  fillColor: searchFillColor,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: subtleBorderColor,
                                     ),
                                   ),
-                                )
-                              : Expanded(
-                                  child: ListView.separated(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        AppSpacing.lg, 0, AppSpacing.lg, 84),
-                                    itemCount: tables.length,
-                                    separatorBuilder: (_, _) =>
-                                        const Gap(AppSpacing.sm),
-                                    itemBuilder: (context, index) {
-                                      final tableItem = tables[index];
-                                      final accessoryNames = provider
-                                          .accessories
-                                          .where((a) => tableItem.accessoryIds
-                                              .contains(a.id))
-                                          .map((a) => a.name)
-                                          .toList(growable: false);
-
-                                      return InkWell(
-                                        onTap: () => _openEditorForTable(
-                                            provider, tableItem),
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                                          decoration: BoxDecoration(
-                                            color: colors.surface,
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: isDark
-                                                ? null
-                                                : Border.all(
-                                                    color: LightColors.surfaceHighlight,
-                                                    width: 1.35,
-                                                  ),
-                                            boxShadow: AppShadows.cardPremium,
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: subtleBorderColor,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: colors.primary,
+                                      width: 1.6,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const Gap(AppSpacing.sm),
+                            tables.isEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 180),
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.table_chart_rounded,
+                                            size: 64,
+                                            color: colors.secondary.withValues(
+                                              alpha: 0.5,
+                                            ),
                                           ),
-                                          child: Column(
+                                          const Gap(AppSpacing.md),
+                                          Text(
+                                            strings.shootingTableNoTable,
+                                            style: textStyles.bodyMedium
+                                                ?.copyWith(
+                                                  color: colors.secondary,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : Expanded(
+                                    child: ListView.separated(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        AppSpacing.lg,
+                                        0,
+                                        AppSpacing.lg,
+                                        84,
+                                      ),
+                                      itemCount: tables.length,
+                                      separatorBuilder: (_, _) =>
+                                          const Gap(AppSpacing.md),
+                                      itemBuilder: (context, index) {
+                                        final tableItem = tables[index];
+                                        final accessoryNames = provider
+                                            .accessories
+                                            .where(
+                                              (a) => tableItem.accessoryIds
+                                                  .contains(a.id),
+                                            )
+                                            .map((a) => a.name)
+                                            .toList(growable: false);
+
+                                        return InkWell(
+                                          onTap: () => _openEditorForTable(
+                                            provider,
+                                            tableItem,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              AppSpacing.md,
+                                              AppSpacing.sm,
+                                              AppSpacing.sm,
+                                              AppSpacing.md,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: colors.surface,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: isDark
+                                                  ? null
+                                                  : Border.all(
+                                                      color: LightColors
+                                                          .surfaceHighlight,
+                                                      width: 1.35,
+                                                    ),
+                                              boxShadow: AppShadows.cardPremium,
+                                            ),
+                                            child: Column(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                const Gap(AppSpacing.sm),
                                                 Row(
                                                   children: [
                                                     Expanded(
@@ -1049,1064 +1705,1225 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                                                         children: [
                                                           Text(
                                                             _tableDisplayName(
-                                                                tableItem),
+                                                              tableItem,
+                                                            ),
                                                             style: textStyles
                                                                 .titleMedium
                                                                 ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight.w800,
-                                                            ),
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w800,
+                                                                ),
                                                           ),
-                                                          if (tableItem.isDope) ...[
+                                                          if (tableItem
+                                                              .isDope) ...[
                                                             const Gap(8),
                                                             Container(
-                                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                              decoration: BoxDecoration(
-                                                                color: colors.primary,
-                                                                borderRadius: BorderRadius.circular(4),
-                                                              ),
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        8,
+                                                                    vertical: 2,
+                                                                  ),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                    color: colors
+                                                                        .primary,
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          4,
+                                                                        ),
+                                                                  ),
                                                               child: Text(
-                                                                strings.dopeBadge,
-                                                                style: textStyles.labelSmall?.copyWith(
-                                                                  color: colors.onPrimary,
-                                                                  fontWeight: FontWeight.bold,
-                                                                ),
+                                                                strings
+                                                                    .dopeBadge,
+                                                                style: textStyles
+                                                                    .labelSmall
+                                                                    ?.copyWith(
+                                                                      color: colors
+                                                                          .onPrimary,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
                                                               ),
                                                             ),
                                                           ],
                                                         ],
                                                       ),
                                                     ),
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _openEditorForTable(
-                                                              provider,
-                                                              tableItem),
-                                                      icon: const Icon(
-                                                          Icons.edit_rounded),
-                                                      tooltip: strings.edit,
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _confirmDeleteTable(
-                                                        provider,
-                                                        strings,
-                                                        tableItem,
+                                                    Transform.translate(
+                                                      offset: const Offset(
+                                                        8,
+                                                        0,
                                                       ),
-                                                      icon: Icon(
-                                                          Icons.delete_rounded),
-                                                      tooltip: strings.delete,
+                                                      child: PopupMenuButton<String>(
+                                                        icon: Icon(
+                                                          Icons
+                                                              .more_vert_rounded,
+                                                          color:
+                                                              colors.onSurface,
+                                                        ),
+                                                        onSelected: (value) {
+                                                          if (value ==
+                                                              'export') {
+                                                            WidgetsBinding
+                                                                .instance
+                                                                .addPostFrameCallback((
+                                                                  _,
+                                                                ) {
+                                                                  if (!mounted)
+                                                                    return;
+                                                                  _showShareTableDialog(
+                                                                    tableItem,
+                                                                  );
+                                                                });
+                                                          } else if (value ==
+                                                              'edit') {
+                                                            _openEditorForTable(
+                                                              provider,
+                                                              tableItem,
+                                                            );
+                                                          } else if (value ==
+                                                              'delete') {
+                                                            _confirmDeleteTable(
+                                                              provider,
+                                                              strings,
+                                                              tableItem,
+                                                            );
+                                                          }
+                                                        },
+                                                        itemBuilder: (context) => [
+                                                          PopupMenuItem<String>(
+                                                            value: 'export',
+                                                            child: Row(
+                                                              children: [
+                                                                const Icon(
+                                                                  Icons
+                                                                      .ios_share_rounded,
+                                                                  size: 20,
+                                                                ),
+                                                                const Gap(12),
+                                                                Text(
+                                                                  strings
+                                                                      .shootingTableExportAction,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          PopupMenuItem<String>(
+                                                            value: 'edit',
+                                                            child: Row(
+                                                              children: [
+                                                                const Icon(
+                                                                  Icons
+                                                                      .edit_rounded,
+                                                                  size: 20,
+                                                                ),
+                                                                const Gap(12),
+                                                                Text(
+                                                                  strings.edit,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          PopupMenuItem<String>(
+                                                            value: 'delete',
+                                                            child: Row(
+                                                              children: [
+                                                                const Icon(
+                                                                  Icons
+                                                                      .delete_rounded,
+                                                                  size: 20,
+                                                                ),
+                                                                const Gap(12),
+                                                                Text(
+                                                                  strings
+                                                                      .delete,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
-                                                const Gap(6),
-                                                Text(
-                                                  '${strings.shootingTablePlatformLabel}: ${_platformName(provider, tableItem.platformId, customPlatformName: tableItem.customPlatformName)}',
+                                                const Gap(1),
+                                                _tableInfoLine(
+                                                  asset:
+                                                      'assets/images/tube.svg',
+                                                  text:
+                                                      '${strings.shootingTablePlatformLabel}: ${_platformName(provider, tableItem.platformId, customPlatformName: tableItem.customPlatformName)}',
+                                                  color: colors.secondary,
                                                   style: textStyles.bodySmall
                                                       ?.copyWith(
-                                                          color:
-                                                              colors.secondary),
+                                                        color: colors.secondary,
+                                                      ),
                                                 ),
                                                 const Gap(2),
-                                                Text(
-                                                  '${strings.shootingTableAmmoLabel}: ${_ammoName(provider, tableItem.ammoId, strings)}',
+                                                _tableInfoLine(
+                                                  asset:
+                                                      'assets/images/pointe.svg',
+                                                  text:
+                                                      '${strings.shootingTableAmmoLabel}: ${_ammoName(provider, tableItem.ammoId, strings)}',
+                                                  color: colors.secondary,
                                                   style: textStyles.bodySmall
                                                       ?.copyWith(
-                                                          color:
-                                                              colors.secondary),
+                                                        color: colors.secondary,
+                                                      ),
                                                 ),
-                                                const Gap(2),
-                                                Text(
-                                                  '${strings.shootingTableAccessoriesLabel}: ${accessoryNames.isEmpty ? strings.shootingTableNoAccessory : accessoryNames.join(', ')}',
+                                                const Gap(3),
+                                                _tableInfoLine(
+                                                  asset:
+                                                      'assets/images/material.svg',
+                                                  text:
+                                                      '${strings.shootingTableAccessoriesLabel}: ${accessoryNames.isEmpty ? strings.shootingTableNoAccessory : accessoryNames.join(', ')}',
+                                                  color: colors.secondary,
                                                   style: textStyles.bodySmall
                                                       ?.copyWith(
-                                                          color:
-                                                              colors.secondary),
+                                                        color: colors.secondary,
+                                                      ),
                                                 ),
-                                                const Gap(AppSpacing.lg),
+                                                const Gap(4),
                                               ],
                                             ),
                                           ),
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ],
-                      ),
-                      ListView(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg),
-                        children: [
-                          _SectionHeader(
-                            leading: const Icon(Icons.edit_note_rounded),
-                            title: strings.shootingTableNameLabel,
-                          ),
-                          const Gap(AppSpacing.xs),
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                            ),
-                            child: TextField(
-                              controller: _tableNameController,
-                              decoration: InputDecoration(
-                                hintText: strings.shootingTableNameHint,
-                                filled: true,
-                                fillColor: colors.surface,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                  borderSide: BorderSide(color: colors.outline),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                  borderSide: BorderSide(color: colors.outline),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                  borderSide: BorderSide(color: colors.primary, width: 2),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Gap(AppSpacing.md),
-                          Container(
-                            padding: AppSpacing.paddingMd,
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: isDark
-                                  ? null
-                                  : Border.all(
-                                      color: LightColors.surfaceHighlight,
-                                      width: 1.2,
-                                    ),
-                              boxShadow: AppShadows.cardPremium,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.analytics_rounded, color: colors.primary),
-                                const Gap(AppSpacing.md),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(strings.dopeMarkAsDope, style: textStyles.titleMedium),
-                                      Text(strings.dopeExplanation, style: textStyles.bodySmall?.copyWith(color: colors.onSurface.withValues(alpha: 0.7))),
-                                    ],
-                                  ),
-                                ),
-                                Switch(
-                                  value: _editorIsDope,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _editorIsDope = value ?? false;
-                                    });
-                                  },
-                                  activeThumbColor: colors.primary,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Gap(AppSpacing.md),
-                          _SectionHeader(
-                            leading: const Icon(Icons.tune_rounded),
-                            title: strings.shootingTableContextTitle,
-                          ),
-                          const Gap(AppSpacing.sm),
-                          Container(
-                            padding: AppSpacing.paddingMd,
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: isDark
-                                  ? null
-                                  : Border.all(
-                                      color: LightColors.surfaceHighlight,
-                                      width: 1.2,
-                                    ),
-                              boxShadow: AppShadows.cardPremium,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // --- PLATEFORME ---
-                                DropdownButtonFormField<String>(
-                                  initialValue: _editorPlatformIsOther ? 'other' : safePlatformId,
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    labelText: '${strings.shootingTablePlatformLabel} *',
-                                    prefixIcon: const Icon(Icons.precision_manufacturing_outlined, size: 20),
-                                  ),
-                                  items: [
-                                    ...platformItems.map(
-                                      (p) => DropdownMenuItem<String>(
-                                        value: p.id,
-                                        child: Text(p.name, overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'other',
-                                      child: Text(strings.shootingTableOtherOption),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    if (value == null) return;
-                                    if (value == 'other') {
-                                      setState(() {
-                                        _editorPlatformIsOther = true;
-                                        _editorPlatformId = '';
-                                        _editorCustomPlatformName = null;
-                                      });
-                                    } else {
-                                      final linked = provider
-                                          .linkedAccessoriesForPlatform(value)
-                                          .map((a) => a.id)
-                                          .toSet();
-                                      setState(() {
-                                        _editorPlatformId = value;
-                                        _editorCustomPlatformName = null;
-                                        _editorPlatformIsOther = false;
-                                        if (!_editorAccessoriesCustomized) {
-                                          _editorAccessoryIds = linked;
-                                        }
-                                        _activeDistance = null;
-                                        _selectedEntryId = null;
-                                        _showAllImpacts = false;
-                                      });
-                                    }
-                                  },
-                                ),
-                                if (_editorPlatformIsOther) ...[
-                                  const Gap(AppSpacing.sm),
-                                  TextFormField(
-                                    initialValue: _editorCustomPlatformName,
-                                    decoration: InputDecoration(
-                                      hintText: strings.shootingTableCustomPlatformHint,
-                                      prefixIcon: const Icon(Icons.edit_outlined, size: 18),
-                                    ),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _editorCustomPlatformName = value.trim().isEmpty ? null : value.trim();
-                                        _editorPlatformId = '';
-                                      });
-                                    },
-                                  ),
-                                ],
-                                const Gap(AppSpacing.md),
-                                // --- CONSOMMABLE ---
-                                DropdownButtonFormField<String?>(
-                                  initialValue: _editorAmmoIsOther ? 'other' : safeAmmoId,
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    labelText: strings.shootingTableAmmoLabel,
-                                    prefixIcon: const Icon(Icons.radio_button_checked_outlined, size: 20),
-                                  ),
-                                  items: [
-                                    DropdownMenuItem<String?>(
-                                      value: null,
-                                      child: Text(strings.shootingTableNoAmmo),
-                                    ),
-                                    ...ammoItems.map(
-                                      (a) => DropdownMenuItem<String?>(
-                                        value: a.id,
-                                        child: Text(a.name, overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<String?>(
-                                      value: 'other',
-                                      child: Text(strings.shootingTableOtherOption),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    if (value == 'other') {
-                                      setState(() {
-                                        _editorAmmoIsOther = true;
-                                        _editorAmmoId = null;
-                                        _editorCustomAmmoName = null;
-                                      });
-                                    } else {
-                                      setState(() {
-                                        _editorAmmoId = value;
-                                        _editorCustomAmmoName = null;
-                                        _editorAmmoIsOther = false;
-                                      });
-                                    }
-                                  },
-                                ),
-                                if (_editorAmmoIsOther) ...[
-                                  const Gap(AppSpacing.sm),
-                                  TextFormField(
-                                    initialValue: _editorCustomAmmoName,
-                                    decoration: InputDecoration(
-                                      hintText: strings.shootingTableCustomAmmoHint,
-                                      prefixIcon: const Icon(Icons.edit_outlined, size: 18),
-                                    ),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _editorCustomAmmoName = value.trim().isEmpty ? null : value.trim();
-                                        _editorAmmoId = null;
-                                      });
-                                    },
-                                  ),
-                                ],
-                                const Gap(AppSpacing.md),
-                                // --- ACCESSOIRES ---
-                                Row(
-                                  children: [
-                                    Icon(Icons.extension_outlined, size: 18, color: colors.secondary),
-                                    const Gap(AppSpacing.xs),
-                                    Text(
-                                      strings.shootingTableAccessoriesLabel,
-                                      style: textStyles.labelLarge?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Gap(AppSpacing.sm),
-                                Row(
-                                  children: [
-                                    if (provider.accessories.isNotEmpty) ...[
-                                      Expanded(
-                                        child: OutlinedButton.icon(
-                                          onPressed: () => _pickAccessories(provider, strings),
-                                          icon: const Icon(Icons.tune_rounded, size: 18),
-                                          label: Text(
-                                            strings.shootingTableManageAccessories,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                      const Gap(AppSpacing.sm),
-                                    ],
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () {
-                                          setState(() {
-                                            _editorAccessoriesIncludeOther = !_editorAccessoriesIncludeOther;
-                                          });
-                                        },
-                                        icon: Icon(
-                                          _editorAccessoriesIncludeOther
-                                              ? Icons.remove_rounded
-                                              : Icons.add_rounded,
-                                          size: 18,
-                                        ),
-                                        label: Text(
-                                          strings.shootingTableOtherOption,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (_editorAccessoriesIncludeOther) ...[
-                                  const Gap(AppSpacing.sm),
-                                  TextFormField(
-                                    decoration: InputDecoration(
-                                      hintText: strings.shootingTableAddAccessory,
-                                      prefixIcon: const Icon(Icons.edit_outlined, size: 18),
-                                    ),
-                                    onFieldSubmitted: (value) {
-                                      if (value.trim().isNotEmpty) {
-                                        setState(() {
-                                          _editorCustomAccessoryNames.add(value.trim());
-                                          _editorAccessoriesCustomized = true;
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ],
-                                const Gap(AppSpacing.sm),
-                                if (selectedAccessoryIds.isEmpty && _editorCustomAccessoryNames.isEmpty)
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      strings.shootingTableNoAccessory,
-                                      style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                                    ),
-                                  )
-                                else
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      ...provider.accessories
-                                          .where((a) => selectedAccessoryIds.contains(a.id))
-                                          .map(
-                                            (a) => Chip(
-                                              side: BorderSide.none,
-                                              backgroundColor: colors.primary.withValues(alpha: 0.12),
-                                              label: Text(a.name),
-                                            ),
-                                          ),
-                                      ..._editorCustomAccessoryNames.map(
-                                        (name) => Chip(
-                                          side: BorderSide.none,
-                                          backgroundColor: colors.primary.withValues(alpha: 0.12),
-                                          label: Text(name),
-                                          deleteIcon: const Icon(Icons.close, size: 16),
-                                          onDeleted: () {
-                                            setState(() {
-                                              _editorCustomAccessoryNames.remove(name);
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const Gap(AppSpacing.md),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _SectionHeader(
-                                  leading: const Icon(Icons.straighten_rounded),
-                                  title: strings.shootingTableDistancesTitle,
-                                ),
-                              ),
-                              ChoiceChip(
-                                selected: true,
-                                showCheckmark: false,
-                                backgroundColor: colors.surface,
-                                selectedColor: colors.primary,
-                                side: BorderSide(color: colors.primary),
-                                checkmarkColor: colors.onPrimary,
-                                onSelected: (_) {
-                                  setState(() {
-                                    _showAllImpacts = !_showAllImpacts;
-                                    if (_showAllImpacts) {
-                                      _fitAllImpactsInFrame = true;
-                                    }
-                                    _selectedEntryId = null;
-                                  });
-                                },
-                                avatar: Icon(
-                                  Icons.swap_horiz_rounded,
-                                  size: 16,
-                                  color: colors.onPrimary,
-                                ),
-                                labelPadding: const EdgeInsets.only(right: 4),
-                                label: Text(
-                                  _showAllImpacts
-                                      ? strings.shootingTableModeAll
-                                      : strings.shootingTableModeActive,
-                                  style: TextStyle(color: colors.onPrimary),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Gap(AppSpacing.sm),
-                          Container(
-                            padding: AppSpacing.paddingMd,
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: isDark
-                                  ? null
-                                  : Border.all(
-                                      color: LightColors.surfaceHighlight,
-                                      width: 1.2,
-                                    ),
-                              boxShadow: AppShadows.cardPremium,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (distances.isEmpty)
-                                  Text(
-                                    strings.shootingTableNoDistance,
-                                    style: textStyles.bodySmall
-                                        ?.copyWith(color: colors.secondary),
-                                  )
-                                else
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 4,
-                                    children: distances.map((distance) {
-                                      final representative = entries.firstWhere(
-                                        (e) =>
-                                            _sameDistance(e.distance, distance),
-                                      );
-                                      final isSelected = (_activeDistance !=
-                                                  null &&
-                                              _sameDistance(
-                                                  _activeDistance!, distance) &&
-                                              !_showAllImpacts) ||
-                                          _showAllImpacts;
-
-                                      return ChoiceChip(
-                                        selected: isSelected,
-                                        showCheckmark: false,
-                                        backgroundColor: colors.surface,
-                                        selectedColor: colors.primary,
-                                        side: BorderSide(
-                                          color: isSelected
-                                              ? colors.primary
-                                              : colors.outline
-                                                  .withValues(alpha: 0.35),
-                                        ),
-                                        onSelected: (_) {
-                                          setState(() {
-                                            _showAllImpacts = false;
-                                            _activeDistance = distance;
-                                            _selectedEntryId = null;
-                                          });
-                                        },
-                                        label: Text(
-                                          '${_formatNumber(_getDistanceInDefaultUnit(distance, representative.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? colors.onPrimary
-                                                : colors.onSurface,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const Gap(AppSpacing.md),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _SectionHeader(
-                                  leading: const Icon(Icons.gps_fixed_rounded),
-                                  title: strings.shootingTableTargetTitle,
-                                ),
-                              ),
-                              ChoiceChip(
-                                selected: true,
-                                showCheckmark: false,
-                                backgroundColor: colors.surface,
-                                selectedColor: colors.primary,
-                                side: BorderSide(color: colors.primary),
-                                checkmarkColor: colors.onPrimary,
-                                onSelected: (_) {
-                                  setState(() {
-                                    _fitAllImpactsInFrame = !_fitAllImpactsInFrame;
-                                    _selectedEntryId = null;
-                                  });
-                                },
-                                avatar: Icon(
-                                  Icons.swap_horiz_rounded,
-                                  size: 16,
-                                  color: colors.onPrimary,
-                                ),
-                                labelPadding: const EdgeInsets.only(right: 4),
-                                label: Text(
-                                  _fitAllImpactsInFrame
-                                      ? strings.shootingTableZoomTarget
-                                      : strings.shootingTableZoomFitAll,
-                                  style: TextStyle(color: colors.onPrimary),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Gap(AppSpacing.sm),
-                          Container(
-                            padding: AppSpacing.paddingMd,
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: isDark
-                                  ? null
-                                  : Border.all(
-                                      color: LightColors.surfaceHighlight,
-                                      width: 1.2,
-                                    ),
-                              boxShadow: AppShadows.cardPremium,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AspectRatio(
-                                  aspectRatio: 1,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: colors.surface,
-                                      borderRadius:
-                                          BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: colors.outline
-                                            .withValues(alpha: 0.25),
-                                      ),
-                                    ),
-                                    child: TapRegion(
-                                      onTapOutside: (_) {
-                                        if (_selectedEntryId == null) return;
-                                        setState(() {
-                                          _selectedEntryId = null;
-                                        });
+                                        );
                                       },
-                                      child: LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          final width = constraints.maxWidth;
-                                          final height = constraints.maxHeight;
-                                          final centerX = width / 2;
-                                          final centerY = height / 2;
-                                          final targetRadiusPx = (width < height
-                                                  ? width
-                                                  : height) /
-                                              2 *
-                                              _targetVisualRadiusFactor;
-                                          var targetScaleReferenceMm =
-                                              _c50OuterRadiusMm;
-                                          if (_fitAllImpactsInFrame &&
-                                              entriesForTarget.isNotEmpty) {
-                                            var maxRadiusMm = 0.0;
-                                            for (final e in entriesForTarget) {
-                                              final local =
-                                                  _entryRadiusMillimeters(e);
-                                              if (local > maxRadiusMm) {
-                                                maxRadiusMm = local;
-                                              }
-                                            }
-                                            targetScaleReferenceMm = math.max(
-                                              _c50OuterRadiusMm,
-                                              maxRadiusMm *
-                                                  _fitAllFramePaddingFactor,
-                                            );
-                                            if (_showAllImpacts) {
-                                              targetScaleReferenceMm = math.max(
-                                                targetScaleReferenceMm,
-                                                _c50OuterRadiusMm *
-                                                    _allImpactsMinZoomOutFactor,
-                                              );
-                                            }
-                                          }
-
-                                          return TweenAnimationBuilder<double>(
-                                            duration: const Duration(
-                                                milliseconds: 280),
-                                            curve: Curves.easeOutCubic,
-                                            tween: Tween<double>(
-                                              begin: _lastScaleReferenceMm,
-                                              end: targetScaleReferenceMm,
-                                            ),
-                                            onEnd: () {
-                                              _lastScaleReferenceMm =
-                                                  targetScaleReferenceMm;
-                                            },
-                                            builder: (context,
-                                                animatedScaleReferenceMm, _) {
-                                              Offset pointForEntry(
-                                                  ShootingAdjustmentEntry
-                                                      entry) {
-                                                final scaleReferenceMm =
-                                                    math.max(
-                                                  _c50OuterRadiusMm,
-                                                  animatedScaleReferenceMm,
-                                                );
-                                                final sceneZoomFactor =
-                                                    _c50OuterRadiusMm /
-                                                        scaleReferenceMm;
-                                                final offsetMm =
-                                                    _entryOffsetMillimeters(
-                                                        entry);
-                                                final normalizedX =
-                                                    offsetMm.dx /
-                                                        _c50OuterRadiusMm;
-                                                final normalizedY =
-                                                    offsetMm.dy /
-                                                        _c50OuterRadiusMm;
-
-                                                return Offset(
-                                                  centerX +
-                                                      (normalizedX *
-                                                          targetRadiusPx *
-                                                          sceneZoomFactor),
-                                                  centerY -
-                                                      (normalizedY *
-                                                          targetRadiusPx *
-                                                          sceneZoomFactor),
-                                                );
-                                              }
-
-                                              final sceneZoomFactor =
-                                                  _c50OuterRadiusMm /
-                                                      math.max(
-                                                        _c50OuterRadiusMm,
-                                                        animatedScaleReferenceMm,
-                                                      );
-
-                                              return Stack(
-                                                children: [
-                                                  Positioned.fill(
-                                                    child: Transform.scale(
-                                                      scale: sceneZoomFactor,
-                                                      child: const CustomPaint(
-                                                        painter:
-                                                            _TargetPainter(),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (activeEntries
-                                                          .isNotEmpty &&
-                                                      entriesForTarget.isEmpty)
-                                                    Positioned.fill(
-                                                      child: IgnorePointer(
-                                                        child: Center(
-                                                          child: Container(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                              horizontal: 12,
-                                                              vertical: 8,
-                                                            ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: colors
-                                                                  .primary,
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                AppRadius.md,
-                                                              ),
-                                                              boxShadow: [
-                                                                BoxShadow(
-                                                                  color: Colors
-                                                                      .black
-                                                                      .withValues(
-                                                                          alpha:
-                                                                              0.22),
-                                                                  blurRadius: 8,
-                                                                  offset:
-                                                                      const Offset(
-                                                                          0, 2),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            child: Text(
-                                                              strings
-                                                                  .shootingTableNoImpactInTarget,
-                                                              style: textStyles
-                                                                  .bodySmall
-                                                                  ?.copyWith(
-                                                                color: colors
-                                                                    .onPrimary,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  if (selectedEntry != null)
-                                                    Positioned.fill(
-                                                      child: GestureDetector(
-                                                        behavior:
-                                                            HitTestBehavior
-                                                                .opaque,
-                                                        onTap: () {
-                                                          setState(() {
-                                                            _selectedEntryId =
-                                                                null;
-                                                          });
-                                                        },
-                                                      ),
-                                                    ),
-                                                  ...entriesForTarget
-                                                      .map((entry) {
-                                                    final point =
-                                                        pointForEntry(entry);
-
-                                                    return Positioned(
-                                                      left: point.dx - 9,
-                                                      top: point.dy - 9,
-                                                      child: GestureDetector(
-                                                        onTap: () {
-                                                          setState(() {
-                                                            _selectedEntryId =
-                                                                entry.id;
-                                                          });
-                                                        },
-                                                        child:
-                                                            const _ImpactCross(),
-                                                      ),
-                                                    );
-                                                  }),
-                                                  if (selectedEntry != null)
-                                                    Builder(
-                                                      builder: (context) {
-                                                        final point =
-                                                            pointForEntry(
-                                                                selectedEntry);
-                                                        final bubbleWidth =
-                                                            190.0;
-                                                        final preferredTop =
-                                                            point.dy - 74;
-                                                        final bubbleLeft = (point
-                                                                    .dx -
-                                                                (bubbleWidth /
-                                                                    2))
-                                                            .clamp(
-                                                                8.0,
-                                                                width -
-                                                                    bubbleWidth -
-                                                                    8)
-                                                            .toDouble();
-                                                        final bubbleTop =
-                                                            preferredTop < 8
-                                                                ? point.dy + 14
-                                                                : preferredTop;
-
-                                                        return Positioned(
-                                                          left: bubbleLeft,
-                                                          top: bubbleTop,
-                                                          child: Container(
-                                                            width: bubbleWidth,
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                              horizontal: 10,
-                                                              vertical: 8,
-                                                            ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: colors
-                                                                  .primary,
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          AppRadius
-                                                                              .md),
-                                                              boxShadow: [
-                                                                BoxShadow(
-                                                                  color: Colors
-                                                                      .black
-                                                                      .withValues(
-                                                                          alpha:
-                                                                              0.2),
-                                                                  blurRadius: 8,
-                                                                  offset:
-                                                                      const Offset(
-                                                                          0, 3),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            child: Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                Text(
-                                                                  '${_formatNumber(_getDistanceInDefaultUnit(selectedEntry.distance, selectedEntry.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
-                                                                  style: textStyles
-                                                                      .bodySmall
-                                                                      ?.copyWith(
-                                                                    color: colors
-                                                                        .onPrimary,
-                                                                  ),
-                                                                ),
-                                                                if (selectedEntry
-                                                                    .correction
-                                                                    .trim()
-                                                                    .isNotEmpty) ...[
-                                                                  const Gap(2),
-                                                                  Text(
-                                                                    selectedEntry
-                                                                        .correction,
-                                                                    maxLines: 3,
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                    style: textStyles
-                                                                        .bodySmall
-                                                                        ?.copyWith(
-                                                                      color: colors
-                                                                          .onPrimary,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        },
-                                      ),
+                                    ),
+                                  ),
+                          ],
+                        ),
+                        ListView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
+                          children: [
+                            _SectionHeader(
+                              leading: const Icon(Icons.edit_note_rounded),
+                              title: strings.shootingTableNameLabel,
+                            ),
+                            const Gap(AppSpacing.xs),
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: _tableNameController,
+                                decoration: InputDecoration(
+                                  hintText: strings.shootingTableNameHint,
+                                  hintStyle: _hintStyle(context),
+                                  filled: true,
+                                  fillColor: colors.surface,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: colors.outline,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: colors.outline,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: colors.primary,
+                                      width: 2,
                                     ),
                                   ),
                                 ),
-                                const Gap(AppSpacing.sm),
-                                Text(
-                                  strings.shootingTableAxisHint,
-                                  style: textStyles.bodySmall
-                                      ?.copyWith(color: colors.secondary),
-                                ),
-                                const Gap(4),
-                                Text(
-                                  strings.shootingTableScaleFixedHint,
-                                  style: textStyles.bodySmall
-                                      ?.copyWith(color: colors.secondary),
-                                ),
-                                const Gap(AppSpacing.sm),
-                                if (activeEntries.isEmpty)
-                                  Text(
-                                    strings.shootingTableNoImpact,
-                                    style: textStyles.bodySmall
-                                        ?.copyWith(color: colors.secondary),
-                                  )
-                                else if (selectedEntry != null)
-                                  Container(
-                                    width: double.infinity,
-                                    padding: AppSpacing.paddingMd,
-                                    decoration: BoxDecoration(
-                                      color: colors.primary
-                                          .withValues(alpha: 0.08),
-                                      borderRadius:
-                                          BorderRadius.circular(AppRadius.md),
-                                      border: Border.all(
-                                        color: colors.primary
-                                            .withValues(alpha: 0.25),
+                              ),
+                            ),
+                            const Gap(AppSpacing.md),
+                            Container(
+                              padding: AppSpacing.paddingMd,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: isDark
+                                    ? null
+                                    : Border.all(
+                                        color: LightColors.surfaceHighlight,
+                                        width: 1.2,
                                       ),
-                                    ),
+                                boxShadow: AppShadows.cardPremium,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_rounded,
+                                    color: colors.primary,
+                                  ),
+                                  const Gap(AppSpacing.md),
+                                  Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          strings
-                                              .shootingTableImpactDetailsTitle,
-                                          style:
-                                              textStyles.labelLarge?.copyWith(
-                                            fontWeight: FontWeight.w700,
+                                          strings.dopeMarkAsDope,
+                                          style: textStyles.titleMedium,
+                                        ),
+                                        Text(
+                                          strings.dopeExplanation,
+                                          style: textStyles.bodySmall?.copyWith(
+                                            color: colors.onSurface.withValues(
+                                              alpha: 0.7,
+                                            ),
                                           ),
                                         ),
-                                        const Gap(6),
-                                        Text(
-                                          '${strings.distanceLabel}: ${_formatNumber(_getDistanceInDefaultUnit(selectedEntry.distance, selectedEntry.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
-                                        ),
-                                        Text(
-                                          'X: ${_formatNumber(_getOffsetInDefaultUnit(selectedEntry.horizontalOffset, selectedEntry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}',
-                                        ),
-                                        Text(
-                                          'Y: ${_formatNumber(_getOffsetInDefaultUnit(selectedEntry.verticalOffset, selectedEntry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}',
-                                        ),
-                                        if (selectedEntry.correction
-                                            .trim()
-                                            .isNotEmpty)
-                                          Text(
-                                            '${strings.shootingTableCorrectionLabel}: ${selectedEntry.correction}',
-                                          ),
-                                        if (selectedEntry.note
-                                            .trim()
-                                            .isNotEmpty)
-                                          Text(
-                                              '${strings.notes}: ${selectedEntry.note}'),
                                       ],
                                     ),
                                   ),
-                              ],
-                            ),
-                          ),
-                          const Gap(AppSpacing.md),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _SectionHeader(
-                                  leading: const Icon(Icons.list_alt_rounded),
-                                  title: strings.shootingTableEntriesTitle,
-                                ),
+                                  Switch(
+                                    value: _editorIsDope,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _editorIsDope = value;
+                                      });
+                                    },
+                                    activeThumbColor: colors.primary,
+                                  ),
+                                ],
                               ),
-                              FilledButton.icon(
-                                onPressed: _editorPlatformId == null
+                            ),
+                            const Gap(AppSpacing.lg),
+                            _SectionHeader(
+                              leading: const Icon(Icons.tune_rounded),
+                              title: strings.shootingTableContextTitle,
+                            ),
+                            const Gap(AppSpacing.sm),
+                            Container(
+                              padding: AppSpacing.paddingMd,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: isDark
                                     ? null
-                                    : () => _addOrEditEntry(),
-                                icon: const Icon(Icons.add_rounded, size: 18),
-                                label: Text(strings.add),
-                                style: FilledButton.styleFrom(
-                                  visualDensity: VisualDensity.compact,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(8),
+                                    : Border.all(
+                                        color: LightColors.surfaceHighlight,
+                                        width: 1.2,
+                                      ),
+                                boxShadow: AppShadows.cardPremium,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // --- PLATEFORME ---
+                                  DropdownButtonFormField<String>(
+                                    initialValue: _editorPlatformIsOther
+                                        ? 'other'
+                                        : safePlatformId,
+                                    isExpanded: true,
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          strings.shootingTablePlatformLabel,
+                                      prefixIcon: _svgFieldIcon(
+                                        'assets/images/tube.svg',
+                                        colors.secondary,
+                                      ),
+                                    ),
+                                    items: [
+                                      ...platformItems.map(
+                                        (p) => DropdownMenuItem<String>(
+                                          value: p.id,
+                                          child: Text(
+                                            p.name,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: textStyles.bodyLarge
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                      DropdownMenuItem<String>(
+                                        value: 'other',
+                                        child: Text(
+                                          strings.shootingTableOtherOption,
+                                          style: textStyles.bodyLarge?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      if (value == 'other') {
+                                        setState(() {
+                                          _editorPlatformIsOther = true;
+                                          _editorPlatformId = '';
+                                          _editorCustomPlatformName = null;
+                                        });
+                                      } else {
+                                        final linked = provider
+                                            .linkedAccessoriesForPlatform(value)
+                                            .map((a) => a.id)
+                                            .toSet();
+                                        setState(() {
+                                          _editorPlatformId = value;
+                                          _editorCustomPlatformName = null;
+                                          _editorPlatformIsOther = false;
+                                          if (!_editorAccessoriesCustomized) {
+                                            _editorAccessoryIds = linked;
+                                          }
+                                          _activeDistance = null;
+                                          _selectedEntryId = null;
+                                          _showAllImpacts = false;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  if (_editorPlatformIsOther) ...[
+                                    const Gap(AppSpacing.sm),
+                                    TextFormField(
+                                      initialValue: _editorCustomPlatformName,
+                                      decoration: InputDecoration(
+                                        hintText: strings
+                                            .shootingTableCustomPlatformHint,
+                                        prefixIcon: const Icon(
+                                          Icons.edit_outlined,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _editorCustomPlatformName =
+                                              value.trim().isEmpty
+                                              ? null
+                                              : value.trim();
+                                          _editorPlatformId = '';
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                  const Gap(AppSpacing.md),
+                                  // --- CONSOMMABLE ---
+                                  DropdownButtonFormField<String?>(
+                                    initialValue: _editorAmmoIsOther
+                                        ? 'other'
+                                        : safeAmmoId,
+                                    isExpanded: true,
+                                    decoration: InputDecoration(
+                                      labelText: strings.shootingTableAmmoLabel,
+                                      prefixIcon: _svgFieldIcon(
+                                        'assets/images/pointe.svg',
+                                        colors.secondary,
+                                      ),
+                                    ),
+                                    items: [
+                                      DropdownMenuItem<String?>(
+                                        value: null,
+                                        child: Text(
+                                          strings.shootingTableNoAmmo,
+                                        ),
+                                      ),
+                                      ...ammoItems.map(
+                                        (a) => DropdownMenuItem<String?>(
+                                          value: a.id,
+                                          child: Text(
+                                            a.name,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                      DropdownMenuItem<String?>(
+                                        value: 'other',
+                                        child: Text(
+                                          strings.shootingTableOtherOption,
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      if (value == 'other') {
+                                        setState(() {
+                                          _editorAmmoIsOther = true;
+                                          _editorAmmoId = null;
+                                          _editorCustomAmmoName = null;
+                                        });
+                                      } else {
+                                        setState(() {
+                                          _editorAmmoId = value;
+                                          _editorCustomAmmoName = null;
+                                          _editorAmmoIsOther = false;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  if (_editorAmmoIsOther) ...[
+                                    const Gap(AppSpacing.sm),
+                                    TextFormField(
+                                      initialValue: _editorCustomAmmoName,
+                                      decoration: InputDecoration(
+                                        hintText:
+                                            strings.shootingTableCustomAmmoHint,
+                                        prefixIcon: const Icon(
+                                          Icons.edit_outlined,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _editorCustomAmmoName =
+                                              value.trim().isEmpty
+                                              ? null
+                                              : value.trim();
+                                          _editorAmmoId = null;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                  const Gap(AppSpacing.md),
+                                  // --- ACCESSOIRES ---
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                    onTap: () =>
+                                        _pickAccessories(provider, strings),
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: strings
+                                            .shootingTableAccessoriesLabel,
+                                        prefixIcon: _svgFieldIcon(
+                                          'assets/images/material.svg',
+                                          colors.secondary,
+                                        ),
+                                        suffixIcon: const Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        selectedAccessoryNames.isEmpty
+                                            ? strings.shootingTableNoAccessory
+                                            : selectedAccessoryNames.join(', '),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: textStyles.bodyLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                ],
+                              ),
+                            ),
+                            const Gap(AppSpacing.md),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _SectionHeader(
+                                    leading: const Icon(
+                                      Icons.straighten_rounded,
+                                    ),
+                                    title: strings.shootingTableDistancesTitle,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const Gap(AppSpacing.sm),
-                          Builder(builder: (context) {
-                            return Container(
-                            padding: AppSpacing.paddingMd,
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: isDark
-                                  ? null
-                                  : Border.all(color: LightColors.surfaceHighlight, width: 1.2),
-                              boxShadow: AppShadows.cardPremium,
+                                ChoiceChip(
+                                  selected: true,
+                                  showCheckmark: false,
+                                  backgroundColor: colors.surface,
+                                  selectedColor: colors.primary,
+                                  side: BorderSide(color: colors.primary),
+                                  checkmarkColor: colors.onPrimary,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _showAllImpacts = !_showAllImpacts;
+                                      if (_showAllImpacts) {
+                                        _fitAllImpactsInFrame = true;
+                                      }
+                                      _selectedEntryId = null;
+                                    });
+                                  },
+                                  avatar: Icon(
+                                    Icons.swap_horiz_rounded,
+                                    size: 16,
+                                    color: colors.onPrimary,
+                                  ),
+                                  labelPadding: const EdgeInsets.only(right: 4),
+                                  label: Text(
+                                    _showAllImpacts
+                                        ? strings.shootingTableModeAll
+                                        : strings.shootingTableModeActive,
+                                    style: TextStyle(color: colors.onPrimary),
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (entries.isEmpty)
-                                  Text(
-                                    strings.shootingTableNoEntry,
-                                    style: textStyles.bodySmall
-                                        ?.copyWith(color: colors.secondary),
-                                  )
-                                else
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: entries.length,
-                                    separatorBuilder: (_, _) =>
-                                        const Divider(height: 16),
-                                    itemBuilder: (context, index) {
-                                      final entry = entries[index];
-                                      final isSelected =
-                                          _selectedEntryId == entry.id;
-                                      return Material(
-                                        color: isSelected
-                                            ? colors.primary
-                                                .withValues(alpha: 0.07)
-                                            : Colors.transparent,
-                                        borderRadius:
-                                            BorderRadius.circular(AppRadius.md),
-                                        child: InkWell(
-                                          borderRadius: BorderRadius.circular(
-                                              AppRadius.md),
-                                          onTap: () {
+                            const Gap(AppSpacing.sm),
+                            Container(
+                              padding: AppSpacing.paddingMd,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: isDark
+                                    ? null
+                                    : Border.all(
+                                        color: LightColors.surfaceHighlight,
+                                        width: 1.2,
+                                      ),
+                                boxShadow: AppShadows.cardPremium,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (distances.isEmpty)
+                                    Text(
+                                      strings.shootingTableNoDistance,
+                                      style: textStyles.bodyMedium?.copyWith(
+                                        color: colors.secondary,
+                                      ),
+                                    )
+                                  else
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 4,
+                                      children: distances.map((distance) {
+                                        final representative = entries
+                                            .firstWhere(
+                                              (e) => _sameDistance(
+                                                e.distance,
+                                                distance,
+                                              ),
+                                            );
+                                        final isSelected =
+                                            (_activeDistance != null &&
+                                                _sameDistance(
+                                                  _activeDistance!,
+                                                  distance,
+                                                ) &&
+                                                !_showAllImpacts) ||
+                                            _showAllImpacts;
+
+                                        return ChoiceChip(
+                                          selected: isSelected,
+                                          showCheckmark: false,
+                                          backgroundColor: colors.surface,
+                                          selectedColor: colors.primary,
+                                          side: BorderSide(
+                                            color: isSelected
+                                                ? colors.primary
+                                                : colors.outline.withValues(
+                                                    alpha: 0.35,
+                                                  ),
+                                          ),
+                                          onSelected: (_) {
                                             setState(() {
-                                              _selectedEntryId = entry.id;
-                                              _activeDistance = entry.distance;
                                               _showAllImpacts = false;
+                                              _activeDistance = distance;
+                                              _selectedEntryId = null;
                                             });
                                           },
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                              AppSpacing.md,
-                                              AppSpacing.sm,
-                                              AppSpacing.md,
-                                              0,
+                                          label: Text(
+                                            '${_formatNumber(_getDistanceInDefaultUnit(distance, representative.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? colors.onPrimary
+                                                  : colors.onSurface,
                                             ),
-                                            child: Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Expanded(
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const Gap(AppSpacing.md),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _SectionHeader(
+                                    leading: const Icon(
+                                      Icons.gps_fixed_rounded,
+                                    ),
+                                    title: strings.shootingTableTargetTitle,
+                                  ),
+                                ),
+                                ChoiceChip(
+                                  selected: true,
+                                  showCheckmark: false,
+                                  backgroundColor: colors.surface,
+                                  selectedColor: colors.primary,
+                                  side: BorderSide(color: colors.primary),
+                                  checkmarkColor: colors.onPrimary,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _fitAllImpactsInFrame =
+                                          !_fitAllImpactsInFrame;
+                                      _selectedEntryId = null;
+                                    });
+                                  },
+                                  avatar: Icon(
+                                    Icons.swap_horiz_rounded,
+                                    size: 16,
+                                    color: colors.onPrimary,
+                                  ),
+                                  labelPadding: const EdgeInsets.only(right: 4),
+                                  label: Text(
+                                    _fitAllImpactsInFrame
+                                        ? strings.shootingTableZoomTarget
+                                        : strings.shootingTableZoomFitAll,
+                                    style: TextStyle(color: colors.onPrimary),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Gap(AppSpacing.sm),
+                            Container(
+                              padding: AppSpacing.paddingMd,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: isDark
+                                    ? null
+                                    : Border.all(
+                                        color: LightColors.surfaceHighlight,
+                                        width: 1.2,
+                                      ),
+                                boxShadow: AppShadows.cardPremium,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AspectRatio(
+                                    aspectRatio: 1,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: colors.surface,
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: colors.outline.withValues(
+                                            alpha: 0.25,
+                                          ),
+                                        ),
+                                      ),
+                                      child: TapRegion(
+                                        onTapOutside: (_) {
+                                          if (_selectedEntryId == null) return;
+                                          setState(() {
+                                            _selectedEntryId = null;
+                                          });
+                                        },
+                                        child: LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final width = constraints.maxWidth;
+                                            final height =
+                                                constraints.maxHeight;
+                                            final centerX = width / 2;
+                                            final centerY = height / 2;
+                                            final targetRadiusPx =
+                                                (width < height
+                                                    ? width
+                                                    : height) /
+                                                2 *
+                                                _targetVisualRadiusFactor;
+                                            var targetScaleReferenceMm =
+                                                _c50OuterRadiusMm;
+                                            if (_fitAllImpactsInFrame &&
+                                                entriesForTarget.isNotEmpty) {
+                                              var maxRadiusMm = 0.0;
+                                              for (final e
+                                                  in entriesForTarget) {
+                                                final local =
+                                                    _entryRadiusMillimeters(e);
+                                                if (local > maxRadiusMm) {
+                                                  maxRadiusMm = local;
+                                                }
+                                              }
+                                              targetScaleReferenceMm = math.max(
+                                                _c50OuterRadiusMm,
+                                                maxRadiusMm *
+                                                    _fitAllFramePaddingFactor,
+                                              );
+                                              if (_showAllImpacts) {
+                                                targetScaleReferenceMm = math.max(
+                                                  targetScaleReferenceMm,
+                                                  _c50OuterRadiusMm *
+                                                      _allImpactsMinZoomOutFactor,
+                                                );
+                                              }
+                                            }
+
+                                            return TweenAnimationBuilder<
+                                              double
+                                            >(
+                                              duration: const Duration(
+                                                milliseconds: 280,
+                                              ),
+                                              curve: Curves.easeOutCubic,
+                                              tween: Tween<double>(
+                                                begin: _lastScaleReferenceMm,
+                                                end: targetScaleReferenceMm,
+                                              ),
+                                              onEnd: () {
+                                                _lastScaleReferenceMm =
+                                                    targetScaleReferenceMm;
+                                              },
+                                              builder:
+                                                  (
+                                                    context,
+                                                    animatedScaleReferenceMm,
+                                                    _,
+                                                  ) {
+                                                    Offset pointForEntry(
+                                                      ShootingAdjustmentEntry
+                                                      entry,
+                                                    ) {
+                                                      final scaleReferenceMm =
+                                                          math.max(
+                                                            _c50OuterRadiusMm,
+                                                            animatedScaleReferenceMm,
+                                                          );
+                                                      final sceneZoomFactor =
+                                                          _c50OuterRadiusMm /
+                                                          scaleReferenceMm;
+                                                      final offsetMm =
+                                                          _entryOffsetMillimeters(
+                                                            entry,
+                                                          );
+                                                      final normalizedX =
+                                                          offsetMm.dx /
+                                                          _c50OuterRadiusMm;
+                                                      final normalizedY =
+                                                          offsetMm.dy /
+                                                          _c50OuterRadiusMm;
+
+                                                      return Offset(
+                                                        centerX +
+                                                            (normalizedX *
+                                                                targetRadiusPx *
+                                                                sceneZoomFactor),
+                                                        centerY -
+                                                            (normalizedY *
+                                                                targetRadiusPx *
+                                                                sceneZoomFactor),
+                                                      );
+                                                    }
+
+                                                    final sceneZoomFactor =
+                                                        _c50OuterRadiusMm /
+                                                        math.max(
+                                                          _c50OuterRadiusMm,
+                                                          animatedScaleReferenceMm,
+                                                        );
+
+                                                    return Stack(
+                                                      children: [
+                                                        Positioned.fill(
+                                                          child: Transform.scale(
+                                                            scale:
+                                                                sceneZoomFactor,
+                                                            child: const CustomPaint(
+                                                              painter:
+                                                                  _TargetPainter(),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        if (activeEntries
+                                                                .isNotEmpty &&
+                                                            entriesForTarget
+                                                                .isEmpty)
+                                                          Positioned.fill(
+                                                            child: IgnorePointer(
+                                                              child: Center(
+                                                                child: Container(
+                                                                  padding:
+                                                                      const EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            12,
+                                                                        vertical:
+                                                                            8,
+                                                                      ),
+                                                                  decoration: BoxDecoration(
+                                                                    color: colors
+                                                                        .primary,
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          AppRadius
+                                                                              .md,
+                                                                        ),
+                                                                    boxShadow: [
+                                                                      BoxShadow(
+                                                                        color: Colors
+                                                                            .black
+                                                                            .withValues(
+                                                                              alpha: 0.22,
+                                                                            ),
+                                                                        blurRadius:
+                                                                            8,
+                                                                        offset:
+                                                                            const Offset(
+                                                                              0,
+                                                                              2,
+                                                                            ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  child: Text(
+                                                                    strings
+                                                                        .shootingTableNoImpactInTarget,
+                                                                    style: textStyles.bodySmall?.copyWith(
+                                                                      color: colors
+                                                                          .onPrimary,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        if (selectedEntry !=
+                                                            null)
+                                                          Positioned.fill(
+                                                            child: GestureDetector(
+                                                              behavior:
+                                                                  HitTestBehavior
+                                                                      .opaque,
+                                                              onTap: () {
+                                                                setState(() {
+                                                                  _selectedEntryId =
+                                                                      null;
+                                                                });
+                                                              },
+                                                            ),
+                                                          ),
+                                                        ...entriesForTarget.map((
+                                                          entry,
+                                                        ) {
+                                                          final point =
+                                                              pointForEntry(
+                                                                entry,
+                                                              );
+
+                                                          return Positioned(
+                                                            left: point.dx - 9,
+                                                            top: point.dy - 9,
+                                                            child: GestureDetector(
+                                                              onTap: () {
+                                                                setState(() {
+                                                                  _selectedEntryId =
+                                                                      entry.id;
+                                                                });
+                                                              },
+                                                              child:
+                                                                  const _ImpactCross(),
+                                                            ),
+                                                          );
+                                                        }),
+                                                        if (selectedEntry !=
+                                                            null)
+                                                          Builder(
+                                                            builder: (context) {
+                                                              final point =
+                                                                  pointForEntry(
+                                                                    selectedEntry,
+                                                                  );
+                                                              final bubbleMaxWidth =
+                                                                  190.0;
+                                                              final bubbleMinWidth =
+                                                                  88.0;
+                                                              final preferredTop =
+                                                                  point.dy - 74;
+                                                              final bubbleLeft =
+                                                                  (point.dx -
+                                                                          (bubbleMaxWidth /
+                                                                              2))
+                                                                      .clamp(
+                                                                        8.0,
+                                                                        width -
+                                                                            bubbleMaxWidth -
+                                                                            8,
+                                                                      )
+                                                                      .toDouble();
+                                                              final bubbleTop =
+                                                                  preferredTop <
+                                                                      8
+                                                                  ? point.dy +
+                                                                        14
+                                                                  : preferredTop;
+
+                                                              return Positioned(
+                                                                left:
+                                                                    bubbleLeft,
+                                                                top: bubbleTop,
+                                                                child: ConstrainedBox(
+                                                                  constraints: BoxConstraints(
+                                                                    minWidth:
+                                                                        bubbleMinWidth,
+                                                                    maxWidth:
+                                                                        bubbleMaxWidth,
+                                                                  ),
+                                                                  child: IntrinsicWidth(
+                                                                    child: Container(
+                                                                      padding: const EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            10,
+                                                                        vertical:
+                                                                            8,
+                                                                      ),
+                                                                      decoration: BoxDecoration(
+                                                                        color: colors
+                                                                            .primary,
+                                                                        borderRadius: BorderRadius.circular(
+                                                                          AppRadius
+                                                                              .md,
+                                                                        ),
+                                                                        boxShadow: [
+                                                                          BoxShadow(
+                                                                            color: Colors.black.withValues(
+                                                                              alpha: 0.2,
+                                                                            ),
+                                                                            blurRadius:
+                                                                                8,
+                                                                            offset: const Offset(
+                                                                              0,
+                                                                              3,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      child: Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.start,
+                                                                        children: [
+                                                                          Text(
+                                                                            '${_formatNumber(_getDistanceInDefaultUnit(selectedEntry.distance, selectedEntry.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
+                                                                            style: textStyles.bodySmall?.copyWith(
+                                                                              color: colors.onPrimary,
+                                                                            ),
+                                                                          ),
+                                                                          if (selectedEntry
+                                                                              .correction
+                                                                              .trim()
+                                                                              .isNotEmpty) ...[
+                                                                            const Gap(
+                                                                              2,
+                                                                            ),
+                                                                            Text(
+                                                                              selectedEntry.correction,
+                                                                              maxLines: 3,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              style: textStyles.bodySmall?.copyWith(
+                                                                                color: colors.onPrimary,
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          ),
+                                                      ],
+                                                    );
+                                                  },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  Text(
+                                    strings.shootingTableAxisHint,
+                                    style: textStyles.bodySmall?.copyWith(
+                                      color: colors.secondary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Gap(4),
+                                  Text(
+                                    strings.shootingTableScaleFixedHint,
+                                    style: textStyles.bodySmall?.copyWith(
+                                      color: colors.secondary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  if (activeEntries.isEmpty)
+                                    Text(
+                                      strings.shootingTableNoImpact,
+                                      style: textStyles.bodySmall?.copyWith(
+                                        color: colors.secondary,
+                                      ),
+                                    )
+                                  else if (selectedEntry != null)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: AppSpacing.paddingMd,
+                                      decoration: BoxDecoration(
+                                        color: colors.primary.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.md,
+                                        ),
+                                        border: Border.all(
+                                          color: colors.primary.withValues(
+                                            alpha: 0.25,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            strings
+                                                .shootingTableImpactDetailsTitle,
+                                            style: textStyles.labelLarge
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const Gap(6),
+                                          Text(
+                                            '${strings.distanceLabel}: ${_formatNumber(_getDistanceInDefaultUnit(selectedEntry.distance, selectedEntry.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
+                                          ),
+                                          Text(
+                                            'X: ${_formatNumber(_getOffsetInDefaultUnit(selectedEntry.horizontalOffset, selectedEntry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}',
+                                          ),
+                                          Text(
+                                            'Y: ${_formatNumber(_getOffsetInDefaultUnit(selectedEntry.verticalOffset, selectedEntry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}',
+                                          ),
+                                          if (selectedEntry.correction
+                                              .trim()
+                                              .isNotEmpty)
+                                            Text(
+                                              '${strings.shootingTableCorrectionLabel}: ${selectedEntry.correction}',
+                                            ),
+                                          if (selectedEntry.note
+                                              .trim()
+                                              .isNotEmpty)
+                                            Text(
+                                              '${strings.notes}: ${selectedEntry.note}',
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const Gap(AppSpacing.md),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _SectionHeader(
+                                    leading: const Icon(Icons.list_alt_rounded),
+                                    title: strings.shootingTableEntriesTitle,
+                                  ),
+                                ),
+                                FilledButton.icon(
+                                  onPressed: _editorPlatformId == null
+                                      ? null
+                                      : () => _addOrEditEntry(),
+                                  icon: const Icon(Icons.add_rounded, size: 18),
+                                  label: Text(strings.add),
+                                  style: FilledButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Gap(AppSpacing.sm),
+                            Builder(
+                              builder: (context) {
+                                return Container(
+                                  padding: AppSpacing.paddingMd,
+                                  decoration: BoxDecoration(
+                                    color: colors.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: isDark
+                                        ? null
+                                        : Border.all(
+                                            color: LightColors.surfaceHighlight,
+                                            width: 1.2,
+                                          ),
+                                    boxShadow: AppShadows.cardPremium,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (entries.isEmpty)
+                                        Text(
+                                          strings.shootingTableNoEntry,
+                                          style: textStyles.bodyMedium
+                                              ?.copyWith(
+                                                color: colors.secondary,
+                                              ),
+                                        )
+                                      else
+                                        ListView.separated(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemCount: entries.length,
+                                          separatorBuilder: (_, _) =>
+                                              const Divider(height: 16),
+                                          itemBuilder: (context, index) {
+                                            final entry = entries[index];
+                                            final isSelected =
+                                                _selectedEntryId == entry.id;
+                                            return Material(
+                                              color: isSelected
+                                                  ? colors.primary.withValues(
+                                                      alpha: 0.07,
+                                                    )
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.md,
+                                                  ),
+                                              child: InkWell(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppRadius.md,
+                                                    ),
+                                                onTap: () {
+                                                  setState(() {
+                                                    _selectedEntryId = entry.id;
+                                                    _activeDistance =
+                                                        entry.distance;
+                                                    _showAllImpacts = false;
+                                                  });
+                                                },
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                        AppSpacing.md,
+                                                        AppSpacing.sm,
+                                                        AppSpacing.md,
+                                                        AppSpacing.sm,
+                                                      ),
                                                   child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
                                                     crossAxisAlignment:
                                                         CrossAxisAlignment
-                                                            .start,
+                                                            .stretch,
                                                     children: [
-                                                      // Distance Header
                                                       Row(
                                                         children: [
                                                           Icon(
@@ -2116,156 +2933,206 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                                                             color: isSelected
                                                                 ? colors.primary
                                                                 : colors
-                                                                    .secondary,
+                                                                      .secondary,
                                                           ),
                                                           const Gap(
-                                                              AppSpacing.xs),
-                                                          Text(
-                                                            '${_formatNumber(_getDistanceInDefaultUnit(entry.distance, entry.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
-                                                            style: textStyles
-                                                                .titleMedium
-                                                                ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w800,
-                                                              color: isSelected
-                                                                  ? colors
-                                                                      .primary
-                                                                  : colors
-                                                                      .onSurface,
+                                                            AppSpacing.xs,
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              '${_formatNumber(_getDistanceInDefaultUnit(entry.distance, entry.distanceUnit))} ${_distanceUnitLabel(strings, _defaultDistanceUnit)}',
+                                                              style: textStyles
+                                                                  .titleMedium
+                                                                  ?.copyWith(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w800,
+                                                                    color:
+                                                                        isSelected
+                                                                        ? colors
+                                                                              .primary
+                                                                        : colors
+                                                                              .onSurface,
+                                                                  ),
                                                             ),
+                                                          ),
+                                                          IconButton(
+                                                            onPressed: () =>
+                                                                _addOrEditEntry(
+                                                                  existing:
+                                                                      entry,
+                                                                ),
+                                                            visualDensity:
+                                                                VisualDensity
+                                                                    .compact,
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .edit_rounded,
+                                                            ),
+                                                            tooltip:
+                                                                strings.edit,
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            constraints:
+                                                                const BoxConstraints.tightFor(
+                                                                  width: 32,
+                                                                  height: 32,
+                                                                ),
+                                                          ),
+                                                          const Gap(2),
+                                                          IconButton(
+                                                            onPressed: () =>
+                                                                _deleteEntry(
+                                                                  strings:
+                                                                      strings,
+                                                                  entry: entry,
+                                                                ),
+                                                            visualDensity:
+                                                                VisualDensity
+                                                                    .compact,
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .delete_rounded,
+                                                            ),
+                                                            tooltip:
+                                                                strings.delete,
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            constraints:
+                                                                const BoxConstraints.tightFor(
+                                                                  width: 32,
+                                                                  height: 32,
+                                                                ),
                                                           ),
                                                         ],
                                                       ),
                                                       const Gap(AppSpacing.sm),
-                                                      // Offset (Décalage)
                                                       Container(
+                                                        width: double.infinity,
                                                         padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal:
-                                                                    AppSpacing
-                                                                        .sm,
-                                                                vertical: 4),
-                                                        decoration:
-                                                            BoxDecoration(
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  AppSpacing.sm,
+                                                              vertical: 7,
+                                                            ),
+                                                        decoration: BoxDecoration(
                                                           color: colors
                                                               .onSurface
                                                               .withValues(
-                                                                  alpha: 0.05),
+                                                                alpha: 0.05,
+                                                              ),
                                                           borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      AppRadius
-                                                                          .sm),
+                                                              BorderRadius.circular(
+                                                                AppRadius.sm,
+                                                              ),
                                                         ),
                                                         child: Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
                                                           children: [
                                                             Icon(
-                                                                Icons
-                                                                    .gps_fixed_rounded,
-                                                                size: 14,
-                                                                color: colors
-                                                                    .secondary),
+                                                              Icons
+                                                                  .gps_fixed_rounded,
+                                                              size: 14,
+                                                              color: colors
+                                                                  .secondary,
+                                                            ),
                                                             const Gap(
-                                                                AppSpacing.xs),
-                                                            Text(
-                                                              'X: ${_formatNumber(_getOffsetInDefaultUnit(entry.horizontalOffset, entry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}   Y: ${_formatNumber(_getOffsetInDefaultUnit(entry.verticalOffset, entry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}',
-                                                              style: textStyles
-                                                                  .bodySmall
-                                                                  ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: colors
-                                                                    .onSurface,
+                                                              AppSpacing.xs,
+                                                            ),
+                                                            Expanded(
+                                                              child: Text(
+                                                                '${strings.shootingTableEntryImpactsLabel}  X: ${_formatNumber(_getOffsetInDefaultUnit(entry.horizontalOffset, entry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}   Y: ${_formatNumber(_getOffsetInDefaultUnit(entry.verticalOffset, entry.offsetUnit))} ${_offsetUnitLabel(strings, _defaultOffsetUnit)}',
+                                                                maxLines: 1,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: textStyles
+                                                                    .bodySmall
+                                                                    ?.copyWith(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w600,
+                                                                      color: colors
+                                                                          .onSurface,
+                                                                    ),
                                                               ),
                                                             ),
                                                           ],
                                                         ),
                                                       ),
-                                                      // Correction (Retenue)
-                                                      if (entry.correction
-                                                          .trim()
-                                                          .isNotEmpty) ...[
-                                                        const Gap(
-                                                            AppSpacing.xs),
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal:
-                                                                      AppSpacing
-                                                                          .sm,
-                                                                  vertical: 4),
-                                                          decoration:
-                                                              BoxDecoration(
+                                                      const Gap(AppSpacing.sm),
+                                                      Container(
+                                                        width: double.infinity,
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  AppSpacing.sm,
+                                                              vertical: 7,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: colors.primary
+                                                              .withValues(
+                                                                alpha: 0.09,
+                                                              ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                AppRadius.sm,
+                                                              ),
+                                                          border: Border.all(
                                                             color: colors
                                                                 .primary
                                                                 .withValues(
-                                                                    alpha: 0.1),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        AppRadius
-                                                                            .sm),
-                                                            border: Border.all(
-                                                                color: colors
-                                                                    .primary
-                                                                    .withValues(
-                                                                        alpha:
-                                                                            0.2)),
-                                                          ),
-                                                          child: Row(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .only(
-                                                                        top:
-                                                                            2.0),
-                                                                child: Icon(
-                                                                    Icons
-                                                                        .tune_rounded,
-                                                                    size: 14,
-                                                                    color: colors
-                                                                        .primary),
-                                                              ),
-                                                              const Gap(
-                                                                  AppSpacing
-                                                                      .xs),
-                                                              Flexible(
-                                                                child: Text(
-                                                                  '${strings.shootingTableCorrectionLabel} :\n${entry.correction.replaceAll('\n', '   ')}',
-                                                                  style: textStyles
-                                                                      .bodySmall
-                                                                      ?.copyWith(
-                                                                    color: colors
-                                                                        .primary,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w700,
-                                                                  ),
+                                                                  alpha: 0.18,
                                                                 ),
-                                                              ),
-                                                            ],
                                                           ),
                                                         ),
-                                                      ],
-                                                      // Notes
+                                                        child: Row(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsets.only(
+                                                                    top: 2,
+                                                                  ),
+                                                              child: Icon(
+                                                                Icons
+                                                                    .tune_rounded,
+                                                                size: 14,
+                                                                color: colors
+                                                                    .primary,
+                                                              ),
+                                                            ),
+                                                            const Gap(
+                                                              AppSpacing.xs,
+                                                            ),
+                                                            Expanded(
+                                                              child: Text(
+                                                                entry.correction
+                                                                        .trim()
+                                                                        .isEmpty
+                                                                    ? '${strings.shootingTableCorrectionLabel} : —'
+                                                                    : '${strings.shootingTableCorrectionLabel} : ${entry.correction.replaceAll('\n', '   ')}',
+                                                                style: textStyles
+                                                                    .bodySmall
+                                                                    ?.copyWith(
+                                                                      color: colors
+                                                                          .primary,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
                                                       if (entry.note
                                                           .trim()
                                                           .isNotEmpty) ...[
                                                         const Gap(
-                                                            AppSpacing.xs),
+                                                          AppSpacing.sm,
+                                                        ),
                                                         Row(
                                                           crossAxisAlignment:
                                                               CrossAxisAlignment
@@ -2273,30 +3140,32 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                                                           children: [
                                                             Padding(
                                                               padding:
-                                                                  const EdgeInsets
-                                                                      .only(
-                                                                      top: 2.0),
+                                                                  const EdgeInsets.only(
+                                                                    top: 2,
+                                                                  ),
                                                               child: Icon(
-                                                                  Icons
-                                                                      .notes_rounded,
-                                                                  size: 14,
-                                                                  color: colors
-                                                                      .secondary),
+                                                                Icons
+                                                                    .notes_rounded,
+                                                                size: 14,
+                                                                color: colors
+                                                                    .secondary,
+                                                              ),
                                                             ),
                                                             const Gap(
-                                                                AppSpacing.xs),
+                                                              AppSpacing.xs,
+                                                            ),
                                                             Expanded(
                                                               child: Text(
                                                                 entry.note,
                                                                 style: textStyles
                                                                     .bodySmall
                                                                     ?.copyWith(
-                                                                  color: colors
-                                                                      .secondary,
-                                                                  fontStyle:
-                                                                      FontStyle
-                                                                          .italic,
-                                                                ),
+                                                                      color: colors
+                                                                          .secondary,
+                                                                      fontStyle:
+                                                                          FontStyle
+                                                                              .italic,
+                                                                    ),
                                                               ),
                                                             ),
                                                           ],
@@ -2305,141 +3174,105 @@ class _ShootingTablesScreenState extends State<ShootingTablesScreen> {
                                                     ],
                                                   ),
                                                 ),
-                                                // Actions trailing
-                                                Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _addOrEditEntry(
-                                                        existing: entry,
-                                                      ),
-                                                      visualDensity:
-                                                          VisualDensity.compact,
-                                                      icon: const Icon(
-                                                          Icons.edit_rounded),
-                                                      tooltip: strings.edit,
-                                                      padding: EdgeInsets.zero,
-                                                      constraints:
-                                                          const BoxConstraints
-                                                              .tightFor(
-                                                        width: 28,
-                                                        height: 28,
-                                                      ),
-                                                    ),
-                                                    const Gap(2),
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _deleteEntry(
-                                                        strings: strings,
-                                                        entry: entry,
-                                                      ),
-                                                      visualDensity:
-                                                          VisualDensity.compact,
-                                                      icon: const Icon(
-                                                          Icons.delete_rounded),
-                                                      tooltip: strings.delete,
-                                                      padding: EdgeInsets.zero,
-                                                      constraints:
-                                                          const BoxConstraints
-                                                              .tightFor(
-                                                        width: 28,
-                                                        height: 28,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            const Gap(AppSpacing.lg),
+                            SizedBox(
+                              height: 52,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: FilledButton.tonal(
+                                      onPressed: _cancelEditor,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: colors.primary
+                                            .withValues(alpha: 0.72),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
                                           ),
                                         ),
-                                      );
-                                    },
+                                      ),
+                                      child: Text(
+                                        strings.actionCancel.toUpperCase(),
+                                        style: textStyles.labelLarge?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                              ],
+                                  const Gap(AppSpacing.md),
+                                  Expanded(
+                                    child: FilledButton(
+                                      onPressed:
+                                          ((_editorPlatformId == null ||
+                                                      _editorPlatformId!
+                                                          .isEmpty) &&
+                                                  (_editorCustomPlatformName ==
+                                                          null ||
+                                                      _editorCustomPlatformName!
+                                                          .trim()
+                                                          .isEmpty)) ||
+                                              _tableNameController.text
+                                                  .trim()
+                                                  .isEmpty
+                                          ? null
+                                          : () =>
+                                                _saveEditor(provider, strings),
+                                      style: FilledButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        strings.shootingTableSaveButton,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          );
-                          }),
-                          const Gap(AppSpacing.lg),
-                          SizedBox(
-                            height: 52,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: FilledButton.tonal(
-                                    onPressed: _cancelEditor,
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: colors.primary.withValues(alpha: 0.72),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      strings.actionCancel.toUpperCase(),
-                                      style: textStyles.labelLarge?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const Gap(AppSpacing.md),
-                                Expanded(
-                                  child: FilledButton(
-                                    onPressed: ((_editorPlatformId == null || _editorPlatformId!.isEmpty) &&
-                                            (_editorCustomPlatformName == null ||
-                                                _editorCustomPlatformName!.trim().isEmpty)) ||
-                                        _tableNameController.text.trim().isEmpty
-                                        ? null
-                                        : () => _saveEditor(provider, strings),
-                                    style: FilledButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child:
-                                        Text(strings.shootingTableSaveButton),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Gap(AppSpacing.lg),
-                        ],
-                      ),
-                    ],
-                  ),
-                  if (_pageIndex == 0)
-                    Positioned(
-                      right: AppSpacing.lg,
-                      bottom: 58,
-                      child: FloatingActionButton.extended(
-                        onPressed: () => _openEditorForCreate(provider),
-                        icon: const Icon(Icons.add),
-                        label: Text(strings.shootingTableCreateButton),
-                        backgroundColor: colors.primary,
-                        foregroundColor: colors.onPrimary,
-                      ),
+                            const Gap(AppSpacing.lg),
+                          ],
+                        ),
+                      ],
                     ),
-                ],
+                    if (_pageIndex == 0)
+                      Positioned(
+                        right: AppSpacing.lg,
+                        bottom: 58,
+                        child: FloatingActionButton.extended(
+                          onPressed: () => _openEditorForCreate(provider),
+                          icon: const Icon(Icons.add),
+                          label: Text(strings.shootingTableCreateButton),
+                          backgroundColor: colors.primary,
+                          foregroundColor: colors.onPrimary,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-enum _TableSort {
-  updatedAt,
-  name,
-  distance,
-}
+enum _TableSort { updatedAt, name, distance }
 
 class _SlidingSegmentedSelector extends StatelessWidget {
   final int selectedIndex;
@@ -2504,8 +3337,9 @@ class _SlidingSegmentedSelector extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppRadius.full),
                           child: Center(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: Text(
                                 labels[i],
                                 maxLines: 1,
@@ -2568,14 +3402,17 @@ class _TargetPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width < size.height ? size.width : size.height) /
+    final radius =
+        (size.width < size.height ? size.width : size.height) /
         2 *
         _ShootingTablesScreenState._targetVisualRadiusFactor;
     final ringStep = radius / 10;
-    final blackVisualRadius = radius *
+    final blackVisualRadius =
+        radius *
         (_ShootingTablesScreenState._c50VisualBlackRadiusMm /
             _ShootingTablesScreenState._c50OuterRadiusMm);
-    final tenRadius = radius *
+    final tenRadius =
+        radius *
         (_ShootingTablesScreenState._c50TenRadiusMm /
             _ShootingTablesScreenState._c50OuterRadiusMm);
 
@@ -2602,7 +3439,8 @@ class _TargetPainter extends CustomPainter {
       final outerRadiusMm = (11 - score) * 25.0;
       final innerRadiusMm = (10 - score) * 25.0;
       final labelRadiusMm = (outerRadiusMm + innerRadiusMm) / 2;
-      final labelRadiusPx = radius *
+      final labelRadiusPx =
+          radius *
           (labelRadiusMm / _ShootingTablesScreenState._c50OuterRadiusMm);
       final inBlackVisual =
           labelRadiusMm <= _ShootingTablesScreenState._c50VisualBlackRadiusMm;
@@ -2668,9 +3506,7 @@ class _ImpactCross extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _ImpactCrossPainter(strokeWidth: 2.4),
-      ),
+      child: CustomPaint(painter: _ImpactCrossPainter(strokeWidth: 2.4)),
     );
   }
 }
@@ -2714,12 +3550,7 @@ class _ImpactCrossPainter extends CustomPainter {
   }
 }
 
-enum _CorrectionDirection {
-  left,
-  right,
-  up,
-  down,
-}
+enum _CorrectionDirection { left, right, up, down }
 
 class _AdjustmentEntryFormSheet extends StatefulWidget {
   final ShootingAdjustmentEntry? existing;
@@ -2759,8 +3590,11 @@ class _AdjustmentEntryFormSheetState extends State<_AdjustmentEntryFormSheet> {
       _useMetric ? AdjustmentOffsetUnit.centimeter : AdjustmentOffsetUnit.inch;
 
   // Conversion functions
-  double _convertDistance(double distance, AdjustmentDistanceUnit fromUnit,
-      AdjustmentDistanceUnit toUnit) {
+  double _convertDistance(
+    double distance,
+    AdjustmentDistanceUnit fromUnit,
+    AdjustmentDistanceUnit toUnit,
+  ) {
     if (fromUnit == toUnit) return distance;
 
     // Convert to meters first, then to target unit
@@ -2775,8 +3609,11 @@ class _AdjustmentEntryFormSheetState extends State<_AdjustmentEntryFormSheet> {
     return inMeters; // meters
   }
 
-  double _convertOffset(double offset, AdjustmentOffsetUnit fromUnit,
-      AdjustmentOffsetUnit toUnit) {
+  double _convertOffset(
+    double offset,
+    AdjustmentOffsetUnit fromUnit,
+    AdjustmentOffsetUnit toUnit,
+  ) {
     if (fromUnit == toUnit) return offset;
 
     // Convert to centimeters first, then to target unit
@@ -2799,26 +3636,33 @@ class _AdjustmentEntryFormSheetState extends State<_AdjustmentEntryFormSheet> {
     _distanceController = TextEditingController(
       text: existing == null
           ? ''
-          : _convertDistance(existing.distance, existing.distanceUnit,
-                  _defaultDistanceUnit)
-              .toString(),
+          : _convertDistance(
+              existing.distance,
+              existing.distanceUnit,
+              _defaultDistanceUnit,
+            ).toString(),
     );
     _xController = TextEditingController(
       text: existing == null
           ? ''
-          : _convertOffset(existing.horizontalOffset, existing.offsetUnit,
-                  _defaultOffsetUnit)
-              .toString(),
+          : _convertOffset(
+              existing.horizontalOffset,
+              existing.offsetUnit,
+              _defaultOffsetUnit,
+            ).toString(),
     );
     _yController = TextEditingController(
       text: existing == null
           ? ''
-          : _convertOffset(existing.verticalOffset, existing.offsetUnit,
-                  _defaultOffsetUnit)
-              .toString(),
+          : _convertOffset(
+              existing.verticalOffset,
+              existing.offsetUnit,
+              _defaultOffsetUnit,
+            ).toString(),
     );
-    final parsedCorrections =
-        _parseCorrectionInstructions(existing?.correction);
+    final parsedCorrections = _parseCorrectionInstructions(
+      existing?.correction,
+    );
     _leftClicksController = TextEditingController(
       text: (parsedCorrections[_CorrectionDirection.left] ?? 0).toString(),
     );
@@ -2949,13 +3793,18 @@ class _AdjustmentEntryFormSheetState extends State<_AdjustmentEntryFormSheet> {
                 decimal: false,
               ),
               textAlign: TextAlign.center,
-              style: textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: textStyles.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
               decoration: InputDecoration(
                 hintText: 'ex: 0',
                 isDense: true,
                 filled: true,
                 fillColor: colors.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide: BorderSide(color: colors.outline),
@@ -2997,327 +3846,408 @@ class _AdjustmentEntryFormSheetState extends State<_AdjustmentEntryFormSheet> {
           child: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
             ),
             child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: EdgeInsets.only(
-              left: AppSpacing.lg,
-              right: AppSpacing.lg,
-              top: 0,
-              bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: LightColors.iconInactive.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const Gap(AppSpacing.md),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey.shade300
-                              : LightColors.primary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.black
-                              : Colors.white,
-                          size: 20,
-                        ),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.only(
+                left: AppSpacing.lg,
+                right: AppSpacing.lg,
+                top: 0,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: LightColors.iconInactive.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const Gap(AppSpacing.sm),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              (widget.existing == null
-                                      ? strings.shootingTableAddEntryTitle
-                                      : strings.shootingTableEditEntryTitle)
-                                  .toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: textStyles.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colors.onSurface,
+                  ),
+                  const Gap(AppSpacing.md),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey.shade300
+                                : LightColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_rounded,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.sm),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                (widget.existing == null
+                                        ? strings.shootingTableAddEntryTitle
+                                        : strings.shootingTableEditEntryTitle)
+                                    .toUpperCase(),
+                                textAlign: TextAlign.center,
+                                style: textStyles.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                Divider(color: colors.outline),
-                const Gap(AppSpacing.xs),
-
-                // ── Distance ──────────────────────────────────────────────
-                _SectionHeader(
-                  leading: Icon(Icons.place_outlined, color: colors.secondary),
-                  title: strings.distanceLabel,
-                ),
-                const Gap(AppSpacing.xs),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                  ),
-                  child: TextField(
-                    controller: _distanceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      hintText: strings.shootingTableDistanceHint,
-                      suffixText: _defaultDistanceUnit == AdjustmentDistanceUnit.meter
-                          ? strings.shootingTableDistanceUnitMeter
-                          : strings.shootingTableDistanceUnitYard,
-                      filled: true,
-                      fillColor: colors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.primary, width: 2),
-                      ),
-                    ),
-                  ),
-                ),
-                const Gap(AppSpacing.md),
-
-                // ── Écart ─────────────────────────────────────────────────
-                _SectionHeader(
-                  leading: Icon(Icons.gps_fixed_rounded, color: colors.secondary),
-                  title: strings.shootingTableCorrectionLabel,
-                ),
-                const Gap(AppSpacing.xs),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                        ),
-                        child: TextField(
-                          controller: _xController,
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'[0-9,+.\-]')),
                           ],
-                          decoration: InputDecoration(
-                            hintText: strings.shootingTableHorizontalHint,
-                            suffixText: _defaultOffsetUnit == AdjustmentOffsetUnit.centimeter
-                                ? strings.shootingTableOffsetUnitCm
-                                : strings.shootingTableOffsetUnitInch,
-                            filled: true,
-                            fillColor: colors.surface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              borderSide: BorderSide(color: colors.outline),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              borderSide: BorderSide(color: colors.outline),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              borderSide: BorderSide(color: colors.primary, width: 2),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Gap(AppSpacing.sm),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                        ),
-                        child: TextField(
-                          controller: _yController,
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'[0-9,+.\-]')),
-                          ],
-                          decoration: InputDecoration(
-                            hintText: strings.shootingTableVerticalHint,
-                            suffixText: _defaultOffsetUnit == AdjustmentOffsetUnit.centimeter
-                                ? strings.shootingTableOffsetUnitCm
-                                : strings.shootingTableOffsetUnitInch,
-                            filled: true,
-                            fillColor: colors.surface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              borderSide: BorderSide(color: colors.outline),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              borderSide: BorderSide(color: colors.outline),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                              borderSide: BorderSide(color: colors.primary, width: 2),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const Gap(AppSpacing.xs),
-                Text(
-                  strings.shootingTableAxisHint,
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
-                ),
-                const Gap(AppSpacing.md),
-
-                // ── Clics de réglage ──────────────────────────────────────
-                _SectionHeader(
-                  leading: Icon(Icons.tune_rounded, color: colors.secondary),
-                  title: strings.shootingTableCorrectionLabel,
-                ),
-                const Gap(AppSpacing.xs),
-                Row(
-                  children: [
-                    _buildCorrectionRow(arrow: '←', controller: _leftClicksController),
-                    const Gap(AppSpacing.xl),
-                    _buildCorrectionRow(arrow: '→', controller: _rightClicksController),
-                  ],
-                ),
-                const Gap(AppSpacing.xs),
-                Row(
-                  children: [
-                    _buildCorrectionRow(arrow: '↑', controller: _upClicksController),
-                    const Gap(AppSpacing.xl),
-                    _buildCorrectionRow(arrow: '↓', controller: _downClicksController),
-                  ],
-                ),
-                const Gap(AppSpacing.md),
-
-                // ── Notes ─────────────────────────────────────────────────
-                _SectionHeader(
-                  leading: Icon(Icons.notes_rounded, color: colors.secondary),
-                  title: strings.notes,
-                ),
-                const Gap(AppSpacing.xs),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                  ),
-                  child: TextField(
-                    controller: _noteController,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: strings.noteOptional,
-                      filled: true,
-                      fillColor: colors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.outline),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide(color: colors.primary, width: 2),
-                      ),
-                    ),
-                  ),
-                ),
-                const Gap(AppSpacing.lg),
-
-                // ── Boutons ───────────────────────────────────────────────
-                SizedBox(
-                  height: 52,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.tonal(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colors.primary.withValues(alpha: 0.72),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Text(
-                            strings.cancel.toUpperCase(),
-                            style: textStyles.labelLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Gap(AppSpacing.md),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {
-                            final distance = double.tryParse(_distanceController.text.trim());
-                            final x = double.tryParse(_xController.text.trim());
-                            final y = double.tryParse(_yController.text.trim());
-                            if (distance == null || x == null || y == null) return;
-                            final now = DateTime.now();
-                            final existing = widget.existing;
-                            final entry = ShootingAdjustmentEntry(
-                              id: existing?.id ?? 'adj-entry-${now.microsecondsSinceEpoch}',
-                              distance: distance,
-                              distanceUnit: _distanceUnit,
-                              horizontalOffset: x,
-                              verticalOffset: y,
-                              offsetUnit: _offsetUnit,
-                              correction: _buildCorrectionInstructions(),
-                              note: _noteController.text.trim(),
-                              createdAt: existing?.createdAt ?? now,
-                              updatedAt: now,
-                            );
-                            Navigator.of(context).pop(entry);
-                          },
-                          style: FilledButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Text(strings.confirm.toUpperCase()),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  Divider(color: colors.outline),
+                  const Gap(AppSpacing.xs),
+
+                  // ── Distance ──────────────────────────────────────────────
+                  _SectionHeader(
+                    leading: Icon(
+                      Icons.place_outlined,
+                      color: colors.secondary,
+                    ),
+                    title: strings.distanceLabel,
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    child: TextField(
+                      controller: _distanceController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: strings.shootingTableDistanceHint,
+                        hintStyle: textStyles.bodyMedium?.copyWith(
+                          color: colors.onSurface.withAlpha(100),
+                        ),
+                        suffixText:
+                            _defaultDistanceUnit == AdjustmentDistanceUnit.meter
+                            ? strings.shootingTableDistanceUnitMeter
+                            : strings.shootingTableDistanceUnitYard,
+                        filled: true,
+                        fillColor: colors.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+
+                  // ── Écart ─────────────────────────────────────────────────
+                  _SectionHeader(
+                    leading: Icon(
+                      Icons.gps_fixed_rounded,
+                      color: colors.secondary,
+                    ),
+                    title: strings.shootingTableCorrectionLabel,
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                          child: TextField(
+                            controller: _xController,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9,+.\-]'),
+                              ),
+                            ],
+                            decoration: InputDecoration(
+                              hintText: strings.shootingTableHorizontalHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(
+                                color: colors.onSurface.withAlpha(100),
+                              ),
+                              suffixText:
+                                  _defaultOffsetUnit ==
+                                      AdjustmentOffsetUnit.centimeter
+                                  ? strings.shootingTableOffsetUnitCm
+                                  : strings.shootingTableOffsetUnitInch,
+                              filled: true,
+                              fillColor: colors.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                borderSide: BorderSide(color: colors.outline),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                borderSide: BorderSide(color: colors.outline),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                borderSide: BorderSide(
+                                  color: colors.primary,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.sm),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                          child: TextField(
+                            controller: _yController,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9,+.\-]'),
+                              ),
+                            ],
+                            decoration: InputDecoration(
+                              hintText: strings.shootingTableVerticalHint,
+                              hintStyle: textStyles.bodyMedium?.copyWith(
+                                color: colors.onSurface.withAlpha(100),
+                              ),
+                              suffixText:
+                                  _defaultOffsetUnit ==
+                                      AdjustmentOffsetUnit.centimeter
+                                  ? strings.shootingTableOffsetUnitCm
+                                  : strings.shootingTableOffsetUnitInch,
+                              filled: true,
+                              fillColor: colors.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                borderSide: BorderSide(color: colors.outline),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                borderSide: BorderSide(color: colors.outline),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                borderSide: BorderSide(
+                                  color: colors.primary,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Text(
+                    strings.shootingTableAxisHint,
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.secondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+
+                  // ── Clics de réglage ──────────────────────────────────────
+                  _SectionHeader(
+                    leading: Icon(Icons.tune_rounded, color: colors.secondary),
+                    title: strings.shootingTableCorrectionLabel,
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Row(
+                    children: [
+                      _buildCorrectionRow(
+                        arrow: '←',
+                        controller: _leftClicksController,
+                      ),
+                      const Gap(AppSpacing.xl),
+                      _buildCorrectionRow(
+                        arrow: '→',
+                        controller: _rightClicksController,
+                      ),
+                    ],
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Row(
+                    children: [
+                      _buildCorrectionRow(
+                        arrow: '↑',
+                        controller: _upClicksController,
+                      ),
+                      const Gap(AppSpacing.xl),
+                      _buildCorrectionRow(
+                        arrow: '↓',
+                        controller: _downClicksController,
+                      ),
+                    ],
+                  ),
+                  const Gap(AppSpacing.md),
+
+                  // ── Notes ─────────────────────────────────────────────────
+                  _SectionHeader(
+                    leading: Icon(Icons.notes_rounded, color: colors.secondary),
+                    title: strings.notes,
+                  ),
+                  const Gap(AppSpacing.xs),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    child: TextField(
+                      controller: _noteController,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: strings.noteOptional,
+                        filled: true,
+                        fillColor: colors.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(color: colors.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Gap(AppSpacing.lg),
+
+                  // ── Boutons ───────────────────────────────────────────────
+                  SizedBox(
+                    height: 52,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.tonal(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: colors.primary.withValues(
+                                alpha: 0.72,
+                              ),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: Text(
+                              strings.cancel.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.md),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () {
+                              final distance = double.tryParse(
+                                _distanceController.text.trim(),
+                              );
+                              final x = double.tryParse(
+                                _xController.text.trim(),
+                              );
+                              final y = double.tryParse(
+                                _yController.text.trim(),
+                              );
+                              if (distance == null || x == null || y == null)
+                                return;
+                              final now = DateTime.now();
+                              final existing = widget.existing;
+                              final entry = ShootingAdjustmentEntry(
+                                id:
+                                    existing?.id ??
+                                    'adj-entry-${now.microsecondsSinceEpoch}',
+                                distance: distance,
+                                distanceUnit: _distanceUnit,
+                                horizontalOffset: x,
+                                verticalOffset: y,
+                                offsetUnit: _offsetUnit,
+                                correction: _buildCorrectionInstructions(),
+                                note: _noteController.text.trim(),
+                                createdAt: existing?.createdAt ?? now,
+                                updatedAt: now,
+                              );
+                              Navigator.of(context).pop(entry);
+                            },
+                            style: FilledButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: Text(strings.confirm.toUpperCase()),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),
@@ -3329,10 +4259,7 @@ class _PocketCardOverlay extends StatefulWidget {
   final ShootingAdjustmentTable table;
   final ThotProvider provider;
 
-  const _PocketCardOverlay({
-    required this.table,
-    required this.provider,
-  });
+  const _PocketCardOverlay({required this.table, required this.provider});
 
   @override
   State<_PocketCardOverlay> createState() => _PocketCardOverlayState();
@@ -3398,7 +4325,9 @@ class _PocketCardOverlayState extends State<_PocketCardOverlay> {
                         },
                         children: [
                           TableRow(
-                            decoration: const BoxDecoration(color: Colors.white24),
+                            decoration: const BoxDecoration(
+                              color: Colors.white24,
+                            ),
                             children: [
                               _TableCell('Distance'),
                               _TableCell('Drop'),
@@ -3448,13 +4377,29 @@ class _PocketCardOverlayState extends State<_PocketCardOverlay> {
     return table.name.trim().isEmpty ? 'Table sans nom' : table.name;
   }
 
-  String _platformName(ThotProvider provider, String platformId, {String? customPlatformName}) {
+  String _platformName(
+    ThotProvider provider,
+    String platformId, {
+    String? customPlatformName,
+  }) {
     if (customPlatformName != null && customPlatformName.trim().isNotEmpty) {
       return customPlatformName;
     }
     final platform = provider.platforms.firstWhere(
       (p) => p.id == platformId,
-      orElse: () => Platform(id: '', name: 'Inconnu', type: '', model: '', caliber: '', serialNumber: '', weight: 0, totalRounds: 0, lastUsed: null, comment: '', lastCleaned: DateTime.now()),
+      orElse: () => Platform(
+        id: '',
+        name: 'Inconnu',
+        type: '',
+        model: '',
+        caliber: '',
+        serialNumber: '',
+        weight: 0,
+        totalRounds: 0,
+        lastUsed: null,
+        comment: '',
+        lastCleaned: DateTime.now(),
+      ),
     );
     return platform.name;
   }
@@ -3463,7 +4408,17 @@ class _PocketCardOverlayState extends State<_PocketCardOverlay> {
     if (ammoId == null) return strings.shootingTableNoAmmo;
     final ammo = provider.ammos.firstWhere(
       (a) => a.id == ammoId,
-      orElse: () => Ammo(id: '', name: 'Inconnu', brand: '', caliber: '', projectileType: '', quantity: 0, lowStockThreshold: 0, lastUsed: null, comment: ''),
+      orElse: () => Ammo(
+        id: '',
+        name: 'Inconnu',
+        brand: '',
+        caliber: '',
+        projectileType: '',
+        quantity: 0,
+        lowStockThreshold: 0,
+        lastUsed: null,
+        comment: '',
+      ),
     );
     return ammo.name;
   }

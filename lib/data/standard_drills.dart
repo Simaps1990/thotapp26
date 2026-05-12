@@ -422,10 +422,7 @@ class StandardDrills {
           shots: 4,
           target: s.standardDrillBillStep3Target,
         ),
-        ExerciseStep(
-          id: 'std_hackathorn_step_3',
-          type: StepType.transition,
-        ),
+        ExerciseStep(id: 'std_hackathorn_step_3', type: StepType.transition),
         ExerciseStep(
           id: 'std_hackathorn_step_4',
           type: StepType.tir,
@@ -434,10 +431,7 @@ class StandardDrills {
           shots: 4,
           target: s.standardDrillBillStep3Target,
         ),
-        ExerciseStep(
-          id: 'std_hackathorn_step_5',
-          type: StepType.transition,
-        ),
+        ExerciseStep(id: 'std_hackathorn_step_5', type: StepType.transition),
         ExerciseStep(
           id: 'std_hackathorn_step_6',
           type: StepType.tir,

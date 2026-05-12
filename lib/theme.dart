@@ -140,113 +140,104 @@ class DarkColors {
 }
 
 ThemeData get lightTheme => ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: LightColors.primary,
-        onPrimary: LightColors.onPrimary,
-        secondary: LightColors.secondary,
-        onSecondary: LightColors.onSecondary,
-        surface: LightColors.surface,
-        onSurface: LightColors.onSurface,
-        error: LightColors.error,
-        onError: LightColors.onError,
-        outline: LightColors.divider,
-      ),
-      scaffoldBackgroundColor: LightColors.background,
-      dividerColor: LightColors.divider,
-      textTheme:
-          _buildTextTheme(LightColors.primaryText, LightColors.secondaryText),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: LightColors.background,
-        foregroundColor: LightColors.primaryText,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
-      cardTheme: CardThemeData(
-        color: LightColors.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(
-            color: LightColors.divider,
-            width: 1.15,
-          ),
-        ),
-      ),
-      iconTheme: const IconThemeData(
-        color: LightColors.icon,
-      ),
-      primaryIconTheme: const IconThemeData(
-        color: LightColors.icon,
-      ),
-      progressIndicatorTheme:
-          const ProgressIndicatorThemeData(color: LightColors.primary),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: LightColors.primary,
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: LightColors.primaryText,
-          side: const BorderSide(color: LightColors.divider),
-        ),
-      ),
-      checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.selected) ? LightColors.primary : null,
-        ),
-      ),
-    );
+  useMaterial3: true,
+  brightness: Brightness.light,
+  colorScheme: const ColorScheme.light(
+    primary: LightColors.primary,
+    onPrimary: LightColors.onPrimary,
+    secondary: LightColors.secondary,
+    onSecondary: LightColors.onSecondary,
+    surface: LightColors.surface,
+    onSurface: LightColors.onSurface,
+    error: LightColors.error,
+    onError: LightColors.onError,
+    outline: LightColors.divider,
+  ),
+  scaffoldBackgroundColor: LightColors.background,
+  dividerColor: LightColors.divider,
+  textTheme: _buildTextTheme(
+    LightColors.primaryText,
+    LightColors.secondaryText,
+  ),
+  appBarTheme: const AppBarTheme(
+    backgroundColor: LightColors.background,
+    foregroundColor: LightColors.primaryText,
+    elevation: 0,
+    scrolledUnderElevation: 0,
+  ),
+  cardTheme: CardThemeData(
+    color: LightColors.surface,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: LightColors.divider, width: 1.15),
+    ),
+  ),
+  iconTheme: const IconThemeData(color: LightColors.icon),
+  primaryIconTheme: const IconThemeData(color: LightColors.icon),
+  progressIndicatorTheme: const ProgressIndicatorThemeData(
+    color: LightColors.primary,
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(foregroundColor: LightColors.primary),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: LightColors.primaryText,
+      side: const BorderSide(color: LightColors.divider),
+    ),
+  ),
+  checkboxTheme: CheckboxThemeData(
+    fillColor: WidgetStateProperty.resolveWith(
+      (states) =>
+          states.contains(WidgetState.selected) ? LightColors.primary : null,
+    ),
+  ),
+);
 
 ThemeData get darkTheme => ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
-        primary: DarkColors.primary,
-        onPrimary: DarkColors.onPrimary,
-        secondary: DarkColors.secondary,
-        onSecondary: DarkColors.onSecondary,
-        surface: DarkColors.surface,
-        onSurface: DarkColors.onSurface,
-        error: DarkColors.error,
-        onError: DarkColors.onError,
-        outline: DarkColors.divider,
-      ),
-      scaffoldBackgroundColor: DarkColors.background,
-      dividerColor: DarkColors.divider,
-      textTheme:
-          _buildTextTheme(DarkColors.primaryText, DarkColors.secondaryText),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: DarkColors.background,
-        foregroundColor: DarkColors.primaryText,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
-      cardTheme: CardThemeData(
-        color: DarkColors.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(
-            color: DarkColors.divider,
-            width: 1.15,
-          ),
-        ),
-      ),
-      iconTheme: const IconThemeData(color: DarkColors.primaryText),
-      primaryIconTheme: const IconThemeData(color: DarkColors.primaryText),
-      progressIndicatorTheme:
-          const ProgressIndicatorThemeData(color: DarkColors.primary),
-      checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.selected) ? DarkColors.primary : null,
-        ),
-      ),
-    );
+  useMaterial3: true,
+  brightness: Brightness.dark,
+  colorScheme: const ColorScheme.dark(
+    primary: DarkColors.primary,
+    onPrimary: DarkColors.onPrimary,
+    secondary: DarkColors.secondary,
+    onSecondary: DarkColors.onSecondary,
+    surface: DarkColors.surface,
+    onSurface: DarkColors.onSurface,
+    error: DarkColors.error,
+    onError: DarkColors.onError,
+    outline: DarkColors.divider,
+  ),
+  scaffoldBackgroundColor: DarkColors.background,
+  dividerColor: DarkColors.divider,
+  textTheme: _buildTextTheme(DarkColors.primaryText, DarkColors.secondaryText),
+  appBarTheme: const AppBarTheme(
+    backgroundColor: DarkColors.background,
+    foregroundColor: DarkColors.primaryText,
+    elevation: 0,
+    scrolledUnderElevation: 0,
+  ),
+  cardTheme: CardThemeData(
+    color: DarkColors.surface,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: DarkColors.divider, width: 1.15),
+    ),
+  ),
+  iconTheme: const IconThemeData(color: DarkColors.primaryText),
+  primaryIconTheme: const IconThemeData(color: DarkColors.primaryText),
+  progressIndicatorTheme: const ProgressIndicatorThemeData(
+    color: DarkColors.primary,
+  ),
+  checkboxTheme: CheckboxThemeData(
+    fillColor: WidgetStateProperty.resolveWith(
+      (states) =>
+          states.contains(WidgetState.selected) ? DarkColors.primary : null,
+    ),
+  ),
+);
 
 TextTheme _buildTextTheme(Color primaryColor, Color secondaryColor) {
   final primaryFont = GoogleFonts.interTextTheme();

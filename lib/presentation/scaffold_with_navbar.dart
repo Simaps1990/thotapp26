@@ -10,10 +10,8 @@ import 'package:thot/l10n/app_strings.dart';
 import '../theme.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {
-  const ScaffoldWithNavBar({
-    required this.navigationShell,
-    Key? key,
-  }) : super(key: key ?? const ValueKey<String>('ScaffoldWithNavBar'));
+  const ScaffoldWithNavBar({required this.navigationShell, Key? key})
+    : super(key: key ?? const ValueKey<String>('ScaffoldWithNavBar'));
 
   final StatefulNavigationShell navigationShell;
 
@@ -26,15 +24,9 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   Widget _withPlatformIconOffset(Widget icon) {
     if (Platform.isIOS) {
-      return Transform.translate(
-        offset: const Offset(0, 12),
-        child: icon,
-      );
+      return Transform.translate(offset: const Offset(0, 12), child: icon);
     }
-    return Transform.translate(
-      offset: const Offset(0, 2),
-      child: icon,
-    );
+    return Transform.translate(offset: const Offset(0, 2), child: icon);
   }
 
   @override
@@ -63,49 +55,43 @@ class ScaffoldWithNavBar extends StatelessWidget {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           height: navThemeHeight,
           labelPadding: const EdgeInsets.only(top: 1),
-          iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
-            (states) {
-              final selected = states.contains(WidgetState.selected);
-              final Color color;
-              if (isDark) {
-                color = selected ? colors.onSurface : colors.secondary;
-              } else {
-                color = selected
-                    ? LightColors.iconActive
-                    : LightColors.iconInactive;
-              }
-              return IconThemeData(color: color, size: 28);
-            },
-          ),
-          labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>(
-            (states) {
-              final selected = states.contains(WidgetState.selected);
-              final base = theme.textTheme.labelSmall ?? const TextStyle();
-              final Color color;
-              if (isDark) {
-                color = selected ? colors.onSurface : colors.secondary;
-              } else {
-                color = selected
-                    ? LightColors.iconActive
-                    : LightColors.iconInactive;
-              }
-              return base.copyWith(
-                fontWeight: FontWeight.w600,
-                color: color,
-                height: 1.0,
-              );
-            },
-          ),
-          overlayColor: WidgetStateProperty.resolveWith<Color?>(
-            (states) {
-              if (states.contains(WidgetState.hovered) ||
-                  states.contains(WidgetState.focused) ||
-                  states.contains(WidgetState.pressed)) {
-                return Colors.transparent;
-              }
-              return null;
-            },
-          ),
+          iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
+            final selected = states.contains(WidgetState.selected);
+            final Color color;
+            if (isDark) {
+              color = selected ? colors.onSurface : colors.secondary;
+            } else {
+              color = selected
+                  ? LightColors.iconActive
+                  : LightColors.iconInactive;
+            }
+            return IconThemeData(color: color, size: 28);
+          }),
+          labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>((states) {
+            final selected = states.contains(WidgetState.selected);
+            final base = theme.textTheme.labelSmall ?? const TextStyle();
+            final Color color;
+            if (isDark) {
+              color = selected ? colors.onSurface : colors.secondary;
+            } else {
+              color = selected
+                  ? LightColors.iconActive
+                  : LightColors.iconInactive;
+            }
+            return base.copyWith(
+              fontWeight: FontWeight.w600,
+              color: color,
+              height: 1.0,
+            );
+          }),
+          overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.focused) ||
+                states.contains(WidgetState.pressed)) {
+              return Colors.transparent;
+            }
+            return null;
+          }),
         ),
         child: Container(
           decoration: const BoxDecoration(
@@ -149,28 +135,48 @@ class ScaffoldWithNavBar extends StatelessWidget {
                     height: navHeight,
                     destinations: [
                       NavigationDestination(
-                        icon: _withPlatformIconOffset(const Icon(Icons.home_outlined)),
-                        selectedIcon: _withPlatformIconOffset(const Icon(Icons.home_rounded)),
+                        icon: _withPlatformIconOffset(
+                          const Icon(Icons.home_outlined),
+                        ),
+                        selectedIcon: _withPlatformIconOffset(
+                          const Icon(Icons.home_rounded),
+                        ),
                         label: strings.navHomeLabel,
                       ),
                       NavigationDestination(
-                        icon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/seance.svg')),
-                        selectedIcon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/seance.svg')),
+                        icon: _withPlatformIconOffset(
+                          const _NavSvgIcon('assets/images/seance.svg'),
+                        ),
+                        selectedIcon: _withPlatformIconOffset(
+                          const _NavSvgIcon('assets/images/seance.svg'),
+                        ),
                         label: strings.navSessionsLabel,
                       ),
                       NavigationDestination(
-                        icon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/material.svg')),
-                        selectedIcon: _withPlatformIconOffset(const _NavSvgIcon('assets/images/material.svg')),
+                        icon: _withPlatformIconOffset(
+                          const _NavSvgIcon('assets/images/material.svg'),
+                        ),
+                        selectedIcon: _withPlatformIconOffset(
+                          const _NavSvgIcon('assets/images/material.svg'),
+                        ),
                         label: strings.navInventoryLabel,
                       ),
                       NavigationDestination(
-                        icon: _withPlatformIconOffset(const Icon(Icons.handyman_outlined)),
-                        selectedIcon: _withPlatformIconOffset(const Icon(Icons.handyman_rounded)),
+                        icon: _withPlatformIconOffset(
+                          const Icon(Icons.handyman_outlined),
+                        ),
+                        selectedIcon: _withPlatformIconOffset(
+                          const Icon(Icons.handyman_rounded),
+                        ),
                         label: strings.navToolsLabel,
                       ),
                       NavigationDestination(
-                        icon: _withPlatformIconOffset(const Icon(Icons.settings_outlined)),
-                        selectedIcon: _withPlatformIconOffset(const Icon(Icons.settings_rounded)),
+                        icon: _withPlatformIconOffset(
+                          const Icon(Icons.settings_outlined),
+                        ),
+                        selectedIcon: _withPlatformIconOffset(
+                          const Icon(Icons.settings_rounded),
+                        ),
                         label: strings.navSettingsLabel,
                       ),
                     ],
@@ -204,4 +210,3 @@ class _NavSvgIcon extends StatelessWidget {
     );
   }
 }
-
