@@ -58,8 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _checkAndShowTutorial() async {
     if (_tutorialDismissedThisSession) return;
     final prefs = await SharedPreferences.getInstance();
-    final neverShowAgain =
-        prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
+    final neverShowAgain = prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
     if (!neverShowAgain && mounted && _tutorialOverlayEntry == null) {
       _showTutorial();
     }
@@ -156,7 +155,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final safeName = file.name.trim().isEmpty
         ? 'document'
         : file.name.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
-    final targetPath = '${docsDir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+    final targetPath =
+        '${docsDir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeName';
     final targetFile = File(targetPath);
 
     final Uint8List? bytes = file.bytes;
@@ -233,16 +233,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final file = File(path);
     if (!await file.exists() || (await file.length()) == 0) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.exportCrashLogEmpty)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.exportCrashLogEmpty)));
       return;
     }
     await Share.shareXFiles([XFile(path)], text: 'THOT crash log');
   }
 
   Future<void> _showDataManagementDialog(
-      BuildContext context, ThotProvider provider) async {
+    BuildContext context,
+    ThotProvider provider,
+  ) async {
     final strings = AppStrings.of(context);
     showDialog(
       context: context,
@@ -283,9 +285,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await Share.shareXFiles([XFile(file.path)], text: 'THOT backup');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.settingsExportError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.settingsExportError(e))));
     }
   }
 
@@ -300,12 +302,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (result == null || result.files.isEmpty) return;
       if (!mounted) return;
 
-      // Confirm before overwriting
+      final picked = result.files.single;
+      String raw;
+      if (picked.path != null) {
+        raw = await File(picked.path!).readAsString();
+      } else if (picked.bytes != null) {
+        raw = utf8.decode(picked.bytes!);
+      } else {
+        return;
+      }
+
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final preview = provider.previewDomainImport(decoded);
+
+      if (!mounted) return;
+
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(strings.jsonImportConfirmTitle),
-          content: Text(strings.jsonImportConfirmMessage),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(strings.jsonImportConfirmMessage),
+              const Gap(16),
+              Text(strings.jsonImportPreviewDetectedContent),
+              const Gap(8),
+              Text(strings.jsonImportPreviewPlatforms(preview.platforms)),
+              Text(strings.jsonImportPreviewAmmos(preview.ammos)),
+              Text(strings.jsonImportPreviewAccessories(preview.accessories)),
+              Text(strings.jsonImportPreviewSessions(preview.sessions)),
+              Text(strings.jsonImportPreviewDiagnostics(preview.diagnostics)),
+              Text(
+                strings.jsonImportPreviewShootingTables(preview.shootingTables),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -318,28 +351,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       );
+
       if (confirmed != true || !mounted) return;
 
-      final picked = result.files.single;
-      String raw;
-      if (picked.path != null) {
-        raw = await File(picked.path!).readAsString();
-      } else if (picked.bytes != null) {
-        raw = utf8.decode(picked.bytes!);
-      } else {
-        return;
-      }
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
       await provider.importDomainFromJson(decoded);
+
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.jsonImportSuccessSnack)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.jsonImportSuccessSnack)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.jsonImportErrorSnack(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.jsonImportErrorSnack(e))));
     }
   }
 
@@ -348,9 +373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final uri = Uri(
       scheme: 'mailto',
       path: to,
-      queryParameters: {
-        'subject': subject,
-      },
+      queryParameters: {'subject': subject},
     );
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
@@ -368,11 +391,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? strings.proRestorePurchasesSuccess
           : strings.proRestorePurchasesNoActiveSubscription;
       ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+        SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+      );
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -414,9 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required ColorScheme colors,
     required TextTheme textStyles,
   }) {
-    return [
-      const Gap(AppSpacing.xs),
-    ];
+    return [const Gap(AppSpacing.xs)];
   }
 
   Widget _buildProfileGroup({
@@ -432,28 +450,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: _SettingsGroup(
         title: strings.profileGroupTitle,
         children: [
-        _SettingsItem(
-          icon: Icons.person_outline_rounded,
-          label: displayName,
-          subtitle: licenseSubtitle,
-          onTap: () => _showEditProfileDialog(context, provider),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
+          _SettingsItem(
+            icon: Icons.person_outline_rounded,
+            label: displayName,
+            subtitle: licenseSubtitle,
+            onTap: () => _showEditProfileDialog(context, provider),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: colors.onSurface.withValues(alpha: 0.5),
+            ),
           ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.description_outlined,
-          label: strings.settingsDocumentsLabel,
-          subtitle: strings.settingsDocumentsCount(provider.userDocuments.length),
-          onTap: () => _showDocumentsDialog(context, provider),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.description_outlined,
+            label: strings.settingsDocumentsLabel,
+            subtitle: strings.settingsDocumentsCount(
+              provider.userDocuments.length,
+            ),
+            onTap: () => _showDocumentsDialog(context, provider),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: colors.onSurface.withValues(alpha: 0.5),
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -472,330 +492,330 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: _SettingsGroup(
         title: strings.preferencesGroupTitle,
         children: [
-        _SettingsItem(
-          icon: Icons.dark_mode_rounded,
-          label: strings.darkModeLabel,
-          subtitle: strings.darkModeSubtitle,
-          trailing: SwitchTheme(
-            data: switchTheme,
-            child: Switch(
-              value: provider.themeMode == ThemeMode.dark,
-              onChanged: (val) => provider.toggleTheme(),
-              activeThumbColor: colors.primary,
+          _SettingsItem(
+            icon: Icons.dark_mode_rounded,
+            label: strings.darkModeLabel,
+            subtitle: strings.darkModeSubtitle,
+            trailing: SwitchTheme(
+              data: switchTheme,
+              child: Switch(
+                value: provider.themeMode == ThemeMode.dark,
+                onChanged: (val) => provider.toggleTheme(),
+                activeThumbColor: colors.primary,
+              ),
             ),
           ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.language_rounded,
-          label: strings.appLanguageLabel,
-          subtitle: null,
-          compact: true,
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<String?>(
-              alignment: Alignment.centerRight,
-              value: provider.localeCode?.isEmpty == true
-                  ? null
-                  : provider.localeCode,
-              items: [
-                DropdownMenuItem<String?>(
-                  value: null,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.appLanguageSystem),
-                  ),
-                ),
-                DropdownMenuItem<String?>(
-                  value: 'fr',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.appLanguageFrench),
-                  ),
-                ),
-                DropdownMenuItem<String?>(
-                  value: 'en',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.appLanguageEnglish),
-                  ),
-                ),
-                DropdownMenuItem<String?>(
-                  value: 'de',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.appLanguageGerman),
-                  ),
-                ),
-                DropdownMenuItem<String?>(
-                  value: 'it',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.appLanguageItalian),
-                  ),
-                ),
-                DropdownMenuItem<String?>(
-                  value: 'es',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.appLanguageSpanish),
-                  ),
-                ),
-              ],
-              onChanged: (code) {
-                provider.setLocaleCode(code);
-              },
-              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
-              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
-            ),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.square_foot_rounded,
-          label: strings.unitProfileLabel,
-          subtitle: null,
-          compact: true,
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<UnitProfile>(
-              alignment: Alignment.centerRight,
-              value: provider.unitProfile == UnitProfile.custom
-                  ? null
-                  : provider.unitProfile,
-              hint: Align(
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.language_rounded,
+            label: strings.appLanguageLabel,
+            subtitle: null,
+            compact: true,
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton<String?>(
                 alignment: Alignment.centerRight,
-                child: Text(strings.unitsCustom),
+                value: provider.localeCode?.isEmpty == true
+                    ? null
+                    : provider.localeCode,
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.appLanguageSystem),
+                    ),
+                  ),
+                  DropdownMenuItem<String?>(
+                    value: 'fr',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.appLanguageFrench),
+                    ),
+                  ),
+                  DropdownMenuItem<String?>(
+                    value: 'en',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.appLanguageEnglish),
+                    ),
+                  ),
+                  DropdownMenuItem<String?>(
+                    value: 'de',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.appLanguageGerman),
+                    ),
+                  ),
+                  DropdownMenuItem<String?>(
+                    value: 'it',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.appLanguageItalian),
+                    ),
+                  ),
+                  DropdownMenuItem<String?>(
+                    value: 'es',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.appLanguageSpanish),
+                    ),
+                  ),
+                ],
+                onChanged: (code) {
+                  provider.setLocaleCode(code);
+                },
+                icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+                style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
               ),
-              items: [
-                DropdownMenuItem(
-                  value: UnitProfile.metric,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.unitsMetric),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: UnitProfile.imperial,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.unitsImperial),
-                  ),
-                ),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  provider.setUnitProfile(val);
-                }
-              },
-              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
-              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
             ),
           ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.monitor_weight_outlined,
-          label: strings.unitsWeightLabel,
-          subtitle: null,
-          compact: true,
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<WeightUnit>(
-              alignment: Alignment.centerRight,
-              value: provider.weightUnit,
-              items: const [
-                DropdownMenuItem(value: WeightUnit.gram, child: Text('g')),
-                DropdownMenuItem(value: WeightUnit.grain, child: Text('gr')),
-                DropdownMenuItem(value: WeightUnit.ounce, child: Text('oz')),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  provider.setWeightUnit(val);
-                }
-              },
-              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
-              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
-            ),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.straighten_rounded,
-          label: strings.unitsDistanceLabel,
-          subtitle: null,
-          compact: true,
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<DistanceUnit>(
-              alignment: Alignment.centerRight,
-              value: provider.distanceUnit,
-              items: const [
-                DropdownMenuItem(value: DistanceUnit.meter, child: Text('m')),
-                DropdownMenuItem(value: DistanceUnit.yard, child: Text('yd')),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  provider.setDistanceUnit(val);
-                }
-              },
-              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
-              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
-            ),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.speed_rounded,
-          label: strings.unitsVelocityLabel,
-          subtitle: null,
-          compact: true,
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<VelocityUnit>(
-              alignment: Alignment.centerRight,
-              value: provider.velocityUnit,
-              items: const [
-                DropdownMenuItem(
-                  value: VelocityUnit.metersPerSecond,
-                  child: Text('m/s'),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.square_foot_rounded,
+            label: strings.unitProfileLabel,
+            subtitle: null,
+            compact: true,
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton<UnitProfile>(
+                alignment: Alignment.centerRight,
+                value: provider.unitProfile == UnitProfile.custom
+                    ? null
+                    : provider.unitProfile,
+                hint: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(strings.unitsCustom),
                 ),
-                DropdownMenuItem(
-                  value: VelocityUnit.feetPerSecond,
-                  child: Text('fps'),
-                ),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  provider.setVelocityUnit(val);
-                }
-              },
-              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
-              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
-            ),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.cloud_outlined,
-          label: strings.unitsWeatherLabel,
-          subtitle: provider.useMetric
-              ? strings.unitsWeatherExampleMetric
-              : strings.unitsWeatherExampleImperial,
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<bool>(
-              alignment: Alignment.centerRight,
-              value: provider.useMetric,
-              items: [
-                DropdownMenuItem(
-                  value: true,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.unitsMetric),
+                items: [
+                  DropdownMenuItem(
+                    value: UnitProfile.metric,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.unitsMetric),
+                    ),
                   ),
-                ),
-                DropdownMenuItem(
-                  value: false,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.unitsImperial),
+                  DropdownMenuItem(
+                    value: UnitProfile.imperial,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.unitsImperial),
+                    ),
                   ),
-                ),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  provider.setWeatherUnitSystem(val);
-                }
-              },
-              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
-              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
-            ),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.calendar_month_rounded,
-          label: strings.dateFormatLabel,
-          subtitle: null,
-          compact: true,
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              alignment: Alignment.centerRight,
-              value: provider.dateFormatPreference,
-              items: [
-                DropdownMenuItem(
-                  value: 'day_month_year',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.dateFormatDayMonthYear),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'month_day_year',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.dateFormatMonthDayYear),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'year_month_day',
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(strings.dateFormatYearMonthDay),
-                  ),
-                ),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  provider.setDateFormatPreference(val);
-                }
-              },
-              icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
-              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
-            ),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.notifications_active_outlined,
-          label: strings.documentPushRemindersLabel,
-          subtitle: strings.documentPushRemindersSubtitle,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SwitchTheme(
-                data: switchTheme,
-                child: Switch(
-                  value: provider.documentExpiryPushEnabled,
-                  onChanged: (val) async {
-                    final before = provider.documentExpiryPushEnabled;
-                    await provider.setDocumentExpiryPushEnabled(val);
-                    if (!context.mounted) return;
-                    if (val && before == provider.documentExpiryPushEnabled) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(strings.documentPushPermissionDenied),
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                    }
-                  },
-                  activeThumbColor: colors.primary,
-                ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    provider.setUnitProfile(val);
+                  }
+                },
+                icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+                style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
               ),
-            ],
+            ),
           ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.shield_rounded,
-          label: strings.backupLabel,
-          subtitle: strings.backupSubtitle,
-          trailing: const SizedBox.shrink(),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.offline_bolt_outlined,
-          label: strings.offlineModeLabel,
-          subtitle: strings.offlineModeSubtitle,
-          trailing: const SizedBox.shrink(),
-        ),
-      ],
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.monitor_weight_outlined,
+            label: strings.unitsWeightLabel,
+            subtitle: null,
+            compact: true,
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton<WeightUnit>(
+                alignment: Alignment.centerRight,
+                value: provider.weightUnit,
+                items: const [
+                  DropdownMenuItem(value: WeightUnit.gram, child: Text('g')),
+                  DropdownMenuItem(value: WeightUnit.grain, child: Text('gr')),
+                  DropdownMenuItem(value: WeightUnit.ounce, child: Text('oz')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    provider.setWeightUnit(val);
+                  }
+                },
+                icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+                style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+              ),
+            ),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.straighten_rounded,
+            label: strings.unitsDistanceLabel,
+            subtitle: null,
+            compact: true,
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton<DistanceUnit>(
+                alignment: Alignment.centerRight,
+                value: provider.distanceUnit,
+                items: const [
+                  DropdownMenuItem(value: DistanceUnit.meter, child: Text('m')),
+                  DropdownMenuItem(value: DistanceUnit.yard, child: Text('yd')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    provider.setDistanceUnit(val);
+                  }
+                },
+                icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+                style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+              ),
+            ),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.speed_rounded,
+            label: strings.unitsVelocityLabel,
+            subtitle: null,
+            compact: true,
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton<VelocityUnit>(
+                alignment: Alignment.centerRight,
+                value: provider.velocityUnit,
+                items: const [
+                  DropdownMenuItem(
+                    value: VelocityUnit.metersPerSecond,
+                    child: Text('m/s'),
+                  ),
+                  DropdownMenuItem(
+                    value: VelocityUnit.feetPerSecond,
+                    child: Text('fps'),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    provider.setVelocityUnit(val);
+                  }
+                },
+                icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+                style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+              ),
+            ),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.cloud_outlined,
+            label: strings.unitsWeatherLabel,
+            subtitle: provider.useMetric
+                ? strings.unitsWeatherExampleMetric
+                : strings.unitsWeatherExampleImperial,
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton<bool>(
+                alignment: Alignment.centerRight,
+                value: provider.useMetric,
+                items: [
+                  DropdownMenuItem(
+                    value: true,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.unitsMetric),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: false,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.unitsImperial),
+                    ),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    provider.setWeatherUnitSystem(val);
+                  }
+                },
+                icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+                style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+              ),
+            ),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.calendar_month_rounded,
+            label: strings.dateFormatLabel,
+            subtitle: null,
+            compact: true,
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                alignment: Alignment.centerRight,
+                value: provider.dateFormatPreference,
+                items: [
+                  DropdownMenuItem(
+                    value: 'day_month_year',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.dateFormatDayMonthYear),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'month_day_year',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.dateFormatMonthDayYear),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'year_month_day',
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(strings.dateFormatYearMonthDay),
+                    ),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    provider.setDateFormatPreference(val);
+                  }
+                },
+                icon: Icon(Icons.arrow_drop_down, color: colors.secondary),
+                style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
+              ),
+            ),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.notifications_active_outlined,
+            label: strings.documentPushRemindersLabel,
+            subtitle: strings.documentPushRemindersSubtitle,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SwitchTheme(
+                  data: switchTheme,
+                  child: Switch(
+                    value: provider.documentExpiryPushEnabled,
+                    onChanged: (val) async {
+                      final before = provider.documentExpiryPushEnabled;
+                      await provider.setDocumentExpiryPushEnabled(val);
+                      if (!context.mounted) return;
+                      if (val && before == provider.documentExpiryPushEnabled) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(strings.documentPushPermissionDenied),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    },
+                    activeThumbColor: colors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.shield_rounded,
+            label: strings.backupLabel,
+            subtitle: strings.backupSubtitle,
+            trailing: const SizedBox.shrink(),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.offline_bolt_outlined,
+            label: strings.offlineModeLabel,
+            subtitle: strings.offlineModeSubtitle,
+            trailing: const SizedBox.shrink(),
+          ),
+        ],
       ),
     );
   }
@@ -830,10 +850,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         margin: const EdgeInsets.only(bottom: AppSpacing.lg),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF3F4A30),
-              Color(0xFF6E7C4A),
-            ],
+            colors: [Color(0xFF3F4A30), Color(0xFF6E7C4A)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -903,13 +920,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _PremiumFeature(strings.proBenefitUnlimitedSessionsTitle),
-                        _PremiumFeature(strings.proBenefitUnlimitedEquipmentTitle),
+                        _PremiumFeature(
+                          strings.proBenefitUnlimitedSessionsTitle,
+                        ),
+                        _PremiumFeature(
+                          strings.proBenefitUnlimitedEquipmentTitle,
+                        ),
                         _PremiumFeature(strings.proBenefitTimerTitle),
                         _PremiumFeature(strings.proBenefitDiagnosticTitle),
                         _PremiumFeature(strings.proBenefitMilliemeTitle),
                         _PremiumFeature(strings.proBenefitLogbookExportTitle),
-                        _PremiumFeature(strings.proBenefitUnlimitedDocumentsTitle),
+                        _PremiumFeature(
+                          strings.proBenefitUnlimitedDocumentsTitle,
+                        ),
                       ],
                     ),
                   ),
@@ -918,7 +941,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
                       onPressed: () => _restorePurchases(context, provider),
-                      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white,
+                      ),
                       label: Text(
                         strings.proRestorePurchases,
                         style: textStyles.bodyMedium?.copyWith(
@@ -982,141 +1008,144 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: _SettingsGroup(
         title: strings.shortcutsGroupTitle,
         children: [
-        _ShortcutToggle(
-          iconBuilder: (c) => Icon(Icons.dark_mode_rounded, color: c, size: 22),
-          label: strings.shortcutToggleTheme,
-          actionId: 'toggle_theme',
-          enabled: provider.quickActions.contains('toggle_theme'),
-          onChanged: (val) => provider.toggleQuickAction('toggle_theme'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) =>
-              Icon(Icons.medical_services_outlined, color: c, size: 22),
-          label: strings.quickActionLabelDiagnostic,
-          actionId: 'diagnostic',
-          enabled: provider.quickActions.contains('diagnostic'),
-          onChanged: (val) => provider.toggleQuickAction('diagnostic'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => Icon(Icons.bolt_rounded, color: c, size: 22),
-          label: strings.quickActionLabelReactionExercises,
-          actionId: 'reaction_exercises',
-          enabled: provider.quickActions.contains('reaction_exercises'),
-          onChanged: (val) => provider.toggleQuickAction('reaction_exercises'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) =>
-              Icon(Icons.straighten_rounded, color: c, size: 22),
-          label: strings.quickActionLabelMillieme,
-          actionId: 'millieme',
-          enabled: provider.quickActions.contains('millieme'),
-          onChanged: (val) => provider.toggleQuickAction('millieme'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) =>
-              Icon(Icons.inventory_2_rounded, color: c, size: 22),
-          label: strings.shortcutNewAccessory,
-          actionId: 'new_accessory',
-          enabled: provider.quickActions.contains('new_accessory'),
-          onChanged: (val) => provider.toggleQuickAction('new_accessory'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => SvgPicture.asset(
-            'assets/images/pointe.svg',
-            width: 22,
-            height: 22,
-            colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+          _ShortcutToggle(
+            iconBuilder: (c) =>
+                Icon(Icons.dark_mode_rounded, color: c, size: 22),
+            label: strings.shortcutToggleTheme,
+            actionId: 'toggle_theme',
+            enabled: provider.quickActions.contains('toggle_theme'),
+            onChanged: (val) => provider.toggleQuickAction('toggle_theme'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
           ),
-          label: strings.shortcutNewAmmo,
-          actionId: 'new_ammo',
-          enabled: provider.quickActions.contains('new_ammo'),
-          onChanged: (val) => provider.toggleQuickAction('new_ammo'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => SvgPicture.asset(
-            'assets/images/tube.svg',
-            width: 22,
-            height: 22,
-            colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) =>
+                Icon(Icons.medical_services_outlined, color: c, size: 22),
+            label: strings.quickActionLabelDiagnostic,
+            actionId: 'diagnostic',
+            enabled: provider.quickActions.contains('diagnostic'),
+            onChanged: (val) => provider.toggleQuickAction('diagnostic'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
           ),
-          label: strings.shortcutNewPlatform,
-          actionId: 'new_platform',
-          enabled: provider.quickActions.contains('new_platform'),
-          onChanged: (val) => provider.toggleQuickAction('new_platform'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) =>
-              Icon(Icons.add_circle_outline_rounded, color: c, size: 22),
-          label: strings.shortcutNewSession,
-          actionId: 'new_session',
-          enabled: provider.quickActions.contains('new_session'),
-          onChanged: (val) => provider.toggleQuickAction('new_session'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) =>
-              Icon(Icons.calculate_rounded, color: c, size: 22),
-          label: strings.quickActionLabelCalculationTools,
-          actionId: 'calculation_tools',
-          enabled: provider.quickActions.contains('calculation_tools'),
-          onChanged: (val) => provider.toggleQuickAction('calculation_tools'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => Icon(Icons.palette_rounded, color: c, size: 22),
-          label: strings.quickActionLabelVisualStimuli,
-          actionId: 'visual_stimuli',
-          enabled: provider.quickActions.contains('visual_stimuli'),
-          onChanged: (val) => provider.toggleQuickAction('visual_stimuli'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => Icon(Icons.table_chart_outlined, color: c, size: 22),
-          label: strings.quickActionLabelShootingTables,
-          actionId: 'shooting_tables',
-          enabled: provider.quickActions.contains('shooting_tables'),
-          onChanged: (val) => provider.toggleQuickAction('shooting_tables'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-        const Divider(indent: 48, height: 1),
-        _ShortcutToggle(
-          iconBuilder: (c) => Icon(Icons.timer_rounded, color: c, size: 22),
-          label: strings.shortcutTimer,
-          actionId: 'timer',
-          enabled: provider.quickActions.contains('timer'),
-          onChanged: (val) => provider.toggleQuickAction('timer'),
-          maxReached: provider.quickActions.length >= 4,
-          switchTheme: switchTheme,
-        ),
-      ],
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) => Icon(Icons.bolt_rounded, color: c, size: 22),
+            label: strings.quickActionLabelReactionExercises,
+            actionId: 'reaction_exercises',
+            enabled: provider.quickActions.contains('reaction_exercises'),
+            onChanged: (val) =>
+                provider.toggleQuickAction('reaction_exercises'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) =>
+                Icon(Icons.straighten_rounded, color: c, size: 22),
+            label: strings.quickActionLabelMillieme,
+            actionId: 'millieme',
+            enabled: provider.quickActions.contains('millieme'),
+            onChanged: (val) => provider.toggleQuickAction('millieme'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) =>
+                Icon(Icons.inventory_2_rounded, color: c, size: 22),
+            label: strings.shortcutNewAccessory,
+            actionId: 'new_accessory',
+            enabled: provider.quickActions.contains('new_accessory'),
+            onChanged: (val) => provider.toggleQuickAction('new_accessory'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) => SvgPicture.asset(
+              'assets/images/pointe.svg',
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+            ),
+            label: strings.shortcutNewAmmo,
+            actionId: 'new_ammo',
+            enabled: provider.quickActions.contains('new_ammo'),
+            onChanged: (val) => provider.toggleQuickAction('new_ammo'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) => SvgPicture.asset(
+              'assets/images/tube.svg',
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+            ),
+            label: strings.shortcutNewPlatform,
+            actionId: 'new_platform',
+            enabled: provider.quickActions.contains('new_platform'),
+            onChanged: (val) => provider.toggleQuickAction('new_platform'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) =>
+                Icon(Icons.add_circle_outline_rounded, color: c, size: 22),
+            label: strings.shortcutNewSession,
+            actionId: 'new_session',
+            enabled: provider.quickActions.contains('new_session'),
+            onChanged: (val) => provider.toggleQuickAction('new_session'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) =>
+                Icon(Icons.calculate_rounded, color: c, size: 22),
+            label: strings.quickActionLabelCalculationTools,
+            actionId: 'calculation_tools',
+            enabled: provider.quickActions.contains('calculation_tools'),
+            onChanged: (val) => provider.toggleQuickAction('calculation_tools'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) => Icon(Icons.palette_rounded, color: c, size: 22),
+            label: strings.quickActionLabelVisualStimuli,
+            actionId: 'visual_stimuli',
+            enabled: provider.quickActions.contains('visual_stimuli'),
+            onChanged: (val) => provider.toggleQuickAction('visual_stimuli'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) =>
+                Icon(Icons.table_chart_outlined, color: c, size: 22),
+            label: strings.quickActionLabelShootingTables,
+            actionId: 'shooting_tables',
+            enabled: provider.quickActions.contains('shooting_tables'),
+            onChanged: (val) => provider.toggleQuickAction('shooting_tables'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+          const Divider(indent: 48, height: 1),
+          _ShortcutToggle(
+            iconBuilder: (c) => Icon(Icons.timer_rounded, color: c, size: 22),
+            label: strings.shortcutTimer,
+            actionId: 'timer',
+            enabled: provider.quickActions.contains('timer'),
+            onChanged: (val) => provider.toggleQuickAction('timer'),
+            maxReached: provider.quickActions.length >= 4,
+            switchTheme: switchTheme,
+          ),
+        ],
       ),
     );
   }
@@ -1134,90 +1163,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: _SettingsGroup(
         title: strings.securityGroupTitle,
         children: [
-        _SettingsItem(
-          icon: Icons.pin_outlined,
-          label: strings.pinCodeLabel,
-          subtitle:
-              provider.pinEnabled ? strings.statusEnabled : strings.statusDisabled,
-          trailing: SwitchTheme(
-            data: switchTheme,
-            child: Switch(
-              value: provider.pinEnabled,
-              onChanged: (val) async {
-                if (val) {
-                  context.push('/set-pin');
-                } else {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(strings.pinDisableConfirmTitle),
-                      content: Text(strings.pinDisableConfirmMessage),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(strings.settingsDialogCancel),
+          _SettingsItem(
+            icon: Icons.pin_outlined,
+            label: strings.pinCodeLabel,
+            subtitle: provider.pinEnabled
+                ? strings.statusEnabled
+                : strings.statusDisabled,
+            trailing: SwitchTheme(
+              data: switchTheme,
+              child: Switch(
+                value: provider.pinEnabled,
+                onChanged: (val) async {
+                  if (val) {
+                    context.push('/set-pin');
+                  } else {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(strings.pinDisableConfirmTitle),
+                        content: Text(strings.pinDisableConfirmMessage),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text(strings.settingsDialogCancel),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text(strings.pinDisableConfirmAction),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed != true || !context.mounted) return;
+                    await provider.togglePinEnabled(false);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(strings.pinDisabledSnack),
+                          duration: const Duration(seconds: 3),
                         ),
-                        FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(strings.pinDisableConfirmAction),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirmed != true || !context.mounted) return;
-                  await provider.togglePinEnabled(false);
+                      );
+                    }
+                  }
+                },
+                activeThumbColor: colors.primary,
+              ),
+            ),
+          ),
+          const Divider(indent: 48, height: 1),
+          _SettingsItem(
+            icon: Icons.fingerprint_rounded,
+            label: strings.biometricLabel,
+            subtitle: provider.biometricEnabled
+                ? strings.statusEnabled
+                : strings.statusDisabled,
+            trailing: SwitchTheme(
+              data: switchTheme,
+              child: Switch(
+                value: provider.biometricEnabled,
+                onChanged: (val) async {
+                  if (val && !provider.pinEnabled) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(strings.biometricRequiresPinSnack),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                    return;
+                  }
+                  await provider.toggleBiometricEnabled(val);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(strings.pinDisabledSnack),
+                        content: Text(strings.biometricStatusChangedSnack(val)),
                         duration: const Duration(seconds: 3),
                       ),
                     );
                   }
-                }
-              },
-              activeThumbColor: colors.primary,
+                },
+                activeThumbColor: colors.primary,
+              ),
             ),
           ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.fingerprint_rounded,
-          label: strings.biometricLabel,
-          subtitle: provider.biometricEnabled
-              ? strings.statusEnabled
-              : strings.statusDisabled,
-          trailing: SwitchTheme(
-            data: switchTheme,
-            child: Switch(
-              value: provider.biometricEnabled,
-              onChanged: (val) async {
-                if (val && !provider.pinEnabled) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(strings.biometricRequiresPinSnack),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                  return;
-                }
-                await provider.toggleBiometricEnabled(val);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        strings.biometricStatusChangedSnack(val),
-                      ),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                }
-              },
-              activeThumbColor: colors.primary,
-            ),
-          ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -1234,91 +1262,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         key: _supportKey,
         child: _SettingsGroup(
-        title: strings.supportGroupTitle,
-        children: [
-        _SettingsItem(
-          icon: Icons.picture_as_pdf_rounded,
-          label: strings.exportPdfLabel,
-          subtitle: provider.isPremium
-              ? strings.exportPdfSubtitlePremium
-              : strings.exportPdfSubtitleProOnly,
-          onTap: () => _handleExportPdf(context, provider),
-          trailing: provider.isPremium
-              ? Icon(
-                  Icons.download_rounded,
-                  color: colors.primary,
-                )
-              : GestureDetector(
-                  onTap: () => context.push('/pro'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.primary,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: LightColors.surfaceHighlight,
-                        width: 1.35,
+          title: strings.supportGroupTitle,
+          children: [
+            _SettingsItem(
+              icon: Icons.picture_as_pdf_rounded,
+              label: strings.exportPdfLabel,
+              subtitle: provider.isPremium
+                  ? strings.exportPdfSubtitlePremium
+                  : strings.exportPdfSubtitleProOnly,
+              onTap: () => _handleExportPdf(context, provider),
+              trailing: provider.isPremium
+                  ? Icon(Icons.download_rounded, color: colors.primary)
+                  : GestureDetector(
+                      onTap: () => context.push('/pro'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.primary,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: LightColors.surfaceHighlight,
+                            width: 1.35,
+                          ),
+                        ),
+                        child: Text(
+                          strings.proBadge,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.onPrimary,
+                              ),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      strings.proBadge,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colors.onPrimary,
-                          ),
-                    ),
-                  ),
-                ),
+            ),
+            const Divider(indent: 48, height: 1),
+            _SettingsItem(
+              icon: Icons.info_outline_rounded,
+              label: strings.legalAndPrivacyLabel,
+              subtitle: strings.aboutSubtitle,
+              onTap: () => context.push('/legal'),
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: colors.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+            const Divider(indent: 48, height: 1),
+            _SettingsItem(
+              icon: Icons.contact_support_outlined,
+              label: strings.supportAndContactLabel,
+              subtitle: strings.contactMeSubtitle,
+              onTap: () => _showContactDialog(context),
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: colors.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+            const Divider(indent: 48, height: 1),
+            _SettingsItem(
+              icon: Icons.settings_backup_restore_rounded,
+              label: strings.dataManagementLabel,
+              subtitle: strings.dataManagementSubtitle,
+              onTap: () => _showDataManagementDialog(context, provider),
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: colors.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+            const Divider(indent: 48, height: 1),
+            _SettingsItem(
+              icon: Icons.delete_forever_rounded,
+              label: strings.settingsDeleteAllDataLabel,
+              subtitle: strings.settingsDeleteAllDataSubtitle,
+              onTap: () => _confirmDeleteAllLocalData(context, provider),
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: colors.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
         ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.info_outline_rounded,
-          label: strings.legalAndPrivacyLabel,
-          subtitle: strings.aboutSubtitle,
-          onTap: () => context.push('/legal'),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.contact_support_outlined,
-          label: strings.supportAndContactLabel,
-          subtitle: strings.contactMeSubtitle,
-          onTap: () => _showContactDialog(context),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.settings_backup_restore_rounded,
-          label: strings.dataManagementLabel,
-          subtitle: strings.dataManagementSubtitle,
-          onTap: () => _showDataManagementDialog(context, provider),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-        const Divider(indent: 48, height: 1),
-        _SettingsItem(
-          icon: Icons.delete_forever_rounded,
-          label: strings.settingsDeleteAllDataLabel,
-          subtitle: strings.settingsDeleteAllDataSubtitle,
-          onTap: () => _confirmDeleteAllLocalData(context, provider),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: colors.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-      ],
-      ),
       ),
     );
   }
@@ -1451,7 +1477,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.black.withValues(alpha: 0.6),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(100),
                     ),
@@ -1528,7 +1557,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showEditProfileDialog(BuildContext context, ThotProvider provider) {
     final nameController = TextEditingController(text: provider.userName);
-    final licenseController = TextEditingController(text: provider.licenseNumber);
+    final licenseController = TextEditingController(
+      text: provider.licenseNumber,
+    );
     final emailController = TextEditingController(text: provider.userEmail);
 
     final strings = AppStrings.of(context);
@@ -1543,20 +1574,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextField(
               controller: nameController,
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 labelText: strings.settingsProfileNameLabel,
                 prefixIcon: Icon(Icons.person_outline_rounded),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ),
             ),
@@ -1564,20 +1604,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextField(
               controller: licenseController,
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 labelText: strings.settingsProfileLicenseLabel,
                 prefixIcon: Icon(Icons.badge_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ),
             ),
@@ -1585,20 +1634,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextField(
               controller: emailController,
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 labelText: strings.settingsProfileEmailLabel,
                 prefixIcon: Icon(Icons.email_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -1632,7 +1690,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-Future<void> _handleExportPdf(
+  Future<void> _handleExportPdf(
     BuildContext context,
     ThotProvider provider,
   ) async {
@@ -1707,7 +1765,12 @@ Future<void> _handleExportPdf(
           final colors = Theme.of(ctx).colorScheme;
           final textStyles = Theme.of(ctx).textTheme;
 
-          Widget option(String label, String count, bool value, ValueChanged<bool?> onChanged) {
+          Widget option(
+            String label,
+            String count,
+            bool value,
+            ValueChanged<bool?> onChanged,
+          ) {
             return InkWell(
               onTap: () => onChanged(!value),
               borderRadius: BorderRadius.circular(8),
@@ -1724,19 +1787,34 @@ Future<void> _handleExportPdf(
                         }
                         return Colors.transparent;
                       }),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
                     const Gap(8),
                     Expanded(
-                      child: Text(label, style: textStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                      child: Text(
+                        label,
+                        style: textStyles.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: colors.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: Text(count, style: textStyles.labelSmall?.copyWith(color: colors.secondary)),
+                      child: Text(
+                        count,
+                        style: textStyles.labelSmall?.copyWith(
+                          color: colors.secondary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1747,7 +1825,11 @@ Future<void> _handleExportPdf(
           return AlertDialog(
             title: Row(
               children: [
-                Icon(Icons.picture_as_pdf_rounded, color: colors.primary, size: 22),
+                Icon(
+                  Icons.picture_as_pdf_rounded,
+                  color: colors.primary,
+                  size: 22,
+                ),
                 const Gap(10),
                 Text(strings.exportNotebookTitle),
               ],
@@ -1756,32 +1838,69 @@ Future<void> _handleExportPdf(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(strings.exportSectionsLabel, style: textStyles.labelLarge?.copyWith(color: colors.secondary)),
+                Text(
+                  strings.exportSectionsLabel,
+                  style: textStyles.labelLarge?.copyWith(
+                    color: colors.secondary,
+                  ),
+                ),
                 const Gap(8),
-                option(strings.exportPlatformsLabel, '${provider.platforms.length}', platforms,
-                    (v) => setLocalState(() => platforms = v ?? platforms)),
-                option(strings.exportConsumablesLabel, '${provider.ammos.length}', ammos,
-                    (v) => setLocalState(() => ammos = v ?? ammos)),
-                option(strings.exportEquipmentLabel, '${provider.accessories.length}', accessories,
-                    (v) => setLocalState(() => accessories = v ?? accessories)),
-                option(strings.exportSessionsLabel, '${provider.sessions.length}', sessions,
-                    (v) => setLocalState(() => sessions = v ?? sessions)),
+                option(
+                  strings.exportPlatformsLabel,
+                  '${provider.platforms.length}',
+                  platforms,
+                  (v) => setLocalState(() => platforms = v ?? platforms),
+                ),
+                option(
+                  strings.exportConsumablesLabel,
+                  '${provider.ammos.length}',
+                  ammos,
+                  (v) => setLocalState(() => ammos = v ?? ammos),
+                ),
+                option(
+                  strings.exportEquipmentLabel,
+                  '${provider.accessories.length}',
+                  accessories,
+                  (v) => setLocalState(() => accessories = v ?? accessories),
+                ),
+                option(
+                  strings.exportSessionsLabel,
+                  '${provider.sessions.length}',
+                  sessions,
+                  (v) => setLocalState(() => sessions = v ?? sessions),
+                ),
                 const Gap(8),
                 TextButton.icon(
                   onPressed: () => setLocalState(() {
-                    platforms = true; ammos = true; accessories = true; sessions = true;
+                    platforms = true;
+                    ammos = true;
+                    accessories = true;
+                    sessions = true;
                   }),
-                  icon: Icon(Icons.select_all_rounded, size: 18, color: colors.primary),
-                  label: Text(strings.selectAllLabel, style: TextStyle(color: colors.primary)),
+                  icon: Icon(
+                    Icons.select_all_rounded,
+                    size: 18,
+                    color: colors.primary,
+                  ),
+                  label: Text(
+                    strings.selectAllLabel,
+                    style: TextStyle(color: colors.primary),
+                  ),
                 ),
                 const Gap(12),
                 const Divider(),
                 const Gap(12),
                 CheckboxListTile(
                   title: Text(strings.pdfExportIncludeAuthOption),
-                  subtitle: Text(strings.pdfExportIncludeAuthDescription, style: textStyles.bodySmall?.copyWith(color: colors.secondary)),
+                  subtitle: Text(
+                    strings.pdfExportIncludeAuthDescription,
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.secondary,
+                    ),
+                  ),
                   value: includeAuth,
-                  onChanged: (v) => setLocalState(() => includeAuth = v ?? true),
+                  onChanged: (v) =>
+                      setLocalState(() => includeAuth = v ?? true),
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
@@ -1793,13 +1912,16 @@ Future<void> _handleExportPdf(
                 child: Text(strings.cancel),
               ),
               FilledButton.icon(
-                onPressed: () => Navigator.pop(ctx, PdfExportOptions(
-                  includePlatforms: platforms,
-                  includeAmmos: ammos,
-                  includeAccessories: accessories,
-                  includeSessions: sessions,
-                  includeAuth: includeAuth,
-                )),
+                onPressed: () => Navigator.pop(
+                  ctx,
+                  PdfExportOptions(
+                    includePlatforms: platforms,
+                    includeAmmos: ammos,
+                    includeAccessories: accessories,
+                    includeSessions: sessions,
+                    includeAuth: includeAuth,
+                  ),
+                ),
                 icon: const Icon(Icons.download_rounded, size: 18),
                 label: Text(strings.exportNotebookTitle),
               ),
@@ -1848,9 +1970,8 @@ Future<void> _handleExportPdf(
                         const Gap(12),
                         Text(
                           strings.settingsDocumentsTitle,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -1874,32 +1995,29 @@ Future<void> _handleExportPdf(
                               Icon(
                                 Icons.description_outlined,
                                 size: 64,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .secondary
-                                    .withValues(alpha: 0.5),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.secondary.withValues(alpha: 0.5),
                               ),
                               const Gap(16),
                               Text(
                                 strings.settingsDocumentsEmptyTitle,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.secondary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.secondary,
                                     ),
                               ),
                               const Gap(8),
                               Text(
                                 strings.settingsDocumentsEmptySubtitle,
                                 textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.secondary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.secondary,
                                     ),
                               ),
                             ],
@@ -1939,7 +2057,9 @@ Future<void> _handleExportPdf(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   border: Border(
-                    top: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    top: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                 ),
                 child: Consumer<ThotProvider>(
@@ -1948,23 +2068,21 @@ Future<void> _handleExportPdf(
                     final textStyles = Theme.of(context).textTheme;
                     final strings = AppStrings.of(context);
 
-                    final reachedLimit =
-                        !provider.canAddUserDocument(
-                          currentUserDocumentsCount: provider.userDocuments.length,
-                        );
-                    final bgColor =
-                        reachedLimit ? colors.surfaceContainerHighest : colors.primary;
-                    final fgColor =
-                        reachedLimit ? colors.secondary : colors.onPrimary;
+                    final reachedLimit = !provider.canAddUserDocument(
+                      currentUserDocumentsCount: provider.userDocuments.length,
+                    );
+                    final bgColor = reachedLimit
+                        ? colors.surfaceContainerHighest
+                        : colors.primary;
+                    final fgColor = reachedLimit
+                        ? colors.secondary
+                        : colors.onPrimary;
 
                     return FilledButton.icon(
                       onPressed: reachedLimit
                           ? () => context.push('/pro')
                           : () => _pickDocument(context, provider),
-                      icon: Icon(
-                        Icons.add,
-                        color: fgColor,
-                      ),
+                      icon: Icon(Icons.add, color: fgColor),
                       label: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -2016,7 +2134,10 @@ Future<void> _handleExportPdf(
     );
   }
 
-  Future<void> _pickDocument(BuildContext context, ThotProvider provider) async {
+  Future<void> _pickDocument(
+    BuildContext context,
+    ThotProvider provider,
+  ) async {
     try {
       final picked = await NativePicker.pick(
         context,
@@ -2036,10 +2157,10 @@ Future<void> _handleExportPdf(
         final mime = isPdf
             ? 'application/pdf'
             : (ext == 'png'
-                ? 'image/png'
-                : (ext == 'jpg' || ext == 'jpeg' || ext == 'heic')
-                    ? 'image/jpeg'
-                    : 'application/octet-stream');
+                  ? 'image/png'
+                  : (ext == 'jpg' || ext == 'jpeg' || ext == 'heic')
+                  ? 'image/jpeg'
+                  : 'application/octet-stream');
         resolvedPathOrDataUrl =
             'data:$mime;base64,${base64Encode(picked.bytes!)}';
       } else {
@@ -2049,8 +2170,10 @@ Future<void> _handleExportPdf(
         if (picked.isImage) {
           resolvedPathOrDataUrl = picked.path!;
         } else {
-          resolvedPathOrDataUrl =
-              await _persistPickedDocumentFromPath(picked.path!, fileName);
+          resolvedPathOrDataUrl = await _persistPickedDocumentFromPath(
+            picked.path!,
+            fileName,
+          );
         }
       }
 
@@ -2133,7 +2256,10 @@ Future<void> _handleExportPdf(
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   labelText: strings.settingsDocumentNameLabel,
                   hintText: strings.settingsDocumentNameHint,
                   prefixIcon: Icon(Icons.edit_rounded),
@@ -2145,15 +2271,21 @@ Future<void> _handleExportPdf(
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                 ),
               ),
@@ -2165,15 +2297,21 @@ Future<void> _handleExportPdf(
                   prefixIcon: Icon(Icons.category_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                 ),
                 items: documentTypes.map((type) {
@@ -2191,84 +2329,97 @@ Future<void> _handleExportPdf(
               const Gap(16),
               Text(
                 strings.docExpiryDateLabel,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.copyWith(
-                        color: Theme.of(context).colorScheme.secondary),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
               ),
               const Gap(8),
-              Row(children: [
-                Expanded(
-                  child: expiryDate == null
-                      ? OutlinedButton.icon(
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime.now()
-                                  .add(const Duration(days: 365 * 20)),
-                            );
-                            if (picked != null) {
-                              setState(() => expiryDate = DateTime(
-                                  picked.year, picked.month, picked.day));
-                            }
-                          },
-                          icon: const Icon(Icons.calendar_today_rounded,
-                              size: 16),
-                          label: Text(strings.selectDateLabel),
-                        )
-                      : Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .outline),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(children: [
-                            Icon(Icons.calendar_today_rounded,
-                                size: 16,
-                                color:
-                                    Theme.of(context).colorScheme.primary),
-                            const Gap(8),
-                            Expanded(
-                              child: Text(
-                                AppDateFormats.formatDateShort(
-                                    context, expiryDate!),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium,
+              Row(
+                children: [
+                  Expanded(
+                    child: expiryDate == null
+                        ? OutlinedButton.icon(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 365 * 20),
+                                ),
+                              );
+                              if (picked != null) {
+                                setState(
+                                  () => expiryDate = DateTime(
+                                    picked.year,
+                                    picked.month,
+                                    picked.day,
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.calendar_today_rounded,
+                              size: 16,
+                            ),
+                            label: Text(strings.selectDateLabel),
+                          )
+                        : Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
                               ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            GestureDetector(
-                              onTap: () => setState(() {
-                                expiryDate = null;
-                                selectedNotifyDays = 0;
-                              }),
-                              child: Icon(Icons.close_rounded,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
                                   size: 16,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .secondary),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const Gap(8),
+                                Expanded(
+                                  child: Text(
+                                    AppDateFormats.formatDateShort(
+                                      context,
+                                      expiryDate!,
+                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => setState(() {
+                                    expiryDate = null;
+                                    selectedNotifyDays = 0;
+                                  }),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 16,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.secondary,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ]),
-                        ),
-                ),
-              ]),
+                          ),
+                  ),
+                ],
+              ),
               if (expiryDate != null) ...[
                 const Gap(16),
                 Text(
                   strings.docExpiryNotifyLabel,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelMedium
-                      ?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.secondary),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
                 ),
                 const Gap(8),
                 DropdownButtonFormField<int>(
@@ -2276,15 +2427,21 @@ Future<void> _handleExportPdf(
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.lg),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                   ),
                   items: [
@@ -2312,12 +2469,9 @@ Future<void> _handleExportPdf(
                 const Gap(8),
                 Text(
                   strings.docExpiryNotifyHint,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.secondary),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
                 ),
               ],
             ],
@@ -2329,9 +2483,10 @@ Future<void> _handleExportPdf(
             ),
             FilledButton(
               onPressed: () async {
-                final remindersReady = await provider.ensureDocumentReminderEnabled(
-                  notifyBeforeDays: selectedNotifyDays,
-                );
+                final remindersReady = await provider
+                    .ensureDocumentReminderEnabled(
+                      notifyBeforeDays: selectedNotifyDays,
+                    );
                 if (!remindersReady) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -2411,9 +2566,7 @@ class _SettingsGroup extends StatelessWidget {
             boxShadow: AppShadows.cardPremium,
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -2424,10 +2577,7 @@ class _SettingsActionDialog extends StatelessWidget {
   final String title;
   final List<_SettingsActionItem> items;
 
-  const _SettingsActionDialog({
-    required this.title,
-    required this.items,
-  });
+  const _SettingsActionDialog({required this.title, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -2501,7 +2651,10 @@ class _SettingsActionDialog extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
@@ -2557,11 +2710,7 @@ class _SettingsActionTile extends StatelessWidget {
                 color: colors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                item.icon,
-                color: colors.primary,
-                size: 24,
-              ),
+              child: Icon(item.icon, color: colors.primary, size: 24),
             ),
             const Gap(16),
             Expanded(
@@ -2588,11 +2737,7 @@ class _SettingsActionTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: colors.outline,
-              size: 20,
-            ),
+            Icon(Icons.chevron_right_rounded, color: colors.outline, size: 20),
           ],
         ),
       ),
@@ -2626,7 +2771,10 @@ class _SettingsItem extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: compact
-            ? const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs)
+            ? const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              )
             : AppSpacing.paddingMd,
         child: Row(
           children: [
@@ -2746,9 +2894,7 @@ class _ShortcutToggle extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: textStyles.bodyMedium?.copyWith(
-                color: colors.onSurface,
-              ),
+              style: textStyles.bodyMedium?.copyWith(color: colors.onSurface),
             ),
           ),
           SwitchTheme(
@@ -2776,19 +2922,15 @@ class _PremiumFeature extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(
-            Icons.check_circle_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
+          Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
           const Gap(12),
           Expanded(
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -2924,13 +3066,17 @@ class _DocumentItem extends StatelessWidget {
     final expiryLabel = document.expiryDate == null
         ? null
         : 'Expire le ${AppDateFormats.formatDateShort(context, document.expiryDate!)}';
-    final subtitle = expiryLabel == null ? baseTypeLabel : '$baseTypeLabel • $expiryLabel';
+    final subtitle = expiryLabel == null
+        ? baseTypeLabel
+        : '$baseTypeLabel • $expiryLabel';
 
     final card = Material(
       color: colors.surface,
       borderRadius: BorderRadius.circular(AppRadius.sm),
       child: InkWell(
-        onTap: isLocked ? () => context.push('/pro') : () => _openDocument(context),
+        onTap: isLocked
+            ? () => context.push('/pro')
+            : () => _openDocument(context),
         borderRadius: BorderRadius.circular(AppRadius.sm),
         child: Container(
           padding: AppSpacing.paddingMd,
@@ -3027,10 +3173,7 @@ class _DocumentItem extends StatelessWidget {
           top: 8,
           right: 8,
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(999),

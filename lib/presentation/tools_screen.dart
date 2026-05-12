@@ -31,57 +31,18 @@ class ToolsScreen extends StatefulWidget {
 }
 
 class _ToolsScreenState extends State<ToolsScreen> {
+  static const Color _timerColor = Color(0xFF4E7896);
+  static const Color _visualStimuliColor = Color(0xFFA64D4D);
+  static const Color _reflexesColor = Color(0xFFC9852B);
+  static const Color _calculationsColor = Color(0xFF725A8C);
+  static const Color _tablesColor = Color(0xFF6F8F5F);
+  static const Color _diagnosticColor = Color(0xFFB14A3E);
+
   static const double _toolSheetInitialSize = 0.9;
   static const double _toolSheetMinSize = 0.5;
   static const double _toolSheetMaxSize = 0.95;
-  bool _hasAutoOpenedTool = false;
 
-  void _handleInitialOpenTool() {
-    if (!mounted || _hasAutoOpenedTool) return;
-    final provider = Provider.of<ThotProvider>(context, listen: false);
-    final tool = widget.initialOpenTool;
-    
-    if (tool == 'reflexes') {
-      _hasAutoOpenedTool = true;
-      _openReflexes(provider);
-      return;
-    }
-    if (tool == 'timer') {
-      _hasAutoOpenedTool = true;
-      _openTimer();
-      return;
-    }
-    if (tool == 'visual_stimuli') {
-      _hasAutoOpenedTool = true;
-      _openVisualStimulus(provider);
-      return;
-    }
-    if (tool == 'calculations') {
-      _hasAutoOpenedTool = true;
-      _openCalculations();
-      return;
-    }
-    if (tool == 'shooting_tables') {
-      _hasAutoOpenedTool = true;
-      _openShootingTables(provider);
-      return;
-    }
-    if (tool == 'diagnostic') {
-      _hasAutoOpenedTool = true;
-      _openDiagnostic(provider);
-      return;
-    }
-    if (tool == 'millieme') {
-      _hasAutoOpenedTool = true;
-      _openCalculations();
-      return;
-    }
-    
-    if (provider.consumeOpenReflexesToolRequest()) {
-      _hasAutoOpenedTool = true;
-      _openReflexes(provider);
-    }
-  }
+  bool _hasAutoOpenedTool = false;
 
   @override
   void initState() {
@@ -94,6 +55,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
   @override
   void didUpdateWidget(covariant ToolsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+
     if (oldWidget.initialOpenTool != widget.initialOpenTool ||
         oldWidget.initialOpenToken != widget.initialOpenToken) {
       _hasAutoOpenedTool = false;
@@ -103,8 +65,62 @@ class _ToolsScreenState extends State<ToolsScreen> {
     }
   }
 
+  void _handleInitialOpenTool() {
+    if (!mounted || _hasAutoOpenedTool) return;
+
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final tool = widget.initialOpenTool;
+
+    if (tool == 'reflexes') {
+      _hasAutoOpenedTool = true;
+      _openReflexes(provider);
+      return;
+    }
+
+    if (tool == 'timer') {
+      _hasAutoOpenedTool = true;
+      _openTimer();
+      return;
+    }
+
+    if (tool == 'visual_stimuli') {
+      _hasAutoOpenedTool = true;
+      _openVisualStimulus(provider);
+      return;
+    }
+
+    if (tool == 'calculations') {
+      _hasAutoOpenedTool = true;
+      _openCalculations();
+      return;
+    }
+
+    if (tool == 'shooting_tables') {
+      _hasAutoOpenedTool = true;
+      _openShootingTables(provider);
+      return;
+    }
+
+    if (tool == 'diagnostic') {
+      _hasAutoOpenedTool = true;
+      _openDiagnostic(provider);
+      return;
+    }
+
+    if (tool == 'millieme') {
+      _hasAutoOpenedTool = true;
+      _openCalculations();
+      return;
+    }
+
+    if (provider.consumeOpenReflexesToolRequest()) {
+      _hasAutoOpenedTool = true;
+      _openReflexes(provider);
+    }
+  }
+
   void _openToolSheet(Widget child) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
@@ -115,16 +131,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
         maxChildSize: _toolSheetMaxSize,
         expand: false,
         builder: (_, scrollController) => child,
-      ),
-    );
-  }
-
-  void _showComingSoonSnack() {
-    final strings = AppStrings.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(strings.toolComingSoon),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -150,6 +156,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       showProModal(context);
       return;
     }
+
     _openToolSheet(const ShootingTablesScreen());
   }
 
@@ -158,6 +165,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       showProModal(context);
       return;
     }
+
     _openToolSheet(const DiagnosticScreen());
   }
 
@@ -173,6 +181,43 @@ class _ToolsScreenState extends State<ToolsScreen> {
     const heroHeight = 208.0;
     const panelTop = 120.0;
 
+    Widget toolSectionTitle(String title) {
+      return Padding(
+        padding: const EdgeInsets.only(
+          top: AppSpacing.sm,
+          bottom: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 18,
+              decoration: BoxDecoration(
+                color: colors.primary,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const Gap(8),
+            Text(
+              title.toUpperCase(),
+              style: textStyles.labelMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.1,
+                color: colors.secondary,
+              ),
+            ),
+            const Gap(12),
+            Expanded(
+              child: Divider(
+                color: colors.outline.withValues(alpha: 0.55),
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     Widget toolButton({
       required IconData icon,
       required String title,
@@ -184,6 +229,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       final effectiveIconColor = iconColors != null && iconColors.isNotEmpty
           ? iconColors.first
           : colors.primary;
+
       return Material(
         color: Colors.transparent,
         child: InkWell(
@@ -236,10 +282,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     ],
                   ),
                 ),
-                if (isLocked) ...[
-                  const ProBadge(compact: true),
-                  const Gap(8),
-                ],
+                if (isLocked) ...[const ProBadge(compact: true), const Gap(8)],
                 Icon(Icons.chevron_right_rounded, color: colors.secondary),
               ],
             ),
@@ -314,12 +357,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      toolSectionTitle('Entraînement'),
                       toolButton(
                         icon: Icons.timer_rounded,
                         title: strings.homeTimerTitle,
                         subtitle: strings.homeTimerSubtitle,
                         onTap: _openTimer,
-                        iconColors: const [Color(0xFF5B89BD), Color(0xFF4A90E2)],
+                        iconColors: const [_timerColor],
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
@@ -327,24 +371,24 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         title: strings.visualStimulusToolTitle,
                         subtitle: strings.visualStimulusToolSubtitle,
                         onTap: () => _openVisualStimulus(provider),
-                        iconColors: const [Color(0xFFB84B70), Color(0xFFE91E63)],
+                        iconColors: const [_visualStimuliColor],
                       ),
-
                       const Gap(AppSpacing.md),
                       toolButton(
                         icon: Icons.bolt_rounded,
                         title: strings.reflexesToolTitle,
                         subtitle: strings.reflexesToolSubtitle,
                         onTap: () => _openReflexes(provider),
-                        iconColors: const [Color(0xFFD18B24), Color(0xFFFF9800)],
+                        iconColors: const [_reflexesColor],
                       ),
-                      const Gap(AppSpacing.md),
+                      const Gap(AppSpacing.lg),
+                      toolSectionTitle('Calcul'),
                       toolButton(
                         icon: Icons.calculate_rounded,
                         title: strings.calculationsToolTitle,
                         subtitle: strings.calculationsToolSubtitle,
                         onTap: _openCalculations,
-                        iconColors: const [Color(0xFF8B4D99), Color(0xFF9C27B0)],
+                        iconColors: const [_calculationsColor],
                       ),
                       const Gap(AppSpacing.md),
                       toolButton(
@@ -352,17 +396,20 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         title: strings.shootingTablesToolTitle,
                         subtitle: strings.shootingTablesToolSubtitle,
                         onTap: () => _openShootingTables(provider),
-                        isLocked: provider.isToolLockedForFree('shooting_tables'),
-                        iconColors: const [Color(0xFF5F9E62), Color(0xFF4CAF50)],
+                        isLocked: provider.isToolLockedForFree(
+                          'shooting_tables',
+                        ),
+                        iconColors: const [_tablesColor],
                       ),
-                      const Gap(AppSpacing.md),
+                      const Gap(AppSpacing.lg),
+                      toolSectionTitle('Maintenance / Diagnostic'),
                       toolButton(
                         icon: Icons.medical_services_outlined,
                         title: strings.homeDiagnosticTitle,
                         subtitle: strings.homeDiagnosticSubtitle,
                         onTap: () => _openDiagnostic(provider),
                         isLocked: provider.isToolLockedForFree('diagnostics'),
-                        iconColors: const [Color(0xFFC25048), Color(0xFFF44336)],
+                        iconColors: const [_diagnosticColor],
                       ),
                       const Gap(40),
                     ],

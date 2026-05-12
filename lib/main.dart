@@ -30,9 +30,6 @@ void main() {
     if (!kIsWeb) {
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
       ]);
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     }
@@ -85,9 +82,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThotProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => ThotProvider())],
       child: const _ViewportResyncApp(),
     );
   }
@@ -174,15 +169,14 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
     final themeMode = context.select<ThotProvider, ThemeMode>(
       (p) => p.themeMode,
     );
-    final appLocale = context.select<ThotProvider, Locale?>(
-      (p) => p.appLocale,
-    );
+    final appLocale = context.select<ThotProvider, Locale?>((p) => p.appLocale);
 
-    final locale = appLocale ?? WidgetsBinding.instance.platformDispatcher.locale;
+    final locale =
+        appLocale ?? WidgetsBinding.instance.platformDispatcher.locale;
     final intlLocale =
         (locale.countryCode == null || locale.countryCode!.isEmpty)
-            ? locale.languageCode
-            : '${locale.languageCode}_${locale.countryCode}';
+        ? locale.languageCode
+        : '${locale.languageCode}_${locale.countryCode}';
     if (_lastIntlLocale != intlLocale) {
       _lastIntlLocale = intlLocale;
       Intl.defaultLocale = intlLocale;
@@ -224,8 +218,10 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
                     // preference intact: a user who enabled "Larger Text"
                     // still sees larger text.
                     final userScale = mediaQuery.textScaler.scale(1.0);
-                    final effectiveScale =
-                        (userScale * iosElementScale).clamp(0.85, 2.0);
+                    final effectiveScale = (userScale * iosElementScale).clamp(
+                      0.85,
+                      2.0,
+                    );
                     return mediaQuery.copyWith(
                       textScaler: TextScaler.linear(effectiveScale),
                     );
@@ -237,7 +233,8 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
                       ),
                       primaryIconTheme: theme.primaryIconTheme.copyWith(
                         size:
-                            (theme.primaryIconTheme.size ?? 24) * iosElementScale,
+                            (theme.primaryIconTheme.size ?? 24) *
+                            iosElementScale,
                       ),
                     ),
                     child: appChild,

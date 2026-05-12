@@ -318,18 +318,25 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
     );
 
     double peak = _dbThresholdMin;
+    Object? calibrationError;
     StreamSubscription<NoiseReading>? sub;
+
     try {
       sub = _noiseMeter!.noise.listen(
         (NoiseReading reading) {
           final db = reading.maxDecibel;
           if (db.isFinite && db > peak) peak = db;
         },
-        onError: (_) {},
+        onError: (Object error) {
+          calibrationError = error;
+        },
         cancelOnError: false,
       );
+      await Future<void>.delayed(const Duration(seconds: 3));
 
-      await Future.delayed(const Duration(seconds: 3));
+      if (calibrationError != null) {
+        throw calibrationError!;
+      }
     } catch (_) {
       if (mounted) {
         messenger?.showSnackBar(
@@ -1522,21 +1529,16 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
                         child: AnimatedDefaultTextStyle(
                           duration: const Duration(milliseconds: 140),
                           curve: Curves.easeOut,
-                          style:
-                              (textStyles.displayLarge ??
-                                      const TextStyle())
-                                  .copyWith(
-                                    fontWeight: FontWeight.w900,
-                                    color: _flashHighlight
-                                        ? colors.error
-                                        : colors.onSurface,
-                                    fontSize:
-                                        (textStyles
-                                                .displayLarge
-                                                ?.fontSize ??
-                                            48) *
-                                        2.7,
-                                  ),
+                          style: (textStyles.displayLarge ?? const TextStyle())
+                              .copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: _flashHighlight
+                                    ? colors.error
+                                    : colors.onSurface,
+                                fontSize:
+                                    (textStyles.displayLarge?.fontSize ?? 48) *
+                                    2.7,
+                              ),
                           child: Text(
                             _formatDuration(
                               _currentDisplayDuration(),

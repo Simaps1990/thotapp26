@@ -40,27 +40,38 @@ class AppRouter {
       if (!provider.isInitialized && !isSplashScreen) {
         return '/splash';
       }
-      
+
       if (isSplashScreen) {
         return null;
       }
-      // If user has not seen onboarding, force them there
+      // If user has not seen onboarding, force them there,
+      // except public review/legal routes that must remain reachable.
+      final isPublicPreOnboardingRoute =
+          isOnboardingScreen ||
+          isSplashScreen ||
+          state.matchedLocation == '/legal' ||
+          state.matchedLocation == '/pro';
+
       if (!provider.hasSeenOnboarding &&
           !provider.onboardingDismissedForSession &&
-          !isOnboardingScreen) {
+          !isPublicPreOnboardingRoute) {
         return '/onboarding';
       }
-      
+
       // If PIN is enabled and user is not authenticated, redirect to lock screen
-      if (provider.hasSeenOnboarding && provider.pinEnabled && !provider.isAuthenticated && !isLockScreen && !isSetPinScreen) {
+      if (provider.hasSeenOnboarding &&
+          provider.pinEnabled &&
+          !provider.isAuthenticated &&
+          !isLockScreen &&
+          !isSetPinScreen) {
         return '/lock';
       }
-      
+
       // If user is on lock screen but PIN is disabled or already authenticated, go home
       if (isLockScreen && (!provider.pinEnabled || provider.isAuthenticated)) {
         return '/';
       }
-      
+
       return null;
     },
     routes: [
@@ -92,10 +103,7 @@ class AppRouter {
               curve: Curves.easeOutCubic,
             );
 
-            return FadeTransition(
-              opacity: curved,
-              child: child,
-            );
+            return FadeTransition(opacity: curved, child: child);
           },
           child: const ProScreen(),
         ),
@@ -213,11 +221,10 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/tools',
-                builder: (context, state) =>
-                    ToolsScreen(
-                      initialOpenTool: state.uri.queryParameters['open'],
-                      initialOpenToken: state.uri.queryParameters['t'],
-                    ),
+                builder: (context, state) => ToolsScreen(
+                  initialOpenTool: state.uri.queryParameters['open'],
+                  initialOpenToken: state.uri.queryParameters['t'],
+                ),
               ),
             ],
           ),
@@ -252,10 +259,7 @@ class _UnknownRouteScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                strings.routeNotFoundMessage,
-                textAlign: TextAlign.center,
-              ),
+              Text(strings.routeNotFoundMessage, textAlign: TextAlign.center),
               const SizedBox(height: 12),
               Text(path, textAlign: TextAlign.center),
               const SizedBox(height: 20),

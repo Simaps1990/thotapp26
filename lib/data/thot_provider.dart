@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kDebugMode, kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
@@ -17,27 +18,13 @@ import 'thot_security_service.dart';
 import '../utils/image_storage.dart';
 import '../utils/crash_logger.dart';
 
-enum WeightUnit {
-  gram,
-  grain,
-  ounce,
-}
+enum WeightUnit { gram, grain, ounce }
 
-enum DistanceUnit {
-  meter,
-  yard,
-}
+enum DistanceUnit { meter, yard }
 
-enum VelocityUnit {
-  metersPerSecond,
-  feetPerSecond,
-}
+enum VelocityUnit { metersPerSecond, feetPerSecond }
 
-enum UnitProfile {
-  metric,
-  imperial,
-  custom,
-}
+enum UnitProfile { metric, imperial, custom }
 
 double gramsToGrains(double grams) => grams * 15.4324;
 double grainsToGrams(double grains) => grains / 15.4324;
@@ -48,11 +35,31 @@ double yardsToMeters(double yards) => yards / 1.09361;
 double mpsToFps(double mps) => mps * 3.28084;
 double fpsToMps(double fps) => fps / 3.28084;
 
+class DomainImportPreview {
+  final int platforms;
+  final int ammos;
+  final int accessories;
+  final int sessions;
+  final int diagnostics;
+  final int shootingTables;
+
+  const DomainImportPreview({
+    required this.platforms,
+    required this.ammos,
+    required this.accessories,
+    required this.sessions,
+    required this.diagnostics,
+    required this.shootingTables,
+  });
+}
+
 class ThotProvider extends ChangeNotifier {
   static const String _platformTypePistolSemiAuto = 'PA';
-  static const String _platformTypePistolSemiAutomatiqueLegacy = 'Pistolet semi-automatique';
-  late final ThotPremiumService _premiumService =
-      ThotPremiumService(onChanged: notifyListeners);
+  static const String _platformTypePistolSemiAutomatiqueLegacy =
+      'Pistolet semi-automatique';
+  late final ThotPremiumService _premiumService = ThotPremiumService(
+    onChanged: notifyListeners,
+  );
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
@@ -86,7 +93,6 @@ class ThotProvider extends ChangeNotifier {
     });
   }
 
-  
   // ============================================================
   // FREEMIUM MACHINERY
   // ============================================================
@@ -151,9 +157,7 @@ class ThotProvider extends ChangeNotifier {
     }
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return const FlutterSecureStorage(
-        aOptions: AndroidOptions(
-          resetOnError: true,
-        ),
+        aOptions: AndroidOptions(resetOnError: true),
       );
     }
     return const FlutterSecureStorage();
@@ -162,8 +166,9 @@ class ThotProvider extends ChangeNotifier {
   final FlutterSecureStorage _secureStorage = _buildSecureStorage();
   final LocalAuthentication _localAuth = LocalAuthentication();
 
-  late final ThotFileStore _domainStore =
-      ThotFileStore(secureStorage: _secureStorage);
+  late final ThotFileStore _domainStore = ThotFileStore(
+    secureStorage: _secureStorage,
+  );
 
   late final ThotSecurityService _securityService = ThotSecurityService(
     secureStorage: _secureStorage,
@@ -186,17 +191,21 @@ class ThotProvider extends ChangeNotifier {
   static const int maxDocumentsPerItemFree = 1;
   static const int maxUserDocumentsFree = 1;
   // Sessions: unlimited even on free plan.
-  
+
   // Theme State
   ThemeMode _themeMode = ThemeMode.light;
   ThemeMode get themeMode => _themeMode;
   void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    _themeMode = _themeMode == ThemeMode.light
+        ? ThemeMode.dark
+        : ThemeMode.light;
     _scheduleSave();
     notifyListeners();
   }
 
-  Future<bool> ensureDocumentReminderEnabled({required int notifyBeforeDays}) async {
+  Future<bool> ensureDocumentReminderEnabled({
+    required int notifyBeforeDays,
+  }) async {
     if (notifyBeforeDays <= 0) return true;
     if (_documentExpiryPushEnabled) return true;
 
@@ -278,7 +287,8 @@ class ThotProvider extends ChangeNotifier {
       clearAmmoId: clearAmmoId,
       accessoryIds: accessoryIds ?? current.accessoryIds,
       customAccessoryNames: customAccessoryNames,
-      accessoriesCustomized: accessoriesCustomized ?? current.accessoriesCustomized,
+      accessoriesCustomized:
+          accessoriesCustomized ?? current.accessoriesCustomized,
       entries: entries != null
           ? ([...entries]..sort((a, b) => a.distance.compareTo(b.distance)))
           : current.entries,
@@ -345,8 +355,9 @@ class ThotProvider extends ChangeNotifier {
   }) {
     final table = adjustmentTableById(tableId);
     if (table == null) return;
-    final updated =
-        table.entries.where((e) => e.id != entryId).toList(growable: false);
+    final updated = table.entries
+        .where((e) => e.id != entryId)
+        .toList(growable: false);
     updateAdjustmentTableById(tableId: tableId, entries: updated);
   }
 
@@ -354,9 +365,9 @@ class ThotProvider extends ChangeNotifier {
     final existing = adjustmentTableForPlatform(platformId);
     final selectedIds = (existing != null && existing.accessoriesCustomized)
         ? existing.accessoryIds
-        : linkedAccessoriesForPlatform(platformId)
-            .map((a) => a.id)
-            .toList(growable: false);
+        : linkedAccessoriesForPlatform(
+            platformId,
+          ).map((a) => a.id).toList(growable: false);
     final validAccessoryIds = accessories.map((a) => a.id).toSet();
     return selectedIds
         .where((id) => validAccessoryIds.contains(id))
@@ -383,10 +394,11 @@ class ThotProvider extends ChangeNotifier {
       return existing;
     }
 
-    final initialAccessoryIds = accessoryIds ??
-        linkedAccessoriesForPlatform(platformId)
-            .map((a) => a.id)
-            .toList(growable: false);
+    final initialAccessoryIds =
+        accessoryIds ??
+        linkedAccessoriesForPlatform(
+          platformId,
+        ).map((a) => a.id).toList(growable: false);
 
     final now = DateTime.now();
     final table = ShootingAdjustmentTable(
@@ -426,8 +438,9 @@ class ThotProvider extends ChangeNotifier {
     _shootingAdjustmentTables[index] = current.copyWith(
       ammoId: ammoId,
       clearAmmoId: clearAmmoId,
-      accessoriesCustomized:
-          accessoryIds != null ? true : current.accessoriesCustomized,
+      accessoriesCustomized: accessoryIds != null
+          ? true
+          : current.accessoriesCustomized,
       accessoryIds: accessoryIds ?? current.accessoryIds,
       updatedAt: DateTime.now(),
     );
@@ -489,8 +502,9 @@ class ThotProvider extends ChangeNotifier {
     if (index == -1) return;
 
     final table = _shootingAdjustmentTables[index];
-    final updatedEntries =
-        table.entries.where((e) => e.id != entryId).toList(growable: false);
+    final updatedEntries = table.entries
+        .where((e) => e.id != entryId)
+        .toList(growable: false);
 
     _shootingAdjustmentTables[index] = table.copyWith(
       entries: updatedEntries,
@@ -523,13 +537,17 @@ class ThotProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteExerciseFromSession({required String sessionId, required String exerciseId}) {
+  void deleteExerciseFromSession({
+    required String sessionId,
+    required String exerciseId,
+  }) {
     final sessionIndex = _sessions.indexWhere((s) => s.id == sessionId);
     if (sessionIndex == -1) return;
 
     final session = _sessions[sessionIndex];
-    final updatedExercises =
-        session.exercises.where((e) => e.id != exerciseId).toList();
+    final updatedExercises = session.exercises
+        .where((e) => e.id != exerciseId)
+        .toList();
     if (updatedExercises.length == session.exercises.length) return;
 
     updateSession(session.copyWith(exercises: updatedExercises));
@@ -539,7 +557,9 @@ class ThotProvider extends ChangeNotifier {
     final baseName = template.name.trim();
     String finalName = baseName;
     int suffix = 2;
-    while (_exerciseTemplates.any((t) => t.name == finalName && t.id != template.id)) {
+    while (_exerciseTemplates.any(
+      (t) => t.name == finalName && t.id != template.id,
+    )) {
       finalName = '$baseName ($suffix)';
       suffix++;
     }
@@ -585,9 +605,7 @@ class ThotProvider extends ChangeNotifier {
       label: 'Changement de pièce: $partName',
       details: (comment ?? '').trim().isEmpty ? null : comment,
     );
-    _platforms[index] = current.copyWith(
-      history: [...current.history, entry],
-    );
+    _platforms[index] = current.copyWith(history: [...current.history, entry]);
     _scheduleSave();
     notifyListeners();
   }
@@ -617,7 +635,8 @@ class ThotProvider extends ChangeNotifier {
   Map<String, DateTime> _achievementUnlockDates = {};
 
   Set<String> get unlockedAchievements => _unlockedAchievements;
-  List<AchievementDefinition> get achievementQueue => List.unmodifiable(_achievementQueue);
+  List<AchievementDefinition> get achievementQueue =>
+      List.unmodifiable(_achievementQueue);
   DateTime? achievementUnlockDate(String id) => _achievementUnlockDates[id];
 
   bool _openReflexesToolRequested = false;
@@ -670,7 +689,7 @@ class ThotProvider extends ChangeNotifier {
   String? _localeCode; // null = suivre la langue du système
   bool _documentExpiryPushEnabled = false;
   List<UserDocument> _userDocuments = [];
-  
+
   String get userName => _userName;
   String get licenseNumber => _licenseNumber;
   String get userEmail => _userEmail;
@@ -693,6 +712,7 @@ class ThotProvider extends ChangeNotifier {
     }
     return UnitProfile.custom;
   }
+
   String get dateFormatPreference => _dateFormatPreference;
   String? get localeCode => _localeCode;
   bool get documentExpiryPushEnabled => _documentExpiryPushEnabled;
@@ -708,7 +728,7 @@ class ThotProvider extends ChangeNotifier {
         : Locale(_localeCode!);
     return AppStrings.forLocale(locale);
   }
-  
+
   void updateUserProfile({String? name, String? license, String? email}) {
     if (name != null) _userName = name;
     if (license != null) _licenseNumber = license;
@@ -716,7 +736,7 @@ class ThotProvider extends ChangeNotifier {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void setUnitSystem(bool metric) {
     setUnitProfile(metric ? UnitProfile.metric : UnitProfile.imperial);
   }
@@ -726,7 +746,9 @@ class ThotProvider extends ChangeNotifier {
     final metric = profile == UnitProfile.metric;
     _useMetric = metric;
     _distanceUnit = metric ? DistanceUnit.meter : DistanceUnit.yard;
-    _velocityUnit = metric ? VelocityUnit.metersPerSecond : VelocityUnit.feetPerSecond;
+    _velocityUnit = metric
+        ? VelocityUnit.metersPerSecond
+        : VelocityUnit.feetPerSecond;
     _weightUnit = metric ? WeightUnit.gram : WeightUnit.grain;
     _scheduleSave();
     notifyListeners();
@@ -766,7 +788,7 @@ class ThotProvider extends ChangeNotifier {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void setLocaleCode(String? code) {
     // Normalise: empty string -> null (suit la langue du système)
     final normalized = (code == null || code.trim().isEmpty)
@@ -777,13 +799,13 @@ class ThotProvider extends ChangeNotifier {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void addUserDocument(UserDocument document) {
     _userDocuments.add(document);
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void deleteUserDocument(String id) {
     _userDocuments.removeWhere((d) => d.id == id);
     _scheduleSave();
@@ -867,7 +889,7 @@ class ThotProvider extends ChangeNotifier {
     await _domainStore.clearEncryptionKeys();
     await _securityService.clearAllSecurityData();
     await _premiumService.clearLocalCache();
-    
+
     // Annuler toutes les notifications de maintenance
     await MaintenanceNotifications.cancelAll();
 
@@ -880,7 +902,7 @@ class ThotProvider extends ChangeNotifier {
 
     notifyListeners();
   }
-  
+
   // ── JSON data backup/restore ───────────────────────────────────────────────
 
   /// Build a complete JSON backup of all user data (domain + preferences).
@@ -899,11 +921,35 @@ class ThotProvider extends ChangeNotifier {
         'velocityUnit': _velocityUnit.name,
         'dateFormatPreference': _dateFormatPreference,
         'localeCode': _localeCode,
-        'themeMode': _themeMode == ThemeMode.dark ? 'dark' : (_themeMode == ThemeMode.system ? 'system' : 'light'),
+        'themeMode': _themeMode == ThemeMode.dark
+            ? 'dark'
+            : (_themeMode == ThemeMode.system ? 'system' : 'light'),
         'quickActions': _quickActions,
       },
       'domain': domain,
     };
+  }
+
+  DomainImportPreview previewDomainImport(Map<String, dynamic> backup) {
+    final domain = backup['domain'] as Map<String, dynamic>?;
+    if (domain == null) {
+      throw ArgumentError('Missing "domain" key in backup');
+    }
+
+    int countList(String key) {
+      final value = domain[key];
+      if (value is List) return value.length;
+      return 0;
+    }
+
+    return DomainImportPreview(
+      platforms: countList('platforms'),
+      ammos: countList('ammos'),
+      accessories: countList('accessories'),
+      sessions: countList('sessions'),
+      diagnostics: countList('diagnostics'),
+      shootingTables: countList('shootingAdjustmentTables'),
+    );
   }
 
   /// Restore all user data from a JSON backup produced by [exportDomainAsJson].
@@ -933,15 +979,16 @@ class ThotProvider extends ChangeNotifier {
         (unit) => unit.name == prefs['velocityUnit'],
         orElse: () => _velocityUnit,
       );
-      _dateFormatPreference = (prefs['dateFormatPreference'] as String?) ?? _dateFormatPreference;
+      _dateFormatPreference =
+          (prefs['dateFormatPreference'] as String?) ?? _dateFormatPreference;
       final rawLocale = prefs['localeCode'] as String?;
       _localeCode = (rawLocale == null || rawLocale.isEmpty) ? null : rawLocale;
       final rawTheme = prefs['themeMode'] as String?;
       _themeMode = rawTheme == 'dark'
           ? ThemeMode.dark
           : rawTheme == 'system'
-              ? ThemeMode.system
-              : ThemeMode.light;
+          ? ThemeMode.system
+          : ThemeMode.light;
       final rawQuickActions = prefs['quickActions'] as List<dynamic>?;
       if (rawQuickActions != null) {
         _quickActions = rawQuickActions.cast<String>();
@@ -959,12 +1006,12 @@ class ThotProvider extends ChangeNotifier {
     await _saveToLocal();
   }
 
-Future<void> toggleCloudBackup(bool enabled) async {
-  // Sauvegarde native laissée au système.
-  // Cette méthode reste uniquement pour compatibilité,
-  // mais ne pilote plus rien côté runtime.
-  notifyListeners();
-}
+  Future<void> toggleCloudBackup(bool enabled) async {
+    // Sauvegarde native laissée au système.
+    // Cette méthode reste uniquement pour compatibilité,
+    // mais ne pilote plus rien côté runtime.
+    notifyListeners();
+  }
 
   // Quick Actions (IDs of selected actions)
   static const List<String> _allowedQuickActionIds = [
@@ -989,7 +1036,12 @@ Future<void> toggleCloudBackup(bool enabled) async {
     'toggle_theme',
   ];
 
-  List<String> _quickActions = ['new_session', 'new_platform', 'new_ammo', 'toggle_theme'];
+  List<String> _quickActions = [
+    'new_session',
+    'new_platform',
+    'new_ammo',
+    'toggle_theme',
+  ];
   List<String> get quickActions => _quickActions;
 
   List<String> _sanitizeQuickActions(Iterable<String>? ids) {
@@ -1003,7 +1055,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
     }
     return result.isEmpty ? List<String>.from(_defaultQuickActions) : result;
   }
-  
+
   void toggleQuickAction(String actionId) {
     if (!_allowedQuickActionIds.contains(actionId)) {
       return;
@@ -1027,11 +1079,14 @@ Future<void> toggleCloudBackup(bool enabled) async {
 
   List<Platform> get platforms => _platforms.where((w) => !w.isHidden).toList();
   List<Ammo> get ammos => _ammos.where((a) => !a.isHidden).toList();
-  List<Accessory> get accessories => _accessories.where((a) => !a.isHidden).toList();
+  List<Accessory> get accessories =>
+      _accessories.where((a) => !a.isHidden).toList();
 
-  String? get primaryPlatformId => platforms.isEmpty ? null : platforms.first.id;
+  String? get primaryPlatformId =>
+      platforms.isEmpty ? null : platforms.first.id;
   String? get primaryAmmoId => ammos.isEmpty ? null : ammos.first.id;
-  String? get primaryAccessoryId => accessories.isEmpty ? null : accessories.first.id;
+  String? get primaryAccessoryId =>
+      accessories.isEmpty ? null : accessories.first.id;
 
   bool canUsePlatformId(String id) => true;
   bool canUseAmmoId(String id) => true;
@@ -1070,7 +1125,8 @@ Future<void> toggleCloudBackup(bool enabled) async {
 
   // Sessions
   List<ExerciseTemplate> _exerciseTemplates = [];
-  List<ExerciseTemplate> get exerciseTemplates => List.unmodifiable(_exerciseTemplates);
+  List<ExerciseTemplate> get exerciseTemplates =>
+      List.unmodifiable(_exerciseTemplates);
 
   // Shooting adjustment tables
   List<ShootingAdjustmentTable> _shootingAdjustmentTables = [];
@@ -1125,7 +1181,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
       notifyListeners();
     }
   }
-  
+
   int get _activePlatformsCount => _platforms.where((w) => !w.isHidden).length;
   int get _activeAmmosCount => _ammos.where((a) => !a.isHidden).length;
   int get _activeAccessoriesCount =>
@@ -1196,7 +1252,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
     const proOnly = {'cognitive_drills', 'shooting_tables', 'diagnostics'};
     return proOnly.contains(toolKey);
   }
-  
+
   String getLimitMessage(String type) {
     final strings = AppStrings.forLocale(appLocale ?? const Locale('fr'));
     if (type == 'platform') {
@@ -1256,24 +1312,53 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void updateSession(Session session) {
     final index = _sessions.indexWhere((s) => s.id == session.id);
-    if (index != -1) {
-      // Critical: keep counters stable when editing a session.
-      // 1) reverse the previous material impact
-      // 2) apply the new one
-      final previous = _sessions[index];
-      _reverseMaterialFromSession(previous);
+    if (index == -1) return;
 
-      _sessions[index] = session;
-      _applyMaterialFromSession(session);
-      _scheduleSave();
-      notifyListeners();
-    }
+    // Critical: keep counters stable when editing a session.
+    // 1) reverse the previous material impact
+    // 2) replace the session
+    // 3) apply the new material impact
+    // 4) recalculate lastUsed for every material touched by old or new version
+    final previous = _sessions[index];
+
+    final impactedPlatformIds = <String>{
+      ...previous.platformImpact.keys,
+      ...session.platformImpact.keys,
+    };
+
+    final impactedAmmoIds = <String>{
+      ...previous.ammoImpact.keys,
+      ...session.ammoImpact.keys,
+    };
+
+    final impactedAccessoryIds = <String>{
+      ...previous.equipmentImpact.keys,
+      ...session.equipmentImpact.keys,
+    };
+
+    _reverseMaterialFromSession(previous);
+
+    _sessions[index] = session;
+
+    _applyMaterialFromSession(session);
+
+    _recalculateLastUsedForMaterialIds(
+      platformIds: impactedPlatformIds,
+      ammoIds: impactedAmmoIds,
+      accessoryIds: impactedAccessoryIds,
+    );
+
+    _scheduleSave();
+    notifyListeners();
   }
 
-  void toggleExercisePrecisionEnabled({required String sessionId, required String exerciseId}) {
+  void toggleExercisePrecisionEnabled({
+    required String sessionId,
+    required String exerciseId,
+  }) {
     final sessionIndex = _sessions.indexWhere((s) => s.id == sessionId);
     if (sessionIndex == -1) return;
 
@@ -1293,7 +1378,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void _applyMaterialFromSession(Session session) {
     // Update platform + ammo counters based on attributed impacts.
     for (final exercise in session.exercises) {
@@ -1347,8 +1432,10 @@ Future<void> toggleCloudBackup(bool enabled) async {
       if (platformIndex == -1) continue;
 
       final platform = _platforms[platformIndex];
-      final updatedTotalRounds =
-          (platform.totalRounds - entry.value).clamp(0, 1 << 30);
+      final updatedTotalRounds = (platform.totalRounds - entry.value).clamp(
+        0,
+        1 << 30,
+      );
 
       var updatedRoundsAtLastCleaning = platform.roundsAtLastCleaning;
       var updatedRoundsAtLastRevision = platform.roundsAtLastRevision;
@@ -1364,7 +1451,9 @@ Future<void> toggleCloudBackup(bool enabled) async {
         totalRounds: updatedTotalRounds,
         roundsAtLastCleaning: updatedRoundsAtLastCleaning,
         roundsAtLastRevision: updatedRoundsAtLastRevision,
-        history: platform.history.where((h) => !h.id.startsWith('${session.id}-')).toList(),
+        history: platform.history
+            .where((h) => !h.id.startsWith('${session.id}-'))
+            .toList(),
       );
     }
 
@@ -1380,8 +1469,10 @@ Future<void> toggleCloudBackup(bool enabled) async {
       if (accIndex == -1) continue;
 
       final accessory = _accessories[accIndex];
-      final updatedTotalRounds =
-          (accessory.totalRounds - entry.value).clamp(0, 1 << 30);
+      final updatedTotalRounds = (accessory.totalRounds - entry.value).clamp(
+        0,
+        1 << 30,
+      );
 
       var updatedRoundsAtLastCleaning = accessory.roundsAtLastCleaning;
       var updatedRoundsAtLastRevision = accessory.roundsAtLastRevision;
@@ -1411,7 +1502,8 @@ Future<void> toggleCloudBackup(bool enabled) async {
       for (final session in _sessions) {
         if (session.id == removedSession.id) continue;
         if (!session.platformImpact.containsKey(id)) continue;
-        if (latest == null || session.date.isAfter(latest)) latest = session.date;
+        if (latest == null || session.date.isAfter(latest))
+          latest = session.date;
       }
       return latest;
     }
@@ -1421,7 +1513,8 @@ Future<void> toggleCloudBackup(bool enabled) async {
       for (final session in _sessions) {
         if (session.id == removedSession.id) continue;
         if (!session.ammoImpact.containsKey(id)) continue;
-        if (latest == null || session.date.isAfter(latest)) latest = session.date;
+        if (latest == null || session.date.isAfter(latest))
+          latest = session.date;
       }
       return latest;
     }
@@ -1431,7 +1524,8 @@ Future<void> toggleCloudBackup(bool enabled) async {
       for (final session in _sessions) {
         if (session.id == removedSession.id) continue;
         if (!session.equipmentImpact.containsKey(id)) continue;
-        if (latest == null || session.date.isAfter(latest)) latest = session.date;
+        if (latest == null || session.date.isAfter(latest))
+          latest = session.date;
       }
       return latest;
     }
@@ -1452,6 +1546,66 @@ Future<void> toggleCloudBackup(bool enabled) async {
     }
   }
 
+  void _recalculateLastUsedForMaterialIds({
+    Set<String> platformIds = const {},
+    Set<String> ammoIds = const {},
+    Set<String> accessoryIds = const {},
+  }) {
+    DateTime? latestForPlatform(String id) {
+      DateTime? latest;
+      for (final session in _sessions) {
+        if (!session.platformImpact.containsKey(id)) continue;
+        if (latest == null || session.date.isAfter(latest)) {
+          latest = session.date;
+        }
+      }
+      return latest;
+    }
+
+    DateTime? latestForAmmo(String id) {
+      DateTime? latest;
+      for (final session in _sessions) {
+        if (!session.ammoImpact.containsKey(id)) continue;
+        if (latest == null || session.date.isAfter(latest)) {
+          latest = session.date;
+        }
+      }
+      return latest;
+    }
+
+    DateTime? latestForAccessory(String id) {
+      DateTime? latest;
+      for (final session in _sessions) {
+        if (!session.equipmentImpact.containsKey(id)) continue;
+        if (latest == null || session.date.isAfter(latest)) {
+          latest = session.date;
+        }
+      }
+      return latest;
+    }
+
+    for (final id in platformIds) {
+      final index = _platforms.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _platforms[index].lastUsed = latestForPlatform(id);
+      }
+    }
+
+    for (final id in ammoIds) {
+      final index = _ammos.indexWhere((a) => a.id == id);
+      if (index != -1) {
+        _ammos[index].lastUsed = latestForAmmo(id);
+      }
+    }
+
+    for (final id in accessoryIds) {
+      final index = _accessories.indexWhere((a) => a.id == id);
+      if (index != -1) {
+        _accessories[index].lastUsed = latestForAccessory(id);
+      }
+    }
+  }
+
   void addPlatform(Platform platform) {
     if (!canAddPlatform()) {
       debugPrint('❌ Free limit reached: cannot add more platforms.');
@@ -1461,7 +1615,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void updatePlatform(Platform platform) {
     final index = _platforms.indexWhere((w) => w.id == platform.id);
     if (index != -1) {
@@ -1520,8 +1674,10 @@ Future<void> toggleCloudBackup(bool enabled) async {
     final platform = _platforms[wIndex];
     final accessory = _accessories[aIndex];
 
-    final platformLinks = platform.linkedAccessoryIds.toSet()..remove(accessoryId);
-    final accessoryLinks = accessory.linkedPlatformIds.toSet()..remove(platformId);
+    final platformLinks = platform.linkedAccessoryIds.toSet()
+      ..remove(accessoryId);
+    final accessoryLinks = accessory.linkedPlatformIds.toSet()
+      ..remove(platformId);
 
     _platforms[wIndex] = platform.copyWith(
       linkedAccessoryIds: platformLinks.toList(growable: false),
@@ -1532,18 +1688,18 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void deletePlatform(String id) {
     final index = _platforms.indexWhere((w) => w.id == id);
     if (index == -1) return;
     _platforms[index] = _platforms[index].copyWith(
-      name: _currentStrings.suffixDeleted(_platforms[index].name), 
+      name: _currentStrings.suffixDeleted(_platforms[index].name),
       isHidden: true,
     );
     _scheduleSave();
     notifyListeners();
   }
-  
+
   bool duplicatePlatform(Platform platform) {
     if (!canAddPlatform()) {
       debugPrint('❌ Free limit reached: cannot duplicate platform.');
@@ -1649,7 +1805,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void updateAmmo(Ammo ammo) {
     final index = _ammos.indexWhere((a) => a.id == ammo.id);
     if (index != -1) {
@@ -1708,7 +1864,8 @@ Future<void> toggleCloudBackup(bool enabled) async {
       newQuantity += entry.quantity;
     }
 
-    final newHistory = List<AmmoHistoryEntry>.from(ammo.safeHistory)..removeAt(entryIndex);
+    final newHistory = List<AmmoHistoryEntry>.from(ammo.safeHistory)
+      ..removeAt(entryIndex);
 
     _ammos[ammoIndex] = ammo.copyWith(
       quantity: newQuantity,
@@ -1719,18 +1876,18 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void deleteAmmo(String id) {
     final index = _ammos.indexWhere((a) => a.id == id);
     if (index == -1) return;
     _ammos[index] = _ammos[index].copyWith(
-      name: _currentStrings.suffixDeleted(_ammos[index].name), 
+      name: _currentStrings.suffixDeleted(_ammos[index].name),
       isHidden: true,
     );
     _scheduleSave();
     notifyListeners();
   }
-  
+
   bool duplicateAmmo(Ammo ammo) {
     if (!canAddAmmo()) {
       debugPrint('❌ Free limit reached: cannot duplicate ammo.');
@@ -1770,7 +1927,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void updateAccessory(Accessory accessory) {
     final index = _accessories.indexWhere((a) => a.id == accessory.id);
     if (index != -1) {
@@ -1811,18 +1968,18 @@ Future<void> toggleCloudBackup(bool enabled) async {
     _scheduleSave();
     notifyListeners();
   }
-  
+
   void deleteAccessory(String id) {
     final index = _accessories.indexWhere((a) => a.id == id);
     if (index == -1) return;
     _accessories[index] = _accessories[index].copyWith(
-      name: _currentStrings.suffixDeletedMasc(_accessories[index].name), 
+      name: _currentStrings.suffixDeletedMasc(_accessories[index].name),
       isHidden: true,
     );
     _scheduleSave();
     notifyListeners();
   }
-  
+
   bool duplicateAccessory(Accessory accessory) {
     if (!canAddAccessory()) {
       debugPrint('❌ Free limit reached: cannot duplicate accessory.');
@@ -1857,22 +2014,32 @@ Future<void> toggleCloudBackup(bool enabled) async {
     notifyListeners();
     return true;
   }
-  
+
   void deleteSession(String id) {
     final index = _sessions.indexWhere((s) => s.id == id);
     if (index == -1) return;
 
     final session = _sessions[index];
 
-    // Reverse material impacts (wear/cleanliness + stock) so critical indicators stay accurate.
+    final impactedPlatformIds = session.platformImpact.keys.toSet();
+    final impactedAmmoIds = session.ammoImpact.keys.toSet();
+    final impactedAccessoryIds = session.equipmentImpact.keys.toSet();
+
+    // Reverse material impacts before removing the session.
     _reverseMaterialFromSession(session);
-    _recalculateLastUsedAfterSessionRemoval(session);
 
     _sessions.removeAt(index);
+
+    _recalculateLastUsedForMaterialIds(
+      platformIds: impactedPlatformIds,
+      ammoIds: impactedAmmoIds,
+      accessoryIds: impactedAccessoryIds,
+    );
+
     _scheduleSave();
     notifyListeners();
   }
-  
+
   bool duplicateSession(Session session) {
     if (!canAddSession()) {
       debugPrint('❌ Free limit reached: cannot duplicate session.');
@@ -1922,7 +2089,9 @@ Future<void> toggleCloudBackup(bool enabled) async {
     }
   }
 
-  List<ShootingAdjustmentEntry> adjustmentEntriesForPlatform(String platformId) {
+  List<ShootingAdjustmentEntry> adjustmentEntriesForPlatform(
+    String platformId,
+  ) {
     final table = adjustmentTableForPlatform(platformId);
     if (table == null) return const [];
     final entries = [...table.entries]
@@ -1948,7 +2117,7 @@ Future<void> toggleCloudBackup(bool enabled) async {
 
   // Stats Logic
   int get totalSessions => _sessions.length;
-  
+
   int get totalRoundsFired {
     return _sessions.fold(0, (sum, s) => sum + s.totalRounds);
   }
@@ -1960,14 +2129,21 @@ Future<void> toggleCloudBackup(bool enabled) async {
     final now = DateTime.now();
     return List.generate(7, (i) {
       final dayStart = DateTime(
-        now.year, now.month, now.day,
+        now.year,
+        now.month,
+        now.day,
       ).subtract(Duration(days: 6 - i));
       final dayEnd = dayStart.add(const Duration(days: 1));
-      final daySessions = _sessions.where((s) =>
-        s.date.isAfter(dayStart.subtract(const Duration(milliseconds: 1))) &&
-        s.date.isBefore(dayEnd) &&
-        s.hasCountedPrecision,
-      ).toList();
+      final daySessions = _sessions
+          .where(
+            (s) =>
+                s.date.isAfter(
+                  dayStart.subtract(const Duration(milliseconds: 1)),
+                ) &&
+                s.date.isBefore(dayEnd) &&
+                s.hasCountedPrecision,
+          )
+          .toList();
       if (daySessions.isEmpty) return 0.0;
       final total = daySessions.fold(0.0, (sum, s) => sum + s.averagePrecision);
       return total / daySessions.length;
@@ -1975,784 +2151,920 @@ Future<void> toggleCloudBackup(bool enabled) async {
   }
   // NOTE: domain encrypted file storage is delegated to `_domainStore`.
 
-Map<String, dynamic> _buildDomainDataMap() {
-  return {
-    'schemaVersion': kCurrentSchemaVersion,
-    'exerciseTemplates': _exerciseTemplates.map((t) => t.toJson()).toList(),
-'userDocuments': _userDocuments.map((d) => {
-  'id': d.id,
-  'name': d.name,
-  'type': d.type,
-  'filePath': d.filePath,
-  'addedDate': d.addedDate.toIso8601String(),
-  if (d.expiryDate != null) 'expiryDate': d.expiryDate!.toIso8601String(),
-  'notifyBeforeDays': d.notifyBeforeDays,
-}).toList(),
-    'platforms': _platforms.map((w) => {
-      'id': w.id,
-      'name': w.name,
-      'model': w.model,
-      'comment': w.comment,
-      'type': w.type,
-      'caliber': w.caliber,
-      'serialNumber': w.serialNumber,
-      'weight': w.weight,
-      'totalRounds': w.totalRounds,
-      'lastCleaned': w.lastCleaned.toIso8601String(),
-      'lastRevised': w.lastRevised.toIso8601String(),
-      'lastUsed': w.lastUsed?.toIso8601String(),
-      'trackWear': w.trackWear,
-      'trackCleanliness': w.trackCleanliness,
-      'trackRounds': w.trackRounds,
-      'cleaningRoundsThreshold': w.cleaningRoundsThreshold,
-      'wearRoundsThreshold': w.wearRoundsThreshold,
-      'roundsAtLastCleaning': w.roundsAtLastCleaning,
-      'roundsAtLastRevision': w.roundsAtLastRevision,
-      'documents': w.documents.map((d) => d.toJson()).toList(),
-      'history': w.history.map((h) => h.toJson()).toList(),
-      'photoPath': w.photoPath,
-      'isHidden': w.isHidden,
-      'linkedAccessoryIds': w.linkedAccessoryIds,
-    }).toList(),
-    'ammos': _ammos.map((a) => {
-      'id': a.id,
-      'name': a.name,
-      'brand': a.brand,
-      'caliber': a.caliber,
-      'comment': a.comment,
-      'projectileType': a.projectileType,
-      'quantity': a.quantity,
-      'initialQuantity': a.initialQuantity,
-      'lastUsed': a.lastUsed?.toIso8601String(),
-      'trackStock': a.trackStock,
-      'lowStockThreshold': a.lowStockThreshold,
-      'documents': a.documents.map((d) => d.toJson()).toList(),
-      'photoPath': a.photoPath,
-      'isHidden': a.isHidden,
-      if (a.unitPrice != null) 'unitPrice': a.unitPrice,
-      'currency': a.currency,
-      'history': a.safeHistory.map((h) => h.toJson()).toList(),
-    }).toList(),
-    'accessories': _accessories.map((ac) => {
-      'id': ac.id,
-      'name': ac.name,
-      'brand': ac.brand,
-      'model': ac.model,
-      'comment': ac.comment,
-      'type': ac.type,
-      'imageUrl': ac.imageUrl,
-      'lastUsed': ac.lastUsed?.toIso8601String(),
-      'totalRounds': ac.totalRounds,
-      'lastCleaned': ac.lastCleaned.toIso8601String(),
-      'lastRevised': ac.lastRevised.toIso8601String(),
-      'trackWear': ac.trackWear,
-      'trackCleanliness': ac.trackCleanliness,
-      'cleaningRoundsThreshold': ac.cleaningRoundsThreshold,
-      'wearRoundsThreshold': ac.wearRoundsThreshold,
-      'roundsAtLastCleaning': ac.roundsAtLastCleaning,
-      'roundsAtLastRevision': ac.roundsAtLastRevision,
-      'batteryChangedAt': ac.batteryChangedAt?.toIso8601String(),
-      'trackBattery': ac.trackBattery,
-      'documents': ac.documents.map((d) => d.toJson()).toList(),
-      'photoPath': ac.photoPath,
-      'isHidden': ac.isHidden,
-      'linkedPlatformIds': ac.linkedPlatformIds,
-    }).toList(),
-    'shootingAdjustmentTables': _shootingAdjustmentTables
-        .map((t) => t.toJson())
-        .toList(),
-    'sessions': _sessions.map((s) => {
-      'id': s.id,
-      'name': s.name,
-      'date': s.date.toIso8601String(),
-      'location': s.location,
-      'shootingDistance': s.shootingDistance,
-      'locationLatitude': s.locationLatitude,
-'locationLongitude': s.locationLongitude,
-      'sessionType': s.sessionType,
-      'weatherEnabled': s.weatherEnabled,
-      'temperature': s.temperature,
-      'wind': s.wind,
-      'humidity': s.humidity,
-      'pressure': s.pressure,
-      'temperatureEnabled': s.temperatureEnabled,
-      'windEnabled': s.windEnabled,
-      'humidityEnabled': s.humidityEnabled,
-      'pressureEnabled': s.pressureEnabled,
-      'platformIds': s.platformIds,
-      'exercises': s.exercises.map((e) => {
-        'id': e.id,
-        'name': e.name,
-        'platformId': e.platformId,
-        'platformLabel': e.platformLabel,
-        'ammoId': e.ammoId,
-        'ammoLabel': e.ammoLabel,
-        'equipmentIds': e.equipmentIds,
-        'equipmentId': e.equipmentIds.isEmpty ? null : e.equipmentIds.first,
-        'targetName': e.targetName,
-        'targetPhotos': e.targetPhotos.map((p) => p.toJson()).toList(),
-        'shotsFired': e.shotsFired,
-        'distance': e.distance,
-        'precision': e.precision,
-        'precisionEnabled': e.precisionEnabled,
-        'observations': e.observations,
-        'platformAssignments': e.platformAssignments.map((a) => {
-          'platformId': a.platformId,
-          'platformLabel': a.platformLabel,
-          'ammoIds': a.ammoIds,
-          'accessoryIds': a.accessoryIds,
-        }).toList(),
-        'shotAllocations': e.shotAllocations.map((a) => {
-          'platformId': a.platformId,
-          'ammoId': a.ammoId,
-          'shots': a.shots,
-        }).toList(),
-        if (e.steps != null)
-          'steps': e.steps!.map((st) => st.toJson()).toList(),
-      }).toList(),
-    }).toList(),
-    'diagnostics': _diagnostics.map((d) => {
-      'id': d.id,
-      'date': d.date.toIso8601String(),
-      'platformId': d.platformId,
-      'platformNameSnapshot': d.platformNameSnapshot,
-      'platformTypeSnapshot': d.platformTypeSnapshot,
-      'responses': d.responses,
-      'incidentKey': d.incidentKey,
-      'suspectedIssueKey': d.suspectedIssueKey,
-      'riskLevelKey': d.riskLevelKey,
-      'probabilities': d.probabilities,
-      'finalDecision': d.finalDecision,
-      'summary': d.summary,
-    }).toList(),
-  };
-}
-
-void _loadDomainDataFromMap(Map<String, dynamic> data) {
-  try {
-    final readVersion = (data['schemaVersion'] as int?) ?? 0;
-    if (readVersion > kCurrentSchemaVersion) {
-      // Data was written by a newer version of the app — best effort: load
-      // anyway but log a warning.
-      debugPrint(
-        '[ThotProvider] WARNING: data file schema version $readVersion is '
-        'newer than current $kCurrentSchemaVersion. Some fields may be lost.',
-      );
-    }
-    // Future migration code goes here:
-    // final data2 = readVersion < 2 ? _migrateV1ToV2(data) : data;
-
-    final templatesList = (data['exerciseTemplates'] as List?) ?? const [];
-    _exerciseTemplates = templatesList
-        .whereType<Map>()
-        .map((t) {
-          try {
-            return ExerciseTemplate.fromJson(t.cast<String, dynamic>());
-          } catch (e) {
-            debugPrint('Failed to load exercise template: $e');
-            return null;
-          }
-        })
-        .whereType<ExerciseTemplate>()
-        .toList();
-
-    final userDocsList = (data['userDocuments'] as List?) ?? const [];
-    _userDocuments = userDocsList
-        .whereType<Map>()
-        .map((d) {
-          try {
-            return UserDocument.fromJson(d.cast<String, dynamic>());
-          } catch (e) {
-            debugPrint('Failed to load user document: $e');
-            return null;
-          }
-        })
-        .whereType<UserDocument>()
-        .toList();
-
-    final platformsList = (data['platforms'] as List?) ?? const [];
-    _platforms = platformsList.whereType<Map>().map((w) {
-      try {
-        return Platform(
-          id: w['id'] as String,
-          name: w['name'] as String,
-          model: w['model'] as String,
-          comment: (w['comment'] ?? '') as String,
-          type: _migratePlatformType((w['type'] ?? 'Plateforme') as String),
-          caliber: w['caliber'] as String,
-          serialNumber: w['serialNumber'] as String,
-          weight: (w['weight'] as num?)?.toDouble() ?? 0.0,
-          totalRounds: (w['totalRounds'] ?? 0) as int,
-          lastCleaned: DateTime.tryParse(w['lastCleaned'] as String? ?? '') ?? DateTime.now(),
-          lastRevised: w['lastRevised'] != null
-              ? DateTime.tryParse(w['lastRevised'] as String) ?? DateTime.now()
-              : DateTime.tryParse(w['lastCleaned'] as String? ?? '') ?? DateTime.now(),
-          lastUsed: DateTime.tryParse(w['lastUsed'] as String? ?? ''),
-          trackWear: w['trackWear'] as bool? ?? true,
-          trackCleanliness: w['trackCleanliness'] as bool? ?? true,
-          trackRounds: w['trackRounds'] as bool? ?? true,
-          cleaningRoundsThreshold: (w['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500,
-          wearRoundsThreshold: (w['wearRoundsThreshold'] as num?)?.toInt() ?? 10000,
-          roundsAtLastCleaning: _migrateRoundsAtLastCleaning(w),
-          roundsAtLastRevision: _migrateRoundsAtLastRevision(w),
-          documents: _decodeItemDocuments(w['documents'] ?? w['pdfPaths'] ?? const []),
-          history: ((w['history'] as List?) ?? const [])
-              .map((h) {
-                try {
-                  return PlatformHistoryEntry.fromJson(h);
-                } catch (_) {
-                  return null;
-                }
-              })
-              .whereType<PlatformHistoryEntry>()
-              .toList(),
-          photoPath: w['photoPath'] as String?,
-          isHidden: w['isHidden'] as bool? ?? false,
-          linkedAccessoryIds: ((w['linkedAccessoryIds'] as List?) ?? const [])
-              .whereType<String>()
-              .toList(),
-        );
-      } catch (e) {
-        debugPrint('Failed to load platform: $e');
-        return null;
-      }
-    }).whereType<Platform>().toList();
-
-    final ammosList = (data['ammos'] as List?) ?? const [];
-    _ammos = ammosList.whereType<Map>().map((a) {
-      try {
-        final qty = (a['quantity'] ?? 0) as int;
-        final rawInitial = (a['initialQuantity'] ?? a['quantity'] ?? 0) as int;
-        final effectiveInitial = (rawInitial <= 0 && qty > 0) ? qty : rawInitial;
-
-        return Ammo(
-          id: a['id'] as String,
-          name: a['name'] as String,
-          brand: a['brand'] as String,
-          caliber: a['caliber'] as String,
-          comment: (a['comment'] ?? '') as String,
-          projectileType: (a['projectileType'] ?? a['bulletType'] ?? '') as String,
-          quantity: qty,
-          initialQuantity: effectiveInitial,
-          lastUsed: DateTime.tryParse(a['lastUsed'] as String? ?? ''),
-          trackStock: a['trackStock'] as bool? ?? true,
-          lowStockThreshold: (a['lowStockThreshold'] as num?)?.toInt() ?? 50,
-          documents: _decodeItemDocuments(a['documents'] ?? a['pdfPaths'] ?? const []),
-          photoPath: a['photoPath'] as String?,
-          isHidden: a['isHidden'] as bool? ?? false,
-          unitPrice: (a['unitPrice'] as num?)?.toDouble(),
-          currency: (a['currency'] as String?) ?? 'EUR',
-          history: (() {
-            try {
-              final raw = a['history'];
-              if (raw is! List) return <AmmoHistoryEntry>[];
-              return raw
-                  .map((h) {
-                    try {
-                      return AmmoHistoryEntry.fromJson(Map<String, dynamic>.from(h as Map));
-                    } catch (_) {
-                      return null;
-                    }
-                  })
-                  .whereType<AmmoHistoryEntry>()
-                  .toList();
-            } catch (_) {
-              return <AmmoHistoryEntry>[];
-            }
-          })(),
-        );
-      } catch (e) {
-        debugPrint('Failed to load ammo: $e');
-        return null;
-      }
-    }).whereType<Ammo>().toList();
-
-    final accessoriesList = (data['accessories'] as List?) ?? const [];
-    _accessories = accessoriesList.whereType<Map>().map((ac) {
-      try {
-        final lastUsed = DateTime.tryParse(ac['lastUsed'] as String? ?? '');
-        final totalRounds = (ac['totalRounds'] ?? 0) as int;
-        final lastCleaned = ac['lastCleaned'] != null
-            ? DateTime.tryParse(ac['lastCleaned'] as String)
-            : null;
-        final lastRevised = ac['lastRevised'] != null
-            ? DateTime.tryParse(ac['lastRevised'] as String)
-            : null;
-
-        final roundsAtLastCleaning =
-            (ac['roundsAtLastCleaning'] as num?)?.toInt() ?? totalRounds;
-        final roundsAtLastRevision =
-            (ac['roundsAtLastRevision'] as num?)?.toInt() ?? totalRounds;
-
-        return Accessory(
-          id: ac['id'] as String,
-          name: ac['name'] as String,
-          brand: (ac['brand'] ?? '') as String,
-          model: (ac['model'] ?? '') as String,
-          comment: (ac['comment'] ?? '') as String,
-          type: (ac['type'] ?? '') as String,
-          imageUrl: (ac['imageUrl'] ?? '') as String,
-          lastUsed: lastUsed,
-          totalRounds: totalRounds,
-          lastCleaned: lastCleaned ?? DateTime.now(),
-          lastRevised: lastRevised ?? lastCleaned ?? DateTime.now(),
-          trackWear: (ac['trackWear'] ?? false) as bool,
-          trackCleanliness: (ac['trackCleanliness'] ?? false) as bool,
-          cleaningRoundsThreshold: (ac['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500,
-          wearRoundsThreshold: (ac['wearRoundsThreshold'] as num?)?.toInt() ?? 10000,
-          roundsAtLastCleaning: roundsAtLastCleaning,
-          roundsAtLastRevision: roundsAtLastRevision,
-          batteryChangedAt: ac['batteryChangedAt'] != null
-              ? DateTime.tryParse(ac['batteryChangedAt'] as String)
-              : null,
-          trackBattery: (ac['trackBattery'] ?? false) as bool,
-          documents: _decodeItemDocuments(ac['documents'] ?? const []),
-          photoPath: ac['photoPath'] as String?,
-          isHidden: (ac['isHidden'] ?? false) as bool,
-          linkedPlatformIds: ((ac['linkedPlatformIds'] as List?) ?? const [])
-              .whereType<String>()
-              .toList(),
-        );
-      } catch (e) {
-        debugPrint('Failed to load accessory: $e');
-        return null;
-      }
-    }).whereType<Accessory>().toList();
-
-    final adjustmentTablesRaw =
-        (data['shootingAdjustmentTables'] as List?) ?? const [];
-    _shootingAdjustmentTables = adjustmentTablesRaw
-        .whereType<Map>()
-        .map((t) {
-          try {
-            return ShootingAdjustmentTable.fromJson(t.cast<String, dynamic>());
-          } catch (_) {
-            return null;
-          }
-        })
-        .whereType<ShootingAdjustmentTable>()
-        .where((t) => t.platformId.trim().isNotEmpty)
-        .toList();
-
-    final sessionsList = (data['sessions'] as List?) ?? const [];
-    _sessions = sessionsList.whereType<Map>().map((s) {
-      try {
-        final exercisesList = (s['exercises'] as List?) ?? const [];
-        final exercises = exercisesList.whereType<Map>().map((raw) {
-          try {
-            final e = raw;
-            final stepsRaw = (e['steps'] as List?) ?? const [];
-            final assignmentsRaw = (e['platformAssignments'] as List?) ?? const [];
-            final shotAllocationsRaw = (e['shotAllocations'] as List?) ?? const [];
-
-            return Exercise(
-              id: e['id'] as String,
-              name: (e['name'] ?? '') as String,
-              platformId: (e['platformId'] ?? '') as String,
-              platformLabel: (e['platformLabel'] as String?),
-              ammoId: (e['ammoId'] ?? '') as String,
-              ammoLabel: (e['ammoLabel'] as String?),
-              equipmentIds: _decodeEquipmentIds(e),
-              targetName: e['targetName'] as String?,
-              targetPhotos: ((e['targetPhotos'] as List?) ?? const [])
-                  .map((p) {
-                    try {
-                      return ExercisePhoto.fromJson(Map<String, dynamic>.from(p as Map));
-                    } catch (_) {
-                      return null;
-                    }
-                  })
-                  .whereType<ExercisePhoto>()
+  Map<String, dynamic> _buildDomainDataMap() {
+    return {
+      'schemaVersion': kCurrentSchemaVersion,
+      'exerciseTemplates': _exerciseTemplates.map((t) => t.toJson()).toList(),
+      'userDocuments': _userDocuments
+          .map(
+            (d) => {
+              'id': d.id,
+              'name': d.name,
+              'type': d.type,
+              'filePath': d.filePath,
+              'addedDate': d.addedDate.toIso8601String(),
+              if (d.expiryDate != null)
+                'expiryDate': d.expiryDate!.toIso8601String(),
+              'notifyBeforeDays': d.notifyBeforeDays,
+            },
+          )
+          .toList(),
+      'platforms': _platforms
+          .map(
+            (w) => {
+              'id': w.id,
+              'name': w.name,
+              'model': w.model,
+              'comment': w.comment,
+              'type': w.type,
+              'caliber': w.caliber,
+              'serialNumber': w.serialNumber,
+              'weight': w.weight,
+              'totalRounds': w.totalRounds,
+              'lastCleaned': w.lastCleaned.toIso8601String(),
+              'lastRevised': w.lastRevised.toIso8601String(),
+              'lastUsed': w.lastUsed?.toIso8601String(),
+              'trackWear': w.trackWear,
+              'trackCleanliness': w.trackCleanliness,
+              'trackRounds': w.trackRounds,
+              'cleaningRoundsThreshold': w.cleaningRoundsThreshold,
+              'wearRoundsThreshold': w.wearRoundsThreshold,
+              'roundsAtLastCleaning': w.roundsAtLastCleaning,
+              'roundsAtLastRevision': w.roundsAtLastRevision,
+              'documents': w.documents.map((d) => d.toJson()).toList(),
+              'history': w.history.map((h) => h.toJson()).toList(),
+              'photoPath': w.photoPath,
+              'isHidden': w.isHidden,
+              'linkedAccessoryIds': w.linkedAccessoryIds,
+            },
+          )
+          .toList(),
+      'ammos': _ammos
+          .map(
+            (a) => {
+              'id': a.id,
+              'name': a.name,
+              'brand': a.brand,
+              'caliber': a.caliber,
+              'comment': a.comment,
+              'projectileType': a.projectileType,
+              'quantity': a.quantity,
+              'initialQuantity': a.initialQuantity,
+              'lastUsed': a.lastUsed?.toIso8601String(),
+              'trackStock': a.trackStock,
+              'lowStockThreshold': a.lowStockThreshold,
+              'documents': a.documents.map((d) => d.toJson()).toList(),
+              'photoPath': a.photoPath,
+              'isHidden': a.isHidden,
+              if (a.unitPrice != null) 'unitPrice': a.unitPrice,
+              'currency': a.currency,
+              'history': a.safeHistory.map((h) => h.toJson()).toList(),
+            },
+          )
+          .toList(),
+      'accessories': _accessories
+          .map(
+            (ac) => {
+              'id': ac.id,
+              'name': ac.name,
+              'brand': ac.brand,
+              'model': ac.model,
+              'comment': ac.comment,
+              'type': ac.type,
+              'imageUrl': ac.imageUrl,
+              'lastUsed': ac.lastUsed?.toIso8601String(),
+              'totalRounds': ac.totalRounds,
+              'lastCleaned': ac.lastCleaned.toIso8601String(),
+              'lastRevised': ac.lastRevised.toIso8601String(),
+              'trackWear': ac.trackWear,
+              'trackCleanliness': ac.trackCleanliness,
+              'cleaningRoundsThreshold': ac.cleaningRoundsThreshold,
+              'wearRoundsThreshold': ac.wearRoundsThreshold,
+              'roundsAtLastCleaning': ac.roundsAtLastCleaning,
+              'roundsAtLastRevision': ac.roundsAtLastRevision,
+              'batteryChangedAt': ac.batteryChangedAt?.toIso8601String(),
+              'trackBattery': ac.trackBattery,
+              'documents': ac.documents.map((d) => d.toJson()).toList(),
+              'photoPath': ac.photoPath,
+              'isHidden': ac.isHidden,
+              'linkedPlatformIds': ac.linkedPlatformIds,
+            },
+          )
+          .toList(),
+      'shootingAdjustmentTables': _shootingAdjustmentTables
+          .map((t) => t.toJson())
+          .toList(),
+      'sessions': _sessions
+          .map(
+            (s) => {
+              'id': s.id,
+              'name': s.name,
+              'date': s.date.toIso8601String(),
+              'location': s.location,
+              'shootingDistance': s.shootingDistance,
+              'locationLatitude': s.locationLatitude,
+              'locationLongitude': s.locationLongitude,
+              'sessionType': s.sessionType,
+              'weatherEnabled': s.weatherEnabled,
+              'temperature': s.temperature,
+              'wind': s.wind,
+              'humidity': s.humidity,
+              'pressure': s.pressure,
+              'temperatureEnabled': s.temperatureEnabled,
+              'windEnabled': s.windEnabled,
+              'humidityEnabled': s.humidityEnabled,
+              'pressureEnabled': s.pressureEnabled,
+              'platformIds': s.platformIds,
+              'exercises': s.exercises
+                  .map(
+                    (e) => {
+                      'id': e.id,
+                      'name': e.name,
+                      'platformId': e.platformId,
+                      'platformLabel': e.platformLabel,
+                      'ammoId': e.ammoId,
+                      'ammoLabel': e.ammoLabel,
+                      'equipmentIds': e.equipmentIds,
+                      'equipmentId': e.equipmentIds.isEmpty
+                          ? null
+                          : e.equipmentIds.first,
+                      'targetName': e.targetName,
+                      'targetPhotos': e.targetPhotos
+                          .map((p) => p.toJson())
+                          .toList(),
+                      'shotsFired': e.shotsFired,
+                      'distance': e.distance,
+                      'precision': e.precision,
+                      'precisionEnabled': e.precisionEnabled,
+                      'observations': e.observations,
+                      'platformAssignments': e.platformAssignments
+                          .map(
+                            (a) => {
+                              'platformId': a.platformId,
+                              'platformLabel': a.platformLabel,
+                              'ammoIds': a.ammoIds,
+                              'accessoryIds': a.accessoryIds,
+                            },
+                          )
+                          .toList(),
+                      'shotAllocations': e.shotAllocations
+                          .map(
+                            (a) => {
+                              'platformId': a.platformId,
+                              'ammoId': a.ammoId,
+                              'shots': a.shots,
+                            },
+                          )
+                          .toList(),
+                      if (e.steps != null)
+                        'steps': e.steps!.map((st) => st.toJson()).toList(),
+                    },
+                  )
                   .toList(),
-              shotsFired: (e['shotsFired'] as num?)?.toInt() ?? 0,
-              distance: (e['distance'] as num?)?.toInt() ?? 0,
-              precision: e['precision'] != null ? (e['precision'] as num).toDouble() : null,
-              precisionEnabled: (e['precisionEnabled'] ?? true) as bool,
-              observations: e['observations'] as String? ?? '',
-              platformAssignments: assignmentsRaw
-                  .whereType<Map>()
-                  .map((m) => Map<String, dynamic>.from(m))
-                  .map((m) {
-                    try {
-                      return ExercisePlatformAssignment(
-                        platformId: (m['platformId'] ?? '') as String,
-                        platformLabel: m['platformLabel'] as String?,
-                        ammoIds: ((m['ammoIds'] as List?) ?? const [])
-                            .whereType<String>()
-                            .toList(),
-                        accessoryIds: ((m['accessoryIds'] as List?) ?? const [])
-                            .whereType<String>()
-                            .toList(),
-                      );
-                    } catch (_) {
-                      return null;
-                    }
-                  })
-                  .whereType<ExercisePlatformAssignment>()
-                  .where((a) => a.platformId.trim().isNotEmpty)
-                  .toList(),
-              shotAllocations: shotAllocationsRaw
-                  .whereType<Map>()
-                  .map((m) => Map<String, dynamic>.from(m))
-                  .map((m) {
-                    try {
-                      return ExerciseShotAllocation(
-                        platformId: (m['platformId'] ?? '') as String,
-                        ammoId: (m['ammoId'] ?? '') as String,
-                        shots: (m['shots'] as num?)?.toInt() ?? 0,
-                      );
-                    } catch (_) {
-                      return null;
-                    }
-                  })
-                  .whereType<ExerciseShotAllocation>()
-                  .where((a) =>
-                      a.platformId.trim().isNotEmpty &&
-                      a.ammoId.trim().isNotEmpty &&
-                      a.shots > 0)
-                  .toList(),
-              steps: stepsRaw
-                  .whereType<Map>()
-                  .map((m) {
-                    try {
-                      return ExerciseStep.fromJson(Map<String, dynamic>.from(m));
-                    } catch (_) {
-                      return null;
-                    }
-                  })
-                  .whereType<ExerciseStep>()
-                  .toList(),
-            );
-          } catch (_) {
-            return null;
-          }
-        }).whereType<Exercise>().toList();
-
-        return Session(
-          id: s['id'] as String,
-          name: s['name'] as String,
-          date: DateTime.tryParse(s['date'] as String? ?? '') ?? DateTime.now(),
-          location: (s['location'] as String?) ?? '',
-          shootingDistance: (s['shootingDistance'] as String?) ?? '',
-          locationLatitude: (s['locationLatitude'] as num?)?.toDouble(),
-          locationLongitude: (s['locationLongitude'] as num?)?.toDouble(),
-          sessionType: s['sessionType'] as String,
-          weatherEnabled: s['weatherEnabled'] as bool? ?? false,
-          temperature: s['temperature'] as String? ?? '',
-          wind: s['wind'] as String? ?? '',
-          humidity: s['humidity'] as String? ?? '',
-          pressure: s['pressure'] as String? ?? '',
-          temperatureEnabled: s['temperatureEnabled'] as bool? ?? true,
-          windEnabled: s['windEnabled'] as bool? ?? true,
-          humidityEnabled: s['humidityEnabled'] as bool? ?? true,
-          pressureEnabled: s['pressureEnabled'] as bool? ?? true,
-          platformIds: ((s['platformIds'] as List?) ?? const [])
-              .whereType<String>()
-              .toList(),
-          exercises: exercises,
-        );
-      } catch (e) {
-        debugPrint('Failed to load session: $e');
-        return null;
-      }
-    }).whereType<Session>().toList();
-
-    final diagnosticsList = (data['diagnostics'] as List?) ?? const [];
-    _diagnostics = diagnosticsList.whereType<Map<String, dynamic>>().map((d) {
-      try {
-        return Diagnostic(
-          id: d['id'] as String,
-          date: DateTime.tryParse(d['date'] as String? ?? '') ?? DateTime.now(),
-          platformId: d['platformId'] as String,
-          platformNameSnapshot: (d['platformNameSnapshot'] ?? '') as String,
-          platformTypeSnapshot: (d['platformTypeSnapshot'] ?? '') as String,
-          responses: Map<String, dynamic>.from(d['responses'] as Map? ?? const {}),
-          incidentKey: (d['incidentKey'] ?? 'incident_unknown') as String,
-          suspectedIssueKey: (d['suspectedIssueKey'] ?? 'multiple_possible') as String,
-          riskLevelKey: (d['riskLevelKey'] ?? 'medium') as String,
-          probabilities: Map<String, int>.from(d['probabilities'] as Map? ?? const {}),
-          finalDecision: (d['finalDecision'] ?? '') as String,
-          summary: (d['summary'] ?? '') as String,
-        );
-      } catch (e) {
-        debugPrint('Failed to load diagnostic: $e');
-        return null;
-      }
-    }).whereType<Diagnostic>().toList();
-  } catch (e) {
-    debugPrint('Critical error in _loadDomainDataFromMap: $e');
+            },
+          )
+          .toList(),
+      'diagnostics': _diagnostics
+          .map(
+            (d) => {
+              'id': d.id,
+              'date': d.date.toIso8601String(),
+              'platformId': d.platformId,
+              'platformNameSnapshot': d.platformNameSnapshot,
+              'platformTypeSnapshot': d.platformTypeSnapshot,
+              'responses': d.responses,
+              'incidentKey': d.incidentKey,
+              'suspectedIssueKey': d.suspectedIssueKey,
+              'riskLevelKey': d.riskLevelKey,
+              'probabilities': d.probabilities,
+              'finalDecision': d.finalDecision,
+              'summary': d.summary,
+            },
+          )
+          .toList(),
+    };
   }
-}
+
+  void _loadDomainDataFromMap(Map<String, dynamic> data) {
+    try {
+      final readVersion = (data['schemaVersion'] as int?) ?? 0;
+      if (readVersion > kCurrentSchemaVersion) {
+        // Data was written by a newer version of the app — best effort: load
+        // anyway but log a warning.
+        debugPrint(
+          '[ThotProvider] WARNING: data file schema version $readVersion is '
+          'newer than current $kCurrentSchemaVersion. Some fields may be lost.',
+        );
+      }
+      // Future migration code goes here:
+      // final data2 = readVersion < 2 ? _migrateV1ToV2(data) : data;
+
+      final templatesList = (data['exerciseTemplates'] as List?) ?? const [];
+      _exerciseTemplates = templatesList
+          .whereType<Map>()
+          .map((t) {
+            try {
+              return ExerciseTemplate.fromJson(t.cast<String, dynamic>());
+            } catch (e) {
+              debugPrint('Failed to load exercise template: $e');
+              return null;
+            }
+          })
+          .whereType<ExerciseTemplate>()
+          .toList();
+
+      final userDocsList = (data['userDocuments'] as List?) ?? const [];
+      _userDocuments = userDocsList
+          .whereType<Map>()
+          .map((d) {
+            try {
+              return UserDocument.fromJson(d.cast<String, dynamic>());
+            } catch (e) {
+              debugPrint('Failed to load user document: $e');
+              return null;
+            }
+          })
+          .whereType<UserDocument>()
+          .toList();
+
+      final platformsList = (data['platforms'] as List?) ?? const [];
+      _platforms = platformsList
+          .whereType<Map>()
+          .map((w) {
+            try {
+              return Platform(
+                id: w['id'] as String,
+                name: w['name'] as String,
+                model: w['model'] as String,
+                comment: (w['comment'] ?? '') as String,
+                type: _migratePlatformType(
+                  (w['type'] ?? 'Plateforme') as String,
+                ),
+                caliber: w['caliber'] as String,
+                serialNumber: w['serialNumber'] as String,
+                weight: (w['weight'] as num?)?.toDouble() ?? 0.0,
+                totalRounds: (w['totalRounds'] ?? 0) as int,
+                lastCleaned:
+                    DateTime.tryParse(w['lastCleaned'] as String? ?? '') ??
+                    DateTime.now(),
+                lastRevised: w['lastRevised'] != null
+                    ? DateTime.tryParse(w['lastRevised'] as String) ??
+                          DateTime.now()
+                    : DateTime.tryParse(w['lastCleaned'] as String? ?? '') ??
+                          DateTime.now(),
+                lastUsed: DateTime.tryParse(w['lastUsed'] as String? ?? ''),
+                trackWear: w['trackWear'] as bool? ?? true,
+                trackCleanliness: w['trackCleanliness'] as bool? ?? true,
+                trackRounds: w['trackRounds'] as bool? ?? true,
+                cleaningRoundsThreshold:
+                    (w['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500,
+                wearRoundsThreshold:
+                    (w['wearRoundsThreshold'] as num?)?.toInt() ?? 10000,
+                roundsAtLastCleaning: _migrateRoundsAtLastCleaning(w),
+                roundsAtLastRevision: _migrateRoundsAtLastRevision(w),
+                documents: _decodeItemDocuments(
+                  w['documents'] ?? w['pdfPaths'] ?? const [],
+                ),
+                history: ((w['history'] as List?) ?? const [])
+                    .map((h) {
+                      try {
+                        return PlatformHistoryEntry.fromJson(h);
+                      } catch (_) {
+                        return null;
+                      }
+                    })
+                    .whereType<PlatformHistoryEntry>()
+                    .toList(),
+                photoPath: w['photoPath'] as String?,
+                isHidden: w['isHidden'] as bool? ?? false,
+                linkedAccessoryIds:
+                    ((w['linkedAccessoryIds'] as List?) ?? const [])
+                        .whereType<String>()
+                        .toList(),
+              );
+            } catch (e) {
+              debugPrint('Failed to load platform: $e');
+              return null;
+            }
+          })
+          .whereType<Platform>()
+          .toList();
+
+      final ammosList = (data['ammos'] as List?) ?? const [];
+      _ammos = ammosList
+          .whereType<Map>()
+          .map((a) {
+            try {
+              final qty = (a['quantity'] ?? 0) as int;
+              final rawInitial =
+                  (a['initialQuantity'] ?? a['quantity'] ?? 0) as int;
+              final effectiveInitial = (rawInitial <= 0 && qty > 0)
+                  ? qty
+                  : rawInitial;
+
+              return Ammo(
+                id: a['id'] as String,
+                name: a['name'] as String,
+                brand: a['brand'] as String,
+                caliber: a['caliber'] as String,
+                comment: (a['comment'] ?? '') as String,
+                projectileType:
+                    (a['projectileType'] ?? a['bulletType'] ?? '') as String,
+                quantity: qty,
+                initialQuantity: effectiveInitial,
+                lastUsed: DateTime.tryParse(a['lastUsed'] as String? ?? ''),
+                trackStock: a['trackStock'] as bool? ?? true,
+                lowStockThreshold:
+                    (a['lowStockThreshold'] as num?)?.toInt() ?? 50,
+                documents: _decodeItemDocuments(
+                  a['documents'] ?? a['pdfPaths'] ?? const [],
+                ),
+                photoPath: a['photoPath'] as String?,
+                isHidden: a['isHidden'] as bool? ?? false,
+                unitPrice: (a['unitPrice'] as num?)?.toDouble(),
+                currency: (a['currency'] as String?) ?? 'EUR',
+                history: (() {
+                  try {
+                    final raw = a['history'];
+                    if (raw is! List) return <AmmoHistoryEntry>[];
+                    return raw
+                        .map((h) {
+                          try {
+                            return AmmoHistoryEntry.fromJson(
+                              Map<String, dynamic>.from(h as Map),
+                            );
+                          } catch (_) {
+                            return null;
+                          }
+                        })
+                        .whereType<AmmoHistoryEntry>()
+                        .toList();
+                  } catch (_) {
+                    return <AmmoHistoryEntry>[];
+                  }
+                })(),
+              );
+            } catch (e) {
+              debugPrint('Failed to load ammo: $e');
+              return null;
+            }
+          })
+          .whereType<Ammo>()
+          .toList();
+
+      final accessoriesList = (data['accessories'] as List?) ?? const [];
+      _accessories = accessoriesList
+          .whereType<Map>()
+          .map((ac) {
+            try {
+              final lastUsed = DateTime.tryParse(
+                ac['lastUsed'] as String? ?? '',
+              );
+              final totalRounds = (ac['totalRounds'] ?? 0) as int;
+              final lastCleaned = ac['lastCleaned'] != null
+                  ? DateTime.tryParse(ac['lastCleaned'] as String)
+                  : null;
+              final lastRevised = ac['lastRevised'] != null
+                  ? DateTime.tryParse(ac['lastRevised'] as String)
+                  : null;
+
+              final roundsAtLastCleaning =
+                  (ac['roundsAtLastCleaning'] as num?)?.toInt() ?? totalRounds;
+              final roundsAtLastRevision =
+                  (ac['roundsAtLastRevision'] as num?)?.toInt() ?? totalRounds;
+
+              return Accessory(
+                id: ac['id'] as String,
+                name: ac['name'] as String,
+                brand: (ac['brand'] ?? '') as String,
+                model: (ac['model'] ?? '') as String,
+                comment: (ac['comment'] ?? '') as String,
+                type: (ac['type'] ?? '') as String,
+                imageUrl: (ac['imageUrl'] ?? '') as String,
+                lastUsed: lastUsed,
+                totalRounds: totalRounds,
+                lastCleaned: lastCleaned ?? DateTime.now(),
+                lastRevised: lastRevised ?? lastCleaned ?? DateTime.now(),
+                trackWear: (ac['trackWear'] ?? false) as bool,
+                trackCleanliness: (ac['trackCleanliness'] ?? false) as bool,
+                cleaningRoundsThreshold:
+                    (ac['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500,
+                wearRoundsThreshold:
+                    (ac['wearRoundsThreshold'] as num?)?.toInt() ?? 10000,
+                roundsAtLastCleaning: roundsAtLastCleaning,
+                roundsAtLastRevision: roundsAtLastRevision,
+                batteryChangedAt: ac['batteryChangedAt'] != null
+                    ? DateTime.tryParse(ac['batteryChangedAt'] as String)
+                    : null,
+                trackBattery: (ac['trackBattery'] ?? false) as bool,
+                documents: _decodeItemDocuments(ac['documents'] ?? const []),
+                photoPath: ac['photoPath'] as String?,
+                isHidden: (ac['isHidden'] ?? false) as bool,
+                linkedPlatformIds:
+                    ((ac['linkedPlatformIds'] as List?) ?? const [])
+                        .whereType<String>()
+                        .toList(),
+              );
+            } catch (e) {
+              debugPrint('Failed to load accessory: $e');
+              return null;
+            }
+          })
+          .whereType<Accessory>()
+          .toList();
+
+      final adjustmentTablesRaw =
+          (data['shootingAdjustmentTables'] as List?) ?? const [];
+      _shootingAdjustmentTables = adjustmentTablesRaw
+          .whereType<Map>()
+          .map((t) {
+            try {
+              return ShootingAdjustmentTable.fromJson(
+                t.cast<String, dynamic>(),
+              );
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<ShootingAdjustmentTable>()
+          .where((t) => t.platformId.trim().isNotEmpty)
+          .toList();
+
+      final sessionsList = (data['sessions'] as List?) ?? const [];
+      _sessions = sessionsList
+          .whereType<Map>()
+          .map((s) {
+            try {
+              final exercisesList = (s['exercises'] as List?) ?? const [];
+              final exercises = exercisesList
+                  .whereType<Map>()
+                  .map((raw) {
+                    try {
+                      final e = raw;
+                      final stepsRaw = (e['steps'] as List?) ?? const [];
+                      final assignmentsRaw =
+                          (e['platformAssignments'] as List?) ?? const [];
+                      final shotAllocationsRaw =
+                          (e['shotAllocations'] as List?) ?? const [];
+
+                      return Exercise(
+                        id: e['id'] as String,
+                        name: (e['name'] ?? '') as String,
+                        platformId: (e['platformId'] ?? '') as String,
+                        platformLabel: (e['platformLabel'] as String?),
+                        ammoId: (e['ammoId'] ?? '') as String,
+                        ammoLabel: (e['ammoLabel'] as String?),
+                        equipmentIds: _decodeEquipmentIds(e),
+                        targetName: e['targetName'] as String?,
+                        targetPhotos: ((e['targetPhotos'] as List?) ?? const [])
+                            .map((p) {
+                              try {
+                                return ExercisePhoto.fromJson(
+                                  Map<String, dynamic>.from(p as Map),
+                                );
+                              } catch (_) {
+                                return null;
+                              }
+                            })
+                            .whereType<ExercisePhoto>()
+                            .toList(),
+                        shotsFired: (e['shotsFired'] as num?)?.toInt() ?? 0,
+                        distance: (e['distance'] as num?)?.toInt() ?? 0,
+                        precision: e['precision'] != null
+                            ? (e['precision'] as num).toDouble()
+                            : null,
+                        precisionEnabled:
+                            (e['precisionEnabled'] ?? true) as bool,
+                        observations: e['observations'] as String? ?? '',
+                        platformAssignments: assignmentsRaw
+                            .whereType<Map>()
+                            .map((m) => Map<String, dynamic>.from(m))
+                            .map((m) {
+                              try {
+                                return ExercisePlatformAssignment(
+                                  platformId: (m['platformId'] ?? '') as String,
+                                  platformLabel: m['platformLabel'] as String?,
+                                  ammoIds: ((m['ammoIds'] as List?) ?? const [])
+                                      .whereType<String>()
+                                      .toList(),
+                                  accessoryIds:
+                                      ((m['accessoryIds'] as List?) ?? const [])
+                                          .whereType<String>()
+                                          .toList(),
+                                );
+                              } catch (_) {
+                                return null;
+                              }
+                            })
+                            .whereType<ExercisePlatformAssignment>()
+                            .where((a) => a.platformId.trim().isNotEmpty)
+                            .toList(),
+                        shotAllocations: shotAllocationsRaw
+                            .whereType<Map>()
+                            .map((m) => Map<String, dynamic>.from(m))
+                            .map((m) {
+                              try {
+                                return ExerciseShotAllocation(
+                                  platformId: (m['platformId'] ?? '') as String,
+                                  ammoId: (m['ammoId'] ?? '') as String,
+                                  shots: (m['shots'] as num?)?.toInt() ?? 0,
+                                );
+                              } catch (_) {
+                                return null;
+                              }
+                            })
+                            .whereType<ExerciseShotAllocation>()
+                            .where(
+                              (a) =>
+                                  a.platformId.trim().isNotEmpty &&
+                                  a.ammoId.trim().isNotEmpty &&
+                                  a.shots > 0,
+                            )
+                            .toList(),
+                        steps: stepsRaw
+                            .whereType<Map>()
+                            .map((m) {
+                              try {
+                                return ExerciseStep.fromJson(
+                                  Map<String, dynamic>.from(m),
+                                );
+                              } catch (_) {
+                                return null;
+                              }
+                            })
+                            .whereType<ExerciseStep>()
+                            .toList(),
+                      );
+                    } catch (_) {
+                      return null;
+                    }
+                  })
+                  .whereType<Exercise>()
+                  .toList();
+
+              return Session(
+                id: s['id'] as String,
+                name: s['name'] as String,
+                date:
+                    DateTime.tryParse(s['date'] as String? ?? '') ??
+                    DateTime.now(),
+                location: (s['location'] as String?) ?? '',
+                shootingDistance: (s['shootingDistance'] as String?) ?? '',
+                locationLatitude: (s['locationLatitude'] as num?)?.toDouble(),
+                locationLongitude: (s['locationLongitude'] as num?)?.toDouble(),
+                sessionType: s['sessionType'] as String,
+                weatherEnabled: s['weatherEnabled'] as bool? ?? false,
+                temperature: s['temperature'] as String? ?? '',
+                wind: s['wind'] as String? ?? '',
+                humidity: s['humidity'] as String? ?? '',
+                pressure: s['pressure'] as String? ?? '',
+                temperatureEnabled: s['temperatureEnabled'] as bool? ?? true,
+                windEnabled: s['windEnabled'] as bool? ?? true,
+                humidityEnabled: s['humidityEnabled'] as bool? ?? true,
+                pressureEnabled: s['pressureEnabled'] as bool? ?? true,
+                platformIds: ((s['platformIds'] as List?) ?? const [])
+                    .whereType<String>()
+                    .toList(),
+                exercises: exercises,
+              );
+            } catch (e) {
+              debugPrint('Failed to load session: $e');
+              return null;
+            }
+          })
+          .whereType<Session>()
+          .toList();
+
+      final diagnosticsList = (data['diagnostics'] as List?) ?? const [];
+      _diagnostics = diagnosticsList
+          .whereType<Map<String, dynamic>>()
+          .map((d) {
+            try {
+              return Diagnostic(
+                id: d['id'] as String,
+                date:
+                    DateTime.tryParse(d['date'] as String? ?? '') ??
+                    DateTime.now(),
+                platformId: d['platformId'] as String,
+                platformNameSnapshot:
+                    (d['platformNameSnapshot'] ?? '') as String,
+                platformTypeSnapshot:
+                    (d['platformTypeSnapshot'] ?? '') as String,
+                responses: Map<String, dynamic>.from(
+                  d['responses'] as Map? ?? const {},
+                ),
+                incidentKey: (d['incidentKey'] ?? 'incident_unknown') as String,
+                suspectedIssueKey:
+                    (d['suspectedIssueKey'] ?? 'multiple_possible') as String,
+                riskLevelKey: (d['riskLevelKey'] ?? 'medium') as String,
+                probabilities: Map<String, int>.from(
+                  d['probabilities'] as Map? ?? const {},
+                ),
+                finalDecision: (d['finalDecision'] ?? '') as String,
+                summary: (d['summary'] ?? '') as String,
+              );
+            } catch (e) {
+              debugPrint('Failed to load diagnostic: $e');
+              return null;
+            }
+          })
+          .whereType<Diagnostic>()
+          .toList();
+    } catch (e) {
+      debugPrint('Critical error in _loadDomainDataFromMap: $e');
+    }
+  }
+
   // Local Storage Methods
   void _scheduleSave() {
-  _saveDebounce?.cancel();
-  _saveDebounce = Timer(const Duration(milliseconds: 400), _saveToLocal);
-}
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(const Duration(milliseconds: 400), _saveToLocal);
+  }
 
-Future<Map<String, dynamic>?> _loadFromSafeBackup() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('thot_domain_data_backup');
-    if (raw == null || raw.isEmpty) return null;
-
-    // Tenter le JSON brut (backup legacy en SharedPreferences)
+  Future<Map<String, dynamic>?> _loadFromSafeBackup() async {
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-    } catch (_) {}
-  } catch (e) {
-    debugPrint('Error loading safe backup: $e');
-  }
-  return null;
-}
-Future<void> _saveToLocal() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('thot_domain_data_backup');
+      if (raw == null || raw.isEmpty) return null;
 
-    if (!_domainDataLoadCompleted) {
+      // Tenter le JSON brut (backup legacy en SharedPreferences)
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) return decoded;
+      } catch (_) {}
+    } catch (e) {
+      debugPrint('Error loading safe backup: $e');
+    }
+    return null;
+  }
+
+  Future<void> _saveToLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      if (!_domainDataLoadCompleted) {
+        if (kDebugMode) {
+          debugPrint('Skip domain save: local domain data not loaded yet.');
+        }
+        return;
+      }
+
+      // Check recent achievements
+      _checkAchievements();
+
+      // Save achievements
+      await prefs.setStringList(
+        'thot_unlocked_achievements',
+        _unlockedAchievements.toList(),
+      );
+      // Save unlock dates as id|iso8601 list
+      final datesList = _achievementUnlockDates.entries
+          .map((e) => '${e.key}|${e.value.toIso8601String()}')
+          .toList();
+      await prefs.setStringList('thot_unlocked_achievement_dates', datesList);
+
+      // Petits réglages seulement
+      await prefs.setString('userName', _userName);
+      await prefs.setString('licenseNumber', _licenseNumber);
+      await prefs.setString('userEmail', _userEmail);
+      await prefs.setBool('useMetric', _useMetric);
+      await prefs.setString('weightUnit', _weightUnit.name);
+      await prefs.setString('distanceUnit', _distanceUnit.name);
+      await prefs.setString('velocityUnit', _velocityUnit.name);
+      await prefs.setString('dateFormatPreference', _dateFormatPreference);
+      await prefs.setString('themeMode', _themeMode.toString());
+      await prefs.setStringList('quickActions', _quickActions);
+      await prefs.setString('localeCode', _localeCode ?? '');
+      await prefs.setBool(
+        'documentExpiryPushEnabled',
+        _documentExpiryPushEnabled,
+      );
+
+      final data = _buildDomainDataMap();
+      final rawJson = jsonEncode(data);
+
+      if (kIsWeb) {
+        await prefs.setString('thot_domain_data', rawJson);
+      } else {
+        await _domainStore.writeDomainData(rawJson);
+      }
+
+      unawaited(_syncDocumentExpiryReminders());
+      unawaited(
+        DashboardWidgetService.sync(
+          sessions: _sessions,
+          platforms: platforms,
+          ammos: ammos,
+          accessories: accessories,
+          userDocuments: _userDocuments,
+        ),
+      );
+
       if (kDebugMode) {
-        debugPrint('Skip domain save: local domain data not loaded yet.');
+        debugPrint('Data saved to local storage.');
       }
-      return;
-    }
-
-    // Check recent achievements
-    _checkAchievements();
-    
-    // Save achievements
-    await prefs.setStringList('thot_unlocked_achievements', _unlockedAchievements.toList());
-    // Save unlock dates as id|iso8601 list
-    final datesList = _achievementUnlockDates.entries
-        .map((e) => '${e.key}|${e.value.toIso8601String()}')
-        .toList();
-    await prefs.setStringList('thot_unlocked_achievement_dates', datesList);
-
-    // Petits réglages seulement
-    await prefs.setString('userName', _userName);
-    await prefs.setString('licenseNumber', _licenseNumber);
-    await prefs.setString('userEmail', _userEmail);
-    await prefs.setBool('useMetric', _useMetric);
-    await prefs.setString('weightUnit', _weightUnit.name);
-    await prefs.setString('distanceUnit', _distanceUnit.name);
-    await prefs.setString('velocityUnit', _velocityUnit.name);
-    await prefs.setString('dateFormatPreference', _dateFormatPreference);
-    await prefs.setString('themeMode', _themeMode.toString());
-    await prefs.setStringList('quickActions', _quickActions);
-    await prefs.setString('localeCode', _localeCode ?? '');
-    await prefs.setBool('documentExpiryPushEnabled', _documentExpiryPushEnabled);
-
-    final data = _buildDomainDataMap();
-    final rawJson = jsonEncode(data);
-
-    if (kIsWeb) {
-      await prefs.setString('thot_domain_data', rawJson);
-    } else {
-      await _domainStore.writeDomainData(rawJson);
-    }
-
-    unawaited(_syncDocumentExpiryReminders());
-    unawaited(
-      DashboardWidgetService.sync(
-        sessions: _sessions,
-        platforms: platforms,
-        ammos: ammos,
-        accessories: accessories,
-        userDocuments: _userDocuments,
-      ),
-    );
-
-    if (kDebugMode) {
-      debugPrint('Data saved to local storage.');
-    }
-  } catch (e) {
-    if (kDebugMode) {
-      debugPrint('Error saving local data.');
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error saving local data.');
+      }
     }
   }
-}
 
-Future<void> _syncDocumentExpiryReminders() async {
-  await MaintenanceNotifications.syncDocumentExpiryReminders(
-    enabled: _documentExpiryPushEnabled,
-    localeCode: _localeCode,
-    platforms: _platforms.where((w) => !w.isHidden).toList(),
-    ammos: _ammos.where((a) => !a.isHidden).toList(),
-    accessories: _accessories.where((a) => !a.isHidden).toList(),
-    userDocuments: _userDocuments,
-  );
-}
-
-Future<void> _loadFromLocal() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-
-    final unlockedList = prefs.getStringList('thot_unlocked_achievements') ?? [];
-    _unlockedAchievements = unlockedList.toSet();
-    // Load unlock dates
-    _achievementUnlockDates = {};
-    final rawDates = prefs.getStringList('thot_unlocked_achievement_dates') ?? const [];
-    for (final entry in rawDates) {
-      final idx = entry.indexOf('|');
-      if (idx > 0) {
-        final id = entry.substring(0, idx);
-        final iso = entry.substring(idx + 1);
-        try {
-          _achievementUnlockDates[id] = DateTime.parse(iso);
-        } catch (_) {}
-      }
-    }
-    // Ensure all unlocked have a date
-    for (final id in _unlockedAchievements) {
-      _achievementUnlockDates.putIfAbsent(id, () => DateTime.now());
-    }
-
-    // Petits réglages
-    _hasSeenOnboarding = prefs.getBool('thot_has_seen_onboarding') ?? false;
-    _userName = prefs.getString('userName') ?? '';
-    _licenseNumber = prefs.getString('licenseNumber') ?? '';
-    _userEmail = prefs.getString('userEmail') ?? '';
-    _useMetric = prefs.getBool('useMetric') ?? true;
-    _weightUnit = WeightUnit.values.firstWhere(
-      (unit) => unit.name == prefs.getString('weightUnit'),
-      orElse: () => WeightUnit.gram,
+  Future<void> _syncDocumentExpiryReminders() async {
+    await MaintenanceNotifications.syncDocumentExpiryReminders(
+      enabled: _documentExpiryPushEnabled,
+      localeCode: _localeCode,
+      platforms: _platforms.where((w) => !w.isHidden).toList(),
+      ammos: _ammos.where((a) => !a.isHidden).toList(),
+      accessories: _accessories.where((a) => !a.isHidden).toList(),
+      userDocuments: _userDocuments,
     );
-    _distanceUnit = DistanceUnit.values.firstWhere(
-      (unit) => unit.name == prefs.getString('distanceUnit'),
-      orElse: () => _useMetric ? DistanceUnit.meter : DistanceUnit.yard,
-    );
-    _velocityUnit = VelocityUnit.values.firstWhere(
-      (unit) => unit.name == prefs.getString('velocityUnit'),
-      orElse: () => _useMetric
-          ? VelocityUnit.metersPerSecond
-          : VelocityUnit.feetPerSecond,
-    );
-    _dateFormatPreference =
-        prefs.getString('dateFormatPreference') ?? 'day_month_year';
-    _premiumService.loadMetadataFromPrefs(prefs);
+  }
 
-    final themeModeStr = prefs.getString('themeMode');
-    if (themeModeStr != null) {
-      _themeMode =
-          themeModeStr.contains('dark') ? ThemeMode.dark : ThemeMode.light;
-    }
+  Future<void> _loadFromLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    _quickActions = _sanitizeQuickActions(prefs.getStringList('quickActions'));
-    _documentExpiryPushEnabled = prefs.getBool('documentExpiryPushEnabled') ?? false;
-    final rawLocale = prefs.getString('localeCode');
-    _localeCode = (rawLocale == null || rawLocale.trim().isEmpty) ? null : rawLocale.trim();
-
-    Map<String, dynamic>? domainData;
-
-    if (kIsWeb) {
-      final raw = prefs.getString('thot_domain_data');
-      if (raw != null && raw.isNotEmpty) {
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map<String, dynamic>) {
-            domainData = decoded;
-          }
-        } catch (_) {
-          domainData = null;
+      final unlockedList =
+          prefs.getStringList('thot_unlocked_achievements') ?? [];
+      _unlockedAchievements = unlockedList.toSet();
+      // Load unlock dates
+      _achievementUnlockDates = {};
+      final rawDates =
+          prefs.getStringList('thot_unlocked_achievement_dates') ?? const [];
+      for (final entry in rawDates) {
+        final idx = entry.indexOf('|');
+        if (idx > 0) {
+          final id = entry.substring(0, idx);
+          final iso = entry.substring(idx + 1);
+          try {
+            _achievementUnlockDates[id] = DateTime.parse(iso);
+          } catch (_) {}
         }
       }
-} else {
-  domainData = await _domainStore.readDomainData();
-}
+      // Ensure all unlocked have a date
+      for (final id in _unlockedAchievements) {
+        _achievementUnlockDates.putIfAbsent(id, () => DateTime.now());
+      }
 
-    if (domainData != null) {
-      _loadDomainDataFromMap(domainData);
-      _domainDataLoadCompleted = true;
-    } else {
-      // ÉCHEC de lecture du stockage principal.
-      // Tenter la restauration via le backup legacy en SharedPreferences.
-      domainData = await _loadFromSafeBackup();
+      // Petits réglages
+      _hasSeenOnboarding = prefs.getBool('thot_has_seen_onboarding') ?? false;
+      _userName = prefs.getString('userName') ?? '';
+      _licenseNumber = prefs.getString('licenseNumber') ?? '';
+      _userEmail = prefs.getString('userEmail') ?? '';
+      _useMetric = prefs.getBool('useMetric') ?? true;
+      _weightUnit = WeightUnit.values.firstWhere(
+        (unit) => unit.name == prefs.getString('weightUnit'),
+        orElse: () => WeightUnit.gram,
+      );
+      _distanceUnit = DistanceUnit.values.firstWhere(
+        (unit) => unit.name == prefs.getString('distanceUnit'),
+        orElse: () => _useMetric ? DistanceUnit.meter : DistanceUnit.yard,
+      );
+      _velocityUnit = VelocityUnit.values.firstWhere(
+        (unit) => unit.name == prefs.getString('velocityUnit'),
+        orElse: () => _useMetric
+            ? VelocityUnit.metersPerSecond
+            : VelocityUnit.feetPerSecond,
+      );
+      _dateFormatPreference =
+          prefs.getString('dateFormatPreference') ?? 'day_month_year';
+      _premiumService.loadMetadataFromPrefs(prefs);
+
+      final themeModeStr = prefs.getString('themeMode');
+      if (themeModeStr != null) {
+        _themeMode = themeModeStr.contains('dark')
+            ? ThemeMode.dark
+            : ThemeMode.light;
+      }
+
+      _quickActions = _sanitizeQuickActions(
+        prefs.getStringList('quickActions'),
+      );
+      _documentExpiryPushEnabled =
+          prefs.getBool('documentExpiryPushEnabled') ?? false;
+      final rawLocale = prefs.getString('localeCode');
+      _localeCode = (rawLocale == null || rawLocale.trim().isEmpty)
+          ? null
+          : rawLocale.trim();
+
+      Map<String, dynamic>? domainData;
+
+      if (kIsWeb) {
+        final raw = prefs.getString('thot_domain_data');
+        if (raw != null && raw.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(raw);
+            if (decoded is Map<String, dynamic>) {
+              domainData = decoded;
+            }
+          } catch (_) {
+            domainData = null;
+          }
+        }
+      } else {
+        domainData = await _domainStore.readDomainData();
+      }
 
       if (domainData != null) {
         _loadDomainDataFromMap(domainData);
         _domainDataLoadCompleted = true;
-        if (kDebugMode) {
-          debugPrint('⚠️ Données restaurées depuis le backup SharedPreferences.');
-        }
-        // Réécrire immédiatement pour restaurer le fichier .dat en clair.
-        await _saveToLocal();
       } else {
-        // ÉCHEC du backup : fallback migration legacy (anciennes clés SharedPreferences).
-        final legacyData = <String, dynamic>{};
+        // ÉCHEC de lecture du stockage principal.
+        // Tenter la restauration via le backup legacy en SharedPreferences.
+        domainData = await _loadFromSafeBackup();
 
-        final userDocsStr = prefs.getString('userDocuments');
-        if (userDocsStr != null && userDocsStr.isNotEmpty) {
-          try {
-            legacyData['userDocuments'] = jsonDecode(userDocsStr);
-          } catch (_) {}
-        }
-
-        final platformsStr = prefs.getString('platforms');
-        if (platformsStr != null && platformsStr.isNotEmpty) {
-          try {
-            legacyData['platforms'] = jsonDecode(platformsStr);
-          } catch (_) {}
-        }
-
-        final ammosStr = prefs.getString('ammos');
-        if (ammosStr != null && ammosStr.isNotEmpty) {
-          try {
-            legacyData['ammos'] = jsonDecode(ammosStr);
-          } catch (_) {}
-        }
-
-        final accessoriesStr = prefs.getString('accessories');
-        if (accessoriesStr != null && accessoriesStr.isNotEmpty) {
-          try {
-            legacyData['accessories'] = jsonDecode(accessoriesStr);
-          } catch (_) {}
-        }
-
-        final sessionsStr = prefs.getString('sessions');
-        if (sessionsStr != null && sessionsStr.isNotEmpty) {
-          try {
-            legacyData['sessions'] = jsonDecode(sessionsStr);
-          } catch (_) {}
-        }
-
-        final diagnosticsStr = prefs.getString('diagnostics');
-        if (diagnosticsStr != null && diagnosticsStr.isNotEmpty) {
-          try {
-            legacyData['diagnostics'] = jsonDecode(diagnosticsStr);
-          } catch (_) {}
-        }
-
-        if (legacyData.isNotEmpty) {
-          _loadDomainDataFromMap(legacyData);
+        if (domainData != null) {
+          _loadDomainDataFromMap(domainData);
           _domainDataLoadCompleted = true;
+          if (kDebugMode) {
+            debugPrint(
+              '⚠️ Données restaurées depuis le backup SharedPreferences.',
+            );
+          }
+          // Réécrire immédiatement pour restaurer le fichier .dat en clair.
           await _saveToLocal();
         } else {
-          // Aucun backup, aucune donnée legacy : initialisation vide.
-          _loadDomainDataFromMap(const {});
-          _domainDataLoadCompleted = true;
+          // ÉCHEC du backup : fallback migration legacy (anciennes clés SharedPreferences).
+          final legacyData = <String, dynamic>{};
+
+          final userDocsStr = prefs.getString('userDocuments');
+          if (userDocsStr != null && userDocsStr.isNotEmpty) {
+            try {
+              legacyData['userDocuments'] = jsonDecode(userDocsStr);
+            } catch (_) {}
+          }
+
+          final platformsStr = prefs.getString('platforms');
+          if (platformsStr != null && platformsStr.isNotEmpty) {
+            try {
+              legacyData['platforms'] = jsonDecode(platformsStr);
+            } catch (_) {}
+          }
+
+          final ammosStr = prefs.getString('ammos');
+          if (ammosStr != null && ammosStr.isNotEmpty) {
+            try {
+              legacyData['ammos'] = jsonDecode(ammosStr);
+            } catch (_) {}
+          }
+
+          final accessoriesStr = prefs.getString('accessories');
+          if (accessoriesStr != null && accessoriesStr.isNotEmpty) {
+            try {
+              legacyData['accessories'] = jsonDecode(accessoriesStr);
+            } catch (_) {}
+          }
+
+          final sessionsStr = prefs.getString('sessions');
+          if (sessionsStr != null && sessionsStr.isNotEmpty) {
+            try {
+              legacyData['sessions'] = jsonDecode(sessionsStr);
+            } catch (_) {}
+          }
+
+          final diagnosticsStr = prefs.getString('diagnostics');
+          if (diagnosticsStr != null && diagnosticsStr.isNotEmpty) {
+            try {
+              legacyData['diagnostics'] = jsonDecode(diagnosticsStr);
+            } catch (_) {}
+          }
+
+          if (legacyData.isNotEmpty) {
+            _loadDomainDataFromMap(legacyData);
+            _domainDataLoadCompleted = true;
+            await _saveToLocal();
+          } else {
+            // Aucun backup, aucune donnée legacy : initialisation vide.
+            _loadDomainDataFromMap(const {});
+            _domainDataLoadCompleted = true;
+          }
         }
       }
-    }
 
-    if (kDebugMode) {
-      debugPrint('Data loaded from local storage.');
-    }
+      if (kDebugMode) {
+        debugPrint('Data loaded from local storage.');
+      }
 
-    await _syncDocumentExpiryReminders();
+      await _syncDocumentExpiryReminders();
 
-    notifyListeners();
-  } catch (e) {
-    if (kDebugMode) {
-      debugPrint('Error loading local data: $e');
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error loading local data: $e');
+      }
+      _domainDataLoadCompleted = false;
+      notifyListeners();
     }
-    _domainDataLoadCompleted = false;
-    notifyListeners();
   }
-}
 
   List<ItemDocument> _decodeItemDocuments(dynamic raw) {
     try {
       if (raw is List) {
-        final docs = raw.map(ItemDocument.fromJson).where((d) => d.path.isNotEmpty).toList();
+        final docs = raw
+            .map(ItemDocument.fromJson)
+            .where((d) => d.path.isNotEmpty)
+            .toList();
         return docs;
       }
     } catch (e) {
@@ -2769,7 +3081,10 @@ Future<void> _loadFromLocal() async {
 
       final rawList = exerciseJson['equipmentIds'];
       if (rawList is List) {
-        return rawList.whereType<String>().where((id) => id.trim().isNotEmpty).toList();
+        return rawList
+            .whereType<String>()
+            .where((id) => id.trim().isNotEmpty)
+            .toList();
       }
 
       // Backward compatibility: older builds stored a single equipmentId
@@ -2781,8 +3096,8 @@ Future<void> _loadFromLocal() async {
     return const [];
   }
 
-int _migrateRoundsAtLastCleaning(dynamic platformJson) {
-      try {
+  int _migrateRoundsAtLastCleaning(dynamic platformJson) {
+    try {
       if (platformJson is Map && platformJson['roundsAtLastCleaning'] != null) {
         return (platformJson['roundsAtLastCleaning'] as num).toInt();
       }
@@ -2790,8 +3105,10 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
       // Legacy migration from normalized cleanlinessLevel (1.0 = clean, 0.0 = dirty)
       if (platformJson is Map && platformJson['cleanlinessLevel'] != null) {
         final totalRounds = (platformJson['totalRounds'] as num?)?.toInt() ?? 0;
-        final threshold = (platformJson['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500;
-        final cleanlinessLevel = (platformJson['cleanlinessLevel'] as num).toDouble();
+        final threshold =
+            (platformJson['cleaningRoundsThreshold'] as num?)?.toInt() ?? 500;
+        final cleanlinessLevel = (platformJson['cleanlinessLevel'] as num)
+            .toDouble();
         final dirtProgress = (1.0 - cleanlinessLevel).clamp(0.0, 1.0);
         final roundsSince = (dirtProgress * threshold).round();
         return (totalRounds - roundsSince).clamp(0, 1 << 30);
@@ -2799,7 +3116,8 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
     } catch (e) {
       debugPrint('Failed to migrate roundsAtLastCleaning: $e');
     }
-    final totalRounds = (platformJson is Map && platformJson['totalRounds'] != null)
+    final totalRounds =
+        (platformJson is Map && platformJson['totalRounds'] != null)
         ? (platformJson['totalRounds'] as num).toInt()
         : 0;
     return totalRounds;
@@ -2814,22 +3132,28 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
       // Legacy migration from normalized wearLevel (0.0 = new, 1.0 = worn)
       if (platformJson is Map && platformJson['wearLevel'] != null) {
         final totalRounds = (platformJson['totalRounds'] as num?)?.toInt() ?? 0;
-        final threshold = (platformJson['wearRoundsThreshold'] as num?)?.toInt() ?? 10000;
-        final wearLevel = (platformJson['wearLevel'] as num).toDouble().clamp(0.0, 1.0);
+        final threshold =
+            (platformJson['wearRoundsThreshold'] as num?)?.toInt() ?? 10000;
+        final wearLevel = (platformJson['wearLevel'] as num).toDouble().clamp(
+          0.0,
+          1.0,
+        );
         final roundsSince = (wearLevel * threshold).round();
         return (totalRounds - roundsSince).clamp(0, 1 << 30);
       }
     } catch (e) {
       debugPrint('Failed to migrate roundsAtLastRevision: $e');
     }
-    final totalRounds = (platformJson is Map && platformJson['totalRounds'] != null)
+    final totalRounds =
+        (platformJson is Map && platformJson['totalRounds'] != null)
         ? (platformJson['totalRounds'] as num).toInt()
         : 0;
     return totalRounds;
   }
 
   String _migratePlatformType(String raw) {
-    if (raw == _platformTypePistolSemiAutomatiqueLegacy) return _platformTypePistolSemiAuto;
+    if (raw == _platformTypePistolSemiAutomatiqueLegacy)
+      return _platformTypePistolSemiAuto;
     return raw;
   }
 
@@ -2840,16 +3164,21 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
   Future<bool> verifyPin(String enteredPin) async {
     return _securityService.verifyPin(enteredPin);
   }
+
   Future<bool> authenticateWithBiometric({String? localizedReason}) async {
-    return _securityService.authenticateWithBiometric(localizedReason: localizedReason);
+    return _securityService.authenticateWithBiometric(
+      localizedReason: localizedReason,
+    );
   }
-  
+
   Future<void> setPinCode(String pin) async {
     await _securityService.setPinCode(pin);
-  } 
+  }
+
   Future<void> togglePinEnabled(bool enabled) async {
     await _securityService.togglePinEnabled(enabled);
   }
+
   Future<void> toggleBiometricEnabled(bool enabled) async {
     await _securityService.toggleBiometricEnabled(enabled);
   }
@@ -2859,14 +3188,17 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
   /// Calculate total fired cost for a specific ammo.
   /// Returns null if unitPrice is not set.
   double? getAmmoTotalShotCost(String ammoId) {
-    final ammo = ammos.firstWhere((a) => a.id == ammoId, orElse: () => Ammo(
-      id: '',
-      name: '',
-      brand: '',
-      caliber: '',
-      quantity: 0,
-      lastUsed: null,
-    ));
+    final ammo = ammos.firstWhere(
+      (a) => a.id == ammoId,
+      orElse: () => Ammo(
+        id: '',
+        name: '',
+        brand: '',
+        caliber: '',
+        quantity: 0,
+        lastUsed: null,
+      ),
+    );
     if (ammo.unitPrice == null) return null;
 
     int totalShotsFired = 0;
@@ -2882,14 +3214,17 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
   /// Calculate remaining stock cost for a specific ammo.
   /// Returns null if unitPrice is not set.
   double? getAmmoRemainingStockCost(String ammoId) {
-    final ammo = ammos.firstWhere((a) => a.id == ammoId, orElse: () => Ammo(
-      id: '',
-      name: '',
-      brand: '',
-      caliber: '',
-      quantity: 0,
-      lastUsed: null,
-    ));
+    final ammo = ammos.firstWhere(
+      (a) => a.id == ammoId,
+      orElse: () => Ammo(
+        id: '',
+        name: '',
+        brand: '',
+        caliber: '',
+        quantity: 0,
+        lastUsed: null,
+      ),
+    );
     if (ammo.unitPrice == null) return null;
 
     return ammo.quantity * ammo.unitPrice!;
@@ -2898,27 +3233,33 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
   /// Calculate estimated cost for a specific session.
   /// Returns null if no ammo with price is used.
   double? getSessionEstimatedCost(String sessionId) {
-    final session = sessions.firstWhere((s) => s.id == sessionId, orElse: () => Session(
-      id: '',
-      name: '',
-      date: DateTime.now(),
-      location: '',
-      exercises: [],
-    ));
+    final session = sessions.firstWhere(
+      (s) => s.id == sessionId,
+      orElse: () => Session(
+        id: '',
+        name: '',
+        date: DateTime.now(),
+        location: '',
+        exercises: [],
+      ),
+    );
 
     double totalCost = 0;
     bool hasPricedAmmo = false;
 
     for (final exercise in session.exercises) {
       for (final entry in exercise.ammoShotImpact.entries) {
-        final ammo = ammos.firstWhere((a) => a.id == entry.key, orElse: () => Ammo(
-          id: '',
-          name: '',
-          brand: '',
-          caliber: '',
-          quantity: 0,
-          lastUsed: null,
-        ));
+        final ammo = ammos.firstWhere(
+          (a) => a.id == entry.key,
+          orElse: () => Ammo(
+            id: '',
+            name: '',
+            brand: '',
+            caliber: '',
+            quantity: 0,
+            lastUsed: null,
+          ),
+        );
         if (ammo.unitPrice != null) {
           hasPricedAmmo = true;
           totalCost += entry.value * ammo.unitPrice!;
@@ -2939,12 +3280,15 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
       final monthStart = DateTime(now.year, now.month - i, 1);
       final monthEnd = i == 0
           ? now
-          : DateTime(now.year, now.month - i + 1, 0).add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
+          : DateTime(now.year, now.month - i + 1, 0)
+                .add(const Duration(days: 1))
+                .subtract(const Duration(milliseconds: 1));
 
       double monthlyCost = 0;
 
       for (final session in sessions) {
-        if (session.date.isAfter(monthStart) && session.date.isBefore(monthEnd)) {
+        if (session.date.isAfter(monthStart) &&
+            session.date.isBefore(monthEnd)) {
           final sessionCost = getSessionEstimatedCost(session.id);
           if (sessionCost != null) {
             monthlyCost += sessionCost;
@@ -2952,10 +3296,7 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
         }
       }
 
-      results.add({
-        'month': monthStart,
-        'cost': monthlyCost,
-      });
+      results.add({'month': monthStart, 'cost': monthlyCost});
     }
 
     return results;
@@ -2972,16 +3313,20 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
       if (session.date.isAfter(monthStart)) {
         for (final exercise in session.exercises) {
           for (final entry in exercise.ammoShotImpact.entries) {
-            final ammo = ammos.firstWhere((a) => a.id == entry.key, orElse: () => Ammo(
-              id: '',
-              name: '',
-              brand: '',
-              caliber: '',
-              quantity: 0,
-              lastUsed: null,
-            ));
+            final ammo = ammos.firstWhere(
+              (a) => a.id == entry.key,
+              orElse: () => Ammo(
+                id: '',
+                name: '',
+                brand: '',
+                caliber: '',
+                quantity: 0,
+                lastUsed: null,
+              ),
+            );
             if (ammo.unitPrice != null) {
-              costs[entry.key] = (costs[entry.key] ?? 0) + (entry.value * ammo.unitPrice!);
+              costs[entry.key] =
+                  (costs[entry.key] ?? 0) + (entry.value * ammo.unitPrice!);
             }
           }
         }
@@ -2994,7 +3339,7 @@ int _migrateRoundsAtLastCleaning(dynamic platformJson) {
 
     return Map.fromEntries(sortedEntries);
   }
-  
+
   Future<void> logout() async {
     await _securityService.logout();
   }

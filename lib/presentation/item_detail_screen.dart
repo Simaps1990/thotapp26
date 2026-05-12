@@ -36,14 +36,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   String _getCurrencySymbol(String? currency) {
     switch (currency) {
-      case 'USD': return '\$';
-      case 'CAD': return 'CA\$';
-      case 'GBP': return '£';
-      case 'CHF': return 'CHF';
-      case 'JPY': return '¥';
-      case 'AUD': return 'A\$';
+      case 'USD':
+        return '\$';
+      case 'CAD':
+        return 'CA\$';
+      case 'GBP':
+        return '£';
+      case 'CHF':
+        return 'CHF';
+      case 'JPY':
+        return '¥';
+      case 'AUD':
+        return 'A\$';
       case 'EUR':
-      default: return '€';
+      default:
+        return '€';
     }
   }
 
@@ -68,8 +75,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         isScrollControlled: true,
         backgroundColor: colors.surface,
         shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.lg),
+          ),
         ),
         builder: (ctx) {
           return Padding(
@@ -119,15 +127,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 const Gap(AppSpacing.md),
                 Text(
                   '${strings.currentStock}: ${ammo.quantity} ${strings.cartridges}',
-                  style:
-                      textStyles.bodyMedium?.copyWith(color: colors.secondary),
+                  style: textStyles.bodyMedium?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
                 const Gap(AppSpacing.md),
                 TextField(
                   controller: controller,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     labelText: strings.quantityToAdd,
                     hintText: strings.example250,
                     filled: true,
@@ -219,6 +231,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       }
     }
   }
+
   PlatformFile? _normalizePickedPdf(PlatformFile file) {
     if (kIsWeb) {
       if (file.bytes == null) return null;
@@ -227,10 +240,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       final mime = isPdf
           ? 'application/pdf'
           : (ext == 'png'
-              ? 'image/png'
-              : (ext == 'jpg' || ext == 'jpeg')
-                  ? 'image/jpeg'
-                  : 'application/octet-stream');
+                ? 'image/png'
+                : (ext == 'jpg' || ext == 'jpeg')
+                ? 'image/jpeg'
+                : 'application/octet-stream');
       final base64Data = base64Encode(file.bytes!);
       final dataUrl = 'data:$mime;base64,$base64Data';
       return PlatformFile(
@@ -285,8 +298,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             children: [
               Text(
                 strings.settingsDocumentNameLabel,
-                style:
-                    textStyles.labelMedium?.copyWith(color: colors.secondary),
+                style: textStyles.labelMedium?.copyWith(
+                  color: colors.secondary,
+                ),
               ),
               TextField(
                 controller: nameController,
@@ -300,8 +314,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               const Gap(16),
               Text(
                 strings.settingsDocumentTypeLabel,
-                style:
-                    textStyles.labelMedium?.copyWith(color: colors.secondary),
+                style: textStyles.labelMedium?.copyWith(
+                  color: colors.secondary,
+                ),
               ),
               DropdownButtonFormField<String>(
                 value: selectedType,
@@ -326,8 +341,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               const Gap(16),
               Text(
                 strings.docExpiryDateLabel,
-                style:
-                    textStyles.labelMedium?.copyWith(color: colors.secondary),
+                style: textStyles.labelMedium?.copyWith(
+                  color: colors.secondary,
+                ),
               ),
               const Gap(8),
               Row(
@@ -354,8 +370,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 );
                               }
                             },
-                            icon: const Icon(Icons.calendar_today_rounded,
-                                size: 16),
+                            icon: const Icon(
+                              Icons.calendar_today_rounded,
+                              size: 16,
+                            ),
                             label: Text(strings.selectDateLabel),
                           )
                         : Container(
@@ -378,7 +396,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 Expanded(
                                   child: Text(
                                     AppDateFormats.formatDateShort(
-                                        context, expiryDate!),
+                                      context,
+                                      expiryDate!,
+                                    ),
                                     style: textStyles.bodyMedium,
                                   ),
                                 ),
@@ -403,8 +423,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 const Gap(16),
                 Text(
                   strings.docExpiryNotifyLabel,
-                  style:
-                      textStyles.labelMedium?.copyWith(color: colors.secondary),
+                  style: textStyles.labelMedium?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
                 const Gap(8),
                 DropdownButtonFormField<int>(
@@ -439,7 +460,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 const Gap(8),
                 Text(
                   strings.docExpiryNotifyHint,
-                  style: textStyles.bodySmall?.copyWith(color: colors.secondary),
+                  style: textStyles.bodySmall?.copyWith(
+                    color: colors.secondary,
+                  ),
                 ),
               ],
             ],
@@ -451,9 +474,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
             FilledButton(
               onPressed: () async {
-                final remindersReady = await provider.ensureDocumentReminderEnabled(
-                  notifyBeforeDays: selectedNotifyDays,
-                );
+                final remindersReady = await provider
+                    .ensureDocumentReminderEnabled(
+                      notifyBeforeDays: selectedNotifyDays,
+                    );
                 if (!remindersReady) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -467,15 +491,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 }
 
                 final name = nameController.text.trim();
-                Navigator.pop(
-                  context,
-                  (
-                    name.isEmpty ? strings.itemDefaultDocumentName : name,
-                    selectedType,
-                    expiryDate,
-                    selectedNotifyDays,
-                  ),
-                );
+                Navigator.pop(context, (
+                  name.isEmpty ? strings.itemDefaultDocumentName : name,
+                  selectedType,
+                  expiryDate,
+                  selectedNotifyDays,
+                ));
               },
               child: Text(confirmLabel ?? strings.settingsAdd),
             ),
@@ -504,7 +525,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       return null;
     }
 
-    final picked = await NativePicker.pick(context, mode: PickerMode.photoOrDocument);
+    final picked = await NativePicker.pick(
+      context,
+      mode: PickerMode.photoOrDocument,
+    );
     if (!mounted || picked.isCancelled) return null;
 
     final String? resolvedPath;
@@ -515,10 +539,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       final mime = isPdf
           ? 'application/pdf'
           : (ext == 'png'
-              ? 'image/png'
-              : (ext == 'jpg' || ext == 'jpeg')
-                  ? 'image/jpeg'
-                  : 'application/octet-stream');
+                ? 'image/png'
+                : (ext == 'jpg' || ext == 'jpeg')
+                ? 'image/jpeg'
+                : 'application/octet-stream');
       resolvedPath = 'data:$mime;base64,${base64Encode(picked.bytes!)}';
     } else {
       resolvedPath = picked.path;
@@ -616,9 +640,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     } else if (ammo != null) {
       provider.updateAmmo(ammo.copyWith(documents: updatedDocuments));
     } else if (accessory != null) {
-      provider.updateAccessory(
-        accessory.copyWith(documents: updatedDocuments),
-      );
+      provider.updateAccessory(accessory.copyWith(documents: updatedDocuments));
     }
 
     if (mounted) {
@@ -672,9 +694,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     } else if (ammo != null) {
       provider.updateAmmo(ammo.copyWith(documents: updatedDocuments));
     } else if (accessory != null) {
-      provider.updateAccessory(
-        accessory.copyWith(documents: updatedDocuments),
-      );
+      provider.updateAccessory(accessory.copyWith(documents: updatedDocuments));
     }
 
     if (mounted) {
@@ -692,8 +712,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     required String platformId,
     required Set<String> desiredAccessoryIds,
   }) {
-    final currentAccessoryIds =
-        provider.linkedAccessoriesForPlatform(platformId).map((a) => a.id).toSet();
+    final currentAccessoryIds = provider
+        .linkedAccessoriesForPlatform(platformId)
+        .map((a) => a.id)
+        .toSet();
 
     for (final accessoryId in desiredAccessoryIds) {
       if (!currentAccessoryIds.contains(accessoryId)) {
@@ -704,7 +726,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       }
     }
 
-    for (final accessoryId in currentAccessoryIds.difference(desiredAccessoryIds)) {
+    for (final accessoryId in currentAccessoryIds.difference(
+      desiredAccessoryIds,
+    )) {
       provider.unlinkPlatformFromAccessory(
         platformId: platformId,
         accessoryId: accessoryId,
@@ -717,8 +741,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     required String accessoryId,
     required Set<String> desiredPlatformIds,
   }) {
-    final currentPlatformIds =
-        provider.linkedPlatformsForAccessory(accessoryId).map((w) => w.id).toSet();
+    final currentPlatformIds = provider
+        .linkedPlatformsForAccessory(accessoryId)
+        .map((w) => w.id)
+        .toSet();
 
     for (final platformId in desiredPlatformIds) {
       if (!currentPlatformIds.contains(platformId)) {
@@ -729,7 +755,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       }
     }
 
-    for (final platformId in currentPlatformIds.difference(desiredPlatformIds)) {
+    for (final platformId in currentPlatformIds.difference(
+      desiredPlatformIds,
+    )) {
       provider.unlinkPlatformFromAccessory(
         platformId: platformId,
         accessoryId: accessoryId,
@@ -737,8 +765,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
   }
 
-  Future<void> _editLinkedAccessories(ThotProvider provider, String platformId) async {
-    final initialSelection = provider.linkedAccessoriesForPlatform(platformId).map((a) => a.id).toSet();
+  Future<void> _editLinkedAccessories(
+    ThotProvider provider,
+    String platformId,
+  ) async {
+    final initialSelection = provider
+        .linkedAccessoriesForPlatform(platformId)
+        .map((a) => a.id)
+        .toSet();
     final updated = await showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
@@ -748,7 +782,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         items: provider.accessories,
         initialSelection: initialSelection,
         labelOf: (a) => a.name,
-        subtitleOf: (a) => [if (a.type.trim().isNotEmpty) a.type, if (a.brand.trim().isNotEmpty) a.brand].join(' • '),
+        subtitleOf: (a) => [
+          if (a.type.trim().isNotEmpty) a.type,
+          if (a.brand.trim().isNotEmpty) a.brand,
+        ].join(' • '),
         idOf: (a) => a.id,
         icon: Icons.inventory_2_rounded,
       ),
@@ -762,8 +799,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Future<void> _editLinkedPlatforms(ThotProvider provider, String accessoryId) async {
-    final initialSelection = provider.linkedPlatformsForAccessory(accessoryId).map((w) => w.id).toSet();
+  Future<void> _editLinkedPlatforms(
+    ThotProvider provider,
+    String accessoryId,
+  ) async {
+    final initialSelection = provider
+        .linkedPlatformsForAccessory(accessoryId)
+        .map((w) => w.id)
+        .toSet();
     final updated = await showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
@@ -773,7 +816,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         items: provider.platforms,
         initialSelection: initialSelection,
         labelOf: (w) => w.name,
-        subtitleOf: (w) => [if (w.type.trim().isNotEmpty) w.type, if (w.caliber.trim().isNotEmpty) w.caliber].join(' • '),
+        subtitleOf: (w) => [
+          if (w.type.trim().isNotEmpty) w.type,
+          if (w.caliber.trim().isNotEmpty) w.caliber,
+        ].join(' • '),
         idOf: (w) => w.id,
         icon: Icons.link_rounded,
       ),
@@ -832,12 +878,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       }
 
       for (var session in sessions) {
-        final monthsDiff = (now.year - session.date.year) * 12 +
+        final monthsDiff =
+            (now.year - session.date.year) * 12 +
             (now.month - session.date.month);
         if (monthsDiff >= 0 && monthsDiff < 6) {
           final key = DateFormat.MMM(localeTag).format(session.date);
           for (var exercise in session.exercises) {
-             bool isMatch = false;
+            bool isMatch = false;
             if (itemType == 'PLATEFORME') {
               isMatch = exercise.platformId == itemId;
             } else if (itemType == 'CONSOMMABLE') {
@@ -897,10 +944,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final accessory = platform == null && ammo == null
         ? provider.accessories.where((a) => a.id == widget.itemId).firstOrNull
         : null;
-    final linkedAccessories =
-        platform != null ? provider.linkedAccessoriesForPlatform(platform.id) : const <Accessory>[];
-    final linkedPlatforms =
-        accessory != null ? provider.linkedPlatformsForAccessory(accessory.id) : const <Platform>[];
+    final linkedAccessories = platform != null
+        ? provider.linkedAccessoriesForPlatform(platform.id)
+        : const <Accessory>[];
+    final linkedPlatforms = accessory != null
+        ? provider.linkedPlatformsForAccessory(accessory.id)
+        : const <Platform>[];
 
     if (platform == null && ammo == null && accessory == null) {
       return Scaffold(
@@ -959,744 +1008,123 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
-      // Même fond que la page d'inventaire (récap accessoires)
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    height: 220 + MediaQuery.paddingOf(context).top,
-                    width: double.infinity,
-                    color: colors.surfaceContainerHighest,
-                    child: photoPath == null
-                        ? Icon(
-                            Icons.image_not_supported_rounded,
-                            size: 64,
-                            color: colors.onSurfaceVariant,
-                          )
-                        : ClipRRect(
-                            child: CrossPlatformImage(
-                              filePath: photoPath,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.paddingOf(context).top + 8,
-                    left: 16,
-                    right: 16,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                          onPressed: () => context.pop(),
-                          color: colors.onSurface,
-                          style: IconButton.styleFrom(
-                            backgroundColor:
-                                colors.surface.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit_rounded),
-                          onPressed: () => context.push(
-                            '/inventory/add?itemId=${widget.itemId}&itemType=$itemType',
-                          ),
-                          color: colors.onSurface,
-                          style: IconButton.styleFrom(
-                            backgroundColor:
-                                colors.surface.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 16,
-                    left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            itemName.toUpperCase(),
-                            style: textStyles.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (headerSubtitle != null) ...[
-                            const Gap(2),
-                            Text(
-                              headerSubtitle,
-                              style: textStyles.labelSmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontWeight: FontWeight.w600,
+        // Même fond que la page d'inventaire (récap accessoires)
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      height: 220 + MediaQuery.paddingOf(context).top,
+                      width: double.infinity,
+                      color: colors.surfaceContainerHighest,
+                      child: photoPath == null
+                          ? Icon(
+                              Icons.image_not_supported_rounded,
+                              size: 64,
+                              color: colors.onSurfaceVariant,
+                            )
+                          : ClipRRect(
+                              child: CrossPlatformImage(
+                                filePath: photoPath,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          ],
+                    ),
+                    Positioned(
+                      top: MediaQuery.paddingOf(context).top + 8,
+                      left: 16,
+                      right: 16,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                            onPressed: () => context.pop(),
+                            color: colors.onSurface,
+                            style: IconButton.styleFrom(
+                              backgroundColor: colors.surface.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_rounded),
+                            onPressed: () => context.push(
+                              '/inventory/add?itemId=${widget.itemId}&itemType=$itemType',
+                            ),
+                            color: colors.onSurface,
+                            style: IconButton.styleFrom(
+                              backgroundColor: colors.surface.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: AppSpacing.paddingLg,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (ammo == null) ...[  // ── Titre maintenance (plateforme/accessoire) ──
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.build_circle_outlined,
-                            size: 18,
-                            color: colors.primary,
-                          ),
-                          const Gap(8),
-                          Text(
-                            strings.maintenanceStatus.toUpperCase(),
-                            style: textStyles.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.1,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Gap(AppSpacing.sm),
-                    ],
-                    if (platform != null)
-                      Container(
-                        padding: AppSpacing.paddingLg,
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          boxShadow: AppShadows.cardPremium,
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? colors.outline
-                                : LightColors.surfaceHighlight,
-                            width: 1.2,
-                          ),
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            _StatusBar(
-                              label: strings.revision,
-                              percent: platform.revisionProgress,
-                              color: platform.revisionProgress > 0.8
-                                  ? colors.error
-                                  : colors.primary,
+                            Text(
+                              itemName.toUpperCase(),
+                              style: textStyles.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            _StatusBar(
-                              label: strings.cleanliness,
-                              percent: platform.cleaningProgress,
-                              color: platform.cleaningProgress > 0.8
-                                  ? colors.error
-                                  : colors.primary,
-                            ),
-                            const Divider(height: 32),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      strings.totalShots,
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      "${platform.totalRounds}",
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: colors.onSurface,
-                                      ),
-                                    ),
-                                  ],
+                            if (headerSubtitle != null) ...[
+                              const Gap(2),
+                              Text(
+                                headerSubtitle,
+                                style: textStyles.labelSmall?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      strings.lastShot,
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      lastUsedText,
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: colors.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const Gap(AppSpacing.md),
-                            Column(
-                              children: [
-                                IntrinsicHeight(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Expanded(
-                                        child: _MaintenanceChip(
-                                          icon: Icons.cleaning_services_rounded,
-                                          label: strings.maintenance,
-                                          value:
-                                              '${platform.roundsSinceCleaning} / ${platform.cleaningRoundsThreshold} ${strings.shotsLower}',
-                                          color: platform.cleaningProgress > 0.8
-                                              ? colors.error
-                                              : colors.secondary,
-                                        ),
-                                      ),
-                                      const Gap(8),
-                                      SizedBox(
-                                        height: double.infinity,
-                                        child: FilledButton(
-                                          style: FilledButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 0,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                AppRadius.lg,
-                                              ),
-                                            ),
-                                            backgroundColor: colors.primary,
-                                            foregroundColor: colors.onPrimary,
-                                            elevation: 2,
-                                            shadowColor: colors.primary
-                                                .withValues(alpha: 0.35),
-                                          ),
-                                          onPressed: () async {
-                                            final confirm =
-                                                await showDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title:
-                                                    Text(strings.confirmation),
-                                                content: Text(
-                                                  strings
-                                                      .confirmPlatformCleaningMessage,
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                            ctx, false),
-                                                    child: Text(strings.cancel),
-                                                  ),
-                                                  FilledButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                            ctx, true),
-                                                    child:
-                                                        Text(strings.confirm),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            if (confirm == true) {
-                                              provider.recordPlatformCleaning(
-                                                platform.id,
-                                              );
-                                              if (context.mounted) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      strings
-                                                          .cleaningRecordedSuccess,
-                                                    ),
-                                                    duration: const Duration(seconds: 3),
-                                                  ),
-                                                );
-                                              }
-                                            }
-                                          },
-                                          child: Text(strings.clean),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Gap(8),
-                                IntrinsicHeight(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Expanded(
-                                        child: _MaintenanceChip(
-                                          icon: Icons.handyman_rounded,
-                                          label: strings.revision,
-                                          value:
-                                              '${platform.roundsSinceRevision} / ${platform.wearRoundsThreshold} ${strings.shotsLower}',
-                                          color: platform.revisionProgress > 0.8
-                                              ? colors.error
-                                              : colors.secondary,
-                                        ),
-                                      ),
-                                      const Gap(8),
-                                      SizedBox(
-                                        height: double.infinity,
-                                        child: FilledButton(
-                                          style: FilledButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 0,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                AppRadius.lg,
-                                              ),
-                                            ),
-                                            backgroundColor: colors.primary,
-                                            foregroundColor: colors.onPrimary,
-                                            elevation: 2,
-                                            shadowColor: colors.primary
-                                                .withValues(alpha: 0.35),
-                                          ),
-                                          onPressed: () async {
-                                            final confirm =
-                                                await showDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: Text(
-                                                  strings.confirmation,
-                                                ),
-                                                content: Text(
-                                                  strings
-                                                      .platformConfirmRevisionMessage,
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                            ctx, false),
-                                                    child: Text(strings.cancel),
-                                                  ),
-                                                  FilledButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                            ctx, true),
-                                                    child:
-                                                        Text(strings.confirm),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            if (confirm == true) {
-                                              provider.recordPlatformRevision(
-                                                platform.id,
-                                              );
-                                              if (context.mounted) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      strings
-                                                          .revisionRecordedSuccess,
-                                                    ),
-                                                    duration: const Duration(seconds: 3),
-                                                  ),
-                                                );
-                                              }
-                                            }
-                                          },
-                                          child: Text(strings.revision),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Gap(8),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton.icon(
-                                    icon: const Icon(Icons.build_circle_outlined),
-                                    onPressed: () async {
-                                      final partController =
-                                          TextEditingController();
-                                      final commentController =
-                                          TextEditingController();
-                                      DateTime selectedDate = DateTime.now();
-                                      bool? result;
-                                      try {
-                                        result = await showDialog<bool>(
-                                          context: context,
-                                          builder: (ctx) => StatefulBuilder(
-                                            builder: (ctx, setStateDlg) =>
-                                                AlertDialog(
-                                              title: Text(
-                                                strings.partChangeTitle,
-                                              ),
-                                            content: SingleChildScrollView(
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
-                                                children: [
-                                                  Text(
-                                                    strings.partNameLabel,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .labelMedium
-                                                        ?.copyWith(
-                                                          color: colors.secondary,
-                                                        ),
-                                                  ),
-                                                 
-                                                  TextField(
-                                                    controller: partController,
-                                                    decoration: InputDecoration(
-                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                                      hintText: strings.partNameHint,
-                                                      filled: true,
-                                                      fillColor: Color.alphaBlend(
-                                                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-                                                        Theme.of(context).colorScheme.surface,
-                                                      ),
-                                                      border: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                                        borderSide: BorderSide(color: colors.outline),
-                                                      ),
-                                                      enabledBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                                        borderSide: BorderSide(color: colors.outline),
-                                                      ),
-                                                      focusedBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                                        borderSide: BorderSide(color: colors.outline),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const Gap(16),
-                                                  Text(
-                                                    strings.dateLabel,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .labelMedium
-                                                        ?.copyWith(
-                                                          color:
-                                                              colors.secondary,
-                                                        ),
-                                                  ),
-                                                  const Gap(8),
-                                                  OutlinedButton.icon(
-                                                    onPressed: () async {
-                                                      final picked =
-                                                          await showDatePicker(
-                                                        context: context,
-                                                        initialDate: selectedDate,
-                                                        firstDate:
-                                                            DateTime(2000),
-                                                        lastDate: DateTime.now()
-                                                            .add(
-                                                          const Duration(
-                                                            days: 3650,
-                                                          ),
-                                                        ),
-                                                      );
-                                                      if (picked != null) {
-                                                        setStateDlg(
-                                                          () => selectedDate =
-                                                              DateTime(
-                                                            picked.year,
-                                                            picked.month,
-                                                            picked.day,
-                                                          ),
-                                                        );
-                                                      }
-                                                    },
-                                                    icon: const Icon(
-                                                      Icons
-                                                          .calendar_today_rounded,
-                                                      size: 18,
-                                                    ),
-                                                    label: Text(
-                                                      AppDateFormats
-                                                          .formatDateShort(
-                                                        context,
-                                                        selectedDate,
-                                                      ),
-                                                    ),
-                                                    style: OutlinedButton
-                                                        .styleFrom(
-                                                      padding:
-                                                          const EdgeInsets
-                                                              .symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 12,
-                                                      ),
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                          AppRadius.sm,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const Gap(16),
-                                                  Text(
-                                                    strings.partChangeCommentLabel,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .labelMedium
-                                                        ?.copyWith(
-                                                          color: colors.secondary,
-                                                        ),
-                                                  ),
-                                                  TextField(
-                                                    controller:
-                                                        commentController,
-                                                    maxLines: 3,
-                                                    decoration: InputDecoration(
-                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                                      hintText: strings.partChangeCommentHint,
-                                                      filled: true,
-                                                      fillColor: Color.alphaBlend(
-                                                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-                                                        Theme.of(context).colorScheme.surface,
-                                                      ),
-                                                      border: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                                        borderSide: BorderSide(color: colors.outline),
-                                                      ),
-                                                      enabledBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                                        borderSide: BorderSide(color: colors.outline),
-                                                      ),
-                                                      focusedBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                                        borderSide: BorderSide(color: colors.outline),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(ctx, false),
-                                                child: Text(strings.cancel),
-                                              ),
-                                              FilledButton(
-                                                onPressed: () {
-                                                  if (partController.text
-                                                      .trim()
-                                                      .isEmpty) {
-                                                    return;
-                                                  }
-                                                  Navigator.pop(ctx, true);
-                                                },
-                                                child: Text(
-                                                  strings.settingsDialogSave,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                      } finally {
-                                        partController.dispose();
-                                        commentController.dispose();
-                                      }
-                                      if (result == true) {
-                                        provider.recordPlatformPartChange(
-                                          platformId: platform.id,
-                                          partName: partController.text.trim(),
-                                          date: selectedDate,
-                                          comment:
-                                              commentController.text.trim(),
-                                        );
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                strings
-                                                    .partChangeRecordedSuccess,
-                                              ),
-                                              duration: const Duration(seconds: 3),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    label: Text(
-                                      strings.recordPartChange,
-                                    ),
-                                    style: FilledButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(AppRadius.lg),
-                                      ),
-                                      backgroundColor: colors.primary,
-                                      foregroundColor: colors.onPrimary,
-                                      elevation: 2,
-                                      shadowColor: colors.primary
-                                          .withValues(alpha: 0.35),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ],
                         ),
-                      )
-                    else if (ammo != null) ...[                      
-                      // ── Titre stock/utilisation hors container ───────
-                      Row(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/images/pointe.svg',
-                            width: 18,
-                            height: 18,
-                            colorFilter: ColorFilter.mode(
-                              colors.primary,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          const Gap(8),
-                          Text(
-                            strings.stockAndUsage.toUpperCase(),
-                            style: textStyles.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.1,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ],
                       ),
-                      const Gap(AppSpacing.sm),
-                      // ── Carte stock ────────────────────────────────
-                      Container(
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          boxShadow: AppShadows.cardPremium,
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? colors.outline
-                                : LightColors.surfaceHighlight,
-                            width: 1.2,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  strings.currentStock,
-                                  style: textStyles.labelSmall?.copyWith(
-                                    color: colors.secondary,
-                                  ),
-                                ),
-                                Text(
-                                  "${ammo.quantity}",
-                                  style: textStyles.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                    color: ammo.quantity < 100
-                                        ? colors.error
-                                        : colors.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  strings.lastShot,
-                                  style: textStyles.labelSmall?.copyWith(
-                                    color: colors.secondary,
-                                  ),
-                                ),
-                                 Text(
-                                   lastUsedText,
-                                   style: textStyles.bodyMedium?.copyWith(
-                                     fontWeight: FontWeight.w600,
-                                     color: colors.onSurface,
-                                   ),
-                                 ),
-                               ],
-                             ),
-                           ],
-                         ),
-                       ),
-                      const Gap(AppSpacing.md),
-                      // ── Bouton réapprovisionner ──────────────────────
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () => _showRestockSheet(ammo, provider),
-                          icon: const Icon(Icons.add_circle_outline_rounded),
-                          label: Text(strings.restock),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                            ),
-                            backgroundColor: colors.primary,
-                            foregroundColor: colors.onPrimary,
-                            elevation: 2,
-                            shadowColor: colors.primary.withValues(alpha: 0.35),
-                          ),
-                        ),
-                      ),
-                      const Gap(AppSpacing.md),
-                      // ── Coût ─────────────────────────────────────────
-                      if (ammo.unitPrice != null) ...[
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: AppSpacing.paddingLg,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (ammo == null) ...[
+                        // ── Titre maintenance (plateforme/accessoire) ──
                         Row(
                           children: [
-                            Icon(Icons.euro_rounded,
-                                size: 18, color: colors.primary),
+                            Icon(
+                              Icons.build_circle_outlined,
+                              size: 18,
+                              color: colors.primary,
+                            ),
                             const Gap(8),
                             Text(
-                              strings.costDashboardTitle.toUpperCase(),
+                              strings.maintenanceStatus.toUpperCase(),
                               style: textStyles.labelLarge?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.1,
@@ -1706,6 +1134,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           ],
                         ),
                         const Gap(AppSpacing.sm),
+                      ],
+                      if (platform != null)
                         Container(
                           padding: AppSpacing.paddingLg,
                           decoration: BoxDecoration(
@@ -1713,743 +1143,650 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             borderRadius: BorderRadius.circular(AppRadius.lg),
                             boxShadow: AppShadows.cardPremium,
                             border: Border.all(
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? colors.outline
                                   : LightColors.surfaceHighlight,
                               width: 1.2,
                             ),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _InfoRow(
-                                icon: Icons.euro_rounded,
-                                label: strings.ammoTotalShotCost,
-                                value: '${provider.getAmmoTotalShotCost(ammo.id)?.toStringAsFixed(2) ?? '0.00'} ${_getCurrencySymbol(ammo.currency)}',
+                              _StatusBar(
+                                label: strings.revision,
+                                percent: platform.revisionProgress,
+                                color: platform.revisionProgress > 0.8
+                                    ? colors.error
+                                    : colors.primary,
                               ),
-                              const Gap(8),
-                              _InfoRow(
-                                icon: Icons.euro_rounded,
-                                label: strings.ammoRemainingStockCost,
-                                value: '${provider.getAmmoRemainingStockCost(ammo.id)?.toStringAsFixed(2) ?? '0.00'} ${_getCurrencySymbol(ammo.currency)}',
+                              _StatusBar(
+                                label: strings.cleanliness,
+                                percent: platform.cleaningProgress,
+                                color: platform.cleaningProgress > 0.8
+                                    ? colors.error
+                                    : colors.primary,
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ]
-                    else
-                      Container(
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          boxShadow: AppShadows.cardPremium,
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? colors.outline
-                                : LightColors.surfaceHighlight,
-                            width: 1.2,
-                          ),
-                        ),
-child: Builder(
-                          builder: (context) {
-                            final acc = accessory!;
-                            final maintenanceEnabledTypes = {
-                              'SUPP',
-                              'Compensateurs',
-                              'Détentes',
-                              'Pièces internes',
-                            };
-                            final maintenanceEnabled =
-                                maintenanceEnabledTypes.contains(acc.type);
-
-                            if (maintenanceEnabled) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  _StatusBar(
-                                    label: strings.revision,
-                                    percent: acc.revisionProgress,
-                                    color: acc.revisionProgress > 0.8
-                                        ? colors.error
-                                        : colors.primary,
-                                  ),
-                                  _StatusBar(
-                                    label: strings.cleanliness,
-                                    percent: acc.cleaningProgress,
-                                    color: acc.cleaningProgress > 0.8
-                                        ? colors.error
-                                        : colors.primary,
-                                  ),
-                                  const Divider(height: 32),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            strings.totalShots,
-                                            style:
-                                                textStyles.labelSmall?.copyWith(
-                                              color: colors.secondary,
-                                            ),
-                                          ),
-                                          Text(
-                                            "${acc.totalRounds}",
-                                            style:
-                                                textStyles.titleLarge?.copyWith(
-                                              fontWeight: FontWeight.w900,
-                                              color: colors.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            strings.lastShot,
-                                            style:
-                                                textStyles.labelSmall?.copyWith(
-                                              color: colors.secondary,
-                                            ),
-                                          ),
-                                          Text(
-                                            lastUsedText,
-                                            style:
-                                                textStyles.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: colors.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  const Gap(AppSpacing.md),
-                                  Column(
-                                    children: [
-                                      IntrinsicHeight(
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            Expanded(
-                                              child: _MaintenanceChip(
-                                                icon: Icons
-                                                    .cleaning_services_rounded,
-                                                label: strings.maintenance,
-                                                value:
-                                                    '${acc.roundsSinceCleaning} / ${acc.cleaningRoundsThreshold} ${strings.shotsLower}',
-                                                color:
-                                                    acc.cleaningProgress > 0.8
-                                                        ? colors.error
-                                                        : colors.secondary,
-                                              ),
-                                            ),
-                                            const Gap(8),
-                                            SizedBox(
-                                              height: double.infinity,
-                                              child: FilledButton(
-                                                style: FilledButton.styleFrom(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 16,
-                                                    vertical: 0,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      AppRadius.lg,
-                                                    ),
-                                                  ),
-                                                  backgroundColor:
-                                                      colors.primary,
-                                                  foregroundColor:
-                                                      colors.onPrimary,
-                                                  elevation: 2,
-                                                  shadowColor: colors.primary
-                                                      .withValues(alpha: 0.35),
-                                                ),
-                                                onPressed: () async {
-                                                  final confirm =
-                                                      await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (ctx) =>
-                                                        AlertDialog(
-                                                      title: const Text(
-                                                        'Confirmation',
-                                                      ),
-                                                      content: const Text(
-                                                        'Voulez-vous vraiment enregistrer un nettoyage complet pour cet accessoire ? Le compteur d\'entretien sera remis à zéro.',
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                            ctx,
-                                                            false,
-                                                          ),
-                                                          child: const Text(
-                                                            'ANNULER',
-                                                          ),
-                                                        ),
-                                                        FilledButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                            ctx,
-                                                            true,
-                                                          ),
-                                                          child: const Text(
-                                                            'CONFIRMER',
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                  if (confirm == true) {
-                                                    provider
-                                                        .recordAccessoryCleaning(
-                                                      acc.id,
-                                                    );
-                                                    if (context.mounted) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            strings.maintenanceRecordedSuccess,
-                                                          ),
-                                                          duration: Duration(seconds: 3),
-                                                        ),
-                                                      );
-                                                    }
-                                                  }
-                                                },
-                                                child: const Text('Nettoyer'),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const Gap(8),
-                                      IntrinsicHeight(
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            Expanded(
-                                              child: _MaintenanceChip(
-                                                icon: Icons.handyman_rounded,
-                                                label: 'Révision',
-                                                value:
-                                                    '${acc.roundsSinceRevision} / ${acc.wearRoundsThreshold} coups',
-                                                color:
-                                                    acc.revisionProgress > 0.8
-                                                        ? colors.error
-                                                        : colors.secondary,
-                                              ),
-                                            ),
-                                            const Gap(8),
-                                            SizedBox(
-                                              height: double.infinity,
-                                              child: FilledButton(
-                                                style: FilledButton.styleFrom(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 16,
-                                                    vertical: 0,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      AppRadius.lg,
-                                                    ),
-                                                  ),
-                                                  backgroundColor: colors.primary,
-                                                  foregroundColor:
-                                                      colors.onPrimary,
-                                                  elevation: 2,
-                                                  shadowColor: colors.primary
-                                                      .withValues(alpha: 0.35),
-                                                ),
-                                                onPressed: () async {
-                                                  final confirm =
-                                                      await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (ctx) =>
-                                                        AlertDialog(
-                                                      title: const Text(
-                                                        'Confirmation',
-                                                      ),
-                                                      content: const Text(
-                                                        'Voulez-vous vraiment enregistrer une révision complète pour cet accessoire ? Le compteur de révision sera remis à zéro.',
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                            ctx,
-                                                            false,
-                                                          ),
-                                                          child: const Text(
-                                                            'ANNULER',
-                                                          ),
-                                                        ),
-                                                        FilledButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                            ctx,
-                                                            true,
-                                                          ),
-                                                          child: const Text(
-                                                            'CONFIRMER',
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                  if (confirm == true) {
-                                                    provider
-                                                        .recordAccessoryRevision(
-                                                      acc.id,
-                                                    );
-                                                    if (context.mounted) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            strings.revisionRecordedSuccess,
-                                                          ),
-                                                          duration: Duration(seconds: 3),
-                                                        ),
-                                                      );
-                                                    }
-                                                  }
-                                                },
-                                                child: Text(strings.reviseLabel),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              );
-                            }
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.inventory_2_rounded,
-                                      size: 18,
-                                      color: colors.primary,
-                                    ),
-                                    const Gap(8),
-                                    Text(
-                                      strings.accessoryStatusTitle,
-                                      style: textStyles.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Gap(AppSpacing.md),
-                                _InfoRowSvg(
-                                  assetPath: 'assets/images/hit.svg',
-                                  label: strings.shotsFired,
-                                  value: "${acc.totalRounds}",
-                                ),
-                                if (acc.batteryChangedAt != null) ...[
-                                  const Gap(12),
-                                  _InfoRow(
-                                    icon: Icons.battery_charging_full_rounded,
-                                    label: strings.batteryChangedLabel,
-                                    value: AppDateFormats.formatDateShort(
-                                      context,
-                                      acc.batteryChangedAt!,
-                                    ),
-                                  ),
-                                ],
-                                const Divider(height: 32),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      strings.lastShot,
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      lastUsedText,
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: colors.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    const Gap(AppSpacing.lg),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          size: 18,
-                          color: colors.primary,
-                        ),
-                        const Gap(8),
-                        Text(
-                          strings.specificationsTitle,
-                          style: textStyles.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Gap(AppSpacing.md),
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                      decoration: BoxDecoration(
-                        color: colors.surface,
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-border: Border.all(
-  color: Theme.of(context).brightness == Brightness.dark
-      ? colors.outline
-      : LightColors.surfaceHighlight,
-  width: 1.35,
-),
-                        boxShadow: AppShadows.cardPremium,
-                      ),
-                     child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final items = <Widget>[
-                            if (platform != null) ...[
-                              _InfoRowSvg(
-                                assetPath: 'assets/images/pointe.svg',
-                                label: strings.caliberLabel,
-                                value: platform.caliber,
-                              ),
-                              _InfoRow(
-                                icon: Icons.list_alt_rounded,
-                                label: strings.modelLabel,
-                                value: platform.model,
-                              ),
-                              _InfoRow(
-                                icon: Icons.numbers_rounded,
-                                label: strings.serialNumberLabel,
-                                value: platform.serialNumber,
-                              ),
-                              _InfoRow(
-                                icon: Icons.scale_rounded,
-                                label: strings.emptyWeightLabel,
-                                value: "${platform.weight} g",
-                              ),
-                              _InfoRow(
-                                icon: Icons.cleaning_services_rounded,
-                                label: strings.lastCleaningLabel,
-                                value: AppDateFormats.formatDateShort(
-                                  context,
-                                  platform.lastCleaned,
-                                ),
-                              ),
-                              _InfoRow(
-                                icon: Icons.handyman_rounded,
-                                label: strings.lastRevisionLabel,
-                                value: AppDateFormats.formatDateShort(
-                                  context,
-                                  platform.lastRevised,
-                                ),
-                              ),
-                            ] else if (ammo != null) ...[
-                              _InfoRowSvg(
-                                assetPath: 'assets/images/pointe.svg',
-                                label: strings.caliberLabel,
-                                value: ammo.caliber,
-                              ),
-                              _InfoRow(
-                                icon: Icons.business_rounded,
-                                label: strings.brandLabel,
-                                value: ammo.brand,
-                              ),
-                              _InfoRow(
-                                icon: Icons.inventory_2_rounded,
-                                label: strings.currentStock,
-                                value: "${ammo.quantity} ${strings.cartridges}",
-                              ),
-                            ] else ...[
-                              _InfoRow(
-                                icon: Icons.local_offer_rounded,
-                                label: strings.typeLabel,
-                                value: strings.itemAccessoryTypeLabel(
-                                  accessory!.type,
-                                ),
-                              ),
-                              if (accessory.brand.isNotEmpty)
-                                _InfoRow(
-                                  icon: Icons.business_rounded,
-                                  label: strings.brandLabel,
-                                  value: accessory.brand,
-                                ),
-                              if (accessory.model.isNotEmpty)
-                                _InfoRow(
-                                  icon: Icons.list_alt_rounded,
-                                  label: strings.modelLabel,
-                                  value: accessory.model,
-                                ),
-                              _InfoRowSvg(
-                                assetPath: 'assets/images/hit.svg',
-                                label: strings.shotsFired,
-                                value: "${accessory.totalRounds}",
-                              ),
-                              if (accessory.batteryChangedAt != null)
-                                _InfoRow(
-                                  icon: Icons.battery_charging_full_rounded,
-                                  label: strings.batteryChangedLabel,
-                                  value: AppDateFormats.formatDateShort(
-                                    context,
-                                    accessory.batteryChangedAt!,
-                                  ),
-                                ),
-                            ],
-                          ];
-
-                          final colWidth = (constraints.maxWidth - 16) / 2;
-                          final rows = <Widget>[];
-                          for (int i = 0; i < items.length; i += 2) {
-                            rows.add(
+                              const Divider(height: 32),
                               Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  SizedBox(width: colWidth, child: items[i]),
-                                  const SizedBox(width: 16),
-                                  SizedBox(
-                                    width: colWidth,
-                                    child: i + 1 < items.length
-                                        ? items[i + 1]
-                                        : const SizedBox(),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        strings.totalShots,
+                                        style: textStyles.labelSmall?.copyWith(
+                                          color: colors.secondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${platform.totalRounds}",
+                                        style: textStyles.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colors.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        strings.lastShot,
+                                        style: textStyles.labelSmall?.copyWith(
+                                          color: colors.secondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        lastUsedText,
+                                        style: textStyles.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colors.onSurface,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            );
-                            if (i + 2 < items.length) {
-                              rows.add(const Gap(12));
-                            }
-                          }
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: rows,
-                          );
-                        },
-                      ),
-                    ),
-                    const Gap(AppSpacing.lg),
-                    if (platform != null || accessory != null) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.link_rounded,
-                                size: 18,
-                                color: colors.primary,
-                              ),
-                              const Gap(8),
-                              Text(
-                                strings.liaisonsLabel.toUpperCase(),
-                                style: textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.1,
-                                  color: colors.onSurface,
-                                ),
+                              const Gap(AppSpacing.md),
+                              Column(
+                                children: [
+                                  IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(
+                                          child: _MaintenanceChip(
+                                            icon:
+                                                Icons.cleaning_services_rounded,
+                                            label: strings.maintenance,
+                                            value:
+                                                '${platform.roundsSinceCleaning} / ${platform.cleaningRoundsThreshold} ${strings.shotsLower}',
+                                            color:
+                                                platform.cleaningProgress > 0.8
+                                                ? colors.error
+                                                : colors.secondary,
+                                          ),
+                                        ),
+                                        const Gap(8),
+                                        SizedBox(
+                                          height: double.infinity,
+                                          child: FilledButton(
+                                            style: FilledButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 0,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppRadius.lg,
+                                                    ),
+                                              ),
+                                              backgroundColor: colors.primary,
+                                              foregroundColor: colors.onPrimary,
+                                              elevation: 2,
+                                              shadowColor: colors.primary
+                                                  .withValues(alpha: 0.35),
+                                            ),
+                                            onPressed: () async {
+                                              final confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (ctx) => AlertDialog(
+                                                  title: Text(
+                                                    strings.confirmation,
+                                                  ),
+                                                  content: Text(
+                                                    strings
+                                                        .confirmPlatformCleaningMessage,
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            ctx,
+                                                            false,
+                                                          ),
+                                                      child: Text(
+                                                        strings.cancel,
+                                                      ),
+                                                    ),
+                                                    FilledButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            ctx,
+                                                            true,
+                                                          ),
+                                                      child: Text(
+                                                        strings.confirm,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              if (confirm == true) {
+                                                provider.recordPlatformCleaning(
+                                                  platform.id,
+                                                );
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        strings
+                                                            .cleaningRecordedSuccess,
+                                                      ),
+                                                      duration: const Duration(
+                                                        seconds: 3,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                            child: Text(strings.clean),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(
+                                          child: _MaintenanceChip(
+                                            icon: Icons.handyman_rounded,
+                                            label: strings.revision,
+                                            value:
+                                                '${platform.roundsSinceRevision} / ${platform.wearRoundsThreshold} ${strings.shotsLower}',
+                                            color:
+                                                platform.revisionProgress > 0.8
+                                                ? colors.error
+                                                : colors.secondary,
+                                          ),
+                                        ),
+                                        const Gap(8),
+                                        SizedBox(
+                                          height: double.infinity,
+                                          child: FilledButton(
+                                            style: FilledButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 0,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppRadius.lg,
+                                                    ),
+                                              ),
+                                              backgroundColor: colors.primary,
+                                              foregroundColor: colors.onPrimary,
+                                              elevation: 2,
+                                              shadowColor: colors.primary
+                                                  .withValues(alpha: 0.35),
+                                            ),
+                                            onPressed: () async {
+                                              final confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (ctx) => AlertDialog(
+                                                  title: Text(
+                                                    strings.confirmation,
+                                                  ),
+                                                  content: Text(
+                                                    strings
+                                                        .platformConfirmRevisionMessage,
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            ctx,
+                                                            false,
+                                                          ),
+                                                      child: Text(
+                                                        strings.cancel,
+                                                      ),
+                                                    ),
+                                                    FilledButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            ctx,
+                                                            true,
+                                                          ),
+                                                      child: Text(
+                                                        strings.confirm,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              if (confirm == true) {
+                                                provider.recordPlatformRevision(
+                                                  platform.id,
+                                                );
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        strings
+                                                            .revisionRecordedSuccess,
+                                                      ),
+                                                      duration: const Duration(
+                                                        seconds: 3,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                            child: Text(strings.revision),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.icon(
+                                      icon: const Icon(
+                                        Icons.build_circle_outlined,
+                                      ),
+                                      onPressed: () async {
+                                        final partController =
+                                            TextEditingController();
+                                        final commentController =
+                                            TextEditingController();
+                                        DateTime selectedDate = DateTime.now();
+                                        bool? result;
+                                        String partName = '';
+                                        String comment = '';
+
+                                        try {
+                                          result = await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => StatefulBuilder(
+                                              builder: (ctx, setStateDlg) => AlertDialog(
+                                                title: Text(
+                                                  strings.partChangeTitle,
+                                                ),
+                                                content: SingleChildScrollView(
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .stretch,
+                                                    children: [
+                                                      Text(
+                                                        strings.partNameLabel,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelMedium
+                                                            ?.copyWith(
+                                                              color: colors
+                                                                  .secondary,
+                                                            ),
+                                                      ),
+
+                                                      TextField(
+                                                        controller:
+                                                            partController,
+                                                        decoration: InputDecoration(
+                                                          contentPadding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 10,
+                                                              ),
+                                                          hintText: strings
+                                                              .partNameHint,
+                                                          filled: true,
+                                                          fillColor:
+                                                              Color.alphaBlend(
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.08,
+                                                                    ),
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .surface,
+                                                              ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  AppRadius.lg,
+                                                                ),
+                                                            borderSide:
+                                                                BorderSide(
+                                                                  color: colors
+                                                                      .outline,
+                                                                ),
+                                                          ),
+                                                          enabledBorder:
+                                                              OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      AppRadius
+                                                                          .lg,
+                                                                    ),
+                                                                borderSide:
+                                                                    BorderSide(
+                                                                      color: colors
+                                                                          .outline,
+                                                                    ),
+                                                              ),
+                                                          focusedBorder:
+                                                              OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      AppRadius
+                                                                          .lg,
+                                                                    ),
+                                                                borderSide:
+                                                                    BorderSide(
+                                                                      color: colors
+                                                                          .outline,
+                                                                    ),
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      const Gap(16),
+                                                      Text(
+                                                        strings.dateLabel,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelMedium
+                                                            ?.copyWith(
+                                                              color: colors
+                                                                  .secondary,
+                                                            ),
+                                                      ),
+                                                      const Gap(8),
+                                                      OutlinedButton.icon(
+                                                        onPressed: () async {
+                                                          final picked =
+                                                              await showDatePicker(
+                                                                context:
+                                                                    context,
+                                                                initialDate:
+                                                                    selectedDate,
+                                                                firstDate:
+                                                                    DateTime(
+                                                                      2000,
+                                                                    ),
+                                                                lastDate:
+                                                                    DateTime.now().add(
+                                                                      const Duration(
+                                                                        days:
+                                                                            3650,
+                                                                      ),
+                                                                    ),
+                                                              );
+                                                          if (picked != null) {
+                                                            setStateDlg(
+                                                              () => selectedDate =
+                                                                  DateTime(
+                                                                    picked.year,
+                                                                    picked
+                                                                        .month,
+                                                                    picked.day,
+                                                                  ),
+                                                            );
+                                                          }
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons
+                                                              .calendar_today_rounded,
+                                                          size: 18,
+                                                        ),
+                                                        label: Text(
+                                                          AppDateFormats.formatDateShort(
+                                                            context,
+                                                            selectedDate,
+                                                          ),
+                                                        ),
+                                                        style: OutlinedButton.styleFrom(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 12,
+                                                              ),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  AppRadius.sm,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const Gap(16),
+                                                      Text(
+                                                        strings
+                                                            .partChangeCommentLabel,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelMedium
+                                                            ?.copyWith(
+                                                              color: colors
+                                                                  .secondary,
+                                                            ),
+                                                      ),
+                                                      TextField(
+                                                        controller:
+                                                            commentController,
+                                                        maxLines: 3,
+                                                        decoration: InputDecoration(
+                                                          contentPadding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 10,
+                                                              ),
+                                                          hintText: strings
+                                                              .partChangeCommentHint,
+                                                          filled: true,
+                                                          fillColor:
+                                                              Color.alphaBlend(
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.08,
+                                                                    ),
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .surface,
+                                                              ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  AppRadius.lg,
+                                                                ),
+                                                            borderSide:
+                                                                BorderSide(
+                                                                  color: colors
+                                                                      .outline,
+                                                                ),
+                                                          ),
+                                                          enabledBorder:
+                                                              OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      AppRadius
+                                                                          .lg,
+                                                                    ),
+                                                                borderSide:
+                                                                    BorderSide(
+                                                                      color: colors
+                                                                          .outline,
+                                                                    ),
+                                                              ),
+                                                          focusedBorder:
+                                                              OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      AppRadius
+                                                                          .lg,
+                                                                    ),
+                                                                borderSide:
+                                                                    BorderSide(
+                                                                      color: colors
+                                                                          .outline,
+                                                                    ),
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          ctx,
+                                                          false,
+                                                        ),
+                                                    child: Text(strings.cancel),
+                                                  ),
+                                                  FilledButton(
+                                                    onPressed: () {
+                                                      if (partController.text
+                                                          .trim()
+                                                          .isEmpty) {
+                                                        return;
+                                                      }
+                                                      Navigator.pop(ctx, true);
+                                                    },
+                                                    child: Text(
+                                                      strings
+                                                          .settingsDialogSave,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                          if (result == true) {
+                                            partName = partController.text
+                                                .trim();
+                                            comment = commentController.text
+                                                .trim();
+                                          }
+                                        } finally {
+                                          partController.dispose();
+                                          commentController.dispose();
+                                        }
+
+                                        if (result == true) {
+                                          provider.recordPlatformPartChange(
+                                            platformId: platform.id,
+                                            partName: partName,
+                                            date: selectedDate,
+                                            comment: comment,
+                                          );
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  strings
+                                                      .partChangeRecordedSuccess,
+                                                ),
+                                                duration: const Duration(
+                                                  seconds: 3,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      label: Text(strings.recordPartChange),
+                                      style: FilledButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.lg,
+                                          ),
+                                        ),
+                                        backgroundColor: colors.primary,
+                                        foregroundColor: colors.onPrimary,
+                                        elevation: 2,
+                                        shadowColor: colors.primary.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          if (platform != null)
-                            FilledButton.icon(
-                              onPressed: () => _editLinkedAccessories(provider, platform.id),
-                              icon: const Icon(
-                                Icons.link_rounded,
-                                size: 18,
-                              ),
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(strings.linkToAccessory),
-                                ],
-                              ),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: colors.primary,
-                                foregroundColor: colors.onPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                ),
-                                elevation: 2,
-                                shadowColor: colors.primary.withValues(alpha: 0.35),
-                              ),
-                            )
-                          else if (accessory != null)
-                            FilledButton.icon(
-                              onPressed: () => _editLinkedPlatforms(provider, accessory.id),
-                              icon: const Icon(
-                                Icons.link_rounded,
-                                size: 18,
-                              ),
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(strings.linkToPlatform),
-                                ],
-                              ),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: colors.primary,
-                                foregroundColor: colors.onPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                ),
-                                elevation: 2,
-                                shadowColor: colors.primary.withValues(alpha: 0.35),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const Gap(AppSpacing.md),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? colors.outline
-                                : LightColors.surfaceHighlight,
-                            width: 1.2,
-                          ),
-                          boxShadow: AppShadows.cardPremium,
-                        ),
-                        child: (platform != null && linkedAccessories.isEmpty) ||
-                                (accessory != null && linkedPlatforms.isEmpty)
-                            ? Text(
-                                platform != null
-                                    ? strings.noAccessoryLinked
-                                    : strings.noPlatformLinked,
-                                style: textStyles.bodyMedium?.copyWith(
-                                  color: colors.secondary,
-                                ),
-                              )
-                            : Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: platform != null
-                                    ? linkedAccessories
-                                        .map(
-                                          (a) => Chip(
-                                            backgroundColor: colors.primary,
-                                            side: BorderSide.none,
-                                            labelStyle: TextStyle(color: colors.onPrimary),
-                                            avatar: Icon(
-                                              Icons.inventory_2_rounded,
-                                              size: 16,
-                                              color: colors.onPrimary,
-                                            ),
-                                            label: Text(a.name),
-                                          ),
-                                        )
-                                        .toList()
-                                    : linkedPlatforms
-                                        .map(
-                                          (w) => Chip(
-                                            backgroundColor: colors.primary,
-                                            side: BorderSide.none,
-                                            labelStyle: TextStyle(color: colors.onPrimary),
-                                            avatar: Icon(
-                                              Icons.link_rounded,
-                                              size: 16,
-                                              color: colors.onPrimary,
-                                            ),
-                                            label: Text(w.name),
-                                          ),
-                                        )
-                                        .toList(),
-                              ),
-                      ),
-                      const Gap(AppSpacing.lg),
-                    ],
-                    if (comment.trim().isNotEmpty) ...[
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.notes_rounded,
-                            size: 18,
-                            color: colors.primary,
-                          ),
-                          const Gap(8),
-                          Text(
-                            strings.commentLabel.toUpperCase(),
-                            style: textStyles.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.1,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Gap(AppSpacing.md),
-                      Container(
-                        width: double.infinity,
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-border: Border.all(
-  color: Theme.of(context).brightness == Brightness.dark
-      ? colors.outline
-      : LightColors.surfaceHighlight,
-  width: 1.35,
-),
-                          boxShadow: AppShadows.cardPremium,
-                        ),
-                        child: Text(
-                          comment.trim(),
-                          style: textStyles.bodyMedium?.copyWith(
-                            height: 1.5,
-                            color: colors.onSurface,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
-                      ),
-                      const Gap(AppSpacing.lg),
-                    ],
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                        )
+                      else if (ammo != null) ...[
+                        // ── Titre stock/utilisation hors container ───────
                         Row(
                           children: [
-Icon(
-                              Icons.picture_as_pdf_rounded,
-                              size: 18,
-                              color: colors.primary,
+                            SvgPicture.asset(
+                              'assets/images/pointe.svg',
+                              width: 18,
+                              height: 18,
+                              colorFilter: ColorFilter.mode(
+                                colors.primary,
+                                BlendMode.srcIn,
+                              ),
                             ),
                             const Gap(8),
                             Text(
-                              strings.documentsLabel.toUpperCase(),
+                              strings.stockAndUsage.toUpperCase(),
                               style: textStyles.labelLarge?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.1,
@@ -2458,270 +1795,107 @@ Icon(
                             ),
                           ],
                         ),
-                        FilledButton.icon(
-                          onPressed: provider.canAddDocumentToItem(
-                            currentDocumentsCount: documents.length,
-                          )
-                              ? () => _addDocumentToCurrentItem(
-                                    documents: documents,
-                                    platform: platform,
-                                    ammo: ammo,
-                                    accessory: accessory,
-                                  )
-                              : () => context.push('/pro'),
-                          icon: const Icon(
-                            Icons.add_rounded,
-                            size: 18,
+                        const Gap(AppSpacing.sm),
+                        // ── Carte stock ────────────────────────────────
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            boxShadow: AppShadows.cardPremium,
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
                           ),
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(strings.settingsAddDocument),
-                              if (!provider.isPremium &&
-                                  !provider.canAddDocumentToItem(
-                                    currentDocumentsCount: documents.length,
-                                  )) ...[
-                                const Gap(8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colors.primary,
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(
-                                      color: LightColors.surfaceHighlight,
-                                      width: 1.35,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    strings.proBadge,
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    strings.currentStock,
                                     style: textStyles.labelSmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: colors.onPrimary,
+                                      color: colors.secondary,
                                     ),
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    "${ammo.quantity}",
+                                    style: textStyles.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      color: ammo.quantity < 100
+                                          ? colors.error
+                                          : colors.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    strings.lastShot,
+                                    style: textStyles.labelSmall?.copyWith(
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                  Text(
+                                    lastUsedText,
+                                    style: textStyles.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colors.primary,
-                            foregroundColor: colors.onPrimary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                            ),
-                            elevation: 2,
-                            shadowColor: colors.primary.withValues(alpha: 0.35),
-                          ),
                         ),
-                      ],
-                    ),
-                    const Gap(AppSpacing.md),
-                    if (documents.isNotEmpty) ...[
-                      ...documents.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final doc = entry.value;
-                        final isLocked = provider.isItemDocumentLockedForFree(
-                          documentIndex: index,
-                        );
-
-                        return _DocItem(
-                          name: doc.name,
-                          type: doc.type,
-                          path: doc.path,
-                          expiryDate: doc.expiryDate,
-                          isLocked: isLocked,
-                          onTap: () => isLocked
-                              ? context.push('/pro')
-                              : _openPdf(doc.path),
-                          onEdit: () => _updateDocumentToCurrentItem(
-                            documents: documents,
-                            document: doc,
-                            platform: platform,
-                            ammo: ammo,
-                            accessory: accessory,
-                          ),
-                          onDelete: () => _removeDocumentFromCurrentItem(
-                            documents: documents,
-                            document: doc,
-                            platform: platform,
-                            ammo: ammo,
-                            accessory: accessory,
-                          ),
-                        );
-                      }),
-                      const Gap(AppSpacing.lg),
-                    ] else ...[
-                      Container(
-                        width: double.infinity,
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? colors.outline
-                                : LightColors.surfaceHighlight,
-                            width: 1.2,
-                          ),
-                          boxShadow: AppShadows.cardPremium,
-                        ),
-                        child: Text(
-                          strings.settingsDocumentsEmptyTitle,
-                          style: textStyles.bodyMedium?.copyWith(
-                            color: colors.secondary,
-                          ),
-                        ),
-                      ),
-                      const Gap(AppSpacing.lg),
-                    ],
-                    if (ammo != null) ...[
-                      // ── Historique de réapprovisionnement ────────────
-                      Row(
-                        children: [
-                          Icon(Icons.history_rounded, size: 18, color: colors.primary),
-                          const Gap(8),
-                          Text(
-                            strings.fullHistoryTitle.toUpperCase(),
-                            style: textStyles.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.1,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Gap(AppSpacing.md),
-                      Container(
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? colors.outline
-                                : LightColors.surfaceHighlight,
-                            width: 1.2,
-                          ),
-                          boxShadow: AppShadows.cardPremium,
-                        ),
-                        child: () {
-                          final sortedHistory = [...ammo.safeHistory]
-                            ..sort((a, b) => b.date.compareTo(a.date));
-                          if (sortedHistory.isEmpty) {
-                            return Text(
-                              strings.noRestockHistoryYet,
-                              style: textStyles.bodyMedium?.copyWith(
-                                color: colors.secondary,
+                        const Gap(AppSpacing.md),
+                        // ── Bouton réapprovisionner ──────────────────────
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () => _showRestockSheet(ammo, provider),
+                            icon: const Icon(Icons.add_circle_outline_rounded),
+                            label: Text(strings.restock),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
                               ),
-                            );
-                          }
-                          return Column(
-                            children: sortedHistory.map((entry) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: colors.primary.withValues(alpha: 0.12),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: SvgPicture.asset(
-                                          'assets/images/pointe.svg',
-                                          width: 16,
-                                          height: 16,
-                                          colorFilter: ColorFilter.mode(
-                                            colors.primary,
-                                            BlendMode.srcIn,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const Gap(12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${entry.label} ${strings.cartridges}',
-                                            style: textStyles.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: colors.onSurface,
-                                            ),
-                                          ),
-                                          if (entry.comment != null && entry.comment!.isNotEmpty)
-                                            Text(
-                                              entry.comment!,
-                                              style: textStyles.bodySmall?.copyWith(
-                                                color: colors.secondary,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    Text(
-                                      AppDateFormats.formatDateShort(context, entry.date),
-                                      style: textStyles.labelSmall?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                    const Gap(8),
-                                    IconButton(
-                                      icon: Icon(Icons.delete_rounded, size: 18),
-                                      onPressed: () async {
-                                        final confirm = await showDialog<bool>(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: Text(strings.deleteHistoryEntryTitle),
-                                            content: Text(strings.deleteHistoryEntryConfirm),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.of(context).pop(false),
-                                                child: Text(strings.cancelButton),
-                                              ),
-                                              TextButton(
-                                                onPressed: () => Navigator.of(context).pop(true),
-                                                style: TextButton.styleFrom(foregroundColor: colors.error),
-                                                child: Text(strings.deleteButton),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-
-                                        if (confirm == true) {
-                                          provider.deleteAmmoHistoryEntry(ammo.id, entry.id);
-                                        }
-                                      },
-                                    ),
-                                  ],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
                                 ),
-                              );
-                            }).toList(),
-                          );
-                        }(),
-                      ),
-                      const Gap(AppSpacing.lg),
-                    ],
-                    if (platform != null || ammo != null) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                              ),
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.onPrimary,
+                              elevation: 2,
+                              shadowColor: colors.primary.withValues(
+                                alpha: 0.35,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.md),
+                        // ── Coût ─────────────────────────────────────────
+                        if (ammo.unitPrice != null) ...[
                           Row(
                             children: [
                               Icon(
-                                Icons.bar_chart_rounded,
+                                Icons.euro_rounded,
                                 size: 18,
                                 color: colors.primary,
                               ),
                               const Gap(8),
                               Text(
-                                strings.usageHistoryShotsTitle.toUpperCase(),
+                                strings.costDashboardTitle.toUpperCase(),
                                 style: textStyles.labelLarge?.copyWith(
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 1.1,
@@ -2730,391 +1904,1556 @@ Icon(
                               ),
                             ],
                           ),
-                          PopupMenuButton<String>(
-                            initialValue: _selectedPeriod,
-                            tooltip: strings.usageHistoryShotsTitle,
-                            onSelected: (v) => setState(() => _selectedPeriod = v),
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'week',
-                                child: Text(strings.weekLabel),
-                              ),
-                              PopupMenuItem(
-                                value: 'month',
-                                child: Text(strings.monthLabel),
-                              ),
-                              PopupMenuItem(
-                                value: 'year',
-                                child: Text(strings.yearLabel),
-                              ),
-                            ],
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _selectedPeriod == 'week'
-                                      ? strings.weekLabel
-                                      : _selectedPeriod == 'year'
-                                          ? strings.yearLabel
-                                          : strings.monthLabel,
-                                  style: textStyles.labelLarge?.copyWith(
-                                    color: colors.secondary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  color: colors.secondary,
-                                  size: 20,
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                      const Gap(AppSpacing.md),
-                      Builder(
-                        builder: (context) {
-                          final history = _calculateUsageHistory(
-                            provider,
-                            widget.itemId,
-                            platform != null ? 'PLATEFORME' : 'CONSOMMABLE',
-                          );
-                          final labels = history.keys.toList();
-                          final values = history.values.toList();
-                          final maxValue = values.isEmpty
-                              ? 100.0
-                              : values
-                                  .reduce((a, b) => a > b ? a : b)
-                                  .toDouble();
-
-                          return Container(
-                            height: 200,
+                          const Gap(AppSpacing.sm),
+                          Container(
                             padding: AppSpacing.paddingLg,
                             decoration: BoxDecoration(
                               color: colors.surface,
                               borderRadius: BorderRadius.circular(AppRadius.lg),
-                            border: Border.all(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? colors.outline
-                                  : LightColors.surfaceHighlight,
-                              width: 1.35,
-                            ),
                               boxShadow: AppShadows.cardPremium,
+                              border: Border.all(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? colors.outline
+                                    : LightColors.surfaceHighlight,
+                                width: 1.2,
+                              ),
                             ),
-                            child: values.isEmpty || maxValue == 0
-                                ? Center(
-                                    child: Text(
-                                      strings.noDataForThisPeriod,
-                                      style: textStyles.bodyMedium?.copyWith(
-                                        color: colors.secondary,
-                                      ),
-                                    ),
-                                  )
-                                : BarChart(
-                                    BarChartData(
-                                      barTouchData: BarTouchData(
-                                        touchTooltipData: BarTouchTooltipData(
-                                          getTooltipColor: (_) => colors.primary,
-                                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                            return BarTooltipItem(
-                                              rod.toY.toInt().toString(),
-                                              const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      gridData: FlGridData(show: false),
-                                      titlesData: FlTitlesData(
-                                        leftTitles: AxisTitles(
-                                          sideTitles:
-                                              SideTitles(showTitles: false),
-                                        ),
-                                        rightTitles: AxisTitles(
-                                          sideTitles:
-                                              SideTitles(showTitles: false),
-                                        ),
-                                        topTitles: AxisTitles(
-                                          sideTitles:
-                                              SideTitles(showTitles: false),
-                                        ),
-                                        bottomTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            getTitlesWidget: (value, meta) {
-                                              if (value.toInt() >= 0 &&
-                                                  value.toInt() <
-                                                      labels.length) {
-                                                return Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    top: 8.0,
-                                                  ),
-                                                  child: Text(
-                                                    labels[value.toInt()],
-                                                    style:
-                                                        textStyles.labelSmall,
-                                                  ),
-                                                );
-                                              }
-                                              return const Text('');
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                      borderData: FlBorderData(show: false),
-                                      barGroups: List.generate(
-                                        values.length,
-                                        (index) => BarChartGroupData(
-                                          x: index,
-                                          barRods: [
-                                            BarChartRodData(
-                                              toY: values[index].toDouble(),
-                                              color: colors.primary,
-                                              width: 20,
-                                              borderRadius:
-                                                  BorderRadius.circular(2),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      maxY: maxValue * 1.2,
-                                    ),
-                                  ),
-                          );
-                        },
-                      ),
-                      const Gap(AppSpacing.lg),
-                    ],
-                    if (accessory != null) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.bar_chart_rounded,
-                                  size: 18, color: colors.primary),
-                              const Gap(8),
-                              Text(
-                                strings.usageHistoryShotsTitle,
-                                style: textStyles.titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                          PopupMenuButton<String>(
-                            initialValue: _selectedPeriod,
-                            tooltip: strings.usageHistoryShotsTitle,
-                            onSelected: (v) => setState(() => _selectedPeriod = v),
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'week',
-                                child: Text(strings.weekLabel),
-                              ),
-                              PopupMenuItem(
-                                value: 'month',
-                                child: Text(strings.monthLabel),
-                              ),
-                              PopupMenuItem(
-                                value: 'year',
-                                child: Text(strings.yearLabel),
-                              ),
-                            ],
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _selectedPeriod == 'week'
-                                      ? strings.weekLabel
-                                      : _selectedPeriod == 'year'
-                                          ? strings.yearLabel
-                                          : strings.monthLabel,
-                                  style: textStyles.labelLarge?.copyWith(
-                                    color: colors.secondary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                _InfoRow(
+                                  icon: Icons.euro_rounded,
+                                  label: strings.ammoTotalShotCost,
+                                  value:
+                                      '${provider.getAmmoTotalShotCost(ammo.id)?.toStringAsFixed(2) ?? '0.00'} ${_getCurrencySymbol(ammo.currency)}',
                                 ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  color: colors.secondary,
-                                  size: 20,
+                                const Gap(8),
+                                _InfoRow(
+                                  icon: Icons.euro_rounded,
+                                  label: strings.ammoRemainingStockCost,
+                                  value:
+                                      '${provider.getAmmoRemainingStockCost(ammo.id)?.toStringAsFixed(2) ?? '0.00'} ${_getCurrencySymbol(ammo.currency)}',
                                 ),
                               ],
                             ),
                           ),
                         ],
-                      ),
-                      const Gap(AppSpacing.md),
-                      Builder(builder: (context) {
-                        final history = _calculateUsageHistory(
-                            provider, widget.itemId, 'ACCESSOIRE');
-                        final labels = history.keys.toList();
-                        final values = history.values.toList();
-                        final maxValue = values.isEmpty
-                            ? 100.0
-                            : values.reduce((a, b) => a > b ? a : b).toDouble();
-                        return Container(
-                          height: 200,
+                      ] else
+                        Container(
                           padding: AppSpacing.paddingLg,
                           decoration: BoxDecoration(
                             color: colors.surface,
                             borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? colors.outline
-                                : LightColors.surfaceHighlight,
-                            width: 1.2,
+                            boxShadow: AppShadows.cardPremium,
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
                           ),
-                          boxShadow: AppShadows.cardPremium,
-                          ),
-                          child: values.isEmpty || maxValue == 0
-                              ? Center(
-                                  child: Text(strings.noDataForThisPeriod,
-                                      style: textStyles.bodyMedium
-                                          ?.copyWith(color: colors.secondary)))
-                              : BarChart(BarChartData(
-                                  barTouchData: BarTouchData(
-                                    touchTooltipData: BarTouchTooltipData(
-                                      getTooltipColor: (_) => colors.primary,
-                                      getTooltipItem:
-                                          (group, groupIndex, rod, rodIndex) {
-                                        return BarTooltipItem(
-                                          rod.toY.toInt().toString(),
-                                          const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        );
-                                      },
+                          child: Builder(
+                            builder: (context) {
+                              final acc = accessory!;
+                              final maintenanceEnabledTypes = {
+                                'SUPP',
+                                'Compensateurs',
+                                'Détentes',
+                                'Pièces internes',
+                              };
+                              final maintenanceEnabled = maintenanceEnabledTypes
+                                  .contains(acc.type);
+
+                              if (maintenanceEnabled) {
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    _StatusBar(
+                                      label: strings.revision,
+                                      percent: acc.revisionProgress,
+                                      color: acc.revisionProgress > 0.8
+                                          ? colors.error
+                                          : colors.primary,
                                     ),
-                                  ),
-                                  gridData: FlGridData(show: false),
-                                  borderData: FlBorderData(show: false),
-                                  titlesData: FlTitlesData(
-                                    leftTitles: AxisTitles(
-                                        sideTitles:
-                                            SideTitles(showTitles: false)),
-                                    rightTitles: AxisTitles(
-                                        sideTitles:
-                                            SideTitles(showTitles: false)),
-                                    topTitles: AxisTitles(
-                                        sideTitles:
-                                            SideTitles(showTitles: false)),
-                                    bottomTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: (value, meta) {
-                                        if (value.toInt() >= 0 &&
-                                            value.toInt() < labels.length) {
-                                          return Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 8.0),
-                                            child: Text(labels[value.toInt()],
-                                                style: textStyles.labelSmall),
-                                          );
-                                        }
-                                        return const Text('');
-                                      },
-                                    )),
-                                  ),
-                                  barGroups: List.generate(
-                                      values.length,
-                                      (index) => BarChartGroupData(
-                                            x: index,
-                                            barRods: [
-                                              BarChartRodData(
-                                                  toY: values[index].toDouble(),
-                                                  color: colors.primary,
-                                                  width: 20,
-                                                  borderRadius:
-                                                      BorderRadius.circular(2))
+                                    _StatusBar(
+                                      label: strings.cleanliness,
+                                      percent: acc.cleaningProgress,
+                                      color: acc.cleaningProgress > 0.8
+                                          ? colors.error
+                                          : colors.primary,
+                                    ),
+                                    const Divider(height: 32),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              strings.totalShots,
+                                              style: textStyles.labelSmall
+                                                  ?.copyWith(
+                                                    color: colors.secondary,
+                                                  ),
+                                            ),
+                                            Text(
+                                              "${acc.totalRounds}",
+                                              style: textStyles.titleLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w900,
+                                                    color: colors.onSurface,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              strings.lastShot,
+                                              style: textStyles.labelSmall
+                                                  ?.copyWith(
+                                                    color: colors.secondary,
+                                                  ),
+                                            ),
+                                            Text(
+                                              lastUsedText,
+                                              style: textStyles.bodyMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: colors.onSurface,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const Gap(AppSpacing.md),
+                                    Column(
+                                      children: [
+                                        IntrinsicHeight(
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              Expanded(
+                                                child: _MaintenanceChip(
+                                                  icon: Icons
+                                                      .cleaning_services_rounded,
+                                                  label: strings.maintenance,
+                                                  value:
+                                                      '${acc.roundsSinceCleaning} / ${acc.cleaningRoundsThreshold} ${strings.shotsLower}',
+                                                  color:
+                                                      acc.cleaningProgress > 0.8
+                                                      ? colors.error
+                                                      : colors.secondary,
+                                                ),
+                                              ),
+                                              const Gap(8),
+                                              SizedBox(
+                                                height: double.infinity,
+                                                child: FilledButton(
+                                                  style: FilledButton.styleFrom(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 0,
+                                                        ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            AppRadius.lg,
+                                                          ),
+                                                    ),
+                                                    backgroundColor:
+                                                        colors.primary,
+                                                    foregroundColor:
+                                                        colors.onPrimary,
+                                                    elevation: 2,
+                                                    shadowColor: colors.primary
+                                                        .withValues(
+                                                          alpha: 0.35,
+                                                        ),
+                                                  ),
+                                                  onPressed: () async {
+                                                    final confirm = await showDialog<bool>(
+                                                      context: context,
+                                                      builder: (ctx) => AlertDialog(
+                                                        title: const Text(
+                                                          'Confirmation',
+                                                        ),
+                                                        content: const Text(
+                                                          'Voulez-vous vraiment enregistrer un nettoyage complet pour cet accessoire ? Le compteur d\'entretien sera remis à zéro.',
+                                                        ),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                  ctx,
+                                                                  false,
+                                                                ),
+                                                            child: const Text(
+                                                              'ANNULER',
+                                                            ),
+                                                          ),
+                                                          FilledButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                  ctx,
+                                                                  true,
+                                                                ),
+                                                            child: const Text(
+                                                              'CONFIRMER',
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                    if (confirm == true) {
+                                                      provider
+                                                          .recordAccessoryCleaning(
+                                                            acc.id,
+                                                          );
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          SnackBar(
+                                                            content: Text(
+                                                              strings
+                                                                  .maintenanceRecordedSuccess,
+                                                            ),
+                                                            duration: Duration(
+                                                              seconds: 3,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                                  child: const Text('Nettoyer'),
+                                                ),
+                                              ),
                                             ],
-                                          )),
-                                  maxY: maxValue * 1.2,
-                                )),
-                        );
-                      }),
+                                          ),
+                                        ),
+                                        const Gap(8),
+                                        IntrinsicHeight(
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              Expanded(
+                                                child: _MaintenanceChip(
+                                                  icon: Icons.handyman_rounded,
+                                                  label: 'Révision',
+                                                  value:
+                                                      '${acc.roundsSinceRevision} / ${acc.wearRoundsThreshold} coups',
+                                                  color:
+                                                      acc.revisionProgress > 0.8
+                                                      ? colors.error
+                                                      : colors.secondary,
+                                                ),
+                                              ),
+                                              const Gap(8),
+                                              SizedBox(
+                                                height: double.infinity,
+                                                child: FilledButton(
+                                                  style: FilledButton.styleFrom(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 0,
+                                                        ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            AppRadius.lg,
+                                                          ),
+                                                    ),
+                                                    backgroundColor:
+                                                        colors.primary,
+                                                    foregroundColor:
+                                                        colors.onPrimary,
+                                                    elevation: 2,
+                                                    shadowColor: colors.primary
+                                                        .withValues(
+                                                          alpha: 0.35,
+                                                        ),
+                                                  ),
+                                                  onPressed: () async {
+                                                    final confirm = await showDialog<bool>(
+                                                      context: context,
+                                                      builder: (ctx) => AlertDialog(
+                                                        title: const Text(
+                                                          'Confirmation',
+                                                        ),
+                                                        content: const Text(
+                                                          'Voulez-vous vraiment enregistrer une révision complète pour cet accessoire ? Le compteur de révision sera remis à zéro.',
+                                                        ),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                  ctx,
+                                                                  false,
+                                                                ),
+                                                            child: const Text(
+                                                              'ANNULER',
+                                                            ),
+                                                          ),
+                                                          FilledButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                  ctx,
+                                                                  true,
+                                                                ),
+                                                            child: const Text(
+                                                              'CONFIRMER',
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                    if (confirm == true) {
+                                                      provider
+                                                          .recordAccessoryRevision(
+                                                            acc.id,
+                                                          );
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          SnackBar(
+                                                            content: Text(
+                                                              strings
+                                                                  .revisionRecordedSuccess,
+                                                            ),
+                                                            duration: Duration(
+                                                              seconds: 3,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                                  child: Text(
+                                                    strings.reviseLabel,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.inventory_2_rounded,
+                                        size: 18,
+                                        color: colors.primary,
+                                      ),
+                                      const Gap(8),
+                                      Text(
+                                        strings.accessoryStatusTitle,
+                                        style: textStyles.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Gap(AppSpacing.md),
+                                  _InfoRowSvg(
+                                    assetPath: 'assets/images/hit.svg',
+                                    label: strings.shotsFired,
+                                    value: "${acc.totalRounds}",
+                                  ),
+                                  if (acc.batteryChangedAt != null) ...[
+                                    const Gap(12),
+                                    _InfoRow(
+                                      icon: Icons.battery_charging_full_rounded,
+                                      label: strings.batteryChangedLabel,
+                                      value: AppDateFormats.formatDateShort(
+                                        context,
+                                        acc.batteryChangedAt!,
+                                      ),
+                                    ),
+                                  ],
+                                  const Divider(height: 32),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        strings.lastShot,
+                                        style: textStyles.labelSmall?.copyWith(
+                                          color: colors.secondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        lastUsedText,
+                                        style: textStyles.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colors.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
                       const Gap(AppSpacing.lg),
-                    ],
-                    if (platform != null) ...[
                       Row(
                         children: [
                           Icon(
-                            Icons.history_rounded,
+                            Icons.info_outline_rounded,
                             size: 18,
                             color: colors.primary,
                           ),
                           const Gap(8),
                           Text(
-                            strings.fullHistoryTitle.toUpperCase(),
-                            style: textStyles.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.1,
-                              color: colors.onSurface,
+                            strings.specificationsTitle,
+                            style: textStyles.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                       const Gap(AppSpacing.md),
                       Container(
-                        padding: AppSpacing.paddingLg,
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                         decoration: BoxDecoration(
                           color: colors.surface,
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                           border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
-                            width: 1.2,
+                            width: 1.35,
                           ),
                           boxShadow: AppShadows.cardPremium,
                         ),
-                        child: () {
-                          final filteredHistory = platform.history
-                              .where(
-                                (h) =>
-                                    h.type == 'entretien' ||
-                                    h.type == 'revision' ||
-                                    h.type == 'piece',
-                              )
-                              .toList()
-                            ..sort((a, b) => b.date.compareTo(a.date));
-
-                          if (filteredHistory.isEmpty) {
-                            return Text(
-                              strings.noMaintenanceHistoryRecorded,
-                              style: textStyles.bodyMedium?.copyWith(
-                                color: colors.secondary,
-                              ),
-                            );
-                          }
-
-                          return Column(
-                            children: filteredHistory
-                                .map(
-                                  (entry) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: _PlatformHistoryRow(entry: entry),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final items = <Widget>[
+                              if (platform != null) ...[
+                                _InfoRowSvg(
+                                  assetPath: 'assets/images/pointe.svg',
+                                  label: strings.caliberLabel,
+                                  value: platform.caliber,
+                                ),
+                                _InfoRow(
+                                  icon: Icons.list_alt_rounded,
+                                  label: strings.modelLabel,
+                                  value: platform.model,
+                                ),
+                                _InfoRow(
+                                  icon: Icons.numbers_rounded,
+                                  label: strings.serialNumberLabel,
+                                  value: platform.serialNumber,
+                                ),
+                                _InfoRow(
+                                  icon: Icons.scale_rounded,
+                                  label: strings.emptyWeightLabel,
+                                  value: "${platform.weight} g",
+                                ),
+                                _InfoRow(
+                                  icon: Icons.cleaning_services_rounded,
+                                  label: strings.lastCleaningLabel,
+                                  value: AppDateFormats.formatDateShort(
+                                    context,
+                                    platform.lastCleaned,
                                   ),
-                                )
-                                .toList(),
-                          );
-                        }(),
+                                ),
+                                _InfoRow(
+                                  icon: Icons.handyman_rounded,
+                                  label: strings.lastRevisionLabel,
+                                  value: AppDateFormats.formatDateShort(
+                                    context,
+                                    platform.lastRevised,
+                                  ),
+                                ),
+                              ] else if (ammo != null) ...[
+                                _InfoRowSvg(
+                                  assetPath: 'assets/images/pointe.svg',
+                                  label: strings.caliberLabel,
+                                  value: ammo.caliber,
+                                ),
+                                _InfoRow(
+                                  icon: Icons.business_rounded,
+                                  label: strings.brandLabel,
+                                  value: ammo.brand,
+                                ),
+                                _InfoRow(
+                                  icon: Icons.inventory_2_rounded,
+                                  label: strings.currentStock,
+                                  value:
+                                      "${ammo.quantity} ${strings.cartridges}",
+                                ),
+                              ] else ...[
+                                _InfoRow(
+                                  icon: Icons.local_offer_rounded,
+                                  label: strings.typeLabel,
+                                  value: strings.itemAccessoryTypeLabel(
+                                    accessory!.type,
+                                  ),
+                                ),
+                                if (accessory.brand.isNotEmpty)
+                                  _InfoRow(
+                                    icon: Icons.business_rounded,
+                                    label: strings.brandLabel,
+                                    value: accessory.brand,
+                                  ),
+                                if (accessory.model.isNotEmpty)
+                                  _InfoRow(
+                                    icon: Icons.list_alt_rounded,
+                                    label: strings.modelLabel,
+                                    value: accessory.model,
+                                  ),
+                                _InfoRowSvg(
+                                  assetPath: 'assets/images/hit.svg',
+                                  label: strings.shotsFired,
+                                  value: "${accessory.totalRounds}",
+                                ),
+                                if (accessory.batteryChangedAt != null)
+                                  _InfoRow(
+                                    icon: Icons.battery_charging_full_rounded,
+                                    label: strings.batteryChangedLabel,
+                                    value: AppDateFormats.formatDateShort(
+                                      context,
+                                      accessory.batteryChangedAt!,
+                                    ),
+                                  ),
+                              ],
+                            ];
+
+                            final colWidth = (constraints.maxWidth - 16) / 2;
+                            final rows = <Widget>[];
+                            for (int i = 0; i < items.length; i += 2) {
+                              rows.add(
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(width: colWidth, child: items[i]),
+                                    const SizedBox(width: 16),
+                                    SizedBox(
+                                      width: colWidth,
+                                      child: i + 1 < items.length
+                                          ? items[i + 1]
+                                          : const SizedBox(),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (i + 2 < items.length) {
+                                rows.add(const Gap(12));
+                              }
+                            }
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: rows,
+                            );
+                          },
+                        ),
                       ),
                       const Gap(AppSpacing.lg),
+                      if (platform != null || accessory != null) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.link_rounded,
+                                  size: 18,
+                                  color: colors.primary,
+                                ),
+                                const Gap(8),
+                                Text(
+                                  strings.liaisonsLabel.toUpperCase(),
+                                  style: textStyles.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.1,
+                                    color: colors.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (platform != null)
+                              FilledButton.icon(
+                                onPressed: () => _editLinkedAccessories(
+                                  provider,
+                                  platform.id,
+                                ),
+                                icon: const Icon(Icons.link_rounded, size: 18),
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [Text(strings.linkToAccessory)],
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: colors.primary,
+                                  foregroundColor: colors.onPrimary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                  ),
+                                  elevation: 2,
+                                  shadowColor: colors.primary.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                ),
+                              )
+                            else if (accessory != null)
+                              FilledButton.icon(
+                                onPressed: () => _editLinkedPlatforms(
+                                  provider,
+                                  accessory.id,
+                                ),
+                                icon: const Icon(Icons.link_rounded, size: 18),
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [Text(strings.linkToPlatform)],
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: colors.primary,
+                                  foregroundColor: colors.onPrimary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                  ),
+                                  elevation: 2,
+                                  shadowColor: colors.primary.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child:
+                              (platform != null && linkedAccessories.isEmpty) ||
+                                  (accessory != null && linkedPlatforms.isEmpty)
+                              ? Text(
+                                  platform != null
+                                      ? strings.noAccessoryLinked
+                                      : strings.noPlatformLinked,
+                                  style: textStyles.bodyMedium?.copyWith(
+                                    color: colors.secondary,
+                                  ),
+                                )
+                              : Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: platform != null
+                                      ? linkedAccessories
+                                            .map(
+                                              (a) => Chip(
+                                                backgroundColor: colors.primary,
+                                                side: BorderSide.none,
+                                                labelStyle: TextStyle(
+                                                  color: colors.onPrimary,
+                                                ),
+                                                avatar: Icon(
+                                                  Icons.inventory_2_rounded,
+                                                  size: 16,
+                                                  color: colors.onPrimary,
+                                                ),
+                                                label: Text(a.name),
+                                              ),
+                                            )
+                                            .toList()
+                                      : linkedPlatforms
+                                            .map(
+                                              (w) => Chip(
+                                                backgroundColor: colors.primary,
+                                                side: BorderSide.none,
+                                                labelStyle: TextStyle(
+                                                  color: colors.onPrimary,
+                                                ),
+                                                avatar: Icon(
+                                                  Icons.link_rounded,
+                                                  size: 16,
+                                                  color: colors.onPrimary,
+                                                ),
+                                                label: Text(w.name),
+                                              ),
+                                            )
+                                            .toList(),
+                                ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      if (comment.trim().isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.notes_rounded,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.commentLabel.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1,
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Container(
+                          width: double.infinity,
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.35,
+                            ),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child: Text(
+                            comment.trim(),
+                            style: textStyles.bodyMedium?.copyWith(
+                              height: 1.5,
+                              color: colors.onSurface,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.picture_as_pdf_rounded,
+                                size: 18,
+                                color: colors.primary,
+                              ),
+                              const Gap(8),
+                              Text(
+                                strings.documentsLabel.toUpperCase(),
+                                style: textStyles.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.1,
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                          FilledButton.icon(
+                            onPressed:
+                                provider.canAddDocumentToItem(
+                                  currentDocumentsCount: documents.length,
+                                )
+                                ? () => _addDocumentToCurrentItem(
+                                    documents: documents,
+                                    platform: platform,
+                                    ammo: ammo,
+                                    accessory: accessory,
+                                  )
+                                : () => context.push('/pro'),
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(strings.settingsAddDocument),
+                                if (!provider.isPremium &&
+                                    !provider.canAddDocumentToItem(
+                                      currentDocumentsCount: documents.length,
+                                    )) ...[
+                                  const Gap(8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colors.primary,
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: LightColors.surfaceHighlight,
+                                        width: 1.35,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      strings.proBadge,
+                                      style: textStyles.labelSmall?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: colors.onPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                              ),
+                              elevation: 2,
+                              shadowColor: colors.primary.withValues(
+                                alpha: 0.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(AppSpacing.md),
+                      if (documents.isNotEmpty) ...[
+                        ...documents.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final doc = entry.value;
+                          final isLocked = provider.isItemDocumentLockedForFree(
+                            documentIndex: index,
+                          );
+
+                          return _DocItem(
+                            name: doc.name,
+                            type: doc.type,
+                            path: doc.path,
+                            expiryDate: doc.expiryDate,
+                            isLocked: isLocked,
+                            onTap: () => isLocked
+                                ? context.push('/pro')
+                                : _openPdf(doc.path),
+                            onEdit: () => _updateDocumentToCurrentItem(
+                              documents: documents,
+                              document: doc,
+                              platform: platform,
+                              ammo: ammo,
+                              accessory: accessory,
+                            ),
+                            onDelete: () => _removeDocumentFromCurrentItem(
+                              documents: documents,
+                              document: doc,
+                              platform: platform,
+                              ammo: ammo,
+                              accessory: accessory,
+                            ),
+                          );
+                        }),
+                        const Gap(AppSpacing.lg),
+                      ] else ...[
+                        Container(
+                          width: double.infinity,
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child: Text(
+                            strings.settingsDocumentsEmptyTitle,
+                            style: textStyles.bodyMedium?.copyWith(
+                              color: colors.secondary,
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      if (ammo != null) ...[
+                        // ── Historique de réapprovisionnement ────────────
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.history_rounded,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.fullHistoryTitle.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1,
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child: () {
+                            final sortedHistory = [...ammo.safeHistory]
+                              ..sort((a, b) => b.date.compareTo(a.date));
+                            if (sortedHistory.isEmpty) {
+                              return Text(
+                                strings.noRestockHistoryYet,
+                                style: textStyles.bodyMedium?.copyWith(
+                                  color: colors.secondary,
+                                ),
+                              );
+                            }
+                            return Column(
+                              children: sortedHistory.map((entry) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: colors.primary.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: SvgPicture.asset(
+                                            'assets/images/pointe.svg',
+                                            width: 16,
+                                            height: 16,
+                                            colorFilter: ColorFilter.mode(
+                                              colors.primary,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const Gap(12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${entry.label} ${strings.cartridges}',
+                                              style: textStyles.bodyMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: colors.onSurface,
+                                                  ),
+                                            ),
+                                            if (entry.comment != null &&
+                                                entry.comment!.isNotEmpty)
+                                              Text(
+                                                entry.comment!,
+                                                style: textStyles.bodySmall
+                                                    ?.copyWith(
+                                                      color: colors.secondary,
+                                                    ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        AppDateFormats.formatDateShort(
+                                          context,
+                                          entry.date,
+                                        ),
+                                        style: textStyles.labelSmall?.copyWith(
+                                          color: colors.secondary,
+                                        ),
+                                      ),
+                                      const Gap(8),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.delete_rounded,
+                                          size: 18,
+                                        ),
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: Text(
+                                                strings.deleteHistoryEntryTitle,
+                                              ),
+                                              content: Text(
+                                                strings
+                                                    .deleteHistoryEntryConfirm,
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                  ).pop(false),
+                                                  child: Text(
+                                                    strings.cancelButton,
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                  ).pop(true),
+                                                  style: TextButton.styleFrom(
+                                                    foregroundColor:
+                                                        colors.error,
+                                                  ),
+                                                  child: Text(
+                                                    strings.deleteButton,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+
+                                          if (confirm == true) {
+                                            provider.deleteAmmoHistoryEntry(
+                                              ammo.id,
+                                              entry.id,
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          }(),
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      if (platform != null || ammo != null) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.bar_chart_rounded,
+                                  size: 18,
+                                  color: colors.primary,
+                                ),
+                                const Gap(8),
+                                Text(
+                                  strings.usageHistoryShotsTitle.toUpperCase(),
+                                  style: textStyles.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.1,
+                                    color: colors.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            PopupMenuButton<String>(
+                              initialValue: _selectedPeriod,
+                              tooltip: strings.usageHistoryShotsTitle,
+                              onSelected: (v) =>
+                                  setState(() => _selectedPeriod = v),
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  value: 'week',
+                                  child: Text(strings.weekLabel),
+                                ),
+                                PopupMenuItem(
+                                  value: 'month',
+                                  child: Text(strings.monthLabel),
+                                ),
+                                PopupMenuItem(
+                                  value: 'year',
+                                  child: Text(strings.yearLabel),
+                                ),
+                              ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _selectedPeriod == 'week'
+                                        ? strings.weekLabel
+                                        : _selectedPeriod == 'year'
+                                        ? strings.yearLabel
+                                        : strings.monthLabel,
+                                    style: textStyles.labelLarge?.copyWith(
+                                      color: colors.secondary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: colors.secondary,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Builder(
+                          builder: (context) {
+                            final history = _calculateUsageHistory(
+                              provider,
+                              widget.itemId,
+                              platform != null ? 'PLATEFORME' : 'CONSOMMABLE',
+                            );
+                            final labels = history.keys.toList();
+                            final values = history.values.toList();
+                            final maxValue = values.isEmpty
+                                ? 100.0
+                                : values
+                                      .reduce((a, b) => a > b ? a : b)
+                                      .toDouble();
+
+                            return Container(
+                              height: 200,
+                              padding: AppSpacing.paddingLg,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                border: Border.all(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? colors.outline
+                                      : LightColors.surfaceHighlight,
+                                  width: 1.35,
+                                ),
+                                boxShadow: AppShadows.cardPremium,
+                              ),
+                              child: values.isEmpty || maxValue == 0
+                                  ? Center(
+                                      child: Text(
+                                        strings.noDataForThisPeriod,
+                                        style: textStyles.bodyMedium?.copyWith(
+                                          color: colors.secondary,
+                                        ),
+                                      ),
+                                    )
+                                  : BarChart(
+                                      BarChartData(
+                                        barTouchData: BarTouchData(
+                                          touchTooltipData: BarTouchTooltipData(
+                                            getTooltipColor: (_) =>
+                                                colors.primary,
+                                            getTooltipItem:
+                                                (
+                                                  group,
+                                                  groupIndex,
+                                                  rod,
+                                                  rodIndex,
+                                                ) {
+                                                  return BarTooltipItem(
+                                                    rod.toY.toInt().toString(),
+                                                    const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  );
+                                                },
+                                          ),
+                                        ),
+                                        gridData: FlGridData(show: false),
+                                        titlesData: FlTitlesData(
+                                          leftTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
+                                          rightTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
+                                          topTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
+                                          bottomTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: true,
+                                              getTitlesWidget: (value, meta) {
+                                                if (value.toInt() >= 0 &&
+                                                    value.toInt() <
+                                                        labels.length) {
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 8.0,
+                                                        ),
+                                                    child: Text(
+                                                      labels[value.toInt()],
+                                                      style:
+                                                          textStyles.labelSmall,
+                                                    ),
+                                                  );
+                                                }
+                                                return const Text('');
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                        borderData: FlBorderData(show: false),
+                                        barGroups: List.generate(
+                                          values.length,
+                                          (index) => BarChartGroupData(
+                                            x: index,
+                                            barRods: [
+                                              BarChartRodData(
+                                                toY: values[index].toDouble(),
+                                                color: colors.primary,
+                                                width: 20,
+                                                borderRadius:
+                                                    BorderRadius.circular(2),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        maxY: maxValue * 1.2,
+                                      ),
+                                    ),
+                            );
+                          },
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      if (accessory != null) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.bar_chart_rounded,
+                                  size: 18,
+                                  color: colors.primary,
+                                ),
+                                const Gap(8),
+                                Text(
+                                  strings.usageHistoryShotsTitle,
+                                  style: textStyles.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            PopupMenuButton<String>(
+                              initialValue: _selectedPeriod,
+                              tooltip: strings.usageHistoryShotsTitle,
+                              onSelected: (v) =>
+                                  setState(() => _selectedPeriod = v),
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  value: 'week',
+                                  child: Text(strings.weekLabel),
+                                ),
+                                PopupMenuItem(
+                                  value: 'month',
+                                  child: Text(strings.monthLabel),
+                                ),
+                                PopupMenuItem(
+                                  value: 'year',
+                                  child: Text(strings.yearLabel),
+                                ),
+                              ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _selectedPeriod == 'week'
+                                        ? strings.weekLabel
+                                        : _selectedPeriod == 'year'
+                                        ? strings.yearLabel
+                                        : strings.monthLabel,
+                                    style: textStyles.labelLarge?.copyWith(
+                                      color: colors.secondary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: colors.secondary,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Builder(
+                          builder: (context) {
+                            final history = _calculateUsageHistory(
+                              provider,
+                              widget.itemId,
+                              'ACCESSOIRE',
+                            );
+                            final labels = history.keys.toList();
+                            final values = history.values.toList();
+                            final maxValue = values.isEmpty
+                                ? 100.0
+                                : values
+                                      .reduce((a, b) => a > b ? a : b)
+                                      .toDouble();
+                            return Container(
+                              height: 200,
+                              padding: AppSpacing.paddingLg,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
+                                border: Border.all(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? colors.outline
+                                      : LightColors.surfaceHighlight,
+                                  width: 1.2,
+                                ),
+                                boxShadow: AppShadows.cardPremium,
+                              ),
+                              child: values.isEmpty || maxValue == 0
+                                  ? Center(
+                                      child: Text(
+                                        strings.noDataForThisPeriod,
+                                        style: textStyles.bodyMedium?.copyWith(
+                                          color: colors.secondary,
+                                        ),
+                                      ),
+                                    )
+                                  : BarChart(
+                                      BarChartData(
+                                        barTouchData: BarTouchData(
+                                          touchTooltipData: BarTouchTooltipData(
+                                            getTooltipColor: (_) =>
+                                                colors.primary,
+                                            getTooltipItem:
+                                                (
+                                                  group,
+                                                  groupIndex,
+                                                  rod,
+                                                  rodIndex,
+                                                ) {
+                                                  return BarTooltipItem(
+                                                    rod.toY.toInt().toString(),
+                                                    const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  );
+                                                },
+                                          ),
+                                        ),
+                                        gridData: FlGridData(show: false),
+                                        borderData: FlBorderData(show: false),
+                                        titlesData: FlTitlesData(
+                                          leftTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
+                                          rightTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
+                                          topTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
+                                          bottomTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: true,
+                                              getTitlesWidget: (value, meta) {
+                                                if (value.toInt() >= 0 &&
+                                                    value.toInt() <
+                                                        labels.length) {
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 8.0,
+                                                        ),
+                                                    child: Text(
+                                                      labels[value.toInt()],
+                                                      style:
+                                                          textStyles.labelSmall,
+                                                    ),
+                                                  );
+                                                }
+                                                return const Text('');
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                        barGroups: List.generate(
+                                          values.length,
+                                          (index) => BarChartGroupData(
+                                            x: index,
+                                            barRods: [
+                                              BarChartRodData(
+                                                toY: values[index].toDouble(),
+                                                color: colors.primary,
+                                                width: 20,
+                                                borderRadius:
+                                                    BorderRadius.circular(2),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        maxY: maxValue * 1.2,
+                                      ),
+                                    ),
+                            );
+                          },
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      if (platform != null) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.history_rounded,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                            const Gap(8),
+                            Text(
+                              strings.fullHistoryTitle.toUpperCase(),
+                              style: textStyles.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1,
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.outline
+                                  : LightColors.surfaceHighlight,
+                              width: 1.2,
+                            ),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child: () {
+                            final filteredHistory =
+                                platform.history
+                                    .where(
+                                      (h) =>
+                                          h.type == 'entretien' ||
+                                          h.type == 'revision' ||
+                                          h.type == 'piece',
+                                    )
+                                    .toList()
+                                  ..sort((a, b) => b.date.compareTo(a.date));
+
+                            if (filteredHistory.isEmpty) {
+                              return Text(
+                                strings.noMaintenanceHistoryRecorded,
+                                style: textStyles.bodyMedium?.copyWith(
+                                  color: colors.secondary,
+                                ),
+                              );
+                            }
+
+                            return Column(
+                              children: filteredHistory
+                                  .map(
+                                    (entry) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: _PlatformHistoryRow(entry: entry),
+                                    ),
+                                  )
+                                  .toList(),
+                            );
+                          }(),
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -3132,20 +3471,14 @@ Icon(
 
       if (pdfPath.startsWith('http://') || pdfPath.startsWith('https://')) {
         final uri = Uri.parse(pdfPath);
-        final ok = await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
+        final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
         if (!ok) throw Exception('launchUrl failed for http(s)');
         return;
       }
 
       if (pdfPath.startsWith('content://')) {
         final uri = Uri.parse(pdfPath);
-        final ok = await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
+        final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
         if (!ok) throw Exception('launchUrl failed for content://');
         return;
       }
@@ -3246,10 +3579,7 @@ class _MaintenanceChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: color.withValues(alpha: 0.25),
-          width: 1.35,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1.35),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -3283,7 +3613,6 @@ class _MaintenanceChip extends StatelessWidget {
     );
   }
 }
-
 
 class _InfoRow extends StatelessWidget {
   final IconData icon;
@@ -3332,7 +3661,6 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-
 
 class _InfoRowSvg extends StatelessWidget {
   final String assetPath;
@@ -3428,13 +3756,13 @@ class _PlatformHistoryRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: colors.surface,
             borderRadius: BorderRadius.circular(4),
-border: Border.all(
-  color: Theme.of(context).brightness == Brightness.dark
-      ? colors.outline
-      : LightColors.surfaceHighlight,
-  width: 1.35,
-),
-),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? colors.outline
+                  : LightColors.surfaceHighlight,
+              width: 1.35,
+            ),
+          ),
           child: Icon(icon, size: 20, color: iconColor),
         ),
         const Gap(16),
@@ -3496,7 +3824,7 @@ class _DocItem extends StatelessWidget {
     required this.onDelete,
   });
 
-static bool _isImagePath(String path) {
+  static bool _isImagePath(String path) {
     final lower = path.toLowerCase();
     return lower.endsWith('.jpg') ||
         lower.endsWith('.jpeg') ||
@@ -3515,8 +3843,9 @@ static bool _isImagePath(String path) {
     final expiryLabel = expiryDate == null
         ? null
         : '${strings.docExpiryExpiresOn} ${AppDateFormats.formatDateShort(context, expiryDate!)}';
-    final secondLine =
-        expiryLabel == null ? baseTypeLabel : '$baseTypeLabel • $expiryLabel';
+    final secondLine = expiryLabel == null
+        ? baseTypeLabel
+        : '$baseTypeLabel • $expiryLabel';
 
     return GestureDetector(
       onTap: onTap,
@@ -3526,13 +3855,13 @@ static bool _isImagePath(String path) {
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
-border: Border.all(
-  color: Theme.of(context).brightness == Brightness.dark
-      ? colors.outline
-      : LightColors.surfaceHighlight,
-  width: 1.35,
-),
-        
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? colors.outline
+                : LightColors.surfaceHighlight,
+            width: 1.35,
+          ),
+
           boxShadow: AppShadows.cardPremium,
         ),
         child: Stack(
@@ -3542,9 +3871,13 @@ border: Border.all(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-Icon(
-                    _DocItem._isImagePath(path) ? Icons.image_rounded : Icons.picture_as_pdf_rounded,
-                    color: _DocItem._isImagePath(path) ? colors.primary : colors.error,
+                  Icon(
+                    _DocItem._isImagePath(path)
+                        ? Icons.image_rounded
+                        : Icons.picture_as_pdf_rounded,
+                    color: _DocItem._isImagePath(path)
+                        ? colors.primary
+                        : colors.error,
                     size: 24,
                   ),
                   const Gap(16),
@@ -3577,8 +3910,10 @@ Icon(
                   ),
                   PopupMenuButton<String>(
                     tooltip: strings.settingsDocumentActions,
-                    icon:
-                        Icon(Icons.more_vert_rounded, color: colors.secondary),
+                    icon: Icon(
+                      Icons.more_vert_rounded,
+                      color: colors.secondary,
+                    ),
                     onSelected: (value) {
                       if (value == 'open') {
                         onTap();
@@ -3621,8 +3956,10 @@ Icon(
                 top: 0,
                 right: 0,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.primary,
                     borderRadius: BorderRadius.circular(999),
