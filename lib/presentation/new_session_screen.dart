@@ -2685,14 +2685,18 @@ class _ExerciseFormState extends State<_ExerciseForm> {
       parts.add('${s.shots} ${strings.exerciseNarrativeShotsWord}');
       final usedPlatformId = (s.usedPlatformId ?? '').trim();
       if (usedPlatformId.isNotEmpty) {
-        final platformName = provider.getPlatformById(usedPlatformId)?.name;
+        final platformName = usedPlatformId.startsWith('custom:')
+            ? usedPlatformId.substring('custom:'.length).trim()
+            : provider.getPlatformById(usedPlatformId)?.name;
         if (platformName != null && platformName.trim().isNotEmpty) {
           parts.add(platformName);
         }
       }
       final usedAmmoId = (s.usedAmmoId ?? '').trim();
       if (usedAmmoId.isNotEmpty) {
-        final ammoName = provider.getAmmoById(usedAmmoId)?.name;
+        final ammoName = usedAmmoId.startsWith('custom:')
+            ? usedAmmoId.substring('custom:'.length).trim()
+            : provider.getAmmoById(usedAmmoId)?.name;
         if (ammoName != null && ammoName.trim().isNotEmpty) {
           parts.add(ammoName);
         }
@@ -5499,6 +5503,10 @@ class _AddExerciseStepSheet extends StatefulWidget {
 }
 
 class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
+  static const String _noneValue = '__none__';
+  static const String _customValue = '__custom__';
+  static const String _customPrefix = 'custom:';
+
   StepType _type = StepType.tir;
   ShootingPosition? _position;
 
@@ -5507,6 +5515,8 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
   final _targetController = TextEditingController();
   final _platformFromController = TextEditingController();
   final _platformToController = TextEditingController();
+  final _customPlatformController = TextEditingController();
+  final _customAmmoController = TextEditingController();
   String? _usedPlatformId;
   String? _usedAmmoId;
   ReloadType? _reloadType;
@@ -5533,8 +5543,24 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     _targetController.text = initial.target ?? '';
     _platformFromController.text = initial.platformFrom ?? '';
     _platformToController.text = initial.platformTo ?? '';
-    _usedPlatformId = initial.usedPlatformId ?? widget.defaultPlatformId;
-    _usedAmmoId = initial.usedAmmoId ?? widget.defaultAmmoId;
+    final initialPlatform = initial.usedPlatformId;
+    if (initialPlatform != null && initialPlatform.startsWith(_customPrefix)) {
+      _usedPlatformId = _customValue;
+      _customPlatformController.text = initialPlatform
+          .substring(_customPrefix.length)
+          .trim();
+    } else {
+      _usedPlatformId = initialPlatform ?? widget.defaultPlatformId;
+    }
+    final initialAmmo = initial.usedAmmoId;
+    if (initialAmmo != null && initialAmmo.startsWith(_customPrefix)) {
+      _usedAmmoId = _customValue;
+      _customAmmoController.text = initialAmmo
+          .substring(_customPrefix.length)
+          .trim();
+    } else {
+      _usedAmmoId = initialAmmo ?? widget.defaultAmmoId;
+    }
     _durationController.text = initial.durationSeconds?.toString() ?? '';
     _triggerController.text = initial.trigger ?? '';
     _commentController.text = initial.comment ?? '';
@@ -5547,6 +5573,8 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
     _targetController.dispose();
     _platformFromController.dispose();
     _platformToController.dispose();
+    _customPlatformController.dispose();
+    _customAmmoController.dispose();
     _durationController.dispose();
     _triggerController.dispose();
     _commentController.dispose();
@@ -5565,12 +5593,16 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
         .map((w) => w.id)
         .toSet();
     final availableAmmoIds = widget.availableAmmos.map((a) => a.id).toSet();
-    final selectedPlatformValue = availablePlatformIds.contains(_usedPlatformId)
+    final selectedPlatformValue = _usedPlatformId == _customValue
+        ? _customValue
+        : availablePlatformIds.contains(_usedPlatformId)
         ? _usedPlatformId
-        : null;
-    final selectedAmmoValue = availableAmmoIds.contains(_usedAmmoId)
+        : _noneValue;
+    final selectedAmmoValue = _usedAmmoId == _customValue
+        ? _customValue
+        : availableAmmoIds.contains(_usedAmmoId)
         ? _usedAmmoId
-        : null;
+        : _noneValue;
 
     InputDecoration decoration(String label) => InputDecoration(
       labelText: label,
@@ -5720,30 +5752,80 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                     DropdownButtonFormField<String>(
                       initialValue: selectedPlatformValue,
                       decoration: decoration(strings.stepUsedPlatformLabel),
-                      items: widget.availablePlatforms
-                          .map(
-                            (w) => DropdownMenuItem<String>(
-                              value: w.id,
-                              child: Text(w.name),
+                      items: [
+                        DropdownMenuItem<String>(
+                          value: _noneValue,
+                          child: Text(
+                            '${strings.stepUsedPlatformLabel}${strings.exerciseOptionalHint}',
+                          ),
+                        ),
+                        ...widget.availablePlatforms.map(
+                          (w) => DropdownMenuItem<String>(
+                            value: w.id,
+                            child: Text(w.name),
+                          ),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: _customValue,
+                          child: Text(
+                            strings.exercisePositionLabel(
+                              ShootingPosition.autre,
                             ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _usedPlatformId = v),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _usedPlatformId = v == _noneValue ? null : v;
+                      }),
                     ),
+                    if (_usedPlatformId == _customValue) ...[
+                      const Gap(10),
+                      TextField(
+                        controller: _customPlatformController,
+                        decoration: decoration(
+                          '${strings.stepUsedPlatformLabel}${strings.exerciseOptionalHint}',
+                        ),
+                      ),
+                    ],
                     const Gap(10),
                     DropdownButtonFormField<String>(
                       initialValue: selectedAmmoValue,
                       decoration: decoration(strings.stepUsedAmmoLabel),
-                      items: widget.availableAmmos
-                          .map(
-                            (a) => DropdownMenuItem<String>(
-                              value: a.id,
-                              child: Text(a.name),
+                      items: [
+                        DropdownMenuItem<String>(
+                          value: _noneValue,
+                          child: Text(
+                            '${strings.stepUsedAmmoLabel}${strings.exerciseOptionalHint}',
+                          ),
+                        ),
+                        ...widget.availableAmmos.map(
+                          (a) => DropdownMenuItem<String>(
+                            value: a.id,
+                            child: Text(a.name),
+                          ),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: _customValue,
+                          child: Text(
+                            strings.exercisePositionLabel(
+                              ShootingPosition.autre,
                             ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _usedAmmoId = v),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _usedAmmoId = v == _noneValue ? null : v;
+                      }),
                     ),
+                    if (_usedAmmoId == _customValue) ...[
+                      const Gap(10),
+                      TextField(
+                        controller: _customAmmoController,
+                        decoration: decoration(
+                          '${strings.stepUsedAmmoLabel}${strings.exerciseOptionalHint}',
+                        ),
+                      ),
+                    ],
                     const Gap(10),
                     TextField(
                       controller: _shotsController,
@@ -5906,19 +5988,26 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                             _durationController.text.trim(),
                           );
 
-                          if (_type == StepType.tir &&
-                              ((shots ?? 0) > 0) &&
-                              ((_usedPlatformId ?? '').trim().isEmpty ||
-                                  (_usedAmmoId ?? '').trim().isEmpty)) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(strings.stepPlatformAmmoRequired),
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                            return;
-                          }
-
+                          final customPlatformName = _customPlatformController
+                              .text
+                              .trim();
+                          final customAmmoName = _customAmmoController.text
+                              .trim();
+                          final effectivePlatformId =
+                              _usedPlatformId == _customValue
+                              ? (customPlatformName.isEmpty
+                                    ? null
+                                    : '$_customPrefix$customPlatformName')
+                              : (_usedPlatformId ?? '').trim().isEmpty
+                              ? null
+                              : _usedPlatformId!.trim();
+                          final effectiveAmmoId = _usedAmmoId == _customValue
+                              ? (customAmmoName.isEmpty
+                                    ? null
+                                    : '$_customPrefix$customAmmoName')
+                              : (_usedAmmoId ?? '').trim().isEmpty
+                              ? null
+                              : _usedAmmoId!.trim();
                           final step = ExerciseStep(
                             id:
                                 widget.initialStep?.id ??
@@ -5939,13 +6028,8 @@ class _AddExerciseStepSheetState extends State<_AddExerciseStepSheet> {
                                 _platformToController.text.trim().isEmpty
                                 ? null
                                 : _platformToController.text.trim(),
-                            usedPlatformId:
-                                (_usedPlatformId ?? '').trim().isEmpty
-                                ? null
-                                : _usedPlatformId!.trim(),
-                            usedAmmoId: (_usedAmmoId ?? '').trim().isEmpty
-                                ? null
-                                : _usedAmmoId!.trim(),
+                            usedPlatformId: effectivePlatformId,
+                            usedAmmoId: effectiveAmmoId,
                             reloadType: _reloadType,
                             durationSeconds: durationSeconds,
                             trigger: _triggerController.text.trim().isEmpty
