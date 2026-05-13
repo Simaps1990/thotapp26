@@ -166,10 +166,10 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
       padding: EdgeInsets.fromLTRB(
         20,
         defaultTargetPlatform == TargetPlatform.iOS
-            ? (topInset / 2 + 30)
-            : (topInset + 30),
+            ? (topInset / 2 + 20)
+            : (topInset + 20),
         20,
-        12,
+        8,
       ),
       decoration: BoxDecoration(
         color: colors.surface,

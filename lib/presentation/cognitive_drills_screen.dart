@@ -32,11 +32,13 @@ enum _StroopInkColor { red, blue, green, yellow }
 class CognitiveDrillsScreen extends StatefulWidget {
   final bool stroopOnly;
   final bool autoStartStroop;
+  final int? initialStroopDifficultyIndex;
 
   const CognitiveDrillsScreen({
     super.key,
     this.stroopOnly = false,
     this.autoStartStroop = false,
+    this.initialStroopDifficultyIndex,
   });
   @override
   State<CognitiveDrillsScreen> createState() => _CognitiveDrillsScreenState();
@@ -55,6 +57,13 @@ class _CognitiveDrillsScreenState extends State<CognitiveDrillsScreen> {
     super.initState();
     if (widget.stroopOnly) {
       _mode = _CognitiveDrillMode.stroop;
+    }
+    final initialStroopDifficultyIndex = widget.initialStroopDifficultyIndex;
+    if (initialStroopDifficultyIndex != null &&
+        initialStroopDifficultyIndex >= 0 &&
+        initialStroopDifficultyIndex < _StroopDifficulty.values.length) {
+      _stroopDifficulty =
+          _StroopDifficulty.values[initialStroopDifficultyIndex];
     }
     _loadScoreHistory();
     if (widget.stroopOnly && widget.autoStartStroop) {
@@ -2495,7 +2504,7 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
                       curve: Curves.easeOut,
                       opacity: showChoices ? 1 : 0,
                       child: Text(
-                        strings.cognitiveDrillModeStroopDescription,
+                        strings.cognitiveDrillStroopRunInstruction,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 14,
@@ -2780,6 +2789,7 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
   @override
   void dispose() {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 

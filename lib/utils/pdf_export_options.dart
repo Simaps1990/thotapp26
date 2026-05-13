@@ -11,7 +11,7 @@ class PdfExportOptions {
     this.includeAmmos = true,
     this.includeAccessories = true,
     this.includeSessions = true,
-    this.includeAuth = true,
+    this.includeAuth = false,
   });
 
   bool get isEmpty =>

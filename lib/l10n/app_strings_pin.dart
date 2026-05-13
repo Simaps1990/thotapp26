@@ -627,11 +627,11 @@ extension AppStringsPin on AppStrings {
       case 'PLATEFORME':
         return isEdit
             ? _pick(
-                fr: 'ÉDITER PLATEFORME',
-                en: 'EDIT PLATFORM',
-                de: 'PLATTFORM BEARBEITEN',
-                it: 'MODIFICA CONFIGURAZIONE',
-                es: 'EDITAR CONFIGURACIÓN',
+                fr: 'ÉDITER LA PLATEFORME',
+                en: 'EDIT THE PLATFORM',
+                de: 'DIE PLATTFORM BEARBEITEN',
+                it: 'MODIFICA LA CONFIGURAZIONE',
+                es: 'EDITAR LA CONFIGURACIÓN',
               )
             : _pick(
                 fr: 'NOUVELLE PLATEFORME',
@@ -643,11 +643,11 @@ extension AppStringsPin on AppStrings {
       case 'CONSOMMABLE':
         return isEdit
             ? _pick(
-                fr: 'ÉDITER CONSOMMABLE',
-                en: 'EDIT AMMO',
-                de: 'VERBRAUCHSMATERIAL BEARBEITEN',
-                it: 'MODIFICA CONSUMABILE',
-                es: 'EDITAR CONSUMIBLE',
+                fr: 'ÉDITER LE CONSOMMABLE',
+                en: 'EDIT THE AMMO',
+                de: 'DAS VERBRAUCHSMATERIAL BEARBEITEN',
+                it: 'MODIFICA IL CONSUMABILE',
+                es: 'EDITAR EL CONSUMIBLE',
               )
             : _pick(
                 fr: 'NOUVEAU CONSOMMABLE',
@@ -659,11 +659,11 @@ extension AppStringsPin on AppStrings {
       case 'ACCESSOIRE':
         return isEdit
             ? _pick(
-                fr: 'ÉDITER ACCESSOIRE',
-                en: 'EDIT ACCESSORY',
-                de: 'ZUBEHÖR BEARBEITEN',
-                it: 'MODIFICA ACCESSORIO',
-                es: 'EDITAR ACCESSORIO',
+                fr: 'ÉDITER L’ACCESSOIRE',
+                en: 'EDIT THE ACCESSORY',
+                de: 'DAS ZUBEHÖR BEARBEITEN',
+                it: 'MODIFICA L’ACCESSORIO',
+                es: 'EDITAR EL ACCESORIO',
               )
             : _pick(
                 fr: 'NOUVEL ACCESSOIRE',

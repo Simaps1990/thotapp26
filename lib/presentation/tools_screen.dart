@@ -184,7 +184,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
     Widget toolSectionTitle(String title) {
       return Padding(
         padding: const EdgeInsets.only(
-          top: AppSpacing.sm,
+          top: 0,
           bottom: AppSpacing.sm,
         ),
         child: SizedBox(

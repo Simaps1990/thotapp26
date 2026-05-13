@@ -126,6 +126,14 @@ extension AppStringsReflexes on AppStrings {
     es: 'Toca el botón cuando esté verde',
   );
 
+  String get reflexesAuditoryPermanentInstruction => _pick(
+    fr: 'Tapez sur le bouton quand vous entendez le signal sonore',
+    en: 'Tap the button when you hear the sound signal',
+    de: 'Tippen Sie auf den Knopf, wenn Sie das Tonsignal hören',
+    it: 'Tocca il pulsante quando senti il segnale sonoro',
+    es: 'Toca el botón cuando oigas la señal sonora',
+  );
+
   String get reflexesFeedbackFalse =>
       _pick(fr: 'FAUX', en: 'FALSE', de: 'FALSCH', it: 'FALSO', es: 'FALSO');
 
@@ -202,11 +210,11 @@ extension AppStringsReflexes on AppStrings {
   );
 
   String get reflexesAndCognitionTitle => _pick(
-fr: 'EXERCICES',
-en: 'EXERCISES',
-de: 'ÜBUNGEN',
-it: 'ESERCIZI',
-es: 'EJERCICIOS',
+    fr: 'EXERCICES',
+    en: 'EXERCISES',
+    de: 'ÜBUNGEN',
+    it: 'ESERCIZI',
+    es: 'EJERCICIOS',
   );
 
   String get reflexesResultsTitle => _pick(

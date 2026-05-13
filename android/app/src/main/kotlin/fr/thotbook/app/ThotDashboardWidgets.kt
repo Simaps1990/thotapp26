@@ -9,11 +9,12 @@ import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetProvider
 import java.util.Locale
 
-private fun launchPendingIntent(context: Context): PendingIntent? {
+private fun launchPendingIntent(context: Context, route: String, requestCode: Int): PendingIntent? {
     val launchIntent = Intent(context, MainActivity::class.java).apply {
         action = Intent.ACTION_MAIN
         addCategory(Intent.CATEGORY_LAUNCHER)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        putExtra("thot_widget_route", route)
     }
 
     val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -22,7 +23,7 @@ private fun launchPendingIntent(context: Context): PendingIntent? {
         PendingIntent.FLAG_UPDATE_CURRENT
     }
 
-    return PendingIntent.getActivity(context, 0, launchIntent, flags)
+    return PendingIntent.getActivity(context, requestCode, launchIntent, flags)
 }
 
 private fun prefInt(widgetData: android.content.SharedPreferences, key: String, defaultValue: Int): Int {
@@ -104,7 +105,7 @@ class ThotStatsWidgetProvider : HomeWidgetProvider() {
                 if (compact) android.view.View.GONE else android.view.View.VISIBLE,
             )
 
-            launchPendingIntent(context)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
+            launchPendingIntent(context, "/", 1001)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }
@@ -157,7 +158,7 @@ class ThotMaintenanceWidgetProvider : HomeWidgetProvider() {
                 if (compact) android.view.View.GONE else android.view.View.VISIBLE,
             )
 
-            launchPendingIntent(context)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
+            launchPendingIntent(context, "/inventory", 1002)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }
@@ -200,7 +201,7 @@ class ThotDocumentsWidgetProvider : HomeWidgetProvider() {
                 if (compact) android.view.View.GONE else android.view.View.VISIBLE,
             )
 
-            launchPendingIntent(context)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
+            launchPendingIntent(context, "/settings", 1003)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }
@@ -248,7 +249,7 @@ class ThotActivityWidgetProvider : HomeWidgetProvider() {
                 if (compact) android.view.View.GONE else android.view.View.VISIBLE,
             )
 
-            launchPendingIntent(context)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
+            launchPendingIntent(context, "/sessions", 1004)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }

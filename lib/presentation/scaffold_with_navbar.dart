@@ -24,9 +24,9 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   Widget _withPlatformIconOffset(Widget icon) {
     if (Platform.isIOS) {
-      return Transform.translate(offset: const Offset(0, 12), child: icon);
+      return Transform.translate(offset: const Offset(0, 8), child: icon);
     }
-    return Transform.translate(offset: const Offset(0, 2), child: icon);
+    return Transform.translate(offset: const Offset(0, -2), child: icon);
   }
 
   @override

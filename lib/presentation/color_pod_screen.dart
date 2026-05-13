@@ -2112,6 +2112,7 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
   @override
   void dispose() {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 

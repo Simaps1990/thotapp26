@@ -17,6 +17,7 @@ import '../theme.dart';
 import '../widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/utils/app_date_formats.dart';
+import 'package:thot/utils/image_storage.dart';
 import 'package:thot/utils/web_document_opener.dart';
 import 'package:thot/utils/native_picker.dart';
 
@@ -844,10 +845,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   padding: EdgeInsets.fromLTRB(
                     20,
                     defaultTargetPlatform == TargetPlatform.iOS
-                        ? (MediaQuery.paddingOf(context).top / 2 + 30)
-                        : (MediaQuery.paddingOf(context).top + 30),
+                        ? (MediaQuery.paddingOf(context).top / 2 + 20)
+                        : (MediaQuery.paddingOf(context).top + 20),
                     20,
-                    12,
+                    8,
                   ),
                   decoration: BoxDecoration(
                     color: colors.surface,
@@ -3285,6 +3286,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Future<void> _pickPhoto() async {
     final picked = await NativePicker.pick(context, mode: PickerMode.photoOnly);
     if (!mounted || picked.isCancelled) return;
+    final persistedPath = kIsWeb
+        ? picked.path
+        : await ImageStorage.persistFromPath(picked.path);
+    if (!mounted) return;
     setState(() {
       if (kIsWeb) {
         _photoBytes = picked.bytes;
@@ -3294,7 +3299,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           _photoPath = 'data:image/$ext;base64,$base64';
         }
       } else {
-        _photoPath = picked.path;
+        _photoPath = persistedPath;
         _photoBytes = null;
       }
     });

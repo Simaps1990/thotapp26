@@ -647,6 +647,14 @@ extension AppStringsTrainingTools on AppStrings {
     es: 'Aparecerá una palabra de color en el centro de la pantalla (**ROJO, VERDE, AZUL** o **AMARILLO**).\nLa palabra puede estar escrita con un **color de tinta diferente** de su significado.\nToca el botón que corresponda al **color de la tinta**, no a la palabra leída.\nEjemplo: la palabra "**ROJO**" escrita en azul → toca el botón azul.\nSé **rápido** y **preciso**.',
   );
 
+  String get cognitiveDrillStroopRunInstruction => _pick(
+    fr: 'Sélectionne la couleur de l’encre du mot',
+    en: 'Select the ink color of the word',
+    de: 'Wähle die Schriftfarbe des Wortes',
+    it: 'Seleziona il colore dell’inchiostro della parola',
+    es: 'Selecciona el color de la tinta de la palabra',
+  );
+
   String get cognitiveDrillModeStroopInfoTooltip => _pick(
     fr: '**Test** développé par **John Ridley Stroop** en 1935 (Journal of Experimental Psychology).\nUtilisé en **neuropsychologie clinique** (batteries D-KEFS, Golden Stroop) et en **recherche** sur la prise de décision en contexte policier shoot/don\'t-shoot.\nCet exercice ne constitue pas un dispositif médical et ne remplace aucune évaluation clinique.',
     en: '**Test** developed by **John Ridley Stroop** in 1935 (Journal of Experimental Psychology).\nUsed in **clinical neuropsychology** (D-KEFS batteries, Golden Stroop) and in **research** on decision-making in police shoot/don\'t-shoot contexts.\nThis exercise is not a medical device and does not replace any clinical evaluation.',

@@ -97,6 +97,7 @@ class _ViewportResyncApp extends StatefulWidget {
 
 class _ViewportResyncAppState extends State<_ViewportResyncApp>
     with WidgetsBindingObserver {
+  static const MethodChannel _configChannel = MethodChannel('thot/config');
   int _layoutEpoch = 0;
   String? _lastIntlLocale;
   Size? _lastScreenSize;
@@ -106,6 +107,30 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
     setState(() {
       _layoutEpoch++;
     });
+  }
+
+  Future<void> _openWidgetRoute(String? route) async {
+    final value = route?.trim();
+    if (value == null || value.isEmpty) return;
+    for (var i = 0; i < 20; i++) {
+      if (!mounted) return;
+      if (context.read<ThotProvider>().isInitialized) break;
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppRouter.router.go(value);
+    });
+  }
+
+  Future<void> _consumeInitialWidgetRoute() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      final route = await _configChannel.invokeMethod<String>(
+        'consumeWidgetRoute',
+      );
+      await _openWidgetRoute(route);
+    } catch (_) {}
   }
 
   @override
@@ -142,9 +167,15 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _configChannel.setMethodCallHandler((call) async {
+      if (call.method == 'onWidgetRoute') {
+        await _openWidgetRoute(call.arguments as String?);
+      }
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _forceRelayout();
+      _consumeInitialWidgetRoute();
     });
   }
 
@@ -161,6 +192,7 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _configChannel.setMethodCallHandler(null);
     super.dispose();
   }
 

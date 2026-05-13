@@ -3115,6 +3115,11 @@ class ThotProvider extends ChangeNotifier {
         }
       }
 
+      final migratedPhotoPaths = await _migrateItemPhotoPaths();
+      if (migratedPhotoPaths) {
+        await _saveToLocal();
+      }
+
       if (kDebugMode) {
         debugPrint('Data loaded from local storage.');
       }
@@ -3129,6 +3134,40 @@ class ThotProvider extends ChangeNotifier {
       _domainDataLoadCompleted = false;
       notifyListeners();
     }
+  }
+
+  Future<bool> _migrateItemPhotoPaths() async {
+    if (kIsWeb) return false;
+    var changed = false;
+
+    for (var i = 0; i < _platforms.length; i++) {
+      final current = _platforms[i];
+      final migrated = await ImageStorage.persistFromPath(current.photoPath);
+      if (migrated != null && migrated != current.photoPath) {
+        _platforms[i] = current.copyWith(photoPath: migrated);
+        changed = true;
+      }
+    }
+
+    for (var i = 0; i < _ammos.length; i++) {
+      final current = _ammos[i];
+      final migrated = await ImageStorage.persistFromPath(current.photoPath);
+      if (migrated != null && migrated != current.photoPath) {
+        _ammos[i] = current.copyWith(photoPath: migrated);
+        changed = true;
+      }
+    }
+
+    for (var i = 0; i < _accessories.length; i++) {
+      final current = _accessories[i];
+      final migrated = await ImageStorage.persistFromPath(current.photoPath);
+      if (migrated != null && migrated != current.photoPath) {
+        _accessories[i] = current.copyWith(photoPath: migrated);
+        changed = true;
+      }
+    }
+
+    return changed;
   }
 
   List<ItemDocument> _decodeItemDocuments(dynamic raw) {

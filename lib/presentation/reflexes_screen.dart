@@ -567,11 +567,25 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         );
         break;
       case _ReflexesMode.stroop:
-        // Use existing stroop flow but with difficulty from level
         final diff = stroopLevelDifficulty(level);
         setState(() => _stroopDifficulty = _StroopDifficulty.values[diff]);
-        await _openStroopTest();
-        return (score: null, closeAll: false, nextLevel: false);
+        final stroopResult = await _openStroopTest();
+        if (stroopResult == null) {
+          return (score: null, closeAll: false, nextLevel: false);
+        }
+        final stoppedEarly = stroopResult['_stopped_early'] == '1';
+        final closeAll = stroopResult['_close_tools'] == '1';
+        if (stoppedEarly) {
+          return (score: null, closeAll: closeAll, nextLevel: false);
+        }
+        final score = _parseFirstNumberValue(
+          stroopResult[AppStrings.of(context).reflexesAvgReactionTime] ?? '',
+        );
+        return (
+          score: score.isFinite ? score : null,
+          closeAll: closeAll,
+          nextLevel: false,
+        );
       case _ReflexesMode.mot:
         final p = motLevelParams(level);
         result = await Navigator.of(context).push<_ReflexSessionRecord>(
@@ -937,19 +951,20 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     setState(() {});
   }
 
-  Future<void> _openStroopTest() async {
+  Future<Map<String, String>?> _openStroopTest() async {
     final provider = context.read<ThotProvider>();
     if (provider.isToolLockedForFree('cognitive_drills')) {
       showProModal(context);
-      return;
+      return null;
     }
     final result = await Navigator.of(context).push<Map<String, String>>(
       PageRouteBuilder<Map<String, String>>(
         opaque: false,
         barrierColor: Colors.transparent,
-        pageBuilder: (_, __, ___) => const CognitiveDrillsScreen(
+        pageBuilder: (_, __, ___) => CognitiveDrillsScreen(
           stroopOnly: true,
           autoStartStroop: true,
+          initialStroopDifficultyIndex: _stroopDifficulty.index,
         ),
         transitionsBuilder: (_, animation, __, child) => FadeTransition(
           opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -957,7 +972,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         ),
       ),
     );
-    if (!mounted || result == null) return;
+    if (!mounted || result == null) return result;
     final stoppedEarly = result['_stopped_early'] == '1';
     if (!stoppedEarly) {
       await TrainingHistory.recordExerciseCompletion(_ReflexesMode.stroop.name);
@@ -967,6 +982,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     if (closeToTools && Navigator.canPop(context)) {
       Navigator.pop(context);
     }
+    return result;
   }
 
   Future<void> _loadHistory() async {
@@ -3131,19 +3147,20 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
             ),
           ),
         ),
-        if (isVisual)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Text(
-              strings.reflexesVisualPermanentInstruction,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Text(
+            isVisual
+                ? strings.reflexesVisualPermanentInstruction
+                : strings.reflexesAuditoryPermanentInstruction,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
             ),
           ),
+        ),
       ],
     );
   }
@@ -5117,12 +5134,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
       ]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     } else {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     }
     super.dispose();
@@ -5173,10 +5185,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
   }
 
   Future<void> _restorePortrait() async {
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 

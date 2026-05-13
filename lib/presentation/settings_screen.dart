@@ -1749,7 +1749,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool ammos = true;
     bool accessories = true;
     bool sessions = true;
-    bool includeAuth = true;
 
     return showDialog<PdfExportOptions>(
       context: context,
@@ -1880,23 +1879,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(color: colors.primary),
                   ),
                 ),
-                const Gap(12),
-                const Divider(),
-                const Gap(12),
-                CheckboxListTile(
-                  title: Text(strings.pdfExportIncludeAuthOption),
-                  subtitle: Text(
-                    strings.pdfExportIncludeAuthDescription,
-                    style: textStyles.bodySmall?.copyWith(
-                      color: colors.secondary,
-                    ),
-                  ),
-                  value: includeAuth,
-                  onChanged: (v) =>
-                      setLocalState(() => includeAuth = v ?? true),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
               ],
             ),
             actions: [
@@ -1912,7 +1894,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     includeAmmos: ammos,
                     includeAccessories: accessories,
                     includeSessions: sessions,
-                    includeAuth: includeAuth,
+                    includeAuth: false,
                   ),
                 ),
                 icon: const Icon(Icons.download_rounded, size: 18),
