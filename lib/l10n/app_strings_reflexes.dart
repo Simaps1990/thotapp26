@@ -236,6 +236,202 @@ extension AppStringsReflexes on AppStrings {
   String get reflexesTopThree =>
       _pick(fr: 'Top 3', en: 'Top 3', de: 'Top 3', it: 'Top 3', es: 'Top 3');
 
+  String reflexesLevelValue(String value) => _pick(
+    fr: 'Niveau $value',
+    en: 'Level $value',
+    de: 'Stufe $value',
+    it: 'Livello $value',
+    es: 'Nivel $value',
+  );
+
+  String reflexesPointsValue(String value) => _pick(
+    fr: '$value points',
+    en: '$value points',
+    de: '$value Punkte',
+    it: '$value punti',
+    es: '$value puntos',
+  );
+
+  String get reflexesScoreScaleScoreLabel => _pick(
+    fr: 'Score',
+    en: 'Score',
+    de: 'Punktzahl',
+    it: 'Punteggio',
+    es: 'Puntuación',
+  );
+
+  String get reflexesScoreScalePenaltyLabel => _pick(
+    fr: 'Pénalité',
+    en: 'Penalty',
+    de: 'Strafe',
+    it: 'Penalità',
+    es: 'Penalización',
+  );
+
+  String get reflexesScoreScaleStarsLabel => _pick(
+    fr: 'Étoiles',
+    en: 'Stars',
+    de: 'Sterne',
+    it: 'Stelle',
+    es: 'Estrellas',
+  );
+
+  String get reflexesScoreScaleReactionScore => _pick(
+    fr: 'Base : 1000 pts, puis malus progressif seulement au-delà d’un temps réaliste.',
+    en: 'Base: 1000 pts, then a progressive penalty only beyond a realistic time.',
+    de: 'Basis: 1000 Punkte, dann progressiver Abzug erst über einer realistischen Zeit.',
+    it: 'Base: 1000 punti, poi penalità progressiva solo oltre un tempo realistico.',
+    es: 'Base: 1000 pts, luego penalización progresiva solo más allá de un tiempo realista.',
+  );
+
+  String get reflexesScoreScaleReactionPenalty => _pick(
+    fr: 'Faux départ : −180 pts. Les erreurs coûtent plus que la vitesse.',
+    en: 'False start: −180 pts. Errors cost more than speed.',
+    de: 'Fehlstart: −180 Punkte. Fehler wiegen schwerer als Geschwindigkeit.',
+    it: 'Falsa partenza: −180 punti. Gli errori pesano più della velocità.',
+    es: 'Salida falsa: −180 pts. Los errores pesan más que la velocidad.',
+  );
+
+  String get reflexesScoreScaleMathScore => _pick(
+    fr: 'Base sur précision, vitesse et difficulté, plafonnée à 1000 pts.',
+    en: 'Based on accuracy, speed and difficulty, capped at 1000 pts.',
+    de: 'Basierend auf Genauigkeit, Geschwindigkeit und Schwierigkeit, begrenzt auf 1000 Punkte.',
+    it: 'Basato su precisione, velocità e difficoltà, limitato a 1000 punti.',
+    es: 'Basado en precisión, velocidad y dificultad, limitado a 1000 pts.',
+  );
+
+  String get reflexesScoreScaleMathPenalty => _pick(
+    fr: 'Erreur : grosse pénalité, plus importante que le temps.',
+    en: 'Error: heavy penalty, more important than time.',
+    de: 'Fehler: starke Strafe, wichtiger als die Zeit.',
+    it: 'Errore: forte penalità, più importante del tempo.',
+    es: 'Error: penalización fuerte, más importante que el tiempo.',
+  );
+
+  String get reflexesScoreScaleMemoryScore => _pick(
+    fr: 'Base sur le taux de réussite et bonus de longueur mémorisée.',
+    en: 'Based on success rate and memorized length bonus.',
+    de: 'Basierend auf Erfolgsquote und Bonus für gemerkte Länge.',
+    it: 'Basato sul tasso di successo e bonus per la lunghezza memorizzata.',
+    es: 'Basado en tasa de éxito y bonificación por longitud memorizada.',
+  );
+
+  String get reflexesScoreScaleMemoryPenalty => _pick(
+    fr: 'Mauvais rappel : perte forte via le taux de réussite.',
+    en: 'Wrong recall: heavy loss through success rate.',
+    de: 'Falscher Abruf: starker Verlust über die Erfolgsquote.',
+    it: 'Richiamo errato: forte perdita tramite il tasso di successo.',
+    es: 'Recuerdo incorrecto: pérdida fuerte mediante la tasa de éxito.',
+  );
+
+  String get reflexesScoreScaleStroopScore => _pick(
+    fr: 'Base : 1000 pts. Le temps réduit le score seulement au-delà du seuil réaliste de la difficulté.',
+    en: 'Base: 1000 pts. Time reduces the score only beyond the realistic threshold for the difficulty.',
+    de: 'Basis: 1000 Punkte. Die Zeit senkt die Punktzahl erst über dem realistischen Schwierigkeitsschwellenwert.',
+    it: 'Base: 1000 punti. Il tempo riduce il punteggio solo oltre la soglia realistica della difficoltà.',
+    es: 'Base: 1000 pts. El tiempo reduce la puntuación solo más allá del umbral realista de la dificultad.',
+  );
+
+  String get reflexesScoreScaleStroopPenalty => _pick(
+    fr: 'Erreurs : pénalité majeure, précision parfaite valorisée même si le temps est moyen.',
+    en: 'Errors: major penalty, perfect accuracy is rewarded even if time is average.',
+    de: 'Fehler: große Strafe, perfekte Genauigkeit wird auch bei mittlerer Zeit belohnt.',
+    it: 'Errori: penalità importante, precisione perfetta valorizzata anche con tempo medio.',
+    es: 'Errores: penalización importante, precisión perfecta valorada incluso con tiempo medio.',
+  );
+
+  String get reflexesScoreScaleMotScore => _pick(
+    fr: 'Base sur le pourcentage de cibles correctement retrouvées.',
+    en: 'Based on the percentage of targets correctly found.',
+    de: 'Basierend auf dem Prozentsatz korrekt gefundener Ziele.',
+    it: 'Basato sulla percentuale di bersagli trovati correttamente.',
+    es: 'Basado en el porcentaje de objetivos encontrados correctamente.',
+  );
+
+  String get reflexesScoreScaleMotPenalty => _pick(
+    fr: 'Cible manquée ou mauvaise sélection : pénalité forte via le taux de réussite.',
+    en: 'Missed target or wrong selection: heavy penalty through success rate.',
+    de: 'Verfehltes Ziel oder falsche Auswahl: starke Strafe über die Erfolgsquote.',
+    it: 'Bersaglio mancato o selezione errata: forte penalità tramite il tasso di successo.',
+    es: 'Objetivo perdido o selección incorrecta: penalización fuerte mediante la tasa de éxito.',
+  );
+
+  String get reflexesScoreScaleStarsRule => _pick(
+    fr: '1★ à 450 pts, 2★ à 700 pts, 3★ à 900 pts.',
+    en: '1★ at 450 pts, 2★ at 700 pts, 3★ at 900 pts.',
+    de: '1★ ab 450 Punkten, 2★ ab 700 Punkten, 3★ ab 900 Punkten.',
+    it: '1★ a 450 punti, 2★ a 700 punti, 3★ a 900 punti.',
+    es: '1★ a 450 pts, 2★ a 700 pts, 3★ a 900 pts.',
+  );
+
+  String reflexesDifficultyValue(String value) => _pick(
+    fr: 'Difficulté : $value',
+    en: 'Difficulty: $value',
+    de: 'Schwierigkeit: $value',
+    it: 'Difficoltà: $value',
+    es: 'Dificultad: $value',
+  );
+
+  String reflexesScoreOriginReaction(String time, String points) => _pick(
+    fr: 'Score de départ : temps de réaction $time ($points)',
+    en: 'Starting score: reaction time $time ($points)',
+    de: 'Startpunktzahl: Reaktionszeit $time ($points)',
+    it: 'Punteggio iniziale: tempo di reazione $time ($points)',
+    es: 'Puntuación inicial: tiempo de reacción $time ($points)',
+  );
+
+  String reflexesScoreOriginAverage(String time, String points) => _pick(
+    fr: 'Score de départ : temps moyen $time ($points)',
+    en: 'Starting score: average time $time ($points)',
+    de: 'Startpunktzahl: Durchschnittszeit $time ($points)',
+    it: 'Punteggio iniziale: tempo medio $time ($points)',
+    es: 'Puntuación inicial: tiempo medio $time ($points)',
+  );
+
+  String reflexesScoreOriginMath(
+    String correct,
+    String time,
+    String points,
+  ) => _pick(
+    fr: 'Score de départ : précision $correct, temps moyen $time ($points)',
+    en: 'Starting score: accuracy $correct, average time $time ($points)',
+    de: 'Startpunktzahl: Genauigkeit $correct, Durchschnittszeit $time ($points)',
+    it: 'Punteggio iniziale: precisione $correct, tempo medio $time ($points)',
+    es: 'Puntuación inicial: precisión $correct, tiempo medio $time ($points)',
+  );
+
+  String reflexesScoreOriginMemory(String correct, String points) => _pick(
+    fr: 'Score de départ : séries réussies $correct ($points)',
+    en: 'Starting score: successful rounds $correct ($points)',
+    de: 'Startpunktzahl: erfolgreiche Runden $correct ($points)',
+    it: 'Punteggio iniziale: serie riuscite $correct ($points)',
+    es: 'Puntuación inicial: series logradas $correct ($points)',
+  );
+
+  String reflexesScoreOriginMot(String targets, String points) => _pick(
+    fr: 'Score de départ : cibles retrouvées $targets ($points)',
+    en: 'Starting score: targets found $targets ($points)',
+    de: 'Startpunktzahl: gefundene Ziele $targets ($points)',
+    it: 'Punteggio iniziale: bersagli trovati $targets ($points)',
+    es: 'Puntuación inicial: objetivos encontrados $targets ($points)',
+  );
+
+  String reflexesPenaltyValue(String value) => _pick(
+    fr: 'Pénalités : $value',
+    en: 'Penalties: $value',
+    de: 'Strafen: $value',
+    it: 'Penalità: $value',
+    es: 'Penalizaciones: $value',
+  );
+
+  String reflexesTotalValue(String value) => _pick(
+    fr: 'Total : $value',
+    en: 'Total: $value',
+    de: 'Gesamt: $value',
+    it: 'Totale: $value',
+    es: 'Total: $value',
+  );
+
   String get reflexesMathScoringExplanation => _pick(
     fr: 'Le classement est calculé selon : (réponses correctes × coefficient difficulté × facteur vitesse) - (réponses incorrectes × coefficient difficulté × 500)\n\nCoefficients de difficulté :\n• Facile : 1x\n• Moyen : 1.5x\n• Difficile : 2x',
     en: 'Ranking is calculated as: (correct answers × difficulty coefficient × speed factor) - (wrong answers × difficulty coefficient × 500)\n\nDifficulty coefficients:\n• Easy: 1x\n• Medium: 1.5x\n• Hard: 2x',

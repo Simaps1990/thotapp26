@@ -95,11 +95,11 @@ Ejemplos de uso: un color para una acción, una dirección entre objetivos aline
   String get colorPodStop =>
       _pick(fr: 'STOP', en: 'STOP', de: 'STOP', it: 'STOP', es: 'STOP');
   String get colorPodNext => _pick(
-    fr: 'SUIVANT',
-    en: 'NEXT',
-    de: 'WEITER',
-    it: 'SUCCESSIVO',
-    es: 'SIGUIENTE',
+    fr: 'CONTINUER',
+    en: 'CONTINUE',
+    de: 'FORTFAHREN',
+    it: 'CONTINUA',
+    es: 'CONTINUAR',
   );
   String get colorPodResults => _pick(
     fr: 'RÉSULTATS',

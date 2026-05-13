@@ -11,7 +11,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:provider/provider.dart';
 
 import 'package:thot/l10n/app_strings.dart';
-import 'package:thot/presentation/cognitive_drills_screen.dart';
 import 'package:thot/presentation/exercise_levels_screen.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/utils/timer_sound.dart';
@@ -19,6 +18,7 @@ import 'package:thot/utils/exercise_level_params.dart';
 import 'package:thot/data/training_history.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/widgets/pro_badge.dart';
+import 'package:thot/widgets/exercise_countdown_background.dart';
 import 'package:thot/presentation/pro_screen.dart';
 
 enum _ReflexesMode { visual, auditory, math, memory, stroop, mot }
@@ -41,7 +41,653 @@ enum _MemoryDifficulty { easy, medium, hard }
 
 enum _StroopDifficulty { easy, medium, hard }
 
+enum _StroopInkColor { red, blue, green, yellow }
+
 enum _MotDifficulty { easy, medium, hard }
+
+double _statNumber(Map<String, String> stats, String key) {
+  final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)').firstMatch(stats[key] ?? '');
+  if (match == null) return 0;
+  return double.tryParse(match.group(1) ?? '') ?? 0;
+}
+
+double _boundedScore(double value) => value.clamp(0, 1000).toDouble();
+
+double _scoredValue(
+  _ReflexesMode mode,
+  double primaryScore,
+  Map<String, String> stats,
+) {
+  final stored = double.tryParse(stats['_score_final'] ?? '');
+  if (stored != null && stored.isFinite) return stored;
+  switch (mode) {
+    case _ReflexesMode.visual:
+    case _ReflexesMode.auditory:
+      final falseStarts = _statNumber(stats, 'Faux départs');
+      return _boundedScore(
+        1000 - max(0, primaryScore - 180) * 1.35 - falseStarts * 180,
+      );
+    case _ReflexesMode.math:
+      return _boundedScore(primaryScore);
+    case _ReflexesMode.memory:
+      return _boundedScore(primaryScore);
+    case _ReflexesMode.stroop:
+      final correct = _statNumber(stats, 'Bonnes réponses');
+      final wrong = _statNumber(stats, 'Mauvaises réponses');
+      final total = max(1, correct + wrong);
+      final accuracy = correct / total;
+      return _boundedScore(
+        (1000 - max(0, primaryScore - 700) * 0.45) * accuracy - wrong * 140,
+      );
+    case _ReflexesMode.mot:
+      return _boundedScore(primaryScore * 10);
+  }
+}
+
+int _starsForScore(double score) {
+  if (score >= 900) return 3;
+  if (score >= 700) return 2;
+  if (score >= 450) return 1;
+  return 0;
+}
+
+class _AnimatedLevelStarsBlock extends StatefulWidget {
+  final int? level;
+  final int stars;
+  final double score;
+
+  const _AnimatedLevelStarsBlock({
+    required this.level,
+    required this.stars,
+    required this.score,
+  });
+
+  @override
+  State<_AnimatedLevelStarsBlock> createState() =>
+      _AnimatedLevelStarsBlockState();
+}
+
+class _AnimatedLevelStarsBlockState extends State<_AnimatedLevelStarsBlock>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 780),
+  );
+  Timer? _startTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleStarsAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedLevelStarsBlock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.stars != widget.stars ||
+        oldWidget.level != widget.level ||
+        oldWidget.score != widget.score) {
+      _scheduleStarsAnimation();
+    }
+  }
+
+  void _scheduleStarsAnimation() {
+    _controller.value = 0;
+    _startTimer?.cancel();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _startTimer = Timer(const Duration(milliseconds: 140), () {
+        if (mounted) _controller.forward(from: 0);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _startTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final texts = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+    final stars = widget.stars.clamp(0, 3);
+
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: colors.outline.withValues(alpha: 0.55)),
+          boxShadow: AppShadows.cardPremium,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.reflexesLevelValue('${widget.level ?? '—'}'),
+                  style: texts.labelLarge?.copyWith(
+                    color: colors.secondary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const Gap(2),
+                Text(
+                  strings.reflexesPointsValue(widget.score.toStringAsFixed(0)),
+                  style: texts.headlineSmall?.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+            const Gap(AppSpacing.lg),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (index) {
+                final visible = index < stars;
+                final start = index * 0.16;
+                final animation = CurvedAnimation(
+                  parent: _controller,
+                  curve: Interval(
+                    start,
+                    (start + 0.38).clamp(0, 1),
+                    curve: Curves.easeOutBack,
+                  ),
+                );
+                return Padding(
+                  padding: EdgeInsets.only(left: index == 0 ? 0 : 3),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        _EmptyResultStar(colors: colors),
+                        AnimatedBuilder(
+                          animation: animation,
+                          builder: (context, child) {
+                            final value = visible ? animation.value : 0.0;
+                            final settle = sin(value * pi).abs();
+                            return Transform.translate(
+                              offset: Offset(0, (1 - value) * -20),
+                              child: Transform.rotate(
+                                angle: (1 - value) * -0.10,
+                                child: Transform.scale(
+                                  scale: visible
+                                      ? 0.72 + (value * 0.28) + (settle * 0.05)
+                                      : 0.72,
+                                  child: Opacity(
+                                    opacity: value.clamp(0, 1),
+                                    child: child,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          child: _PremiumResultStar(colors: colors),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyResultStar extends StatelessWidget {
+  final ColorScheme colors;
+
+  const _EmptyResultStar({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.star_rounded,
+            size: 39,
+            color: colors.shadow.withValues(alpha: 0.10),
+          ),
+          Icon(
+            Icons.star_border_rounded,
+            size: 39,
+            color: colors.outline.withValues(alpha: 0.55),
+            shadows: [
+              Shadow(
+                color: colors.shadow.withValues(alpha: 0.12),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PremiumResultStar extends StatelessWidget {
+  final ColorScheme colors;
+
+  const _PremiumResultStar({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            const Color(0xFFFFD36A).withValues(alpha: 0.24),
+            const Color(0xFFFFA726).withValues(alpha: 0.06),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.58, 1.0],
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.star_rounded,
+            size: 39,
+            color: colors.shadow.withValues(alpha: 0.18),
+            shadows: [
+              Shadow(
+                color: colors.shadow.withValues(alpha: 0.28),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) => const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFF3B0), Color(0xFFFFC447), Color(0xFFFF8F1F)],
+            ).createShader(bounds),
+            child: const Icon(Icons.star_rounded, size: 37),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultTopThreeCard extends StatelessWidget {
+  const _ResultTopThreeCard({
+    required this.records,
+    required this.colors,
+    required this.textStyles,
+    required this.strings,
+    required this.scoreTextBuilder,
+    required this.dateTextBuilder,
+  });
+
+  final List<_ReflexSessionRecord> records;
+  final ColorScheme colors;
+  final TextTheme textStyles;
+  final AppStrings strings;
+  final String Function(_ReflexSessionRecord record) scoreTextBuilder;
+  final String Function(DateTime date) dateTextBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.outline),
+        boxShadow: AppShadows.cardPremium,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, color: colors.primary),
+              const Gap(AppSpacing.sm),
+              Text(
+                strings.reflexesTopThree,
+                style: textStyles.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colors.secondary,
+                ),
+              ),
+            ],
+          ),
+          const Gap(AppSpacing.md),
+          if (records.isEmpty)
+            Text(
+              strings.reflexesNoSessions,
+              style: textStyles.bodyMedium?.copyWith(color: colors.secondary),
+            )
+          else
+            ...records.take(3).toList().asMap().entries.map((entry) {
+              final index = entry.key;
+              final record = entry.value;
+              final medalColor = index == 0
+                  ? const Color(0xFFFFC107)
+                  : index == 1
+                  ? const Color(0xFFB0BEC5)
+                  : const Color(0xFFCD7F32);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.workspace_premium_rounded,
+                      color: medalColor,
+                      size: 20,
+                    ),
+                    const Gap(AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        scoreTextBuilder(record),
+                        style: textStyles.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      dateTextBuilder(record.date),
+                      style: textStyles.bodySmall?.copyWith(
+                        color: colors.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultTitleWithScaleInfo extends StatelessWidget {
+  const _ResultTitleWithScaleInfo({required this.mode, required this.title});
+
+  final _ReflexesMode mode;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final texts = Theme.of(context).textTheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: texts.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colors.onSurface,
+            ),
+          ),
+        ),
+        const Gap(6),
+        Tooltip(
+          richMessage: TextSpan(
+            style: texts.bodySmall?.copyWith(
+              color: colors.surface,
+              height: 1.35,
+            ),
+            children: _scoreScaleSpans(context, mode),
+          ),
+          triggerMode: TooltipTriggerMode.tap,
+          showDuration: const Duration(seconds: 8),
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: colors.onSurface.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: colors.onSurface.withValues(alpha: 0.45),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+List<InlineSpan> _scoreScaleSpans(BuildContext context, _ReflexesMode mode) {
+  final colors = Theme.of(context).colorScheme;
+  final strings = AppStrings.of(context);
+  final label = TextStyle(color: colors.secondary, fontWeight: FontWeight.w800);
+  final content = _scoreScaleContent(context, mode);
+  return [
+    TextSpan(text: '${strings.reflexesScoreScaleScoreLabel} : ', style: label),
+    TextSpan(text: '${content.$1}\n'),
+    TextSpan(
+      text: '${strings.reflexesScoreScalePenaltyLabel} : ',
+      style: label,
+    ),
+    TextSpan(text: '${content.$2}\n'),
+    TextSpan(text: '${strings.reflexesScoreScaleStarsLabel} : ', style: label),
+    TextSpan(text: content.$3),
+  ];
+}
+
+(String, String, String) _scoreScaleContent(
+  BuildContext context,
+  _ReflexesMode mode,
+) {
+  final strings = AppStrings.of(context);
+  switch (mode) {
+    case _ReflexesMode.visual:
+    case _ReflexesMode.auditory:
+      return (
+        strings.reflexesScoreScaleReactionScore,
+        strings.reflexesScoreScaleReactionPenalty,
+        strings.reflexesScoreScaleStarsRule,
+      );
+    case _ReflexesMode.math:
+      return (
+        strings.reflexesScoreScaleMathScore,
+        strings.reflexesScoreScaleMathPenalty,
+        strings.reflexesScoreScaleStarsRule,
+      );
+    case _ReflexesMode.memory:
+      return (
+        strings.reflexesScoreScaleMemoryScore,
+        strings.reflexesScoreScaleMemoryPenalty,
+        strings.reflexesScoreScaleStarsRule,
+      );
+    case _ReflexesMode.stroop:
+      return (
+        strings.reflexesScoreScaleStroopScore,
+        strings.reflexesScoreScaleStroopPenalty,
+        strings.reflexesScoreScaleStarsRule,
+      );
+    case _ReflexesMode.mot:
+      return (
+        strings.reflexesScoreScaleMotScore,
+        strings.reflexesScoreScaleMotPenalty,
+        strings.reflexesScoreScaleStarsRule,
+      );
+  }
+}
+
+class _ScoreEquationBlock extends StatelessWidget {
+  const _ScoreEquationBlock({
+    required this.mode,
+    required this.primaryScore,
+    required this.stats,
+  });
+
+  final _ReflexesMode mode;
+  final double primaryScore;
+  final Map<String, String> stats;
+
+  double _num(String key) => double.tryParse(stats[key] ?? '') ?? 0;
+
+  String? _valueContaining(String text) {
+    for (final entry in stats.entries) {
+      if (entry.key.toLowerCase().contains(text.toLowerCase())) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
+  String _withMs(String value) {
+    final trimmed = value.trim();
+    return trimmed.toLowerCase().endsWith('ms') ? trimmed : '$trimmed ms';
+  }
+
+  String _scoreOrigin(AppStrings strings, double base) {
+    final avgReaction = _valueContaining('réaction');
+    final avgAnswer = _valueContaining('réponse');
+    final correct = _valueContaining('bonnes réponses');
+    final memoryCorrect = _valueContaining('correct');
+    final targets = _valueContaining('cibles');
+    final reactionLabel = avgReaction == null ? null : _withMs(avgReaction);
+    final answerLabel = avgAnswer == null ? null : _withMs(avgAnswer);
+    final points = strings.reflexesPointsValue(base.toStringAsFixed(0));
+    if (mode == _ReflexesMode.visual || mode == _ReflexesMode.auditory) {
+      return strings.reflexesScoreOriginReaction(
+        reactionLabel ?? '${primaryScore.toStringAsFixed(0)} ms',
+        points,
+      );
+    }
+    if (mode == _ReflexesMode.stroop) {
+      return strings.reflexesScoreOriginAverage(
+        reactionLabel ?? '${primaryScore.toStringAsFixed(0)} ms',
+        points,
+      );
+    }
+    if (mode == _ReflexesMode.math) {
+      return strings.reflexesScoreOriginMath(
+        correct ?? '—',
+        answerLabel ?? '—',
+        points,
+      );
+    }
+    if (mode == _ReflexesMode.memory) {
+      return strings.reflexesScoreOriginMemory(memoryCorrect ?? '—', points);
+    }
+    return strings.reflexesScoreOriginMot(targets ?? '—', points);
+  }
+
+  Widget _bulletLine(BuildContext context, String text, Color color) {
+    final texts = Theme.of(context).textTheme;
+    final style = texts.bodyMedium?.copyWith(
+      color: color,
+      fontWeight: FontWeight.w400,
+    );
+    final separatorIndex = text.indexOf(':');
+    final title = separatorIndex >= 0
+        ? text.substring(0, separatorIndex + 1)
+        : text;
+    final content = separatorIndex >= 0
+        ? text.substring(separatorIndex + 1)
+        : '';
+
+    return RichText(
+      text: TextSpan(
+        style: style,
+        children: [
+          TextSpan(
+            text: '• $title',
+            style: style?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          TextSpan(text: content),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final texts = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+    final finalScore = _scoredValue(mode, primaryScore, stats);
+    final base = _num('_score_base');
+    final penalties = stats.entries
+        .where((e) => e.key.startsWith('_score_penalty'))
+        .map((e) => double.tryParse(e.value) ?? 0)
+        .where((v) => v > 0)
+        .toList();
+    final penaltyTotal = penalties.fold<double>(0, (a, b) => a + b);
+    final effectiveBase = base > 0 ? base : finalScore;
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _bulletLine(
+            context,
+            _scoreOrigin(strings, effectiveBase),
+            colors.onSurface,
+          ),
+          const Gap(6),
+          _bulletLine(
+            context,
+            penaltyTotal > 0
+                ? strings.reflexesPenaltyValue(
+                    '−${strings.reflexesPointsValue(penaltyTotal.toStringAsFixed(0))}',
+                  )
+                : strings.reflexesPenaltyValue(
+                    strings.reflexesPointsValue('0'),
+                  ),
+            penaltyTotal > 0 ? colors.error : colors.onSurfaceVariant,
+          ),
+          const Gap(10),
+          Container(height: 1, color: colors.outline.withValues(alpha: 0.45)),
+          const Gap(10),
+          Text(
+            strings.reflexesTotalValue(
+              strings.reflexesPointsValue(finalScore.toStringAsFixed(0)),
+            ),
+            textAlign: TextAlign.center,
+            style: texts.headlineSmall?.copyWith(
+              color: colors.primary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class ReflexesScreen extends StatefulWidget {
   const ReflexesScreen({super.key});
@@ -328,13 +974,13 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           .toList();
     }
 
-    if (_mode == _ReflexesMode.visual ||
-        _mode == _ReflexesMode.auditory ||
-        _mode == _ReflexesMode.stroop) {
-      records.sort((a, b) => a.primaryScore.compareTo(b.primaryScore));
-    } else {
-      records.sort((a, b) => b.primaryScore.compareTo(a.primaryScore));
-    }
+    records.sort(
+      (a, b) => _scoredValue(
+        b.mode,
+        b.primaryScore,
+        b.stats,
+      ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats)),
+    );
 
     return records;
   }
@@ -529,6 +1175,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
                   : _MathDifficulty.hard,
               operatorMode: opMode,
               operandMax: p.operandMax,
+              history:
+                  _historyByMode[_ReflexesMode.math.name] ??
+                  const <_ReflexSessionRecord>[],
               onResultSaved: _appendHistory,
               level: level,
             ),
@@ -553,6 +1202,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
               sequenceLength: p.sequenceLength,
               displayMs: p.displayMs,
               rounds: p.rounds,
+              history:
+                  _historyByMode[_ReflexesMode.memory.name] ??
+                  const <_ReflexSessionRecord>[],
               onResultSaved: _appendHistory,
               level: level,
             ),
@@ -569,22 +1221,28 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       case _ReflexesMode.stroop:
         final diff = stroopLevelDifficulty(level);
         setState(() => _stroopDifficulty = _StroopDifficulty.values[diff]);
-        final stroopResult = await _openStroopTest();
+        final stroopResult = await _openStroopTest(level: level);
         if (stroopResult == null) {
           return (score: null, closeAll: false, nextLevel: false);
         }
-        final stoppedEarly = stroopResult['_stopped_early'] == '1';
-        final closeAll = stroopResult['_close_tools'] == '1';
+        final stoppedEarly = stroopResult.stats['_stopped_early'] == '1';
+        final closeAll = stroopResult.stats['_close_tools'] == '1';
         if (stoppedEarly) {
           return (score: null, closeAll: closeAll, nextLevel: false);
         }
         final score = _parseFirstNumberValue(
-          stroopResult[AppStrings.of(context).reflexesAvgReactionTime] ?? '',
+          stroopResult.stats[AppStrings.of(context).reflexesAvgReactionTime] ??
+              '',
+        );
+        final finalScore = _scoredValue(
+          _ReflexesMode.stroop,
+          score,
+          stroopResult.stats,
         );
         return (
-          score: score.isFinite ? score : null,
+          score: finalScore.isFinite ? finalScore : null,
           closeAll: closeAll,
-          nextLevel: false,
+          nextLevel: stroopResult.stats['_next_level'] == '1',
         );
       case _ReflexesMode.mot:
         final p = motLevelParams(level);
@@ -629,9 +1287,10 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       if (list.isEmpty || list.first.date != result.date) {
         await _appendHistory(result);
       }
+      await TrainingHistory.recordExerciseCompletion(mode.name);
     }
     return (
-      score: result.primaryScore,
+      score: _scoredValue(mode, result.primaryScore, result.stats),
       closeAll: closeAll,
       nextLevel: nextLevel,
     );
@@ -720,20 +1379,12 @@ class _ReflexesScreenState extends State<ReflexesScreen>
   }
 
   int Function(double) _starsCalcForMode(_ReflexesMode mode) {
-    switch (mode) {
-      case _ReflexesMode.visual:
-        return starsForVisual;
-      case _ReflexesMode.auditory:
-        return starsForAuditory;
-      case _ReflexesMode.math:
-        return starsForMath;
-      case _ReflexesMode.memory:
-        return (s) => starsForMemory(s / 100.0);
-      case _ReflexesMode.stroop:
-        return starsForStroop;
-      case _ReflexesMode.mot:
-        return starsForMot;
-    }
+    return (s) {
+      if (s >= 850) return 3;
+      if (s >= 650) return 2;
+      if (s > 0) return 1;
+      return 0;
+    };
   }
 
   String Function(double) _scoreLabelForMode(_ReflexesMode mode) {
@@ -741,13 +1392,13 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       case _ReflexesMode.visual:
       case _ReflexesMode.auditory:
       case _ReflexesMode.stroop:
-        return (s) => '${s.toStringAsFixed(0)} ms';
+        return (s) => '${s.toStringAsFixed(0)} pts';
       case _ReflexesMode.math:
-        return (s) => s.toStringAsFixed(0);
+        return (s) => '${s.toStringAsFixed(0)} pts';
       case _ReflexesMode.memory:
-        return (s) => '${s.toStringAsFixed(0)}%';
+        return (s) => '${s.toStringAsFixed(0)} pts';
       case _ReflexesMode.mot:
-        return (s) => s.toStringAsFixed(2);
+        return (s) => '${s.toStringAsFixed(0)} pts';
     }
   }
 
@@ -931,6 +1582,53 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     );
   }
 
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_historyKey);
+    if (raw == null) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      final loaded = <String, List<_ReflexSessionRecord>>{};
+      for (final entry in decoded.entries) {
+        final value = entry.value;
+        if (value is List) {
+          loaded[entry.key.toString()] = value
+              .whereType<Map<dynamic, dynamic>>()
+              .map(
+                (e) =>
+                    _ReflexSessionRecord.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .toList();
+        }
+      }
+      if (!mounted) return;
+      setState(() => _historyByMode = loaded);
+    } catch (_) {}
+  }
+
+  Future<void> _appendHistory(_ReflexSessionRecord record) async {
+    final updated = Map<String, List<_ReflexSessionRecord>>.from(
+      _historyByMode,
+    );
+    final list = <_ReflexSessionRecord>[
+      record,
+      ...(updated[record.mode.name] ?? const <_ReflexSessionRecord>[]),
+    ];
+    updated[record.mode.name] = list.take(30).toList();
+    setState(() => _historyByMode = updated);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _historyKey,
+      jsonEncode(
+        updated.map(
+          (key, value) =>
+              MapEntry(key, value.map((record) => record.toJson()).toList()),
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -951,20 +1649,22 @@ class _ReflexesScreenState extends State<ReflexesScreen>
     setState(() {});
   }
 
-  Future<Map<String, String>?> _openStroopTest() async {
+  Future<_ReflexSessionRecord?> _openStroopTest({int? level}) async {
     final provider = context.read<ThotProvider>();
-    if (provider.isToolLockedForFree('cognitive_drills')) {
+    if (provider.isReflexesModeLockedForFree(_ReflexesMode.stroop.name)) {
       showProModal(context);
       return null;
     }
-    final result = await Navigator.of(context).push<Map<String, String>>(
-      PageRouteBuilder<Map<String, String>>(
+    final result = await Navigator.of(context).push<_ReflexSessionRecord>(
+      PageRouteBuilder<_ReflexSessionRecord>(
         opaque: false,
         barrierColor: Colors.transparent,
-        pageBuilder: (_, __, ___) => CognitiveDrillsScreen(
-          stroopOnly: true,
-          autoStartStroop: true,
-          initialStroopDifficultyIndex: _stroopDifficulty.index,
+        pageBuilder: (_, __, ___) => _StroopRunScreen(
+          difficulty: _stroopDifficulty,
+          history:
+              _historyByMode[_ReflexesMode.stroop.name] ??
+              const <_ReflexSessionRecord>[],
+          level: level,
         ),
         transitionsBuilder: (_, animation, __, child) => FadeTransition(
           opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -973,199 +1673,17 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       ),
     );
     if (!mounted || result == null) return result;
-    final stoppedEarly = result['_stopped_early'] == '1';
+    final stoppedEarly = result.stats['_stopped_early'] == '1';
     if (!stoppedEarly) {
+      await _appendHistory(result);
       await TrainingHistory.recordExerciseCompletion(_ReflexesMode.stroop.name);
     }
     if (mounted) setState(() {});
-    final closeToTools = result['_close_tools'] == '1';
+    final closeToTools = result.stats['_close_tools'] == '1';
     if (closeToTools && Navigator.canPop(context)) {
       Navigator.pop(context);
     }
     return result;
-  }
-
-  Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_historyKey);
-    if (raw == null || raw.isEmpty) return;
-    try {
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      final map = <String, List<_ReflexSessionRecord>>{};
-      for (final entry in decoded.entries) {
-        final list = (entry.value as List?) ?? const [];
-        map[entry.key] = list
-            .whereType<Map>()
-            .map(
-              (e) =>
-                  _ReflexSessionRecord.fromJson(Map<String, dynamic>.from(e)),
-            )
-            .toList();
-      }
-
-      // Load Stroop data from cognitive_drill_score_history
-      final stroopHistoryJson = prefs.getString(
-        'cognitive_drill_score_history',
-      );
-      if (stroopHistoryJson != null) {
-        try {
-          final stroopRaw = jsonDecode(stroopHistoryJson);
-          if (stroopRaw is! List) return;
-          final strings = AppStrings.of(context);
-          final stroopRecords = stroopRaw
-              .whereType<Map<dynamic, dynamic>>()
-              .where((e) => e['_modeKey'] == 'stroop')
-              .map((e) {
-                final avgStr = (e[strings.reflexesAvgReactionTime] ?? '')
-                    .toString();
-                final primaryFromAvg = _parseFirstNumberValue(avgStr);
-                final primaryFromStored =
-                    double.tryParse((e['_primary'] ?? '').toString()) ??
-                    double.nan;
-                final primary = primaryFromStored.isFinite
-                    ? primaryFromStored
-                    : (primaryFromAvg.isFinite ? primaryFromAvg : double.nan);
-                return _ReflexSessionRecord(
-                  mode: _ReflexesMode.stroop,
-                  date:
-                      DateTime.tryParse(e['date']?.toString() ?? '') ??
-                      DateTime.now(),
-                  primaryScore: primary,
-                  stats: e.map<String, String>(
-                    (key, value) =>
-                        MapEntry(key.toString(), value?.toString() ?? ''),
-                  ),
-                );
-              })
-              .where(
-                (record) =>
-                    record.primaryScore.isFinite && record.primaryScore > 50,
-              )
-              .toList();
-          map['stroop'] = stroopRecords;
-        } catch (_) {}
-      }
-
-      if (!mounted) return;
-      setState(() => _historyByMode = map);
-    } catch (_) {}
-  }
-
-  Future<void> _saveHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _historyKey,
-      jsonEncode(
-        _historyByMode.map(
-          (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _appendHistory(_ReflexSessionRecord record) async {
-    final key = record.mode.name;
-    final list = [...(_historyByMode[key] ?? const <_ReflexSessionRecord>[])];
-    list.insert(0, record);
-    _historyByMode[key] = list.take(20).toList(growable: false);
-    if (mounted) setState(() {});
-    await _saveHistory();
-    final stoppedEarly = record.stats['_stopped_early'] == '1';
-    if (!stoppedEarly) {
-      await TrainingHistory.recordExerciseCompletion(key);
-    }
-    if (mounted) {
-      Provider.of<ThotProvider>(context, listen: false).checkAchievements();
-    }
-  }
-
-  (int, int, int) _getReactionParams() {
-    switch (_reactionDifficulty) {
-      case _ReactionDifficulty.easy:
-        return (10, 2000, 4000);
-      case _ReactionDifficulty.medium:
-        return (15, 1500, 5000);
-      case _ReactionDifficulty.hard:
-        return (20, 1000, 6000);
-    }
-  }
-
-  _MathOperator _getMathOperator() {
-    switch (_mathDifficulty) {
-      case _MathDifficulty.easy:
-        return _MathOperator.addSubOnly;
-      case _MathDifficulty.medium:
-        return _MathOperator.addSubMul;
-      case _MathDifficulty.hard:
-        return _MathOperator.mixed;
-    }
-  }
-
-  (int, int) _getMathOperandRange() {
-    // .$1 = max additions/soustractions, .$2 = max table multiplication/division
-    switch (_mathDifficulty) {
-      case _MathDifficulty.easy:
-        return (50, 0);
-      case _MathDifficulty.medium:
-        return (99, 12);
-      case _MathDifficulty.hard:
-        return (99, 12);
-    }
-  }
-
-  (int, int) _getMemoryParams() {
-    switch (_memoryDifficulty) {
-      case _MemoryDifficulty.easy:
-        return (5, 1500);
-      case _MemoryDifficulty.medium:
-        return (7, 2500);
-      case _MemoryDifficulty.hard:
-        return (9, 3500);
-    }
-  }
-
-  ({
-    int totalCircles,
-    int targetCount,
-    int trackingDurationMs,
-    double speedPxPerSec,
-    int trials,
-    double circleDiameter,
-    int highlightDurationMs,
-  })
-  _getMotParams() {
-    switch (_motDifficulty) {
-      case _MotDifficulty.easy:
-        return (
-          totalCircles: 10,
-          targetCount: 1,
-          trackingDurationMs: 7000,
-          speedPxPerSec: 100,
-          trials: 6,
-          circleDiameter: 42,
-          highlightDurationMs: 1200,
-        );
-      case _MotDifficulty.medium:
-        return (
-          totalCircles: 10,
-          targetCount: 3,
-          trackingDurationMs: 8000,
-          speedPxPerSec: 140,
-          trials: 8,
-          circleDiameter: 42,
-          highlightDurationMs: 1000,
-        );
-      case _MotDifficulty.hard:
-        return (
-          totalCircles: 10,
-          targetCount: 5,
-          trackingDurationMs: 10000,
-          speedPxPerSec: 180,
-          trials: 10,
-          circleDiameter: 42,
-          highlightDurationMs: 700,
-        );
-    }
   }
 
   Future<void> _showReactionDifficultyDialog(
@@ -1264,162 +1782,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
   }
 
   Future<void> _start() async {
-    if (_mode == null) return;
-    _ReflexSessionRecord? result;
-    switch (_mode!) {
-      case _ReflexesMode.visual:
-        final (stimuliCount, minDelayMs, maxDelayMs) = _getReactionParams();
-        result = await Navigator.of(context).push<_ReflexSessionRecord>(
-          PageRouteBuilder<_ReflexSessionRecord>(
-            opaque: false,
-            barrierColor: Colors.transparent,
-            pageBuilder: (_, __, ___) => _ReactionRunScreen(
-              mode: _ReflexesMode.visual,
-              history:
-                  _historyByMode[_ReflexesMode.visual.name] ??
-                  const <_ReflexSessionRecord>[],
-              stimuliCount: stimuliCount,
-              minDelayMs: minDelayMs,
-              maxDelayMs: maxDelayMs,
-            ),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              ),
-              child: child,
-            ),
-          ),
-        );
-        break;
-      case _ReflexesMode.auditory:
-        final (stimuliCount, minDelayMs, maxDelayMs) = _getReactionParams();
-        result = await Navigator.of(context).push<_ReflexSessionRecord>(
-          PageRouteBuilder<_ReflexSessionRecord>(
-            opaque: false,
-            barrierColor: Colors.transparent,
-            pageBuilder: (_, __, ___) => _ReactionRunScreen(
-              mode: _ReflexesMode.auditory,
-              history:
-                  _historyByMode[_ReflexesMode.auditory.name] ??
-                  const <_ReflexSessionRecord>[],
-              stimuliCount: stimuliCount,
-              minDelayMs: minDelayMs,
-              maxDelayMs: maxDelayMs,
-            ),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              ),
-              child: child,
-            ),
-          ),
-        );
-        break;
-      case _ReflexesMode.math:
-        final operatorMode = _getMathOperator();
-        final (operandMax, _) = _getMathOperandRange();
-        final mathDurationSeconds = _mathDifficulty == _MathDifficulty.easy
-            ? 60
-            : _mathDifficulty == _MathDifficulty.medium
-            ? 90
-            : 120;
-        result = await Navigator.of(context).push<_ReflexSessionRecord>(
-          PageRouteBuilder<_ReflexSessionRecord>(
-            opaque: false,
-            barrierColor: Colors.transparent,
-            pageBuilder: (_, __, ___) => _MathRunScreen(
-              durationSeconds: mathDurationSeconds,
-              difficulty: _mathDifficulty,
-              operatorMode: operatorMode,
-              operandMax: operandMax,
-            ),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              ),
-              child: child,
-            ),
-          ),
-        );
-        break;
-      case _ReflexesMode.memory:
-        final (sequenceLength, displayMs) = _getMemoryParams();
-        result = await Navigator.of(context).push<_ReflexSessionRecord>(
-          PageRouteBuilder<_ReflexSessionRecord>(
-            opaque: false,
-            barrierColor: Colors.transparent,
-            pageBuilder: (_, __, ___) => _MemoryRunScreen(
-              difficulty: _memoryDifficulty,
-              sequenceLength: sequenceLength,
-              displayMs: displayMs,
-              rounds: _memoryRounds,
-            ),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              ),
-              child: child,
-            ),
-          ),
-        );
-        break;
-      case _ReflexesMode.mot:
-        final motParams = _getMotParams();
-        result = await Navigator.of(context).push<_ReflexSessionRecord>(
-          PageRouteBuilder<_ReflexSessionRecord>(
-            opaque: false,
-            barrierColor: Colors.transparent,
-            pageBuilder: (_, __, ___) => _MotRunScreen(
-              difficulty: _motDifficulty,
-              totalCircles: motParams.totalCircles,
-              targetCount: motParams.targetCount,
-              trackingDurationMs: motParams.trackingDurationMs,
-              speedPxPerSec: motParams.speedPxPerSec,
-              trials: motParams.trials,
-              circleDiameter: motParams.circleDiameter,
-              highlightDurationMs: motParams.highlightDurationMs,
-              history:
-                  _historyByMode[_ReflexesMode.mot.name] ??
-                  const <_ReflexSessionRecord>[],
-            ),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              ),
-              child: child,
-            ),
-          ),
-        );
-        break;
-      case _ReflexesMode.stroop:
-        await _openStroopTest();
-        return;
-    }
-    if (result != null) {
-      final closeToTools = result.stats['_close_tools'] == '1';
-      final cleanStats = Map<String, String>.from(result.stats)
-        ..remove('_close_tools');
-      final cleanResult = _ReflexSessionRecord(
-        mode: result.mode,
-        date: result.date,
-        primaryScore: result.primaryScore,
-        stats: cleanStats,
-      );
-      final stoppedEarly = cleanResult.stats['_stopped_early'] == '1';
-      if (!stoppedEarly) {
-        await _appendHistory(cleanResult);
-      }
-      if (!mounted) return;
-      setState(() {});
-      if (closeToTools && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-    }
+    final mode = _mode;
+    if (mode == null) return;
+    _openLevelsPanelForMode(mode);
   }
 
   @override
@@ -1603,6 +1968,1258 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         ),
       ),
     );
+  }
+}
+
+class _StroopRunScreen extends StatefulWidget {
+  const _StroopRunScreen({
+    required this.difficulty,
+    required this.history,
+    this.level,
+  });
+  final _StroopDifficulty difficulty;
+  final List<_ReflexSessionRecord> history;
+  final int? level;
+  @override
+  State<_StroopRunScreen> createState() => _StroopRunScreenState();
+}
+
+class _StroopRunScreenState extends State<_StroopRunScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  final _random = Random();
+  int _countdown = 3;
+  bool _running = false;
+  Timer? _timer;
+  Stopwatch? _rt;
+  DateTime? _stimulusShownAt;
+  _StroopInkColor? _word;
+  _StroopInkColor? _ink;
+  bool _congruent = false;
+  bool _responded = false;
+  final _cong = <Duration>[];
+  final _conf = <Duration>[];
+  final _reactionTimes = <Duration>[];
+  int _responses = 0;
+  int _correctAnswers = 0;
+  int _wrongAnswers = 0;
+  final Map<String, int> _wordCounts = {
+    'red': 0,
+    'blue': 0,
+    'green': 0,
+    'yellow': 0,
+  };
+  final Map<String, int> _inkCounts = {
+    'red': 0,
+    'blue': 0,
+    'green': 0,
+    'yellow': 0,
+  };
+  bool _showResults = false;
+  Map<String, String>? _currentResult;
+  bool _aborted = false;
+  late final AnimationController _feedbackAnimationController =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1000),
+      );
+  String? _answerFeedbackText;
+  Color? _answerFeedbackTextColor;
+  Color? _answerFeedbackBgColor;
+  Color? _answerFeedbackAccentColor;
+  Completer<void> _responseCompleter = Completer<void>();
+  bool? _lastAnswerCorrect;
+  int _lastResponseMs = 0;
+  int _stimuliShown = 0;
+
+  double _parsePrimary(Map<String, String> entry) {
+    return double.tryParse(entry['_primary'] ?? '') ?? double.infinity;
+  }
+
+  String _fmtDate(String value) =>
+      value.replaceFirst('-', '/').replaceFirst('-', '/');
+
+  double _parseFirstNumber(String value) {
+    final m = RegExp(r'([0-9]+(?:\.[0-9]+)?)').firstMatch(value);
+    if (m == null) return double.infinity;
+    return double.tryParse(m.group(1) ?? '') ?? double.infinity;
+  }
+
+  List<Map<String, String>> _top3(AppStrings strings) {
+    final items = widget.history
+        .map(
+          (e) => {
+            '_modeKey': _ReflexesMode.stroop.name,
+            'modeLabel': strings.cognitiveDrillModeStroop,
+            'date': e.date.toString().substring(0, 16),
+            '_primary': _scoredValue(
+              e.mode,
+              e.primaryScore,
+              e.stats,
+            ).toStringAsFixed(3),
+            ...e.stats,
+          },
+        )
+        .where((e) {
+          final p = _parsePrimary(e);
+          return p.isFinite && p > 50;
+        })
+        .toList();
+    final current = _currentResult;
+    if (current != null) {
+      final primary =
+          double.tryParse(current['_score_final'] ?? '') ??
+          _parseFirstNumber(current[strings.reflexesAvgReactionTime] ?? '');
+      if (primary.isFinite && primary > 0) {
+        items.add({
+          '_modeKey': _ReflexesMode.stroop.name,
+          'modeLabel': strings.cognitiveDrillModeStroop,
+          'date': DateTime.now().toString().substring(0, 16),
+          '_primary': primary.toStringAsFixed(3),
+          ...current,
+        });
+      }
+    }
+    items.sort((a, b) => _parsePrimary(b).compareTo(_parsePrimary(a)));
+    return items.take(3).toList();
+  }
+
+  int _getCount() => widget.difficulty == _StroopDifficulty.easy
+      ? 15
+      : widget.difficulty == _StroopDifficulty.medium
+      ? 20
+      : 25;
+
+  void _closeToTools() {
+    final current = _currentResult;
+    if (current == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final payload = Map<String, String>.from(current)..['_close_tools'] = '1';
+    Navigator.of(context).pop(
+      _ReflexSessionRecord(
+        mode: _ReflexesMode.stroop,
+        date: DateTime.now(),
+        primaryScore: double.tryParse(current['_score_final'] ?? '') ?? 0,
+        stats: payload,
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WakelockPlus.enable();
+    _loop();
+  }
+
+  Future<void> _loop() async {
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
+      if (_countdown <= 1) {
+        t.cancel();
+        setState(() => _countdown = 0);
+        unawaited(TimerSound.play().catchError((_) {}));
+        await Future.delayed(const Duration(milliseconds: 450));
+        if (!mounted) return;
+        setState(() {
+          _running = true;
+          _stimuliShown = 0;
+        });
+        _run();
+      } else {
+        setState(() => _countdown--);
+      }
+    });
+  }
+
+  Future<void> _run() async {
+    for (var i = 0; i < _getCount(); i++) {
+      if (_aborted || !mounted) break;
+      final stim = _pick(i);
+      _word = stim.$1;
+      _ink = stim.$2;
+      _congruent = stim.$3;
+      _responded = false;
+      _lastResponseMs = 0;
+      _rt = null;
+      _stimulusShownAt = null;
+      _wordCounts[_word!.name] = _wordCounts[_word!.name]! + 1;
+      _inkCounts[_ink!.name] = _inkCounts[_ink!.name]! + 1;
+      _stimuliShown = i + 1;
+      if (mounted) {
+        setState(() {});
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _responded || _word == null || _ink == null) return;
+          _stimulusShownAt = DateTime.now();
+          _rt = Stopwatch()..start();
+        });
+      }
+
+      _responseCompleter = Completer<void>();
+      final responseFuture = _responseCompleter.future;
+
+      await responseFuture;
+      if (_aborted || !mounted) break;
+
+      _rt?.stop();
+      _showAnswerFeedback(_lastAnswerCorrect ?? false, _lastResponseMs);
+      await Future.delayed(const Duration(seconds: 1));
+      if (_aborted || !mounted) break;
+
+      if (mounted) {
+        setState(() {
+          _answerFeedbackText = null;
+          _word = null;
+          _ink = null;
+        });
+      }
+      await Future.delayed(const Duration(milliseconds: 180));
+    }
+    if (_aborted || !mounted) return;
+    final strings = AppStrings.of(context);
+    final shown = _wordCounts.values.fold<int>(0, (a, b) => a + b);
+    final avgMs = _reactionTimes.isEmpty
+        ? double.infinity
+        : _reactionTimes.fold<int>(
+                0,
+                (sum, duration) => sum + duration.inMilliseconds,
+              ) /
+              _reactionTimes.length;
+    final avgMsLabel = avgMs.isFinite ? '${avgMs.toStringAsFixed(0)} ms' : '—';
+    final total = max(1, _correctAnswers + _wrongAnswers);
+    final accuracy = _correctAnswers / total;
+    final targetMs = switch (widget.difficulty) {
+      _StroopDifficulty.easy => 1400.0,
+      _StroopDifficulty.medium => 1200.0,
+      _StroopDifficulty.hard => 1050.0,
+    };
+    final speedPenalty = avgMs.isFinite
+        ? max(0.0, avgMs - targetMs) * 0.45
+        : 300.0;
+    final baseScore = 1000.0 - speedPenalty;
+    final accuracyPenalty = (1 - accuracy) * 520;
+    final errorPenalty = _wrongAnswers * 140.0;
+    final score = (baseScore - accuracyPenalty - errorPenalty)
+        .clamp(0, 1000)
+        .toDouble();
+    final stats = <String, String>{
+      'mode': 'stroop',
+      'difficulty': widget.difficulty.name,
+      '_score_final': score.toStringAsFixed(1),
+      '_score_base': baseScore.toStringAsFixed(1),
+      '_score_penalty_speed': speedPenalty.toStringAsFixed(1),
+      '_score_penalty_accuracy': accuracyPenalty.toStringAsFixed(1),
+      '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
+      if (widget.level != null) '_level': widget.level.toString(),
+      strings.cognitiveDrillResultsStimuliCount: '$shown',
+      strings.cognitiveDrillResultsResponses: '$_responses',
+      strings.reflexesAvgReactionTime: avgMsLabel,
+      strings.reflexesMathCorrectAnswers: '$_correctAnswers',
+      strings.reflexesMathWrongAnswers: '$_wrongAnswers',
+      strings.cognitiveDrillStroopAvgCongruent: _avg(_cong),
+      strings.cognitiveDrillStroopAvgConflict: _avg(_conf),
+      strings.stroopWordsRed: '${_wordCounts['red']}',
+      strings.stroopWordsBlue: '${_wordCounts['blue']}',
+      strings.stroopWordsGreen: '${_wordCounts['green']}',
+      strings.stroopWordsYellow: '${_wordCounts['yellow']}',
+      strings.stroopInkRed: '${_inkCounts['red']}',
+      strings.stroopInkBlue: '${_inkCounts['blue']}',
+      strings.stroopInkGreen: '${_inkCounts['green']}',
+      strings.stroopInkYellow: '${_inkCounts['yellow']}',
+    };
+    setState(() {
+      _currentResult = stats;
+      _showResults = true;
+    });
+  }
+
+  _ReflexSessionRecord _recordFromCurrent(Map<String, String> current) {
+    return _ReflexSessionRecord(
+      mode: _ReflexesMode.stroop,
+      date: DateTime.now(),
+      primaryScore: double.tryParse(current['_score_final'] ?? '') ?? 0,
+      stats: current,
+    );
+  }
+
+  void _stop() {
+    _aborted = true;
+    _timer?.cancel();
+    _rt?.stop();
+    if (!mounted) return;
+    if (_wordCounts.values.any((v) => v > 0)) {
+      final strings = AppStrings.of(context);
+      final stats = <String, String>{
+        'mode': 'stroop',
+        'difficulty': widget.difficulty.name,
+        strings.cognitiveDrillResultsStimuliCount:
+            '${_wordCounts.values.reduce((a, b) => a + b)}',
+        strings.cognitiveDrillResultsResponses: '$_responses',
+        strings.reflexesAvgReactionTime: _avgMs(_reactionTimes),
+        strings.reflexesMathCorrectAnswers: '$_correctAnswers',
+        strings.reflexesMathWrongAnswers: '$_wrongAnswers',
+        strings.cognitiveDrillStroopAvgCongruent: _avg(_cong),
+        strings.cognitiveDrillStroopAvgConflict: _avg(_conf),
+        strings.stroopWordsRed: '${_wordCounts['red']}',
+        strings.stroopWordsBlue: '${_wordCounts['blue']}',
+        strings.stroopWordsGreen: '${_wordCounts['green']}',
+        strings.stroopWordsYellow: '${_wordCounts['yellow']}',
+        strings.stroopInkRed: '${_inkCounts['red']}',
+        strings.stroopInkBlue: '${_inkCounts['blue']}',
+        strings.stroopInkGreen: '${_inkCounts['green']}',
+        strings.stroopInkYellow: '${_inkCounts['yellow']}',
+        '_stopped_early': '1',
+        if (widget.level != null) '_level': widget.level.toString(),
+      };
+      setState(() {
+        _currentResult = stats;
+        _showResults = true;
+      });
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  (_StroopInkColor, _StroopInkColor, bool) _pick(int i) {
+    // Ratio de congruence selon difficulté :
+    // Easy 60% congruents, Medium 50%, Hard 30%
+    final congruentRatio = widget.difficulty == _StroopDifficulty.easy
+        ? 0.60
+        : widget.difficulty == _StroopDifficulty.medium
+        ? 0.50
+        : 0.30;
+    final congruent = _random.nextDouble() < congruentRatio;
+    final ink = _StroopInkColor.values[_random.nextInt(4)];
+    if (congruent) return (ink, ink, true);
+    final words = _StroopInkColor.values.where((e) => e != ink).toList();
+    return (words[_random.nextInt(words.length)], ink, false);
+  }
+
+  void _respond(_StroopInkColor selectedColor) {
+    if (!_running || _word == null || _ink == null || _responded) return;
+    _responded = true;
+    _responses++;
+    final shownAt = _stimulusShownAt;
+    final d = shownAt == null
+        ? (_rt?.elapsed ?? Duration.zero)
+        : DateTime.now().difference(shownAt);
+    _lastResponseMs = d.inMilliseconds;
+    _rt?.stop();
+    final isCorrect = selectedColor == _ink;
+    _lastAnswerCorrect = isCorrect;
+    if (isCorrect) {
+      _correctAnswers++;
+      if (d.inMilliseconds > 50 && d.inMilliseconds < 2500) {
+        _reactionTimes.add(d);
+        (_congruent ? _cong : _conf).add(d);
+      }
+    } else {
+      _wrongAnswers++;
+    }
+    if (!_responseCompleter.isCompleted) {
+      _responseCompleter.complete();
+    }
+    setState(() {});
+  }
+
+  void _showAnswerFeedback(bool isCorrect, int ms) {
+    setState(() {
+      _answerFeedbackText = isCorrect
+          ? 'BONNE REPONSE • $ms ms'
+          : 'MAUVAISE REPONSE • $ms ms';
+      _answerFeedbackTextColor = isCorrect
+          ? const Color(0xFFE8FFF4)
+          : const Color(0xFFFFECEF);
+      _answerFeedbackBgColor = isCorrect
+          ? const Color(0xFF0D402A)
+          : const Color(0xFF4C1621);
+      _answerFeedbackAccentColor = isCorrect
+          ? const Color(0xFF00E676)
+          : const Color(0xFFFF5252);
+    });
+    _feedbackAnimationController.reset();
+    _feedbackAnimationController.forward();
+  }
+
+  String _avgMs(List<Duration> list) {
+    if (list.isEmpty) return '—';
+    final avgMs =
+        list.fold<int>(0, (sum, duration) => sum + duration.inMilliseconds) /
+        list.length;
+    return '${avgMs.toStringAsFixed(0)} ms';
+  }
+
+  String _avg(List<Duration> l) => l.isEmpty
+      ? '—'
+      : '${(l.fold<int>(0, (a, b) => a + b.inMilliseconds) / l.length / 1000).toStringAsFixed(2)} s';
+
+  Widget _buildAnswerButton(AppStrings strings, _StroopInkColor color) {
+    return Expanded(
+      child: SizedBox(
+        height: 52,
+        child: FilledButton(
+          onPressed: (_running && _ink != null) ? () => _respond(color) : null,
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            disabledBackgroundColor: Colors.white.withValues(alpha: 0.5),
+            disabledForegroundColor: Colors.black.withValues(alpha: 0.6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: Text(
+            _stroopColorLabel(strings, color).toUpperCase(),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.3,
+              fontSize: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeedbackBubble({
+    required String text,
+    required Color? textColor,
+    required Color? bgColor,
+    required Color? accentColor,
+    required IconData icon,
+  }) {
+    return AnimatedBuilder(
+      animation: _feedbackAnimationController,
+      builder: (_, __) {
+        final t = _feedbackAnimationController.value;
+        final appear = Curves.easeOutBack.transform((t / 0.32).clamp(0.0, 1.0));
+        final vanish = ((t - 0.65) / 0.35).clamp(0.0, 1.0);
+        final scale = 0.72 + (appear * 0.28) - (vanish * 0.08);
+        final opacity = ((1.0 - vanish) * (0.65 + 0.35 * appear))
+            .clamp(0.0, 1.0)
+            .toDouble();
+        final y = (16 * (1.0 - appear)) - (22 * vanish);
+        return Transform.scale(
+          scale: scale,
+          child: Transform.translate(
+            offset: Offset(0, y),
+            child: Opacity(
+              opacity: opacity,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      (bgColor ?? const Color(0xFF1E2432)).withValues(
+                        alpha: 0.98,
+                      ),
+                      (accentColor ?? const Color(0xFF00E676)).withValues(
+                        alpha: 0.26,
+                      ),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: (accentColor ?? Colors.white).withValues(
+                      alpha: 0.55,
+                    ),
+                    width: 1.2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (accentColor ?? Colors.black).withValues(
+                        alpha: 0.45,
+                      ),
+                      blurRadius: 18,
+                      spreadRadius: 1.5,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, color: accentColor, size: 18),
+                    const Gap(6),
+                    Text(
+                      text,
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _aborted = true;
+      _timer?.cancel();
+      _rt?.stop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _rt?.stop();
+    _feedbackAnimationController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final texts = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+    final showChoices = _running && _ink != null;
+
+    if (_showResults && _currentResult != null) {
+      final top3 = _top3(strings);
+      final baseBackground = Theme.of(context).scaffoldBackgroundColor;
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.90,
+            decoration: BoxDecoration(
+              color: baseBackground,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: LightColors.iconInactive.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: SizedBox(
+                    height: 44,
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pop(_recordFromCurrent(_currentResult!)),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: LightColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.sm),
+                        Expanded(
+                          child: _ResultTitleWithScaleInfo(
+                            mode: _ReflexesMode.stroop,
+                            title: strings.reflexesResultsTitle,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _closeToTools,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 28,
+                              color: colors.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: Divider(color: colors.outline),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: AppSpacing.paddingLg,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _AnimatedLevelStarsBlock(
+                          level: widget.level,
+                          score:
+                              double.tryParse(
+                                _currentResult!['_score_final'] ?? '0',
+                              ) ??
+                              0,
+                          stars: _starsForScore(
+                            double.tryParse(
+                                  _currentResult!['_score_final'] ?? '0',
+                                ) ??
+                                0,
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: colors.outline),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                strings.reflexesPerformance,
+                                style: texts.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.secondary,
+                                ),
+                              ),
+                              const Gap(AppSpacing.md),
+                              _ScoreEquationBlock(
+                                mode: _ReflexesMode.stroop,
+                                primaryScore:
+                                    double.tryParse(
+                                      _currentResult!['_score_final'] ?? '',
+                                    ) ??
+                                    0,
+                                stats: _currentResult!,
+                              ),
+                              const Gap(AppSpacing.md),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      strings.cognitiveDrillResultsStimuliCount,
+                                      style: texts.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _currentResult![strings
+                                            .cognitiveDrillResultsStimuliCount] ??
+                                        '0',
+                                    style: texts.titleMedium?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(AppSpacing.md),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      strings.reflexesAvgReactionTime,
+                                      style: texts.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _currentResult![strings
+                                            .reflexesAvgReactionTime] ??
+                                        '—',
+                                    style: texts.titleMedium?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(AppSpacing.md),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      strings.reflexesMathCorrectAnswers,
+                                      style: texts.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _currentResult![strings
+                                            .reflexesMathCorrectAnswers] ??
+                                        '0',
+                                    style: texts.titleMedium?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(AppSpacing.md),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      strings.reflexesMathWrongAnswers,
+                                      style: texts.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _currentResult![strings
+                                            .reflexesMathWrongAnswers] ??
+                                        '0',
+                                    style: texts.titleMedium?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(AppSpacing.md),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      strings.reflexesDifficultyLabel,
+                                      style: texts.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    widget.difficulty == _StroopDifficulty.easy
+                                        ? strings.reflexesDifficultyEasy
+                                        : widget.difficulty ==
+                                              _StroopDifficulty.medium
+                                        ? strings.reflexesDifficultyMedium
+                                        : strings.reflexesDifficultyHard,
+                                    style: texts.titleMedium?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                        SizedBox(
+                          height: 52,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showResults = false;
+                                      _currentResult = null;
+                                      _aborted = false;
+                                      _countdown = 3;
+                                      _running = false;
+                                      _word = null;
+                                      _ink = null;
+                                      _responded = false;
+                                      _responses = 0;
+                                      _correctAnswers = 0;
+                                      _wrongAnswers = 0;
+                                      _reactionTimes.clear();
+                                      _cong.clear();
+                                      _conf.clear();
+                                      _wordCounts.updateAll((key, value) => 0);
+                                      _inkCounts.updateAll((key, value) => 0);
+                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (mounted) _loop();
+                                        });
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        colors.surfaceContainerHighest,
+                                    foregroundColor: colors.onSurfaceVariant,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.replay_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodRestart.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              const Gap(AppSpacing.sm),
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    final current = _currentResult;
+                                    if (current == null) return;
+                                    Navigator.of(context).pop(
+                                      _recordFromCurrent(
+                                        Map<String, String>.from(current)
+                                          ..['_next_level'] = '1',
+                                      ),
+                                    );
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodNext.toUpperCase(),
+                                  ),
+                                  iconAlignment: IconAlignment.end,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: colors.outline),
+                            boxShadow: AppShadows.cardPremium,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.emoji_events_rounded,
+                                    color: colors.primary,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  Text(
+                                    strings.reflexesTopThree,
+                                    style: texts.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: colors.secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Gap(AppSpacing.md),
+                              if (top3.isEmpty)
+                                Text(
+                                  strings.cognitiveDrillNoScores,
+                                  style: texts.bodyMedium?.copyWith(
+                                    color: colors.secondary,
+                                  ),
+                                )
+                              else
+                                ...top3.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final row = entry.value;
+                                  final medalColor = index == 0
+                                      ? const Color(0xFFFFC107)
+                                      : index == 1
+                                      ? const Color(0xFFB0BEC5)
+                                      : const Color(0xFFCD7F32);
+                                  final score = _parsePrimary(row);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.md,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.workspace_premium_rounded,
+                                          color: medalColor,
+                                          size: 20,
+                                        ),
+                                        const Gap(AppSpacing.sm),
+                                        Expanded(
+                                          child: Text(
+                                            score.isFinite
+                                                ? '${score.toStringAsFixed(0)} pts'
+                                                : '—',
+                                            style: texts.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          _fmtDate(row['date'] ?? ''),
+                                          style: texts.bodySmall?.copyWith(
+                                            color: colors.secondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    Color _getHardModeBackground() {
+      if (widget.difficulty != _StroopDifficulty.hard) return Colors.black;
+      if (_ink == null) return Colors.black;
+      final allColors = [
+        const Color(0xFFE53935), // red
+        const Color(0xFF1E88E5), // blue
+        const Color(0xFF43A047), // green
+        const Color(0xFFFDD835), // yellow
+      ];
+
+      final currentColor = _stroopColor(_ink!);
+      final availableColors = allColors
+          .where((c) => c != currentColor)
+          .toList();
+      return availableColors[_random.nextInt(availableColors.length)];
+    }
+
+    final hardBg = _getHardModeBackground();
+    return Scaffold(
+      backgroundColor: hardBg,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      resizeToAvoidBottomInset: false,
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        removeBottom: true,
+        removeLeft: true,
+        removeRight: true,
+        child: SizedBox.expand(
+          child: Stack(
+            children: [
+              _LandscapeWrapper(
+                color: hardBg,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _running
+                          ? AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              switchInCurve: Curves.linear,
+                              switchOutCurve: Curves.linear,
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOut,
+                                  ),
+                                  child: child,
+                                );
+                              },
+                              child: _word == null || _ink == null
+                                  ? const SizedBox.expand(
+                                      key: ValueKey('stroop-empty'),
+                                    )
+                                  : _StroopStimulusView(
+                                      key: ValueKey(
+                                        'stroop-${_stimuliShown}-${_word!.name}-${_ink!.name}',
+                                      ),
+                                      word: _word,
+                                      ink: _ink,
+                                    ),
+                            )
+                          : LayoutBuilder(
+                              builder: (context, constraints) {
+                                final maxHeight = constraints.maxHeight;
+                                final targetNumberSize = _countdown > 0
+                                    ? 160.0
+                                    : 120.0;
+                                final numberFontSize = min(
+                                  targetNumberSize,
+                                  maxHeight * 0.62,
+                                );
+                                final prepareFontSize = min(
+                                  18.0,
+                                  max(14.0, maxHeight * 0.075),
+                                );
+                                return ExerciseCountdownBackground(
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        AnimatedScale(
+                                          key: ValueKey(_countdown),
+                                          scale: 1.0,
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
+                                          curve: Curves.elasticOut,
+                                          onEnd: () {
+                                            if (mounted) {
+                                              setState(() {});
+                                            }
+                                          },
+                                          child: TweenAnimationBuilder<double>(
+                                            tween: Tween<double>(
+                                              begin: 0.5,
+                                              end: 1.0,
+                                            ),
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            curve: Curves.elasticOut,
+                                            builder: (context, scale, child) {
+                                              return Transform.scale(
+                                                scale: scale,
+                                                child: Text(
+                                                  _countdown > 0
+                                                      ? '$_countdown'
+                                                      : 'GO !',
+                                                  style: TextStyle(
+                                                    fontSize: numberFontSize,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: Colors.white,
+                                                    letterSpacing: -4,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        if (_countdown > 0) ...[
+                                          const Gap(12),
+                                          Text(
+                                            strings.colorPodPrepare,
+                                            style: TextStyle(
+                                              fontSize: prepareFontSize,
+                                              color: Colors.white70,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: _running ? AppSpacing.sm : 0,
+                      ),
+                      child: SizedBox(
+                        height: _running ? 22 : 0,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 140),
+                          curve: Curves.easeOut,
+                          opacity: showChoices ? 1 : 0,
+                          child: Text(
+                            strings.cognitiveDrillStroopRunInstruction,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          _running ? AppSpacing.sm : 0,
+                          AppSpacing.lg,
+                          _running ? AppSpacing.lg : 0,
+                        ),
+                        child: SizedBox(
+                          height: _running ? 52 : 0,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 140),
+                            curve: Curves.easeOut,
+                            opacity: showChoices ? 1 : 0,
+                            child: IgnorePointer(
+                              ignoring: !showChoices,
+                              child: Row(
+                                children: [
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.red,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.blue,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.green,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.yellow,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                top: 20,
+                left: 12,
+                child: SafeArea(
+                  child: _running
+                      ? Text(
+                          '$_stimuliShown/${_getCount()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
+              if (_answerFeedbackText != null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Align(
+                      alignment: const Alignment(0, -0.62),
+                      child: _buildFeedbackBubble(
+                        text: _answerFeedbackText!,
+                        textColor: _answerFeedbackTextColor,
+                        bgColor: _answerFeedbackBgColor,
+                        accentColor: _answerFeedbackAccentColor,
+                        icon: Icons.flash_on_rounded,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                top: 20,
+                right: 12,
+                child: SafeArea(
+                  child: TextButton(
+                    onPressed: _stop,
+                    child: Text(
+                      strings.colorPodStop,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Color _stroopColor(_StroopInkColor color) {
+  switch (color) {
+    case _StroopInkColor.red:
+      return const Color(0xFFE53935);
+    case _StroopInkColor.blue:
+      return const Color(0xFF1E88E5);
+    case _StroopInkColor.green:
+      return const Color(0xFF43A047);
+    case _StroopInkColor.yellow:
+      return const Color(0xFFFDD835);
+  }
+}
+
+String _stroopName(AppStrings strings, _StroopInkColor color) {
+  switch (color) {
+    case _StroopInkColor.red:
+      return strings.colorPodRed.toUpperCase();
+    case _StroopInkColor.blue:
+      return strings.colorPodBlue.toUpperCase();
+    case _StroopInkColor.green:
+      return strings.colorPodGreen.toUpperCase();
+    case _StroopInkColor.yellow:
+      return strings.colorPodYellow.toUpperCase();
+  }
+}
+
+String _stroopColorLabel(AppStrings strings, _StroopInkColor color) {
+  switch (color) {
+    case _StroopInkColor.red:
+      return strings.colorPodRed;
+    case _StroopInkColor.blue:
+      return strings.colorPodBlue;
+    case _StroopInkColor.green:
+      return strings.colorPodGreen;
+    case _StroopInkColor.yellow:
+      return strings.colorPodYellow;
   }
 }
 
@@ -2147,7 +3764,11 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
   _ReflexSessionRecord? _currentResult;
 
   int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
-    return a.primaryScore.compareTo(b.primaryScore);
+    return _scoredValue(
+      b.mode,
+      b.primaryScore,
+      b.stats,
+    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats));
   }
 
   String _formatDate(DateTime dt) {
@@ -2402,11 +4023,20 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                   .reduce((a, b) => a + b) /
               _timesMs.length;
     final strings = AppStrings.of(context);
+    final speedPenalty =
+        max(0.0, avg - 180.0) *
+        (widget.mode == _ReflexesMode.auditory ? 1.45 : 1.35);
+    final errorPenalty = _falseStarts * 180.0;
+    final score = _boundedScore(1000 - speedPenalty - errorPenalty);
     final result = _ReflexSessionRecord(
       mode: widget.mode,
       date: DateTime.now(),
-      primaryScore: avg,
+      primaryScore: score,
       stats: {
+        '_score_final': score.toStringAsFixed(1),
+        '_score_base': '1000',
+        '_score_penalty_speed': speedPenalty.toStringAsFixed(1),
+        '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
         strings.reflexesStimuliCountLabel: _index.toString(),
         strings.reflexesAvgReactionTime: avg.toStringAsFixed(1),
         strings.reflexesStdDevReactionTime: sqrt(variance).toStringAsFixed(1),
@@ -2548,13 +4178,9 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                         ),
                         const Gap(AppSpacing.sm),
                         Expanded(
-                          child: Text(
-                            strings.reflexesResultsTitle,
-                            textAlign: TextAlign.center,
-                            style: texts.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colors.onSurface,
-                            ),
+                          child: _ResultTitleWithScaleInfo(
+                            mode: _currentResult!.mode,
+                            title: strings.reflexesResultsTitle,
                           ),
                         ),
                         GestureDetector(
@@ -2584,6 +4210,22 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        _AnimatedLevelStarsBlock(
+                          level: widget.level,
+                          score: _scoredValue(
+                            _currentResult!.mode,
+                            _currentResult!.primaryScore,
+                            _currentResult!.stats,
+                          ),
+                          stars: _starsForScore(
+                            _scoredValue(
+                              _currentResult!.mode,
+                              _currentResult!.primaryScore,
+                              _currentResult!.stats,
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
                         Container(
                           padding: AppSpacing.paddingLg,
                           decoration: BoxDecoration(
@@ -2600,6 +4242,12 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                                   fontWeight: FontWeight.w800,
                                   color: colors.secondary,
                                 ),
+                              ),
+                              const Gap(AppSpacing.md),
+                              _ScoreEquationBlock(
+                                mode: _currentResult!.mode,
+                                primaryScore: _currentResult!.primaryScore,
+                                stats: _currentResult!.stats,
                               ),
                               const Gap(AppSpacing.md),
                               _buildStatRow(
@@ -2672,7 +4320,7 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                                     ),
                                   ),
                                   icon: const Icon(
-                                    Icons.refresh_rounded,
+                                    Icons.replay_rounded,
                                     size: 20,
                                   ),
                                   label: Text(
@@ -2764,7 +4412,7 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                                         const Gap(AppSpacing.sm),
                                         Expanded(
                                           child: Text(
-                                            '${record.primaryScore.toStringAsFixed(1)} ms',
+                                            '${_scoredValue(record.mode, record.primaryScore, record.stats).toStringAsFixed(0)} pts',
                                             style: texts.bodyMedium?.copyWith(
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -3201,12 +4849,14 @@ class _MathRunScreen extends StatefulWidget {
     required this.difficulty,
     required this.operatorMode,
     required this.operandMax,
+    this.history = const <_ReflexSessionRecord>[],
     this.level,
   });
   final int durationSeconds;
   final _MathDifficulty difficulty;
   final _MathOperator operatorMode;
   final int operandMax;
+  final List<_ReflexSessionRecord> history;
   final void Function(_ReflexSessionRecord)? onResultSaved;
   final int? level;
   @override
@@ -3239,6 +4889,32 @@ class _MathRunScreenState extends State<_MathRunScreen>
         vsync: this,
         duration: const Duration(milliseconds: 600),
       );
+
+  int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
+    return _scoredValue(
+      b.mode,
+      b.primaryScore,
+      b.stats,
+    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats));
+  }
+
+  String _formatDate(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  List<_ReflexSessionRecord> _topRecords() {
+    final current = _currentResult;
+    final levelStr = widget.level?.toString();
+    var records = <_ReflexSessionRecord>[
+      ...widget.history,
+      if (current != null) current,
+    ];
+    if (levelStr != null) {
+      records = records.where((r) => r.stats['_level'] == levelStr).toList();
+    }
+    records.sort(_compareScores);
+    return records;
+  }
 
   void _startTicker() {
     _ticker?.cancel();
@@ -3443,10 +5119,18 @@ class _MathRunScreenState extends State<_MathRunScreen>
       _MathDifficulty.hard => 2.0,
     };
 
-    final timeFactor = avg > 0 ? 10000.0 / avg : 0.0;
-    final weightedScore =
-        (_correct * difficultyCoefficient * timeFactor) -
-        (_wrong * difficultyCoefficient * 500);
+    final totalAnswers = max(1, _correct + _wrong);
+    final accuracy = _correct / totalAnswers;
+    final targetMs = switch (widget.difficulty) {
+      _MathDifficulty.easy => 5200.0,
+      _MathDifficulty.medium => 6500.0,
+      _MathDifficulty.hard => 8200.0,
+    };
+    final speedRatio = avg > 0 ? (targetMs / avg).clamp(0.0, 1.15) : 0.0;
+    final baseScore =
+        (620 * accuracy) + (280 * speedRatio) + (100 * min(1.0, _correct / 12));
+    final errorPenalty = _wrong * difficultyCoefficient * 95;
+    final score = _boundedScore(baseScore - errorPenalty);
 
     final difficultyLabel = switch (widget.difficulty) {
       _MathDifficulty.easy => strings.reflexesDifficultyEasy,
@@ -3457,8 +5141,11 @@ class _MathRunScreenState extends State<_MathRunScreen>
     final result = _ReflexSessionRecord(
       mode: _ReflexesMode.math,
       date: DateTime.now(),
-      primaryScore: weightedScore,
+      primaryScore: score,
       stats: {
+        '_score_final': score.toStringAsFixed(1),
+        '_score_base': baseScore.toStringAsFixed(1),
+        '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
         strings.reflexesMathCorrectAnswers: '$_correct',
         strings.reflexesMathWrongAnswers: '$_wrong',
         strings.reflexesAvgAnswerTime:
@@ -3499,10 +5186,20 @@ class _MathRunScreenState extends State<_MathRunScreen>
         _MathDifficulty.hard => 2.0,
       };
 
-      final timeFactor = avg > 0 ? 10000.0 / avg : 0.0;
-      final weightedScore =
-          (_correct * difficultyCoefficient * timeFactor) -
-          (_wrong * difficultyCoefficient * 500);
+      final totalAnswers = max(1, _correct + _wrong);
+      final accuracy = _correct / totalAnswers;
+      final targetMs = switch (widget.difficulty) {
+        _MathDifficulty.easy => 5200.0,
+        _MathDifficulty.medium => 6500.0,
+        _MathDifficulty.hard => 8200.0,
+      };
+      final speedRatio = avg > 0 ? (targetMs / avg).clamp(0.0, 1.15) : 0.0;
+      final baseScore =
+          (620 * accuracy) +
+          (280 * speedRatio) +
+          (100 * min(1.0, _correct / 12));
+      final errorPenalty = _wrong * difficultyCoefficient * 95;
+      final score = _boundedScore(baseScore - errorPenalty);
 
       final difficultyLabel = switch (widget.difficulty) {
         _MathDifficulty.easy => strings.reflexesDifficultyEasy,
@@ -3513,8 +5210,11 @@ class _MathRunScreenState extends State<_MathRunScreen>
       final result = _ReflexSessionRecord(
         mode: _ReflexesMode.math,
         date: DateTime.now(),
-        primaryScore: weightedScore,
+        primaryScore: score,
         stats: {
+          '_score_final': score.toStringAsFixed(1),
+          '_score_base': baseScore.toStringAsFixed(1),
+          '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
           strings.reflexesMathCorrectAnswers: '$_correct',
           strings.reflexesMathWrongAnswers: '$_wrong',
           strings.reflexesAvgAnswerTime:
@@ -3631,13 +5331,9 @@ class _MathRunScreenState extends State<_MathRunScreen>
                         ),
                         const Gap(AppSpacing.sm),
                         Expanded(
-                          child: Text(
-                            strings.reflexesResultsTitle,
-                            textAlign: TextAlign.center,
-                            style: texts.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colors.onSurface,
-                            ),
+                          child: _ResultTitleWithScaleInfo(
+                            mode: _currentResult!.mode,
+                            title: strings.reflexesResultsTitle,
                           ),
                         ),
                         GestureDetector(
@@ -3667,94 +5363,129 @@ class _MathRunScreenState extends State<_MathRunScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          strings.reflexesModeMath,
-                          style: texts.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: colors.secondary,
+                        _AnimatedLevelStarsBlock(
+                          level: widget.level,
+                          score: _scoredValue(
+                            _currentResult!.mode,
+                            _currentResult!.primaryScore,
+                            _currentResult!.stats,
+                          ),
+                          stars: _starsForScore(
+                            _scoredValue(
+                              _currentResult!.mode,
+                              _currentResult!.primaryScore,
+                              _currentResult!.stats,
+                            ),
                           ),
                         ),
                         const Gap(AppSpacing.lg),
-                        _buildStatRow(
-                          texts,
-                          colors,
-                          strings.reflexesMathCorrectAnswers,
-                          _currentResult!.stats[strings
-                                  .reflexesMathCorrectAnswers] ??
-                              '',
-                        ),
-                        _buildStatRow(
-                          texts,
-                          colors,
-                          strings.reflexesMathWrongAnswers,
-                          _currentResult!.stats[strings
-                                  .reflexesMathWrongAnswers] ??
-                              '',
-                        ),
-                        _buildStatRow(
-                          texts,
-                          colors,
-                          strings.reflexesAvgAnswerTime,
-                          _currentResult!.stats[strings
-                                  .reflexesAvgAnswerTime] ??
-                              '',
-                        ),
-                        const Gap(AppSpacing.lg),
-                        Text(
-                          strings.reflexesMathOperationsTitle,
-                          style: texts.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: colors.secondary,
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: colors.outline),
                           ),
-                        ),
-                        const Gap(AppSpacing.md),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                strings.reflexesPerformance,
+                                style: texts.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.secondary,
+                                ),
+                              ),
+                              const Gap(AppSpacing.md),
+                              _ScoreEquationBlock(
+                                mode: _currentResult!.mode,
+                                primaryScore: _currentResult!.primaryScore,
+                                stats: _currentResult!.stats,
+                              ),
+                              const Gap(AppSpacing.md),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesMathCorrectAnswers,
+                                _currentResult!.stats[strings
+                                        .reflexesMathCorrectAnswers] ??
+                                    '',
+                              ),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesMathWrongAnswers,
+                                _currentResult!.stats[strings
+                                        .reflexesMathWrongAnswers] ??
+                                    '',
+                              ),
+                              _buildStatRow(
+                                texts,
+                                colors,
+                                strings.reflexesAvgAnswerTime,
+                                _currentResult!.stats[strings
+                                        .reflexesAvgAnswerTime] ??
+                                    '',
+                              ),
+                              const Gap(AppSpacing.md),
+                              Text(
+                                strings.reflexesMathOperationsTitle,
+                                style: texts.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.secondary,
+                                ),
+                              ),
+                              const Gap(AppSpacing.md),
+                              Row(
                                 children: [
-                                  _buildOperationRow(
-                                    texts,
-                                    colors,
-                                    '+',
-                                    _currentResult!.stats,
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        _buildOperationRow(
+                                          texts,
+                                          colors,
+                                          '+',
+                                          _currentResult!.stats,
+                                        ),
+                                        _buildOperationRow(
+                                          texts,
+                                          colors,
+                                          '−',
+                                          _currentResult!.stats,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  _buildOperationRow(
-                                    texts,
-                                    colors,
-                                    '−',
-                                    _currentResult!.stats,
+                                  Container(
+                                    width: 1,
+                                    height: 80,
+                                    color: colors.outline,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.lg,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        _buildOperationRow(
+                                          texts,
+                                          colors,
+                                          '×',
+                                          _currentResult!.stats,
+                                        ),
+                                        _buildOperationRow(
+                                          texts,
+                                          colors,
+                                          '÷',
+                                          _currentResult!.stats,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 80,
-                              color: colors.outline,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.lg,
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _buildOperationRow(
-                                    texts,
-                                    colors,
-                                    '×',
-                                    _currentResult!.stats,
-                                  ),
-                                  _buildOperationRow(
-                                    texts,
-                                    colors,
-                                    '÷',
-                                    _currentResult!.stats,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const Gap(AppSpacing.lg),
                         SizedBox(
@@ -3783,7 +5514,7 @@ class _MathRunScreenState extends State<_MathRunScreen>
                                     ),
                                   ),
                                   icon: const Icon(
-                                    Icons.refresh_rounded,
+                                    Icons.replay_rounded,
                                     size: 20,
                                   ),
                                   label: Text(
@@ -3813,6 +5544,22 @@ class _MathRunScreenState extends State<_MathRunScreen>
                               ),
                             ],
                           ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                        _ResultTopThreeCard(
+                          records: _topRecords(),
+                          colors: colors,
+                          textStyles: texts,
+                          strings: strings,
+                          scoreTextBuilder: (record) =>
+                              strings.reflexesPointsValue(
+                                _scoredValue(
+                                  record.mode,
+                                  record.primaryScore,
+                                  record.stats,
+                                ).toStringAsFixed(0),
+                              ),
+                          dateTextBuilder: _formatDate,
                         ),
                       ],
                     ),
@@ -4154,12 +5901,14 @@ class _MemoryRunScreen extends StatefulWidget {
     required this.sequenceLength,
     required this.displayMs,
     required this.rounds,
+    this.history = const <_ReflexSessionRecord>[],
     this.level,
   });
   final _MemoryDifficulty difficulty;
   final int sequenceLength;
   final int displayMs;
   final int rounds;
+  final List<_ReflexSessionRecord> history;
   final void Function(_ReflexSessionRecord)? onResultSaved;
   final int? level;
   @override
@@ -4188,6 +5937,32 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
   // For color-coded box feedback
   bool _showInputResult = false;
   String? _expectedSequenceStr;
+
+  int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
+    return _scoredValue(
+      b.mode,
+      b.primaryScore,
+      b.stats,
+    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats));
+  }
+
+  String _formatDate(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  List<_ReflexSessionRecord> _topRecords() {
+    final current = _currentResult;
+    final levelStr = widget.level?.toString();
+    var records = <_ReflexSessionRecord>[
+      ...widget.history,
+      if (current != null) current,
+    ];
+    if (levelStr != null) {
+      records = records.where((r) => r.stats['_level'] == levelStr).toList();
+    }
+    records.sort(_compareScores);
+    return records;
+  }
 
   @override
   void initState() {
@@ -4252,11 +6027,19 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
     if (!mounted) return;
 
     if (_round >= widget.rounds) {
+      final successRate = widget.rounds == 0 ? 0.0 : _correct / widget.rounds;
+      final lengthBonus = min(1.0, widget.sequenceLength / 8.0) * 180;
+      final baseScore = (820 * successRate) + lengthBonus;
+      final errorPenalty = (widget.rounds - _correct) * 170.0;
+      final score = _boundedScore(baseScore - errorPenalty);
       final result = _ReflexSessionRecord(
         mode: _ReflexesMode.memory,
         date: DateTime.now(),
-        primaryScore: _correct.toDouble(),
+        primaryScore: score,
         stats: {
+          '_score_final': score.toStringAsFixed(1),
+          '_score_base': baseScore.toStringAsFixed(1),
+          '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
           strings.reflexesMemoryRounds: '${widget.rounds}',
           strings.reflexesMemoryCorrect: '$_correct',
           strings.reflexesMemoryMaxLength: '$_maxLength',
@@ -4320,11 +6103,19 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
   void _stop() {
     if (_correct > 0) {
       final strings = AppStrings.of(context);
+      final successRate = widget.rounds == 0 ? 0.0 : _correct / widget.rounds;
+      final lengthBonus = min(1.0, widget.sequenceLength / 8.0) * 180;
+      final baseScore = (820 * successRate) + lengthBonus;
+      final errorPenalty = (widget.rounds - _correct) * 170.0;
+      final score = _boundedScore(baseScore - errorPenalty);
       final result = _ReflexSessionRecord(
         mode: _ReflexesMode.memory,
         date: DateTime.now(),
-        primaryScore: _correct.toDouble(),
+        primaryScore: score,
         stats: {
+          '_score_final': score.toStringAsFixed(1),
+          '_score_base': baseScore.toStringAsFixed(1),
+          '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
           strings.reflexesMemoryRounds: '${_round - 1}',
           strings.reflexesMemoryCorrect: '$_correct',
           strings.reflexesMemoryMaxLength: '$_maxLength',
@@ -4428,13 +6219,9 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                         ),
                         const Gap(AppSpacing.sm),
                         Expanded(
-                          child: Text(
-                            strings.reflexesResultsTitle,
-                            textAlign: TextAlign.center,
-                            style: texts.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colors.onSurface,
-                            ),
+                          child: _ResultTitleWithScaleInfo(
+                            mode: _currentResult!.mode,
+                            title: strings.reflexesResultsTitle,
                           ),
                         ),
                         GestureDetector(
@@ -4464,6 +6251,22 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        _AnimatedLevelStarsBlock(
+                          level: widget.level,
+                          score: _scoredValue(
+                            _currentResult!.mode,
+                            _currentResult!.primaryScore,
+                            _currentResult!.stats,
+                          ),
+                          stars: _starsForScore(
+                            _scoredValue(
+                              _currentResult!.mode,
+                              _currentResult!.primaryScore,
+                              _currentResult!.stats,
+                            ),
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
                         Container(
                           padding: AppSpacing.paddingLg,
                           decoration: BoxDecoration(
@@ -4480,6 +6283,12 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                                   fontWeight: FontWeight.w800,
                                   color: colors.secondary,
                                 ),
+                              ),
+                              const Gap(AppSpacing.md),
+                              _ScoreEquationBlock(
+                                mode: _currentResult!.mode,
+                                primaryScore: _currentResult!.primaryScore,
+                                stats: _currentResult!.stats,
                               ),
                               const Gap(AppSpacing.md),
                               ..._currentResult!.stats.entries
@@ -4540,7 +6349,7 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                                     ),
                                   ),
                                   icon: const Icon(
-                                    Icons.refresh_rounded,
+                                    Icons.replay_rounded,
                                     size: 20,
                                   ),
                                   label: Text(
@@ -4570,6 +6379,22 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                               ),
                             ],
                           ),
+                        ),
+                        const Gap(AppSpacing.lg),
+                        _ResultTopThreeCard(
+                          records: _topRecords(),
+                          colors: colors,
+                          textStyles: texts,
+                          strings: strings,
+                          scoreTextBuilder: (record) =>
+                              strings.reflexesPointsValue(
+                                _scoredValue(
+                                  record.mode,
+                                  record.primaryScore,
+                                  record.stats,
+                                ).toStringAsFixed(0),
+                              ),
+                          dateTextBuilder: _formatDate,
                         ),
                       ],
                     ),
@@ -5043,7 +6868,11 @@ class _MotRunScreenState extends State<_MotRunScreen>
   final _repaintNotifier = ValueNotifier<int>(0);
 
   int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
-    return b.primaryScore.compareTo(a.primaryScore);
+    return _scoredValue(
+      b.mode,
+      b.primaryScore,
+      b.stats,
+    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats));
   }
 
   String _formatDate(DateTime dt) {
@@ -5430,11 +7259,18 @@ class _MotRunScreenState extends State<_MotRunScreen>
         ? 0.0
         : (totalCorrect / totalPossible) * 100;
 
+    final baseScore = successRate * 10;
+    final missedTargets = totalPossible - totalCorrect;
+    final errorPenalty = missedTargets * 120.0;
+    final score = _boundedScore(baseScore - errorPenalty);
     final result = _ReflexSessionRecord(
       mode: _ReflexesMode.mot,
       date: DateTime.now(),
-      primaryScore: successRate,
+      primaryScore: score,
       stats: {
+        '_score_final': score.toStringAsFixed(1),
+        '_score_base': baseScore.toStringAsFixed(1),
+        '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
         strings.reflexesMotTrialLabel: '${widget.trials}',
         strings.reflexesMotTargetsFound: '$totalCorrect / $totalPossible',
         strings.reflexesMotAvgScore: avgScore.toStringAsFixed(2),
@@ -5785,13 +7621,9 @@ class _MotRunScreenState extends State<_MotRunScreen>
                       ),
                       const Gap(AppSpacing.sm),
                       Expanded(
-                        child: Text(
-                          strings.reflexesResultsTitle,
-                          textAlign: TextAlign.center,
-                          style: textStyles.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
-                          ),
+                        child: _ResultTitleWithScaleInfo(
+                          mode: _currentResult!.mode,
+                          title: strings.reflexesResultsTitle,
                         ),
                       ),
                       GestureDetector(
@@ -5819,6 +7651,22 @@ class _MotRunScreenState extends State<_MotRunScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      _AnimatedLevelStarsBlock(
+                        level: widget.level,
+                        score: _scoredValue(
+                          _currentResult!.mode,
+                          _currentResult!.primaryScore,
+                          _currentResult!.stats,
+                        ),
+                        stars: _starsForScore(
+                          _scoredValue(
+                            _currentResult!.mode,
+                            _currentResult!.primaryScore,
+                            _currentResult!.stats,
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.lg),
                       Container(
                         padding: AppSpacing.paddingLg,
                         decoration: BoxDecoration(
@@ -5835,6 +7683,12 @@ class _MotRunScreenState extends State<_MotRunScreen>
                                 fontWeight: FontWeight.w800,
                                 color: colors.secondary,
                               ),
+                            ),
+                            const Gap(AppSpacing.md),
+                            _ScoreEquationBlock(
+                              mode: _currentResult!.mode,
+                              primaryScore: _currentResult!.primaryScore,
+                              stats: _currentResult!.stats,
                             ),
                             const Gap(AppSpacing.md),
                             ..._currentResult!.stats.entries
@@ -5909,7 +7763,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
                                   ),
                                 ),
                                 icon: const Icon(
-                                  Icons.refresh_rounded,
+                                  Icons.replay_rounded,
                                   size: 20,
                                 ),
                                 label: Text(
@@ -6951,4 +8805,76 @@ class _LevelCell extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StroopStimulusView extends StatelessWidget {
+  const _StroopStimulusView({super.key, required this.word, required this.ink});
+  final _StroopInkColor? word;
+  final _StroopInkColor? ink;
+  @override
+  Widget build(BuildContext context) {
+    if (word == null || ink == null) return const SizedBox.expand();
+    final strings = AppStrings.of(context);
+    return Center(
+      child: Transform.translate(
+        offset: const Offset(0, 52),
+        child: Text(
+          _stroopName(strings, word!),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _stroopColor(ink!),
+            fontSize: 110,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+            shadows: [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LandscapeWrapper extends StatefulWidget {
+  const _LandscapeWrapper({required this.color, required this.child});
+  final Color color;
+  final Widget child;
+  @override
+  State<_LandscapeWrapper> createState() => _LandscapeWrapperState();
+}
+
+class _LandscapeWrapperState extends State<_LandscapeWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => MediaQuery.removePadding(
+    context: context,
+    removeTop: true,
+    removeBottom: true,
+    removeLeft: true,
+    removeRight: true,
+    child: SizedBox.expand(
+      child: ColoredBox(color: widget.color, child: widget.child),
+    ),
+  );
 }

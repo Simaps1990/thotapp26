@@ -15,6 +15,168 @@ import 'package:thot/theme.dart';
 import 'package:thot/utils/timer_sound.dart';
 import 'package:thot/data/training_history.dart';
 
+int _starsForScore(double score) {
+  if (score >= 850) return 3;
+  if (score >= 650) return 2;
+  if (score > 0) return 1;
+  return 0;
+}
+
+class _AnimatedLevelStarsBlock extends StatefulWidget {
+  final int? level;
+  final int stars;
+
+  const _AnimatedLevelStarsBlock({required this.level, required this.stars});
+
+  @override
+  State<_AnimatedLevelStarsBlock> createState() =>
+      _AnimatedLevelStarsBlockState();
+}
+
+class _AnimatedLevelStarsBlockState extends State<_AnimatedLevelStarsBlock>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1050),
+  )..forward();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final texts = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
+
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: BoxDecoration(
+        color: colors.primaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.28)),
+        boxShadow: AppShadows.cardPremium,
+      ),
+      child: Row(
+        children: [
+          Text(
+            '${strings.reflexesLevelValue('${widget.level ?? '—'}')}:',
+            style: texts.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: colors.onPrimaryContainer,
+            ),
+          ),
+          const Spacer(),
+          ...List.generate(3, (index) {
+            final visible = index < widget.stars.clamp(0, 3);
+            final start = index * 0.18;
+            final animation = CurvedAnimation(
+              parent: _controller,
+              curve: Interval(
+                start,
+                (start + 0.46).clamp(0, 1),
+                curve: Curves.elasticOut,
+              ),
+            );
+
+            return Padding(
+              padding: EdgeInsets.only(left: index == 0 ? 0 : 4),
+              child: AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  final value = visible ? animation.value : 0.0;
+
+                  return Transform.translate(
+                    offset: Offset((1 - value) * -14, 0),
+                    child: Transform.rotate(
+                      angle: (1 - value) * -0.08,
+                      child: Transform.scale(
+                        scale: visible ? 0.72 + (value * 0.28) : 0.72,
+                        child: Opacity(
+                          opacity: value.clamp(0, 1),
+                          child: child,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: _PremiumResultStar(colors: colors),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _PremiumResultStar extends StatelessWidget {
+  final ColorScheme colors;
+
+  const _PremiumResultStar({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            const Color(0xFFFFD36A).withValues(alpha: 0.24),
+            const Color(0xFFFFA726).withValues(alpha: 0.06),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.58, 1.0],
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.star_rounded,
+            size: 37,
+            color: colors.shadow.withValues(alpha: 0.18),
+            shadows: [
+              Shadow(
+                color: colors.shadow.withValues(alpha: 0.28),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) => const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFF3B0), Color(0xFFFFC447), Color(0xFFFF8F1F)],
+            ).createShader(bounds),
+            child: const Icon(Icons.star_rounded, size: 35),
+          ),
+          Positioned(
+            top: 9,
+            left: 13,
+            child: Container(
+              width: 8,
+              height: 3,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.62),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 enum _CognitiveDrillMode { direction, stroop }
 
 enum _DirectionSubMode {
@@ -108,6 +270,8 @@ class _CognitiveDrillsScreenState extends State<CognitiveDrillsScreen> {
     Map<String, String> stats,
     AppStrings strings,
   ) {
+    final finalScore = double.tryParse(stats['_score_final'] ?? '');
+    if (finalScore != null && finalScore.isFinite) return finalScore;
     switch (mode) {
       case _CognitiveDrillMode.direction:
         return _parseFirstNumber(
@@ -206,9 +370,12 @@ class _CognitiveDrillsScreenState extends State<CognitiveDrillsScreen> {
     setState(() {});
     if (widget.stroopOnly && Navigator.canPop(context)) {
       if (closeToTools) {
-        Navigator.pop(context, {'_close_tools': '1'});
+        Navigator.pop(
+          context,
+          Map<String, String>.from(cleanResult)..['_close_tools'] = '1',
+        );
       } else {
-        Navigator.pop(context);
+        Navigator.pop(context, cleanResult);
       }
     }
   }
@@ -1400,28 +1567,71 @@ class _DirectionRunScreenState extends State<_DirectionRunScreen>
                         const Gap(AppSpacing.lg),
                         SizedBox(
                           height: 52,
-                          child: FilledButton(
-                            onPressed: () {
-                              setState(() {
-                                _showResults = false;
-                                _currentResult = null;
-                                _aborted = false;
-                                _countdown = 3;
-                                _running = false;
-                                _stimulus = null;
-                                _arrowCounts.updateAll((key, value) => 0);
-                                _sw = null;
-                              });
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) _countdownLoop();
-                              });
-                            },
-                            style: FilledButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showResults = false;
+                                      _currentResult = null;
+                                      _aborted = false;
+                                      _countdown = 3;
+                                      _running = false;
+                                      _stimulus = null;
+                                      _arrowCounts.updateAll((key, value) => 0);
+                                      _sw = null;
+                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (mounted) _countdownLoop();
+                                        });
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        colors.surfaceContainerHighest,
+                                    foregroundColor: colors.onSurfaceVariant,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.replay_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodRestart.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(strings.colorPodRestart.toUpperCase()),
+                              const Gap(AppSpacing.sm),
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    final current = _currentResult;
+                                    if (current == null) return;
+                                    Navigator.of(context).pop(
+                                      Map<String, String>.from(current)
+                                        ..['_next_level'] = '1',
+                                    );
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodNext.toUpperCase(),
+                                  ),
+                                  iconAlignment: IconAlignment.end,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const Gap(AppSpacing.lg),
@@ -1553,9 +1763,14 @@ class _DirectionRunScreenState extends State<_DirectionRunScreen>
 }
 
 class _StroopRunScreen extends StatefulWidget {
-  const _StroopRunScreen({required this.difficulty, required this.history});
+  const _StroopRunScreen({
+    required this.difficulty,
+    required this.history,
+    this.level,
+  });
   final _StroopDifficulty difficulty;
   final List<Map<String, String>> history;
+  final int? level;
   @override
   State<_StroopRunScreen> createState() => _StroopRunScreenState();
 }
@@ -1730,9 +1945,22 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
     if (_aborted || !mounted) return;
     final strings = AppStrings.of(context);
     final shown = _wordCounts.values.fold<int>(0, (a, b) => a + b);
+    final avgMs = _parseFirstNumber(_avgMs(_reactionTimes));
+    final total = max(1, _correctAnswers + _wrongAnswers);
+    final accuracy = _correctAnswers / total;
+    final speedComponent = (1000 - avgMs).clamp(0, 1000).toDouble();
+    final accuracyPenalty = (1 - accuracy) * 450;
+    final errorPenalty = _wrongAnswers * 55.0;
+    final score = (speedComponent - accuracyPenalty - errorPenalty)
+        .clamp(0, 1000)
+        .toDouble();
     final stats = <String, String>{
       'mode': 'stroop',
       'difficulty': widget.difficulty.name,
+      '_score_final': score.toStringAsFixed(1),
+      '_score_base': speedComponent.toStringAsFixed(1),
+      '_score_penalty_accuracy': accuracyPenalty.toStringAsFixed(1),
+      '_score_penalty_errors': errorPenalty.toStringAsFixed(1),
       strings.cognitiveDrillResultsStimuliCount: '$shown',
       strings.cognitiveDrillResultsResponses: '$_responses',
       strings.reflexesAvgReactionTime: _avgMs(_reactionTimes),
@@ -2103,6 +2331,16 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        _AnimatedLevelStarsBlock(
+                          level: widget.level,
+                          stars: _starsForScore(
+                            double.tryParse(
+                                  _currentResult!['_score_final'] ?? '0',
+                                ) ??
+                                0,
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
                         Container(
                           padding: AppSpacing.paddingLg,
                           decoration: BoxDecoration(
@@ -2239,36 +2477,79 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
                         const Gap(AppSpacing.lg),
                         SizedBox(
                           height: 52,
-                          child: FilledButton(
-                            onPressed: () {
-                              setState(() {
-                                _showResults = false;
-                                _currentResult = null;
-                                _aborted = false;
-                                _countdown = 3;
-                                _running = false;
-                                _word = null;
-                                _ink = null;
-                                _responded = false;
-                                _responses = 0;
-                                _correctAnswers = 0;
-                                _wrongAnswers = 0;
-                                _reactionTimes.clear();
-                                _cong.clear();
-                                _conf.clear();
-                                _wordCounts.updateAll((key, value) => 0);
-                                _inkCounts.updateAll((key, value) => 0);
-                              });
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) _loop();
-                              });
-                            },
-                            style: FilledButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showResults = false;
+                                      _currentResult = null;
+                                      _aborted = false;
+                                      _countdown = 3;
+                                      _running = false;
+                                      _word = null;
+                                      _ink = null;
+                                      _responded = false;
+                                      _responses = 0;
+                                      _correctAnswers = 0;
+                                      _wrongAnswers = 0;
+                                      _reactionTimes.clear();
+                                      _cong.clear();
+                                      _conf.clear();
+                                      _wordCounts.updateAll((key, value) => 0);
+                                      _inkCounts.updateAll((key, value) => 0);
+                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (mounted) _loop();
+                                        });
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        colors.surfaceContainerHighest,
+                                    foregroundColor: colors.onSurfaceVariant,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.replay_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodRestart.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(strings.colorPodRestart.toUpperCase()),
+                              const Gap(AppSpacing.sm),
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    final current = _currentResult;
+                                    if (current == null) return;
+                                    Navigator.of(context).pop(
+                                      Map<String, String>.from(current)
+                                        ..['_next_level'] = '1',
+                                    );
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodNext.toUpperCase(),
+                                  ),
+                                  iconAlignment: IconAlignment.end,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const Gap(AppSpacing.lg),
@@ -2383,229 +2664,247 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
     final hardBg = _getHardModeBackground();
     return Scaffold(
       backgroundColor: hardBg,
-      body: Stack(
-        children: [
-          _LandscapeWrapper(
-            color: hardBg,
-            child: Column(
-              children: [
-                Expanded(
-                  child: _running
-                      ? AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 220),
-                          switchInCurve: Curves.linear,
-                          switchOutCurve: Curves.linear,
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOut,
-                              ),
-                              child: child,
-                            );
-                          },
-                          child: _word == null || _ink == null
-                              ? const SizedBox.expand(
-                                  key: ValueKey('stroop-empty'),
-                                )
-                              : _StroopStimulusView(
-                                  key: ValueKey(
-                                    'stroop-${_stimuliShown}-${_word!.name}-${_ink!.name}',
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      resizeToAvoidBottomInset: false,
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        removeBottom: true,
+        removeLeft: true,
+        removeRight: true,
+        child: SizedBox.expand(
+          child: Stack(
+            children: [
+              _LandscapeWrapper(
+                color: hardBg,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _running
+                          ? AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              switchInCurve: Curves.linear,
+                              switchOutCurve: Curves.linear,
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOut,
                                   ),
-                                  word: _word,
-                                  ink: _ink,
-                                ),
-                        )
-                      : LayoutBuilder(
-                          builder: (context, constraints) {
-                            final maxHeight = constraints.maxHeight;
-                            final targetNumberSize = _countdown > 0
-                                ? 160.0
-                                : 120.0;
-                            final numberFontSize = min(
-                              targetNumberSize,
-                              maxHeight * 0.62,
-                            );
-                            final prepareFontSize = min(
-                              18.0,
-                              max(14.0, maxHeight * 0.075),
-                            );
-                            return ExerciseCountdownBackground(
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    AnimatedScale(
-                                      key: ValueKey(_countdown),
-                                      scale: 1.0,
-                                      duration: const Duration(
-                                        milliseconds: 300,
+                                  child: child,
+                                );
+                              },
+                              child: _word == null || _ink == null
+                                  ? const SizedBox.expand(
+                                      key: ValueKey('stroop-empty'),
+                                    )
+                                  : _StroopStimulusView(
+                                      key: ValueKey(
+                                        'stroop-${_stimuliShown}-${_word!.name}-${_ink!.name}',
                                       ),
-                                      curve: Curves.elasticOut,
-                                      onEnd: () {
-                                        if (mounted) {
-                                          setState(() {});
-                                        }
-                                      },
-                                      child: TweenAnimationBuilder<double>(
-                                        tween: Tween<double>(
-                                          begin: 0.5,
-                                          end: 1.0,
-                                        ),
-                                        duration: const Duration(
-                                          milliseconds: 300,
-                                        ),
-                                        curve: Curves.elasticOut,
-                                        builder: (context, scale, child) {
-                                          return Transform.scale(
-                                            scale: scale,
-                                            child: Text(
-                                              _countdown > 0
-                                                  ? '$_countdown'
-                                                  : 'GO !',
-                                              style: TextStyle(
-                                                fontSize: numberFontSize,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.white,
-                                                letterSpacing: -4,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
+                                      word: _word,
+                                      ink: _ink,
                                     ),
-                                    if (_countdown > 0) ...[
-                                      const Gap(12),
-                                      Text(
-                                        strings.colorPodPrepare,
-                                        style: TextStyle(
-                                          fontSize: prepareFontSize,
-                                          color: Colors.white70,
-                                          fontWeight: FontWeight.w600,
+                            )
+                          : LayoutBuilder(
+                              builder: (context, constraints) {
+                                final maxHeight = constraints.maxHeight;
+                                final targetNumberSize = _countdown > 0
+                                    ? 160.0
+                                    : 120.0;
+                                final numberFontSize = min(
+                                  targetNumberSize,
+                                  maxHeight * 0.62,
+                                );
+                                final prepareFontSize = min(
+                                  18.0,
+                                  max(14.0, maxHeight * 0.075),
+                                );
+                                return ExerciseCountdownBackground(
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        AnimatedScale(
+                                          key: ValueKey(_countdown),
+                                          scale: 1.0,
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
+                                          curve: Curves.elasticOut,
+                                          onEnd: () {
+                                            if (mounted) {
+                                              setState(() {});
+                                            }
+                                          },
+                                          child: TweenAnimationBuilder<double>(
+                                            tween: Tween<double>(
+                                              begin: 0.5,
+                                              end: 1.0,
+                                            ),
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            curve: Curves.elasticOut,
+                                            builder: (context, scale, child) {
+                                              return Transform.scale(
+                                                scale: scale,
+                                                child: Text(
+                                                  _countdown > 0
+                                                      ? '$_countdown'
+                                                      : 'GO !',
+                                                  style: TextStyle(
+                                                    fontSize: numberFontSize,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: Colors.white,
+                                                    letterSpacing: -4,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: _running ? AppSpacing.sm : 0,
-                  ),
-                  child: SizedBox(
-                    height: _running ? 22 : 0,
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 140),
-                      curve: Curves.easeOut,
-                      opacity: showChoices ? 1 : 0,
-                      child: Text(
-                        strings.cognitiveDrillStroopRunInstruction,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
+                                        if (_countdown > 0) ...[
+                                          const Gap(12),
+                                          Text(
+                                            strings.colorPodPrepare,
+                                            style: TextStyle(
+                                              fontSize: prepareFontSize,
+                                              color: Colors.white70,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: _running ? AppSpacing.sm : 0,
                       ),
-                    ),
-                  ),
-                ),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      _running ? AppSpacing.sm : 0,
-                      AppSpacing.lg,
-                      _running ? AppSpacing.lg : 0,
-                    ),
-                    child: SizedBox(
-                      height: _running ? 52 : 0,
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 140),
-                        curve: Curves.easeOut,
-                        opacity: showChoices ? 1 : 0,
-                        child: IgnorePointer(
-                          ignoring: !showChoices,
-                          child: Row(
-                            children: [
-                              _buildAnswerButton(strings, _StroopInkColor.red),
-                              const Gap(AppSpacing.sm),
-                              _buildAnswerButton(strings, _StroopInkColor.blue),
-                              const Gap(AppSpacing.sm),
-                              _buildAnswerButton(
-                                strings,
-                                _StroopInkColor.green,
-                              ),
-                              const Gap(AppSpacing.sm),
-                              _buildAnswerButton(
-                                strings,
-                                _StroopInkColor.yellow,
-                              ),
-                            ],
+                      child: SizedBox(
+                        height: _running ? 22 : 0,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 140),
+                          curve: Curves.easeOut,
+                          opacity: showChoices ? 1 : 0,
+                          child: Text(
+                            strings.cognitiveDrillStroopRunInstruction,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
                     ),
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          _running ? AppSpacing.sm : 0,
+                          AppSpacing.lg,
+                          _running ? AppSpacing.lg : 0,
+                        ),
+                        child: SizedBox(
+                          height: _running ? 52 : 0,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 140),
+                            curve: Curves.easeOut,
+                            opacity: showChoices ? 1 : 0,
+                            child: IgnorePointer(
+                              ignoring: !showChoices,
+                              child: Row(
+                                children: [
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.red,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.blue,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.green,
+                                  ),
+                                  const Gap(AppSpacing.sm),
+                                  _buildAnswerButton(
+                                    strings,
+                                    _StroopInkColor.yellow,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                top: 20,
+                left: 12,
+                child: SafeArea(
+                  child: _running
+                      ? Text(
+                          '$_stimuliShown/${_getCount()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
+              if (_answerFeedbackText != null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Align(
+                      alignment: const Alignment(0, -0.62),
+                      child: _buildFeedbackBubble(
+                        text: _answerFeedbackText!,
+                        textColor: _answerFeedbackTextColor,
+                        bgColor: _answerFeedbackBgColor,
+                        accentColor: _answerFeedbackAccentColor,
+                        icon: Icons.flash_on_rounded,
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 20,
-            left: 12,
-            child: SafeArea(
-              child: _running
-                  ? Text(
-                      '$_stimuliShown/${_getCount()}',
+              Positioned(
+                top: 20,
+                right: 12,
+                child: SafeArea(
+                  child: TextButton(
+                    onPressed: _stop,
+                    child: Text(
+                      strings.colorPodStop,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w900,
                         fontSize: 14,
                       ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-          if (_answerFeedbackText != null)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Align(
-                  alignment: const Alignment(0, -0.62),
-                  child: _buildFeedbackBubble(
-                    text: _answerFeedbackText!,
-                    textColor: _answerFeedbackTextColor,
-                    bgColor: _answerFeedbackBgColor,
-                    accentColor: _answerFeedbackAccentColor,
-                    icon: Icons.flash_on_rounded,
+                    ),
                   ),
                 ),
               ),
-            ),
-          Positioned(
-            top: 20,
-            right: 12,
-            child: SafeArea(
-              child: TextButton(
-                onPressed: _stop,
-                child: Text(
-                  strings.colorPodStop,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2784,6 +3083,7 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
@@ -2794,9 +3094,15 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
   }
 
   @override
-  Widget build(BuildContext context) => ColoredBox(
-    color: widget.color,
-    child: SizedBox.expand(child: widget.child),
+  Widget build(BuildContext context) => MediaQuery.removePadding(
+    context: context,
+    removeTop: true,
+    removeBottom: true,
+    removeLeft: true,
+    removeRight: true,
+    child: SizedBox.expand(
+      child: ColoredBox(color: widget.color, child: widget.child),
+    ),
   );
 }
 
