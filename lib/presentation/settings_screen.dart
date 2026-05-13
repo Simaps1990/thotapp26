@@ -808,13 +808,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: strings.backupSubtitle,
             trailing: const SizedBox.shrink(),
           ),
-          const Divider(indent: 48, height: 1),
-          _SettingsItem(
-            icon: Icons.offline_bolt_outlined,
-            label: strings.offlineModeLabel,
-            subtitle: strings.offlineModeSubtitle,
-            trailing: const SizedBox.shrink(),
-          ),
         ],
       ),
     );

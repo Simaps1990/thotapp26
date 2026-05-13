@@ -1041,6 +1041,11 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
     if (!provider.isPremium) {
       for (final ex in _exercises) {
         for (final platformId in ex.platformShotImpact.keys) {
+          if (platformId.trim().isEmpty ||
+              platformId == 'none' ||
+              platformId == 'borrowed') {
+            continue;
+          }
           if (!provider.canUsePlatformId(platformId)) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -1054,6 +1059,11 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
         }
 
         for (final ammoId in ex.ammoShotImpact.keys) {
+          if (ammoId.trim().isEmpty ||
+              ammoId == 'none' ||
+              ammoId == 'borrowed') {
+            continue;
+          }
           if (!provider.canUseAmmoId(ammoId)) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -1067,6 +1077,9 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
         }
 
         for (final accId in ex.equipmentShotImpact.keys) {
+          if (accId.trim().isEmpty || accId == 'none' || accId == 'borrowed') {
+            continue;
+          }
           if (!provider.canUseAccessoryId(accId)) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -4669,25 +4682,50 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     final hasTirStep =
         _detailedMode &&
         _steps.any((s) => s.type == StepType.tir && (s.shots ?? 0) > 0);
+    final needsGlobalPlatform =
+        !_detailedMode ||
+        _steps.any(
+          (s) =>
+              s.type == StepType.tir &&
+              (s.shots ?? 0) > 0 &&
+              (s.usedPlatformId ?? '').trim().isEmpty,
+        );
+    final needsGlobalAmmo =
+        !_detailedMode ||
+        _steps.any(
+          (s) =>
+              s.type == StepType.tir &&
+              (s.shots ?? 0) > 0 &&
+              (s.usedAmmoId ?? '').trim().isEmpty,
+        );
     final hasUnattributedTirStep =
         _detailedMode &&
         _steps.any(
           (s) =>
               s.type == StepType.tir &&
               (s.shots ?? 0) > 0 &&
-              ((s.usedPlatformId ?? '').trim().isEmpty ||
-                  (s.usedAmmoId ?? '').trim().isEmpty),
+              ((s.usedPlatformId ?? '').trim().isEmpty &&
+                      _platformSource == 'inventory' &&
+                      _selectedPlatformId == null ||
+                  (s.usedAmmoId ?? '').trim().isEmpty &&
+                      _ammoSource == 'inventory' &&
+                      _selectedAmmoId == null),
         );
 
     setState(() {
       _platformError =
-          _platformSource == 'inventory' && _selectedPlatformId == null;
-      _ammoError = _ammoSource == 'inventory' && _selectedAmmoId == null;
+          needsGlobalPlatform &&
+          _platformSource == 'inventory' &&
+          _selectedPlatformId == null;
+      _ammoError =
+          needsGlobalAmmo &&
+          _ammoSource == 'inventory' &&
+          _selectedAmmoId == null;
       _shotsError = _detailedMode
           ? (hasTirStep && computedShots <= 0)
           : (shots == null || shots <= 0);
       _distanceError = _detailedMode
-          ? (computedDistance <= 0)
+          ? (_steps.isEmpty || (hasTirStep && computedDistance <= 0))
           : (distance == null || distance <= 0);
     });
 
@@ -4743,11 +4781,11 @@ class _ExerciseFormState extends State<_ExerciseForm> {
 
     final effectivePlatformId = _platformSource == 'borrowed'
         ? 'borrowed'
-        : _selectedPlatformId!;
+        : (_selectedPlatformId ?? 'none');
 
     final effectiveAmmoId = _ammoSource == 'borrowed'
         ? 'borrowed'
-        : _selectedAmmoId!;
+        : (_selectedAmmoId ?? 'none');
 
     final effectiveSteps = _detailedMode
         ? List<ExerciseStep>.from(_steps)

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
@@ -344,7 +344,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      toolSectionTitle('Entraînement'),
+                      toolSectionTitle(strings.toolsTrainingSectionTitle),
                       toolButton(
                         icon: Icons.timer_rounded,
                         title: strings.homeTimerTitle,
@@ -369,7 +369,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         iconColors: const [_reflexesColor],
                       ),
                       const Gap(AppSpacing.lg),
-                      toolSectionTitle('Calcul'),
+                      toolSectionTitle(strings.toolsCalculationSectionTitle),
                       toolButton(
                         icon: Icons.calculate_rounded,
                         title: strings.calculationsToolTitle,
@@ -389,7 +389,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         iconColors: const [_tablesColor],
                       ),
                       const Gap(AppSpacing.lg),
-                      toolSectionTitle('Maintenance / Diagnostic'),
+                      toolSectionTitle(strings.toolsMaintenanceSectionTitle),
                       toolButton(
                         icon: Icons.medical_services_outlined,
                         title: strings.homeDiagnosticTitle,

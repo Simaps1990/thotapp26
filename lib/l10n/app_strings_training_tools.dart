@@ -386,11 +386,11 @@ extension AppStringsTrainingTools on AppStrings {
   );
 
   String get reflexesToolTitle => _pick(
-fr: 'EXERCICES',
-en: 'EXERCISES',
-de: 'ÜBUNGEN',
-it: 'ESERCIZI',
-es: 'EJERCICIOS',
+    fr: 'EXERCICES',
+    en: 'EXERCISES',
+    de: 'ÜBUNGEN',
+    it: 'ESERCIZI',
+    es: 'EJERCICIOS',
   );
 
   String get reflexesToolSubtitle => _pick(
@@ -415,6 +415,30 @@ es: 'EJERCICIOS',
     de: 'Mil, Hit Factor, Power Factor',
     it: 'Mil, Hit Factor, Power Factor',
     es: 'Mil, Hit Factor, Power Factor',
+  );
+
+  String get toolsTrainingSectionTitle => _pick(
+    fr: 'Entraînement',
+    en: 'Training',
+    de: 'Training',
+    it: 'Allenamento',
+    es: 'Entrenamiento',
+  );
+
+  String get toolsCalculationSectionTitle => _pick(
+    fr: 'Calcul',
+    en: 'Calculation',
+    de: 'Berechnung',
+    it: 'Calcolo',
+    es: 'Cálculo',
+  );
+
+  String get toolsMaintenanceSectionTitle => _pick(
+    fr: 'Maintenance',
+    en: 'Maintenance',
+    de: 'Wartung',
+    it: 'Manutenzione',
+    es: 'Mantenimiento',
   );
 
   String get toolComingSoon => _pick(

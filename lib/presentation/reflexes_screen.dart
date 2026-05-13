@@ -1823,7 +1823,7 @@ class _DrillCardState extends State<_DrillCard>
                     alignment: Alignment.center,
                     colorFilter: ColorFilter.mode(
                       Colors.black.withValues(
-                        alpha: widget.isSelected ? 0.18 : 0.38,
+                        alpha: widget.isSelected ? 0.12 : 0.28,
                       ),
                       BlendMode.darken,
                     ),

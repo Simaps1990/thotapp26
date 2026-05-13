@@ -145,10 +145,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     });
 
     final visibleAchievements = achievements.where((a) {
-      final date = provider.achievementUnlockDate(a.id);
       final progress = a.progress(provider);
       final safeTarget = a.target <= 0 ? 1 : a.target;
-      final isUnlocked = date != null || progress >= safeTarget;
+      final isUnlocked = progress >= safeTarget;
       if (_achievementStatusIndex == 0) return isUnlocked;
       return !isUnlocked && progress > 0;
     }).toList();
@@ -256,6 +255,8 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               final rarityColor = _rarityColor(a.rarity);
               final date = provider.achievementUnlockDate(a.id);
               final progress = a.progress(provider);
+              final safeTarget = a.target <= 0 ? 1 : a.target;
+              final isUnlocked = progress >= safeTarget;
               final isInProgress = _achievementStatusIndex == 1;
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -271,7 +272,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                     rarityColor: rarityColor,
                     progress: progress,
                     target: a.target,
-                    unlockedAt: date,
+                    unlockedAt: isUnlocked ? date : null,
                     iconAsset: _achievementIconAsset(a.id),
                   ),
                 ),
