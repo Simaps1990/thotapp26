@@ -57,7 +57,7 @@ class _AchievementToastLayerState extends State<AchievementToastLayer>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // On écoute le provider pour savoir si un trophée est arrivé
-    final provider = Provider.of<ThotProvider>(context, listen: true);
+    final provider = Provider.of<ThotProvider>(context);
     if (_currentlyShowing == null && provider.achievementQueue.isNotEmpty) {
       // Pour éviter de setState en plein build
       WidgetsBinding.instance.addPostFrameCallback((_) {

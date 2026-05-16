@@ -297,4 +297,20 @@ extension AppStringsTimer on AppStrings {
     it: 'Riavviare',
     es: 'Reiniciar',
   );
+
+  String get increaseValue => _pick(
+    fr: 'Augmenter',
+    en: 'Increase',
+    de: 'Erhöhen',
+    it: 'Aumenta',
+    es: 'Aumentar',
+  );
+
+  String get decreaseValue => _pick(
+    fr: 'Diminuer',
+    en: 'Decrease',
+    de: 'Verringern',
+    it: 'Diminuisci',
+    es: 'Disminuir',
+  );
 }

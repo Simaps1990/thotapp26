@@ -551,4 +551,20 @@ extension AppStringsShootingTables on AppStrings {
     it: 'Annulla',
     es: 'Cancelar',
   );
+
+  String get shootingTableQrScannerError => _pick(
+    fr: 'Erreur d\'accès à la caméra',
+    en: 'Camera access error',
+    de: 'Kamera-Zugriffsfehler',
+    it: 'Errore di accesso alla fotocamera',
+    es: 'Error de acceso a la cámara',
+  );
+
+  String get tableImportedSuffix => _pick(
+    fr: '(importée)',
+    en: '(imported)',
+    de: '(importiert)',
+    it: '(importata)',
+    es: '(importada)',
+  );
 }

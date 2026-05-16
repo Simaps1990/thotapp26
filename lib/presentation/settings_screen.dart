@@ -131,17 +131,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _getInitials(String name) {
-    if (name.isEmpty) return "?";
+    if (name.isEmpty) return '?';
     try {
       return name
           .split(' ')
           .where((n) => n.isNotEmpty)
           .take(2)
           .map((n) => n[0])
-          .join('')
+          .join()
           .toUpperCase();
     } catch (e) {
-      return "?";
+      return '?';
     }
   }
 
@@ -238,7 +238,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ).showSnackBar(SnackBar(content: Text(strings.exportCrashLogEmpty)));
       return;
     }
-    await Share.shareXFiles([XFile(path)], text: 'THOT crash log');
+    try {
+      await Share.shareXFiles([XFile(path)], text: 'THOT crash log');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.exportCrashLogEmpty)));
+    }
   }
 
   Future<void> _showDataManagementDialog(
@@ -519,7 +526,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : provider.localeCode,
                 items: [
                   DropdownMenuItem<String?>(
-                    value: null,
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: Text(strings.appLanguageSystem),
@@ -867,7 +873,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.workspace_premium_rounded,
                         size: 40,
                         color: Colors.white,
@@ -896,7 +902,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ),
-                      Icon(
+                      const Icon(
                         Icons.arrow_forward_rounded,
                         color: Colors.white,
                         size: 28,
@@ -947,7 +953,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
+                        padding: const EdgeInsets.symmetric(),
                       ),
                     ),
                   ),
@@ -1412,6 +1418,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? 'assets/images/carnetn.webp'
                           : 'assets/images/carnet.webp',
                       fit: BoxFit.cover,
+                      excludeFromSemantics: true,
                     ),
                     DecoratedBox(
                       decoration: BoxDecoration(
@@ -1452,7 +1459,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 top: panelTop - 56,
                 child: TextButton.icon(
                   onPressed: () => _showEditProfileDialog(context, provider),
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.person_rounded,
                     color: Colors.white,
                     size: 18,
@@ -1572,7 +1579,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   vertical: 10,
                 ),
                 labelText: strings.settingsProfileNameLabel,
-                prefixIcon: Icon(Icons.person_outline_rounded),
+                prefixIcon: const Icon(Icons.person_outline_rounded),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide: BorderSide(
@@ -1602,7 +1609,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   vertical: 10,
                 ),
                 labelText: strings.settingsProfileLicenseLabel,
-                prefixIcon: Icon(Icons.badge_outlined),
+                prefixIcon: const Icon(Icons.badge_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide: BorderSide(
@@ -1632,7 +1639,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   vertical: 10,
                 ),
                 labelText: strings.settingsProfileEmailLabel,
-                prefixIcon: Icon(Icons.email_outlined),
+                prefixIcon: const Icon(Icons.email_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide: BorderSide(
@@ -1697,7 +1704,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             label: strings.settingsViewPro,
             onPressed: () => context.push('/pro'),
           ),
-          duration: const Duration(seconds: 4),
         ),
       );
       return;
@@ -1711,7 +1717,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(strings.selectAtLeastOneSection),
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -1894,7 +1900,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     includeAmmos: ammos,
                     includeAccessories: accessories,
                     includeSessions: sessions,
-                    includeAuth: false,
                   ),
                 ),
                 icon: const Icon(Icons.download_rounded, size: 18),
@@ -1952,6 +1957,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
+                      tooltip: strings.close,
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -2237,9 +2243,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   labelText: strings.settingsDocumentNameLabel,
                   hintText: strings.settingsDocumentNameHint,
-                  prefixIcon: Icon(Icons.edit_rounded),
+                  prefixIcon: const Icon(Icons.edit_rounded),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.clear_rounded, size: 18),
+                    tooltip: strings.clear,
                     onPressed: () {
                       nameController.clear();
                     },
@@ -2269,7 +2276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 initialValue: selectedType,
                 decoration: InputDecoration(
                   labelText: strings.settingsDocumentTypeLabel,
-                  prefixIcon: Icon(Icons.category_outlined),
+                  prefixIcon: const Icon(Icons.category_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     borderSide: BorderSide(
@@ -2458,19 +2465,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             FilledButton(
               onPressed: () async {
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
                 final remindersReady = await provider
                     .ensureDocumentReminderEnabled(
                       notifyBeforeDays: selectedNotifyDays,
                     );
                 if (!remindersReady) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(strings.documentPushPermissionDenied),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(strings.documentPushPermissionDenied),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
                   return;
                 }
 
@@ -2487,9 +2494,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
 
                 provider.addUserDocument(document);
-                Navigator.pop(context);
+                navigator.pop();
 
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(
                     content: Text(strings.settingsDocumentAddedSuccess),
                     duration: const Duration(seconds: 3),
@@ -2897,7 +2904,7 @@ class _PremiumFeature extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
           const Gap(12),
           Expanded(
             child: Text(
@@ -2927,15 +2934,15 @@ class _DocumentItem extends StatelessWidget {
 
   IconData _getDocumentIcon(String type) {
     switch (type) {
-      case "Permis de chasse":
+      case 'Permis de chasse':
         return Icons.badge_outlined;
-      case "Licence FFT":
+      case 'Licence FFT':
         return Icons.card_membership_outlined;
       case "Carte d'identité":
         return Icons.credit_card_outlined;
-      case "Autorisation de port de plateforme":
+      case 'Autorisation de port de plateforme':
         return Icons.gavel_outlined;
-      case "Certificat médical":
+      case 'Certificat médical':
         return Icons.medical_services_outlined;
       default:
         return Icons.description_outlined;
@@ -2965,10 +2972,7 @@ class _DocumentItem extends StatelessWidget {
 
       if (kIsWeb) {
         if (path.startsWith('data:')) {
-          await WebDocumentOpener.openDataUrlInNewTab(
-            path,
-            windowName: '_blank',
-          );
+          await WebDocumentOpener.openDataUrlInNewTab(path);
           return;
         }
 
@@ -2977,7 +2981,6 @@ class _DocumentItem extends StatelessWidget {
             path.startsWith('https://')) {
           final ok = await launchUrl(
             Uri.parse(path),
-            mode: LaunchMode.platformDefault,
             webOnlyWindowName: '_blank',
           );
           if (!ok) throw Exception('launchUrl failed (web)');
@@ -3102,7 +3105,8 @@ class _DocumentItem extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete_rounded),
+                  icon: const Icon(Icons.delete_rounded),
+                  tooltip: strings.deleteButton,
                   onPressed: () {
                     showDialog(
                       context: context,

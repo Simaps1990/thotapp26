@@ -37,7 +37,11 @@ abstract final class SessionTextExporter {
         session.shootingDistance!.trim().isNotEmpty) {
       buffer.writeln('🎯 ${session.shootingDistance}');
     }
-    buffer.writeln(strings.textExportType(session.sessionType));
+  buffer.writeln(
+    strings.textExportType(
+      strings.sessionTypeDisplayName(session.sessionType),
+    ),
+  );
     buffer.writeln();
 
     if (session.weatherEnabled) {

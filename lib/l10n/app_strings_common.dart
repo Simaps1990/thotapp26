@@ -358,4 +358,12 @@ extension AppStringsCommon on AppStrings {
     it: 'Mai usato',
     es: 'Nunca usado',
   );
+
+  String get next => _pick(
+    fr: 'Suivant',
+    en: 'Next',
+    de: 'Weiter',
+    it: 'Successivo',
+    es: 'Siguiente',
+  );
 }

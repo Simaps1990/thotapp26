@@ -489,85 +489,6 @@ extension AppStringsTrainingTools on AppStrings {
     es: 'TEST DE STROOP',
   );
 
-  String get cognitiveDrillDirectionSubmode4Arrows => _pick(
-    fr: '4 directions',
-    en: '4 directions',
-    de: '4 Richtungen',
-    it: '4 direzioni',
-    es: '4 direcciones',
-  );
-
-  String get cognitiveDrillDirectionSubmode4ArrowsDesc => _pick(
-    fr: 'Haut, bas, gauche, droite',
-    en: 'Up, down, left, right',
-    de: 'Oben, unten, links, rechts',
-    it: 'Su, giù, sinistra, destra',
-    es: 'Arriba, abajo, izquierda, derecha',
-  );
-
-  String get cognitiveDrillDirectionSubmodeLeftRight => _pick(
-    fr: 'Gauche / Droite',
-    en: 'Left / Right',
-    de: 'Links / Rechts',
-    it: 'Sinistra / Destra',
-    es: 'Izquierda / Derecha',
-  );
-
-  String get cognitiveDrillDirectionSubmodeLeftRightDesc => _pick(
-    fr: 'Flèches horizontales uniquement',
-    en: 'Horizontal arrows only',
-    de: 'Nur horizontale Pfeile',
-    it: 'Solo frecce orizzontali',
-    es: 'Solo flechas horizontales',
-  );
-
-  String get cognitiveDrillDirectionSubmodeLeftCenterRight => _pick(
-    fr: 'Gauche / Centre / Droite',
-    en: 'Left / Center / Right',
-    de: 'Links / Mitte / Rechts',
-    it: 'Sinistra / Centro / Destra',
-    es: 'Izquierda / Centro / Derecha',
-  );
-
-  String get cognitiveDrillDirectionSubmodeLeftCenterRightDesc => _pick(
-    fr: 'Flèches horizontales avec centre',
-    en: 'Horizontal arrows with center',
-    de: 'Horizontale Pfeile mit Mitte',
-    it: 'Frecce orizzontali con centro',
-    es: 'Flechas horizontales con centro',
-  );
-
-  String get cognitiveDrillDirectionSubmodeUpDown => _pick(
-    fr: 'Haut / Bas',
-    en: 'Up / Down',
-    de: 'Oben / Unten',
-    it: 'Su / Giù',
-    es: 'Arriba / Abajo',
-  );
-
-  String get cognitiveDrillDirectionSubmodeUpDownDesc => _pick(
-    fr: 'Flèches verticales uniquement',
-    en: 'Vertical arrows only',
-    de: 'Nur vertikale Pfeile',
-    it: 'Solo frecce verticali',
-    es: 'Solo flechas verticales',
-  );
-
-  String get cognitiveDrillDirectionSubmodeUpDownCenter => _pick(
-    fr: 'Haut / Centre / Bas',
-    en: 'Up / Center / Down',
-    de: 'Oben / Mitte / Unten',
-    it: 'Su / Centro / Giù',
-    es: 'Arriba / Centro / Abajo',
-  );
-
-  String get cognitiveDrillDirectionSubmodeUpDownCenterDesc => _pick(
-    fr: 'Flèches verticales avec centre',
-    en: 'Vertical arrows with center',
-    de: 'Vertikale Pfeile mit Mitte',
-    it: 'Frecce verticali con centro',
-    es: 'Flechas verticales con centro',
-  );
 
   String get cognitiveDrillStroopSubmodeSimple => _pick(
     fr: 'Réaction simple',
@@ -597,14 +518,6 @@ extension AppStringsTrainingTools on AppStrings {
     de: 'Schwer',
     it: 'Difficile',
     es: 'Difícil',
-  );
-
-  String get cognitiveDrillDirectionSubmodeTitle => _pick(
-    fr: 'Orientations des flèches',
-    en: 'Arrow orientations',
-    de: 'Pfeilrichtungen',
-    it: 'Orientamenti delle frecce',
-    es: 'Orientaciones de flechas',
   );
 
   String get cognitiveDrillSettingsTitle => _pick(
@@ -683,11 +596,11 @@ extension AppStringsTrainingTools on AppStrings {
   );
 
   String get reflexesModeMotDescription => _pick(
-    fr: 'Plusieurs cercles identiques sont disposés à l\'écran. Au début, **3 cercles clignotent en orange** : ce sont vos cibles à mémoriser. Tous les cercles redeviennent ensuite identiques et se déplacent en même temps. Suivez mentalement les 3 cibles d\'origine. Quand le mouvement s\'arrête, tapez les **3 cercles** que vous pensez être les cibles.',
-    en: 'Multiple identical circles are arranged on screen. At the start, **3 circles flash orange** : these are your targets to memorize. All circles then become identical and move simultaneously. Mentally track the 3 original targets. When movement stops, tap the **3 circles** you believe are the targets.',
-    de: 'Mehrere identische Kreise sind auf dem Bildschirm angeordnet. Zu Beginn blinken **3 Kreise orange** : dies sind Ihre Ziele, die Sie sich merken müssen. Alle Kreise werden dann identisch und bewegen sich gleichzeitig. Verfolgen Sie mental die 3 ursprünglichen Ziele. Wenn die Bewegung stoppt, tippen Sie auf die **3 Kreise**, die Ihrer Meinung nach die Ziele sind.',
-    it: 'Più cerchi identici sono disposti sullo schermo. All\'inizio, **3 cerchi lampeggiano in arancione** : questi sono i target da memorizzare. Tutti i cerchi diventano poi identici e si muovono contemporaneamente. Segui mentalmente i 3 target originali. Quando il movimento si ferma, tocca i **3 cerchi** che pensi siano i target.',
-    es: 'Varios círculos idénticos están dispuestos en pantalla. Al principio, **3 círculos parpadean en naranja** : estos son tus objetivos a memorizar. Todos los círculos se vuelven luego idénticos y se mueven simultáneamente. Sigue mentalmente los 3 objetivos originales. Cuando el movimiento se detiene, toca los **3 círculos** que crees que son los objetivos.',
+    fr: 'Plusieurs cercles identiques sont disposés à l\'écran. Au début, **certains cercles clignotent en orange** : ce sont vos cibles à mémoriser. Le nombre de cibles varie selon la difficulté (1 à 5). Tous les cercles redeviennent ensuite identiques et se déplacent en même temps. Suivez mentalement les cibles d\'origine. Quand le mouvement s\'arrête, tapez les cercles que vous pensez être les cibles.',
+    en: 'Multiple identical circles are arranged on screen. At the start, **some circles flash orange** : these are your targets to memorize. The number of targets varies by difficulty (1 to 5). All circles then become identical and move simultaneously. Mentally track the original targets. When movement stops, tap the circles you believe are the targets.',
+    de: 'Mehrere identische Kreise sind auf dem Bildschirm angeordnet. Zu Beginn blinken **einige Kreise orange** : dies sind Ihre Ziele, die Sie sich merken müssen. Die Anzahl der Ziele variiert je nach Schwierigkeit (1 bis 5). Alle Kreise werden dann identisch und bewegen sich gleichzeitig. Verfolgen Sie mental die ursprünglichen Ziele. Wenn die Bewegung stoppt, tippen Sie auf die Kreise, die Ihrer Meinung nach die Ziele sind.',
+    it: 'Più cerchi identici sono disposti sullo schermo. All\'inizio, **alcuni cerchi lampeggiano in arancione** : questi sono i target da memorizzare. Il numero di target varia in base alla difficoltà (da 1 a 5). Tutti i cerchi diventano poi identici e si muovono contemporaneamente. Segui mentalmente i target originali. Quando il movimento si ferma, tocca i cerchi che pensi siano i target.',
+    es: 'Varios círculos idénticos están dispuestos en pantalla. Al principio, **algunos círculos parpadean en naranja** : estos son tus objetivos a memorizar. El número de objetivos varía según la dificultad (de 1 a 5). Todos los círculos se vuelven luego idénticos y se mueven simultáneamente. Sigue mentalmente los objetivos originales. Cuando el movimiento se detiene, toca los círculos que crees que son los objetivos.',
   );
 
   String get reflexesModeMotInfoTooltip => _pick(
@@ -816,14 +729,6 @@ extension AppStringsTrainingTools on AppStrings {
     de: 'W\u00f6rter',
     it: 'Parole',
     es: 'Palabras',
-  );
-
-  String get cognitiveDrillDirectionArrowsBreakdown => _pick(
-    fr: 'Détail des flèches',
-    en: 'Arrows breakdown',
-    de: 'Pfeile-Aufschlüsselung',
-    it: 'Dettaglio frecce',
-    es: 'Detalle flechas',
   );
 
   String get cognitiveDrillStimulusDurationLabel => _pick(
@@ -973,30 +878,6 @@ extension AppStringsTrainingTools on AppStrings {
   );
 
   // --- Difficulty Criteria ---
-
-  String get cognitiveDrillDirectionEasyCriteria => _pick(
-    fr: '10 stimuli • 1.5 s',
-    en: '10 stimuli • 1.5 s',
-    de: '10 Stimuli • 1.5 s',
-    it: '10 stimoli • 1.5 s',
-    es: '10 estímulos • 1.5 s',
-  );
-
-  String get cognitiveDrillDirectionMediumCriteria => _pick(
-    fr: '15 stimuli • 1.2 s',
-    en: '15 stimuli • 1.2 s',
-    de: '15 Stimuli • 1.2 s',
-    it: '15 stimoli • 1.2 s',
-    es: '15 estímulos • 1.2 s',
-  );
-
-  String get cognitiveDrillDirectionHardCriteria => _pick(
-    fr: '20 stimuli • 0.9 s',
-    en: '20 stimuli • 0.9 s',
-    de: '20 Stimuli • 0.9 s',
-    it: '20 stimoli • 0.9 s',
-    es: '20 estímulos • 0.9 s',
-  );
 
   String get cognitiveDrillStroopEasyCriteria => _pick(
     fr: '15 stimuli • 1.8 s',

@@ -5,37 +5,40 @@ import 'package:thot/data/thot_provider.dart';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-Platform _platform({String id = 'w1', int totalRounds = 0, int roundsAtLastCleaning = 0}) =>
-    Platform(
-      id: id,
-      name: 'Glock 17',
-      model: 'Gen 5',
-      caliber: '9mm',
-      serialNumber: 'SN-$id',
-      weight: 0.63,
-      totalRounds: totalRounds,
-      lastCleaned: DateTime(2026, 1, 1),
-      lastUsed: DateTime(2026, 1, 1),
-      roundsAtLastCleaning: roundsAtLastCleaning,
-    );
+Platform _platform({
+  String id = 'w1',
+  int totalRounds = 0,
+  int roundsAtLastCleaning = 0,
+}) => Platform(
+  id: id,
+  name: 'Glock 17',
+  model: 'Gen 5',
+  caliber: '9mm',
+  serialNumber: 'SN-$id',
+  weight: 0.63,
+  totalRounds: totalRounds,
+  lastCleaned: DateTime(2026),
+  lastUsed: DateTime(2026),
+  roundsAtLastCleaning: roundsAtLastCleaning,
+);
 
 Ammo _ammo({String id = 'a1', int quantity = 500}) => Ammo(
-      id: id,
-      name: 'FMJ 124gr',
-      brand: 'Fiocchi',
-      caliber: '9mm',
-      quantity: quantity,
-      lastUsed: DateTime(2026, 1, 1),
-    );
+  id: id,
+  name: 'FMJ 124gr',
+  brand: 'Fiocchi',
+  caliber: '9mm',
+  quantity: quantity,
+  lastUsed: DateTime(2026),
+);
 
 Accessory _accessory({String id = 'acc1', int totalRounds = 0}) => Accessory(
-      id: id,
-      name: 'Eotech 512',
-      type: 'Optique',
-      lastUsed: DateTime(2026, 1, 1),
-      lastCleaned: DateTime(2026, 1, 1),
-      totalRounds: totalRounds,
-    );
+  id: id,
+  name: 'Eotech 512',
+  type: 'Optique',
+  lastUsed: DateTime(2026),
+  lastCleaned: DateTime(2026),
+  totalRounds: totalRounds,
+);
 
 Exercise _exercise({
   String id = 'e1',
@@ -43,27 +46,22 @@ Exercise _exercise({
   String ammoId = 'a1',
   List<String> equipmentIds = const [],
   int shotsFired = 50,
-}) =>
-    Exercise(
-      id: id,
-      platformId: platformId,
-      ammoId: ammoId,
-      equipmentIds: equipmentIds,
-      shotsFired: shotsFired,
-      distance: 25,
-    );
+}) => Exercise(
+  id: id,
+  platformId: platformId,
+  ammoId: ammoId,
+  equipmentIds: equipmentIds,
+  shotsFired: shotsFired,
+  distance: 25,
+);
 
-Session _session({
-  String id = 's1',
-  List<Exercise>? exercises,
-}) =>
-    Session(
-      id: id,
-      name: 'Session $id',
-      date: DateTime(2026, 1, 15),
-      location: 'Stand',
-      exercises: exercises ?? [_exercise()],
-    );
+Session _session({String id = 's1', List<Exercise>? exercises}) => Session(
+  id: id,
+  name: 'Session $id',
+  date: DateTime(2026, 1, 15),
+  location: 'Stand',
+  exercises: exercises ?? [_exercise()],
+);
 
 Future<ThotProvider> _makeProvider() async {
   SharedPreferences.setMockInitialValues({});
@@ -78,56 +76,66 @@ void main() {
   // NOTE: These tests validate the active freemium enforcement.
   // They are skipped while `_kFreeLimitsDisabled = true` in ThotProvider.
   // Re-enable when the freemium flag is flipped to `false`.
-  group('ThotProvider — limites plan gratuit', skip: 'Freemium limits disabled via _kFreeLimitsDisabled flag', () {
-    test('canAddPlatform retourne false quand limite atteinte (free)', () async {
-      final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      // 1 plateforme = limite free atteinte
-      expect(p.canAddPlatform(), false);
-    });
+  group(
+    'ThotProvider — limites plan gratuit',
+    skip: 'Freemium limits disabled via _kFreeLimitsDisabled flag',
+    () {
+      test(
+        'canAddPlatform retourne false quand limite atteinte (free)',
+        () async {
+          final p = await _makeProvider();
+          p.addPlatform(_platform());
+          // 1 plateforme = limite free atteinte
+          expect(p.canAddPlatform(), false);
+        },
+      );
 
-    test('canAddAmmo retourne false quand limite atteinte (free)', () async {
-      final p = await _makeProvider();
-      p.addAmmo(_ammo(id: 'a1'));
-      expect(p.canAddAmmo(), false);
-    });
+      test('canAddAmmo retourne false quand limite atteinte (free)', () async {
+        final p = await _makeProvider();
+        p.addAmmo(_ammo());
+        expect(p.canAddAmmo(), false);
+      });
 
-    test('canAddAccessory retourne false quand limite atteinte (free)', () async {
-      final p = await _makeProvider();
-      p.addAccessory(_accessory(id: 'acc1'));
-      expect(p.canAddAccessory(), false);
-    });
+      test(
+        'canAddAccessory retourne false quand limite atteinte (free)',
+        () async {
+          final p = await _makeProvider();
+          p.addAccessory(_accessory());
+          expect(p.canAddAccessory(), false);
+        },
+      );
 
-    test('canAddSession retourne false après 5 sessions (free)', () async {
-      final p = await _makeProvider();
-      for (var i = 0; i < 5; i++) {
-        p.addSession(_session(id: 's$i', exercises: []));
-      }
-      expect(p.canAddSession(), false);
-    });
+      test('canAddSession retourne false après 5 sessions (free)', () async {
+        final p = await _makeProvider();
+        for (var i = 0; i < 5; i++) {
+          p.addSession(_session(id: 's$i', exercises: []));
+        }
+        expect(p.canAddSession(), false);
+      });
 
-    test('addPlatform est silencieux quand limite atteinte', () async {
-      final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addPlatform(_platform(id: 'w2')); // doit être ignoré
-      expect(p.platforms.length, 1);
-    });
-  });
+      test('addPlatform est silencieux quand limite atteinte', () async {
+        final p = await _makeProvider();
+        p.addPlatform(_platform());
+        p.addPlatform(_platform(id: 'w2')); // doit être ignoré
+        expect(p.platforms.length, 1);
+      });
+    },
+  );
 
   group('ThotProvider — addSession + impact matériel', () {
     test('addSession incrémente totalRounds de la plateforme', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1', totalRounds: 100));
-      p.addAmmo(_ammo(id: 'a1', quantity: 500));
-      p.addSession(_session(exercises: [_exercise(shotsFired: 50)]));
+      p.addPlatform(_platform(totalRounds: 100));
+      p.addAmmo(_ammo());
+      p.addSession(_session(exercises: [_exercise()]));
 
       expect(p.platforms.first.totalRounds, 150);
     });
 
     test('addSession décrémente le stock de consommables', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1', quantity: 200));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo(quantity: 200));
       p.addSession(_session(exercises: [_exercise(shotsFired: 80)]));
 
       expect(p.ammos.first.quantity, 120);
@@ -135,8 +143,8 @@ void main() {
 
     test('stock consommables ne descend pas en négatif', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1', quantity: 10));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo(quantity: 10));
       p.addSession(_session(exercises: [_exercise(shotsFired: 999)]));
 
       expect(p.ammos.first.quantity, 0);
@@ -144,36 +152,43 @@ void main() {
 
     test('addSession incrémente totalRounds de l accessoire', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1'));
-      p.addAccessory(_accessory(id: 'acc1', totalRounds: 0));
-      p.addSession(_session(exercises: [
-        _exercise(equipmentIds: ['acc1'], shotsFired: 30),
-      ]));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo());
+      p.addAccessory(_accessory());
+      p.addSession(
+        _session(
+          exercises: [
+            _exercise(equipmentIds: ['acc1'], shotsFired: 30),
+          ],
+        ),
+      );
 
       // Accessory.totalRounds est mutable directement dans _applyMaterial
       final acc = p.accessories.first;
       expect(acc.totalRounds, 30);
     });
 
-    test('addSession ajoute une entrée dans l historique de la plateforme', () async {
-      final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1'));
-      p.addSession(_session(id: 's1', exercises: [_exercise()]));
+    test(
+      'addSession ajoute une entrée dans l historique de la plateforme',
+      () async {
+        final p = await _makeProvider();
+        p.addPlatform(_platform());
+        p.addAmmo(_ammo());
+        p.addSession(_session(exercises: [_exercise()]));
 
-      // La plateforme doit avoir 1 entrée d'historique de type 'tir'
-      final platform = p.getPlatformById('w1')!;
-      expect(platform.history.any((h) => h.type == 'tir'), true);
-    });
+        // La plateforme doit avoir 1 entrée d'historique de type 'tir'
+        final platform = p.getPlatformById('w1')!;
+        expect(platform.history.any((h) => h.type == 'tir'), true);
+      },
+    );
   });
 
   group('ThotProvider — deleteSession + inversion matériel', () {
     test('deleteSession restaure les rounds de la plateforme', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1', totalRounds: 0));
-      p.addAmmo(_ammo(id: 'a1', quantity: 500));
-      p.addSession(_session(id: 's1', exercises: [_exercise(shotsFired: 50)]));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo());
+      p.addSession(_session(exercises: [_exercise()]));
       expect(p.platforms.first.totalRounds, 50);
 
       p.deleteSession('s1');
@@ -182,9 +197,9 @@ void main() {
 
     test('deleteSession restaure le stock de consommables', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1', quantity: 500));
-      p.addSession(_session(id: 's1', exercises: [_exercise(shotsFired: 100)]));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo());
+      p.addSession(_session(exercises: [_exercise(shotsFired: 100)]));
       expect(p.ammos.first.quantity, 400);
 
       p.deleteSession('s1');
@@ -193,9 +208,9 @@ void main() {
 
     test('deleteSession supprime les entrées d historique liées', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1'));
-      p.addSession(_session(id: 's1', exercises: [_exercise()]));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo());
+      p.addSession(_session(exercises: [_exercise()]));
 
       final beforeDelete = p.getPlatformById('w1')!.history.length;
       expect(beforeDelete, 1);
@@ -209,10 +224,10 @@ void main() {
   group('ThotProvider — updateSession', () {
     test('updateSession recalcule correctement les impacts', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1', quantity: 500));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo());
 
-      final original = _session(id: 's1', exercises: [_exercise(shotsFired: 50)]);
+      final original = _session(exercises: [_exercise()]);
       p.addSession(original);
       expect(p.platforms.first.totalRounds, 50);
       expect(p.ammos.first.quantity, 450);
@@ -233,21 +248,26 @@ void main() {
   });
 
   group('ThotProvider — recordPlatformCleaning / recordPlatformRevision', () {
-    test('recordPlatformCleaning remet roundsAtLastCleaning à totalRounds', () async {
-      final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1', totalRounds: 300, roundsAtLastCleaning: 0));
-      p.addAmmo(_ammo());
+    test(
+      'recordPlatformCleaning remet roundsAtLastCleaning à totalRounds',
+      () async {
+        final p = await _makeProvider();
+        p.addPlatform(_platform(totalRounds: 300));
+        p.addAmmo(_ammo());
 
-      p.recordPlatformCleaning('w1');
+        p.recordPlatformCleaning('w1');
 
-      final w = p.getPlatformById('w1')!;
-      expect(w.roundsAtLastCleaning, 300);
-      expect(w.cleaningProgress, 0.0);
-    });
+        final w = p.getPlatformById('w1')!;
+        expect(w.roundsAtLastCleaning, 300);
+        expect(w.cleaningProgress, 0.0);
+      },
+    );
 
     test('recordPlatformCleaning ne touche pas roundsAtLastRevision', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1', totalRounds: 300)..copyWith(roundsAtLastRevision: 100));
+      p.addPlatform(
+        _platform(totalRounds: 300)..copyWith(roundsAtLastRevision: 100),
+      );
       // On vérifie que la révision n'est pas perturbée
       final before = p.getPlatformById('w1')!.roundsAtLastRevision;
       p.recordPlatformCleaning('w1');
@@ -255,15 +275,18 @@ void main() {
       expect(after, before);
     });
 
-    test('recordPlatformRevision ajoute une entrée historique de type revision', () async {
-      final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
+    test(
+      'recordPlatformRevision ajoute une entrée historique de type revision',
+      () async {
+        final p = await _makeProvider();
+        p.addPlatform(_platform());
 
-      p.recordPlatformRevision('w1');
+        p.recordPlatformRevision('w1');
 
-      final w = p.getPlatformById('w1')!;
-      expect(w.history.any((h) => h.type == 'revision'), true);
-    });
+        final w = p.getPlatformById('w1')!;
+        expect(w.history.any((h) => h.type == 'revision'), true);
+      },
+    );
   });
 
   group('ThotProvider — totalRoundsFired', () {
@@ -274,25 +297,143 @@ void main() {
 
     test('somme tous les coups de toutes les sessions', () async {
       final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      p.addAmmo(_ammo(id: 'a1', quantity: 9999));
-      p.addSession(_session(id: 's1', exercises: [_exercise(shotsFired: 100)]));
-      p.addSession(_session(id: 's2', exercises: [_exercise(id: 'e2', shotsFired: 200)]));
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo(quantity: 9999));
+      p.addSession(_session(exercises: [_exercise(shotsFired: 100)]));
+      p.addSession(
+        _session(
+          id: 's2',
+          exercises: [_exercise(id: 'e2', shotsFired: 200)],
+        ),
+      );
       expect(p.totalRoundsFired, 300);
     });
   });
 
   group('ThotProvider — deletePlatform (soft delete)', () {
-    test('deletePlatform cache la plateforme sans la supprimer des données', () async {
-      final p = await _makeProvider();
-      p.addPlatform(_platform(id: 'w1'));
-      expect(p.platforms.length, 1);
+    test(
+      'deletePlatform cache la plateforme sans la supprimer des données',
+      () async {
+        final p = await _makeProvider();
+        p.addPlatform(_platform());
+        expect(p.platforms.length, 1);
 
-      p.deletePlatform('w1');
-      // platforms (getter) filtre les isHidden
-      expect(p.platforms.length, 0);
-      // mais la plateforme existe toujours en interne (pour la cohérence historique)
-      expect(p.getPlatformById('w1'), isNotNull);
+        p.deletePlatform('w1');
+        // platforms (getter) filtre les isHidden
+        expect(p.platforms.length, 0);
+        // mais la plateforme existe toujours en interne (pour la cohérence historique)
+        expect(p.getPlatformById('w1'), isNotNull);
+      },
+    );
+  });
+
+  // ─── H.1 JSON export/import roundtrip ─────────────────────────────────────
+  group('JSON export/import roundtrip', () {
+    test('exported JSON contains expected top-level keys', () async {
+      final p = await _makeProvider();
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo());
+      p.addSession(_session());
+      final map = p.exportDomainAsJson();
+      expect(map.containsKey('domain'), true);
+      final domain = map['domain'] as Map<String, dynamic>;
+      expect(domain.containsKey('platforms'), true);
+      expect(domain.containsKey('ammos'), true);
+      expect(domain.containsKey('sessions'), true);
+    });
+
+    test('import after export preserves entity counts', () async {
+      final p = await _makeProvider();
+      p.addPlatform(_platform());
+      p.addAmmo(_ammo());
+      p.addSession(_session());
+      final map = p.exportDomainAsJson();
+      final fresh = await _makeProvider();
+      await fresh.importDomainFromJson(map);
+      expect(fresh.platforms.length, p.platforms.length);
+      expect(fresh.ammos.length, p.ammos.length);
+      expect(fresh.sessions.length, p.sessions.length);
+    });
+
+    test('import rejects null payload without throwing unhandled exception', () async {
+      final p = await _makeProvider();
+      expect(
+        () => p.importDomainFromJson({}),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+  });
+
+  // ─── H.3 Replacement parts cascade ──────────────────────────────────────────
+  group('Platform replacement parts', () {
+    test('recordPlatformPartChange adds entry to history and replacementParts', () async {
+      final p = await _makeProvider();
+      p.addPlatform(_platform());
+      final platformId = p.platforms.first.id;
+
+      p.recordPlatformPartChange(
+        platformId: platformId,
+        partName: 'Ressort de récupérateur',
+        date: DateTime(2026, 1, 15),
+      );
+
+      final platform = p.platforms.first;
+      expect(platform.replacementParts.length, 1);
+      expect(
+        platform.history.where((h) => h.type == PlatformHistoryType.partReplacement).length,
+        1,
+      );
+      expect(platform.replacementParts.first.name, 'Ressort de récupérateur');
+    });
+
+    test('deletePlatformReplacementPart removes part AND linked history entry', () async {
+      final p = await _makeProvider();
+      p.addPlatform(_platform());
+      final platformId = p.platforms.first.id;
+
+      p.recordPlatformPartChange(
+        platformId: platformId,
+        partName: 'Ressort',
+        date: DateTime(2026, 1, 1),
+      );
+
+      final partId = p.platforms.first.replacementParts.first.id;
+      p.deletePlatformReplacementPart(
+        platformId: platformId,
+        partId: partId,
+      );
+
+      final platform = p.platforms.first;
+      expect(platform.replacementParts, isEmpty);
+      expect(
+        platform.history.where((h) => h.type == PlatformHistoryType.partReplacement),
+        isEmpty,
+      );
+    });
+
+    test('updatePlatformReplacementPart syncs partName in history data', () async {
+      final p = await _makeProvider();
+      p.addPlatform(_platform());
+      final platformId = p.platforms.first.id;
+
+      p.recordPlatformPartChange(
+        platformId: platformId,
+        partName: 'Ressort',
+        date: DateTime(2026, 1, 1),
+      );
+
+      final oldPart = p.platforms.first.replacementParts.first;
+      final updated = oldPart.copyWith(name: 'Nouveau nom pièce');
+
+      p.updatePlatformReplacementPart(
+        platformId: platformId,
+        part: updated,
+      );
+
+      final historyEntry = p.platforms.first.history.firstWhere(
+        (h) => h.type == PlatformHistoryType.partReplacement,
+      );
+      expect(historyEntry.data[PlatformHistoryDataKey.partName], 'Nouveau nom pièce');
     });
   });
 }

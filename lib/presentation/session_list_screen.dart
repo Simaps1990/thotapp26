@@ -336,6 +336,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
                         Image.asset(
                           _sessionsHeroAsset(context),
                           fit: BoxFit.cover,
+                          excludeFromSemantics: true,
                         ),
                         DecoratedBox(
                           decoration: BoxDecoration(
@@ -358,7 +359,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
                     top: panelTop - 56,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           strings.sessionsSubtitle,
@@ -440,10 +440,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                     height: 44,
                                     child: _SlidingSegmentedSelector(
                                       selectedIndex: _selectedIndex,
-                                      labels: const [
-                                        'Toutes',
-                                        'Ce mois',
-                                        '7 jours',
+                                      labels: [
+                                        strings.sessionsFilterAll,
+                                        strings.sessionsFilterMonth,
+                                        strings.sessionsFilter7Days,
                                       ],
                                       onSelected: (index) {
                                         setState(() {
@@ -509,6 +509,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                                 Icons.clear,
                                                 size: 18,
                                               ),
+                                              tooltip: strings.clear,
                                               splashRadius: 18,
                                               onPressed: () {
                                                 _searchController.clear();
@@ -600,8 +601,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
                             index,
                           );
                           // Get the first platform and ammo from exercises (supports none/borrowed)
-                          String platformName = "—";
-                          String ammoName = "—";
+                          String platformName = '—';
+                          String ammoName = '—';
                           if (session.exercises.isNotEmpty) {
                             final firstEx = session.exercises.first;
                             platformName = platformDisplayName(
@@ -1115,7 +1116,6 @@ class _SessionCard extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
-      useRootNavigator: true,
       builder: (dialogContext) => AlertDialog(
         title: Text(strings.confirmDeleteTitle),
         content: Text(strings.confirmDeleteSessionMessage(session.name)),
@@ -1527,13 +1527,13 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
           backgroundColor: Colors.transparent,
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           floatingActionButton: Padding(
-            padding: const EdgeInsets.only(bottom: 0),
+            padding: const EdgeInsets.only(),
             child: Opacity(
               opacity: _pageIndex == 0 ? 1.0 : 0.0,
               child: IgnorePointer(
                 ignoring: _pageIndex != 0,
                 child: FloatingActionButton.extended(
-                  onPressed: () => _openEditor(template: null),
+                  onPressed: () => _openEditor(),
                   icon: const Icon(Icons.add),
                   label: Text(strings.createTemplateButton),
                   backgroundColor: colors.primary,
@@ -1647,7 +1647,11 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                       height: 44,
                       child: _SlidingSegmentedSelector(
                         selectedIndex: _getSortIndex(),
-                        labels: ['Date', 'Nom', _modeFilterLabel()],
+                        labels: [
+                          strings.sessionsSortDate,
+                          strings.sessionsSortName,
+                          _modeFilterLabel(),
+                        ],
                         onSelected: (index) {
                           setState(() {
                             switch (index) {
@@ -1718,6 +1722,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear, size: 18),
+                                tooltip: strings.clear,
                                 splashRadius: 18,
                                 onPressed: () {
                                   _searchController.clear();
@@ -1939,7 +1944,8 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                   ),
                                   onTap: () => _openEditor(template: t),
                                   trailing: IconButton(
-                                    icon: Icon(Icons.delete_rounded),
+                                    icon: const Icon(Icons.delete_rounded),
+                                    tooltip: strings.deleteButton,
                                     onPressed: () {
                                       showDialog<void>(
                                         context: context,
@@ -2105,7 +2111,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                             // 1. SECTION NOM
                             Row(
                               children: [
-                                Icon(Icons.edit_note_rounded, size: 18),
+                                const Icon(Icons.edit_note_rounded, size: 18),
                                 const Gap(8),
                                 Text(
                                   strings.templateNameDialogTitle.toUpperCase(),
@@ -2478,7 +2484,6 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                                     padding:
                                                         const EdgeInsets.symmetric(
                                                           horizontal: 12,
-                                                          vertical: 0,
                                                         ),
                                                     visualDensity:
                                                         VisualDensity.compact,
@@ -2506,7 +2511,6 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                                   border: Border.all(
                                                     color: colors.outline
                                                         .withValues(alpha: 0.5),
-                                                    style: BorderStyle.solid,
                                                   ),
                                                 ),
                                                 child: Text(
@@ -2676,6 +2680,7 @@ class TemplateManagerScreenState extends State<TemplateManagerScreen> {
                                                                   .delete_rounded,
                                                               size: 18,
                                                             ),
+                                                            tooltip: strings.deleteButton,
                                                             onPressed: () =>
                                                                 setState(
                                                                   () => _steps
@@ -3182,7 +3187,6 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       ),
                       items: [
                         DropdownMenuItem(
-                          value: null,
                           child: Text(strings.exerciseWritePlatformOption),
                         ),
                         ...provider.platforms.map(
@@ -3210,7 +3214,6 @@ class _TemplateStepSheetState extends State<_TemplateStepSheet> {
                       ),
                       items: [
                         DropdownMenuItem(
-                          value: null,
                           child: Text(strings.exerciseWritePlatformOption),
                         ),
                         ...provider.platforms.map(

@@ -241,10 +241,10 @@ extension AppStringsSettings on AppStrings {
 
   String get backupSubtitle => _pick(
     fr: "Données stockées et sécurisées uniquement sur l'appareil. La sauvegarde cloud est possible via votre compte iOS/Android.",
-    en: "Data is stored and secured only on the device. Cloud backup is available via your iOS/Android account.",
-    de: "Daten werden ausschließlich auf dem Gerät gespeichert und gesichert. Cloud-Backups sind über Ihr iOS-/Android-Konto möglich.",
-    it: "I dati sono archiviati e protetti esclusivamente sul dispositivo. Il backup cloud è disponibile tramite il tuo account iOS/Android.",
-    es: "Los datos se almacenan y se protegen únicamente en el dispositivo. La copia de seguridad en la nube está disponible a través de tu cuenta iOS/Android.",
+    en: 'Data is stored and secured only on the device. Cloud backup is available via your iOS/Android account.',
+    de: 'Daten werden ausschließlich auf dem Gerät gespeichert und gesichert. Cloud-Backups sind über Ihr iOS-/Android-Konto möglich.',
+    it: 'I dati sono archiviati e protetti esclusivamente sul dispositivo. Il backup cloud è disponibile tramite il tuo account iOS/Android.',
+    es: 'Los datos se almacenan y se protegen únicamente en el dispositivo. La copia de seguridad en la nube está disponible a través de tu cuenta iOS/Android.',
   );
 
   String get offlineModeLabel => _pick(
@@ -920,10 +920,10 @@ extension AppStringsSettings on AppStrings {
   );
 
   String get settingsDocumentTypePlatformPermit => _pick(
-    fr: "Autorisation de port de plateforme",
+    fr: 'Autorisation de port de plateforme',
     en: 'Platform carry permit',
     de: 'Konfigurationsmitführungsgenehmigung',
-    it: "Autorizzazione al porto di configurazione",
+    it: 'Autorizzazione al porto di configurazione',
     es: 'Permiso de porte de configuración',
   );
 

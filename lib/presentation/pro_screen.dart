@@ -140,7 +140,7 @@ class _ProScreenState extends State<ProScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ProHeader(bgColor: _bgDark),
+                const _ProHeader(bgColor: _bgDark),
 
                 Transform.translate(
                   offset: const Offset(0, -120),
@@ -257,7 +257,7 @@ class _ProScreenState extends State<ProScreen>
                           child: Text(
                             strings.proNoPaymentToday,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: _mutedText,
                               fontSize: 12.5,
                               height: 1.4,
@@ -308,7 +308,7 @@ class _ProScreenState extends State<ProScreen>
                                 Expanded(
                                   child: Text(
                                     strings.proActiveOnAccount,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: _creamWhite,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -365,6 +365,7 @@ class _ProScreenState extends State<ProScreen>
                   iconSize: 22,
                   color: Colors.white,
                   icon: const Icon(Icons.close_rounded),
+                  tooltip: strings.close,
                   onPressed: () => context.pop(),
                 ),
               ),
@@ -396,6 +397,7 @@ class _ProHeader extends StatelessWidget {
             'assets/images/payment.webp',
             fit: BoxFit.cover,
             alignment: Alignment.topCenter,
+            excludeFromSemantics: true,
             errorBuilder: (_, __, ___) => Container(color: bgColor),
           ),
           // Léger voile sombre uniforme (cohérence visuelle)
@@ -588,7 +590,7 @@ class _ProBenefitRow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: showDivider
-            ? Border(bottom: BorderSide(color: dividerColor, width: 1))
+            ? Border(bottom: BorderSide(color: dividerColor))
             : null,
       ),
       padding: const EdgeInsets.symmetric(
@@ -809,7 +811,7 @@ class _ProOfferCardsRow extends StatelessWidget {
             child: _ProOfferCard(
               isSelected: yearlySelected,
               onTap: onSelectYearly,
-              topBadge: null,
+              topBadge: strings.proTrialDaysBadge,
               showRecommendedBadge: true,
               recommendedLabel: strings.proRecommendedBadge.toUpperCase(),
               savingsLabel: savingsPercent != null
@@ -836,7 +838,7 @@ class _ProOfferCardsRow extends StatelessWidget {
 class _ProOfferCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
-  final String? topBadge; // "3 JOURS OFFERTS" ou null
+  final String? topBadge; // "7 JOURS OFFERTS" ou null
   final bool showRecommendedBadge;
   final String recommendedLabel;
   final String? savingsLabel; // "-25%" ou null
@@ -898,7 +900,6 @@ class _ProOfferCard extends StatelessWidget {
                           BoxShadow(
                             color: kakiOlive.withValues(alpha: 0.25),
                             blurRadius: 14,
-                            spreadRadius: 0,
                           ),
                         ]
                       : null,
@@ -910,7 +911,6 @@ class _ProOfferCard extends StatelessWidget {
                   children: [
                     // Ligne titre + badge inline (recommandé OU savings)
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Flexible(
                           child: Text(
@@ -1000,7 +1000,7 @@ class _ProOfferCard extends StatelessWidget {
                 ),
                 child: Text(
                   topBadge!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 8.5,
                     fontWeight: FontWeight.w900,

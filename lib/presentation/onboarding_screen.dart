@@ -92,6 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 150,
             height: 150,
             fit: BoxFit.contain,
+            excludeFromSemantics: true,
           ),
         ),
         title: strings.onboardingTitle1,
@@ -130,7 +131,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Padding(
             padding: EdgeInsets.only(top: Platform.isIOS ? 0 : AppSpacing.sm),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -235,6 +235,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               backgroundAsset,
               fit: BoxFit.cover,
               gaplessPlayback: true,
+              excludeFromSemantics: true,
             ),
             Container(
               decoration: BoxDecoration(
@@ -320,7 +321,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset(backgroundAsset, fit: BoxFit.cover),
+        Image.asset(
+          backgroundAsset,
+          fit: BoxFit.cover,
+          excludeFromSemantics: true,
+        ),
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

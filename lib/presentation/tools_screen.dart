@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
@@ -183,10 +183,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
     Widget toolSectionTitle(String title) {
       return Padding(
-        padding: const EdgeInsets.only(
-          top: 0,
-          bottom: AppSpacing.sm,
-        ),
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: SizedBox(
           height: 24,
           child: Row(
@@ -291,7 +288,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.asset(_toolsHeroAsset(context), fit: BoxFit.cover),
+                    Image.asset(
+                      _toolsHeroAsset(context),
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                    ),
                     DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(

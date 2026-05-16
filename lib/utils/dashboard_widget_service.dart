@@ -97,10 +97,15 @@ class DashboardWidgetService {
       return list.reduce((a, b) => a + b) / list.length;
     }
 
+    // Stable, language-agnostic codes. The native widget code (Android
+    // strings.xml or iOS Localizable.strings) is responsible for mapping
+    // these to localized labels. NEVER send a French-only label here:
+    // the widget runs on the system home screen and may be shown to a
+    // user whose system locale differs from the app's selected locale.
     String level(double value) {
-      if (value >= 1.0) return 'CRITIQUE';
-      if (value >= 0.8) return 'ATTENTION';
-      return 'OK';
+      if (value >= 1.0) return 'critical';
+      if (value >= 0.8) return 'warning';
+      return 'ok';
     }
 
     final wearAvg = avg(wearProgress);

@@ -116,8 +116,6 @@ class _LockScreenState extends State<LockScreen> {
     return Scaffold(
       backgroundColor: colors.surface,
       body: SafeArea(
-        top: true,
-        bottom: true,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(

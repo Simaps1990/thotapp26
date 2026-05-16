@@ -88,7 +88,7 @@ abstract final class NativePicker {
           ],
           cancelButton: CupertinoActionSheetAction(
             isDefaultAction: true,
-            onPressed: () => Navigator.of(ctx).pop(null),
+            onPressed: () => Navigator.of(ctx).pop(),
             child: Text(strings.pickerActionCancel),
           ),
         ),

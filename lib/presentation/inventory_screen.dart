@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/theme.dart';
+import 'package:thot/utils/thresholds.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/widgets/tutorial_overlay.dart';
@@ -125,13 +126,13 @@ class _InventoryScreenState extends State<InventoryScreen>
   String get _currentTabType {
     switch (_tabController.index) {
       case 0:
-        return "PLATEFORME";
+        return 'PLATEFORME';
       case 1:
-        return "CONSOMMABLE";
+        return 'CONSOMMABLE';
       case 2:
-        return "ACCESSOIRE";
+        return 'ACCESSOIRE';
       default:
-        return "PLATEFORME";
+        return 'PLATEFORME';
     }
   }
 
@@ -237,24 +238,33 @@ class _InventoryScreenState extends State<InventoryScreen>
         backgroundColor: canAddCurrent ? colors.primary : colors.surface,
         foregroundColor: canAddCurrent ? colors.onPrimary : colors.secondary,
       ),
-      body: SafeArea(
-        top: false, // laisse l'image héro monter sous la status bar
-        child: Column(
-          children: [
-            SizedBox(
-              height: panelTop + panelHeight,
-              child: Stack(
-                children: [
-                  SizedBox(
-                    height: heroHeight,
-                    width: double.infinity,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.asset(
-                          _inventoryHeroAsset(context),
-                          fit: BoxFit.cover,
-                        ),
+      body: GestureDetector(
+        onTap: () {
+          final currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus && currentFocus.hasFocus) {
+            currentFocus.unfocus();
+          }
+        },
+        behavior: HitTestBehavior.translucent,
+        child: SafeArea(
+          top: false, // laisse l'image héro monter sous la status bar
+          child: Column(
+            children: [
+              SizedBox(
+                height: panelTop + panelHeight,
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      height: heroHeight,
+                      width: double.infinity,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            _inventoryHeroAsset(context),
+                            fit: BoxFit.cover,
+                            excludeFromSemantics: true,
+                          ),
                         DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -375,6 +385,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                                                 Icons.clear,
                                                 size: 18,
                                               ),
+                                              tooltip: strings.clear,
                                               splashRadius: 18,
                                               onPressed: () {
                                                 _searchController.clear();
@@ -444,6 +455,7 @@ class _InventoryScreenState extends State<InventoryScreen>
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -562,7 +574,7 @@ class _InventoryList extends StatelessWidget {
 
   bool _isInactive(DateTime? lastUsed) {
     if (lastUsed == null) return false;
-    return DateTime.now().difference(lastUsed).inDays >= 90;
+    return DateTime.now().difference(lastUsed).inDays >= Thresholds.inactiveDays;
   }
 
   Color _typeAccentColor(String type) {
@@ -577,24 +589,27 @@ class _InventoryList extends StatelessWidget {
     }
   }
 
-  List<_InventoryStatusBadge> _platformBadges(Platform platform) {
+  List<_InventoryStatusBadge> _platformBadges(
+    Platform platform,
+    AppStrings strings,
+  ) {
     final badges = <_InventoryStatusBadge>[];
 
-    if (platform.trackCleanliness && platform.cleaningProgress >= 0.8) {
+    if (platform.trackCleanliness && platform.cleaningProgress >= Thresholds.maintenanceWarningRatio) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Nettoyage bientôt',
-          color: Color(0xFFC9852B),
+        _InventoryStatusBadge(
+          label: strings.statusCleaningSoon,
+          color: const Color(0xFFC9852B),
           icon: Icons.cleaning_services_rounded,
         ),
       );
     }
 
-    if (platform.trackWear && platform.revisionProgress >= 0.8) {
+    if (platform.trackWear && platform.revisionProgress >= Thresholds.maintenanceWarningRatio) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Révision bientôt',
-          color: Color(0xFFB14A3E),
+        _InventoryStatusBadge(
+          label: strings.statusRevisionSoon,
+          color: const Color(0xFFB14A3E),
           icon: Icons.build_rounded,
         ),
       );
@@ -602,9 +617,9 @@ class _InventoryList extends StatelessWidget {
 
     if (_isInactive(platform.lastUsed)) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Inactif',
-          color: Color(0xFF7C8794),
+        _InventoryStatusBadge(
+          label: strings.statusInactive,
+          color: const Color(0xFF7C8794),
           icon: Icons.schedule_rounded,
         ),
       );
@@ -613,14 +628,14 @@ class _InventoryList extends StatelessWidget {
     return badges;
   }
 
-  List<_InventoryStatusBadge> _ammoBadges(Ammo ammo) {
+  List<_InventoryStatusBadge> _ammoBadges(Ammo ammo, AppStrings strings) {
     final badges = <_InventoryStatusBadge>[];
 
     if (ammo.quantity <= ammo.lowStockThreshold) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Stock bas',
-          color: Color(0xFFC9852B),
+        _InventoryStatusBadge(
+          label: strings.statusLowStock,
+          color: const Color(0xFFC9852B),
           icon: Icons.inventory_2_rounded,
         ),
       );
@@ -628,9 +643,9 @@ class _InventoryList extends StatelessWidget {
 
     if (_isInactive(ammo.lastUsed)) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Inactif',
-          color: Color(0xFF7C8794),
+        _InventoryStatusBadge(
+          label: strings.statusInactive,
+          color: const Color(0xFF7C8794),
           icon: Icons.schedule_rounded,
         ),
       );
@@ -639,24 +654,27 @@ class _InventoryList extends StatelessWidget {
     return badges;
   }
 
-  List<_InventoryStatusBadge> _accessoryBadges(Accessory accessory) {
+  List<_InventoryStatusBadge> _accessoryBadges(
+    Accessory accessory,
+    AppStrings strings,
+  ) {
     final badges = <_InventoryStatusBadge>[];
 
-    if (accessory.trackCleanliness && accessory.cleaningProgress >= 0.8) {
+    if (accessory.trackCleanliness && accessory.cleaningProgress >= Thresholds.maintenanceWarningRatio) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Nettoyage bientôt',
-          color: Color(0xFFC9852B),
+        _InventoryStatusBadge(
+          label: strings.statusCleaningSoon,
+          color: const Color(0xFFC9852B),
           icon: Icons.cleaning_services_rounded,
         ),
       );
     }
 
-    if (accessory.trackWear && accessory.revisionProgress >= 0.8) {
+    if (accessory.trackWear && accessory.revisionProgress >= Thresholds.maintenanceWarningRatio) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Révision bientôt',
-          color: Color(0xFFB14A3E),
+        _InventoryStatusBadge(
+          label: strings.statusRevisionSoon,
+          color: const Color(0xFFB14A3E),
           icon: Icons.build_rounded,
         ),
       );
@@ -664,9 +682,9 @@ class _InventoryList extends StatelessWidget {
 
     if (_isInactive(accessory.lastUsed)) {
       badges.add(
-        const _InventoryStatusBadge(
-          label: 'Inactif',
-          color: Color(0xFF7C8794),
+        _InventoryStatusBadge(
+          label: strings.statusInactive,
+          color: const Color(0xFF7C8794),
           icon: Icons.schedule_rounded,
         ),
       );
@@ -797,7 +815,7 @@ class _InventoryList extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       itemCount: filtered.length,
       separatorBuilder: (_, __) => const Gap(16),
       itemBuilder: (context, index) {
@@ -808,14 +826,14 @@ class _InventoryList extends StatelessWidget {
           return _InventoryCard(
             itemId: w.id,
             title: w.name,
-            subtitle: "${w.model} • ${w.caliber}",
+            subtitle: '${w.model} • ${w.caliber}',
             statLabel: strings.shotsFired,
-            statValue: "${w.totalRounds}",
+            statValue: '${w.totalRounds}',
             // Show the localized platform type in the grey badge (top-right).
             category: strings.itemPlatformTypeLabel(w.type),
             isLow: false,
             lastUse: _formatLastUse(w.lastUsed),
-            badges: _platformBadges(w),
+            badges: _platformBadges(w, strings),
             typeAccentColor: _typeAccentColor('platform'),
             svgIconAsset: 'assets/images/tube.svg',
             icon: Icons.security_rounded,
@@ -844,16 +862,16 @@ class _InventoryList extends StatelessWidget {
           return _InventoryCard(
             itemId: a.id,
             title: a.name,
-            subtitle: "${a.brand} • ${a.caliber}",
+            subtitle: '${a.brand} • ${a.caliber}',
             statLabel: strings.stock,
-            statValue: "${a.quantity}",
+            statValue: '${a.quantity}',
             // Show projectile type in the grey badge (top-right).
             category: a.projectileType.isNotEmpty
                 ? a.projectileType
                 : 'Consommable',
             isLow: a.quantity < 100,
             lastUse: _formatLastUse(a.lastUsed),
-            badges: _ammoBadges(a),
+            badges: _ammoBadges(a, strings),
             typeAccentColor: _typeAccentColor('ammo'),
             svgIconAsset: 'assets/images/pointe.svg',
             icon: Icons.inventory_2_rounded,
@@ -890,13 +908,13 @@ class _InventoryList extends StatelessWidget {
                 ? ac.brand
                 : (ac.type.isNotEmpty ? ac.type : ''),
             statLabel: strings.shotsFired,
-            statValue: "${ac.totalRounds}",
+            statValue: '${ac.totalRounds}',
             // Show the localized accessory type in the grey badge (top-right).
             category: strings.itemAccessoryTypeLabel(ac.type),
             // Accessories should not appear as critical indicators.
             isLow: false,
             lastUse: _formatLastUse(ac.lastUsed),
-            badges: _accessoryBadges(ac),
+            badges: _accessoryBadges(ac, strings),
             typeAccentColor: _typeAccentColor('accessory'),
             icon: Icons.inventory_2_rounded,
             photoPath: ac.photoPath,
@@ -1070,7 +1088,6 @@ class _InventoryCard extends StatelessWidget {
                                 filePath: photoPath,
                                 width: 60,
                                 height: 60,
-                                fit: BoxFit.cover,
                               ),
                             )
                           : Center(

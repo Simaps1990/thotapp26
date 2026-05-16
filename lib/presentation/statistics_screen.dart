@@ -320,7 +320,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 _SectionTitle(title: strings.statisticsGlobalSummaryTitle),
                 const Gap(AppSpacing.md),
                 _StatsGrid(
-                  childAspectRatio: 1.55,
                   children: [
                     _KpiCard(
                       title: strings.statisticsSessionsLabel,
@@ -420,7 +419,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
                 const Gap(AppSpacing.md),
                 _StatsGrid(
-                  childAspectRatio: 1.55,
                   children: [
                     _KpiCard(
                       title: strings.statisticsPerfectSessionsLabel,
@@ -941,7 +939,6 @@ class _AnalyticsLineCard extends StatelessWidget {
                         minY: minY,
                         maxY: maxY,
                         lineTouchData: LineTouchData(
-                          handleBuiltInTouches: true,
                           touchTooltipData: LineTouchTooltipData(
                             getTooltipColor: (_) => colors.surface,
                             tooltipBorder: BorderSide(color: colors.outline),
@@ -960,7 +957,6 @@ class _AnalyticsLineCard extends StatelessWidget {
                           ),
                         ),
                         gridData: FlGridData(
-                          show: true,
                           drawVerticalLine: false,
                           horizontalInterval: chartYInterval,
                           getDrawingHorizontalLine: (_) => FlLine(
@@ -969,12 +965,8 @@ class _AnalyticsLineCard extends StatelessWidget {
                           ),
                         ),
                         titlesData: FlTitlesData(
-                          topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
+                          topTitles: const AxisTitles(),
+                          rightTitles: const AxisTitles(),
                           leftTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
@@ -1032,7 +1024,6 @@ class _AnalyticsLineCard extends StatelessWidget {
                             color: tone,
                             barWidth: 3,
                             dotData: FlDotData(
-                              show: true,
                               getDotPainter: (spot, xPercent, barData, index) =>
                                   FlDotCirclePainter(
                                     radius: 3.2,
@@ -1142,14 +1133,8 @@ class _CostDashboardCard extends StatelessWidget {
               final index = entry.key;
               final ammo = provider.ammos.firstWhere(
                 (a) => a.id == entry.value.key,
-                orElse: () => Ammo(
-                  id: '',
-                  name: '',
-                  brand: '',
-                  caliber: '',
-                  quantity: 0,
-                  lastUsed: null,
-                ),
+                orElse: () =>
+                    Ammo(id: '', name: '', brand: '', caliber: '', quantity: 0),
               );
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -1309,7 +1294,6 @@ class _ActivityBarsCard extends StatelessWidget {
                       maxY: maxValue.toDouble() + 1,
                       alignment: BarChartAlignment.spaceAround,
                       gridData: FlGridData(
-                        show: true,
                         drawVerticalLine: false,
                         horizontalInterval: 1,
                         getDrawingHorizontalLine: (_) => FlLine(
@@ -1318,17 +1302,10 @@ class _ActivityBarsCard extends StatelessWidget {
                         ),
                       ),
                       titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: false,
-                            reservedSize: 0,
-                          ),
+                        topTitles: const AxisTitles(),
+                        rightTitles: const AxisTitles(),
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(reservedSize: 0),
                         ),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
@@ -1559,10 +1536,7 @@ class _ModernDonutCard extends StatelessWidget {
 
     return Container(
       height: 218,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: 0,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       decoration: decoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1974,7 +1948,7 @@ class _InsightRow extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-            ?._statsCardDecoration(context, radius: 16) ??
+            ?._statsCardDecoration(context) ??
         BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(16),
@@ -2063,7 +2037,7 @@ class _EquipmentStatCard extends StatelessWidget {
 
     final decoration =
         (context.findAncestorStateOfType<_StatisticsScreenState>())
-            ?._statsCardDecoration(context, radius: 16) ??
+            ?._statsCardDecoration(context) ??
         BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(16),
@@ -2073,7 +2047,6 @@ class _EquipmentStatCard extends StatelessWidget {
     return Container(
       decoration: decoration,
       child: Stack(
-        clipBehavior: Clip.hardEdge,
         children: [
           Align(
             alignment: const Alignment(0, 0.40),

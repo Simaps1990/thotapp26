@@ -19,6 +19,9 @@
     <string name="widget_maintenance_wear">Verschleiß %s • %s</string>
     <string name="widget_maintenance_fouling">Verschmutzung %s • %s</string>
     <string name="widget_maintenance_stock">Bestand %s • %s</string>
+    <string name="widget_level_critical">KRITISCH</string>
+    <string name="widget_level_warning">ACHTUNG</string>
+    <string name="widget_level_ok">OK</string>
 
     <string name="widget_documents_title">Dokumentenerinnerungen</string>
     <string name="widget_documents_count">%d zu prüfen</string>

@@ -89,7 +89,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
             children: [
               Expanded(
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Flexible(
                       child: Text(
@@ -387,7 +386,7 @@ class DiagnosticHistoryView extends StatelessWidget {
                           color: colors.error,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.delete_rounded),
+                        child: const Icon(Icons.delete_rounded),
                       ),
                       onDismissed: (_) =>
                           provider.deleteDiagnostic(diagnostic.id),
@@ -433,6 +432,7 @@ class DiagnosticHistoryView extends StatelessWidget {
                                   Transform.translate(
                                     offset: const Offset(8, 0),
                                     child: IconButton(
+                                      tooltip: strings.delete,
                                       onPressed: () {
                                         showDialog(
                                           context: context,
@@ -469,7 +469,7 @@ class DiagnosticHistoryView extends StatelessWidget {
                                           ),
                                         );
                                       },
-                                      icon: Icon(Icons.delete_rounded),
+                                      icon: const Icon(Icons.delete_rounded),
                                       iconSize: 20,
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(),

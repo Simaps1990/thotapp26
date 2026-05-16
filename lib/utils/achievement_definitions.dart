@@ -217,7 +217,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     progress: (p) => p.accessories.length,
   ),
 
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'first_precision_session',
     title: 'Première précision mesurée',
     description: 'Scorez au moins une session avec la précision activée.',
@@ -225,7 +225,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     target: 1,
     progress: countedPrecisionSessionsCount,
   ),
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'ten_precision_sessions',
     title: 'Œil affûté',
     description: 'Enregistrez 10 sessions avec calcul de précision.',
@@ -233,7 +233,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     target: 10,
     progress: countedPrecisionSessionsCount,
   ),
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'fifty_precision_sessions',
     title: 'Analyseur confirmé',
     description: 'Mesurez votre précision sur 50 sessions.',
@@ -242,7 +242,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     progress: countedPrecisionSessionsCount,
   ),
 
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'first_perfect_session',
     title: 'Sans faute',
     description: 'Réalisez 100% de précision sur une session.',
@@ -250,7 +250,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     target: 1,
     progress: perfectSessionsCount,
   ),
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'three_perfect_sessions',
     title: 'Zéro défaut',
     description: 'Atteignez les 100% de précision lors de 3 sessions.',
@@ -258,7 +258,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     target: 3,
     progress: perfectSessionsCount,
   ),
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'ten_perfect_sessions',
     title: 'Maître de précision',
     description: 'Conservez une précision parfaite (100%) sur 10 sessions.',
@@ -358,7 +358,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     progress: (p) => p.totalRoundsFired,
   ),
 
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'history_started',
     title: 'Carnet vivant',
     description: 'Alimentez l\'historique détaillé de votre matériel 10 fois.',
@@ -366,7 +366,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     target: 10,
     progress: totalPlatformHistoryEntries,
   ),
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'history_extended',
     title: 'Historique riche',
     description: 'Créez 50 entrées dans les historiques matériels.',
@@ -374,7 +374,7 @@ final List<AchievementDefinition> achievementDefinitions = [
     target: 50,
     progress: totalPlatformHistoryEntries,
   ),
-  AchievementDefinition(
+  const AchievementDefinition(
     id: 'history_master',
     title: 'Mémoire d\'atelier',
     description: 'Un suivi exemplaire avec 100 événements d\'historique.',

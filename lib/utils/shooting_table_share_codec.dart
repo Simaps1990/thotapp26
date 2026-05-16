@@ -12,7 +12,10 @@ class ShootingTableShareCodec {
     return '$prefix${base64UrlEncode(bytes)}';
   }
 
-  static ShootingAdjustmentTable decode(String input) {
+  static ShootingAdjustmentTable decode(
+    String input, {
+    String importedSuffix = '(importée)',
+  }) {
     final trimmed = input.trim();
     if (!trimmed.startsWith(prefix)) {
       throw const FormatException('Invalid THOT table prefix');
@@ -35,7 +38,7 @@ class ShootingTableShareCodec {
     final baseName = table.name.trim().isEmpty ? 'Table' : table.name.trim();
     return table.copyWith(
       id: 'adj-import-${now.microsecondsSinceEpoch}',
-      name: '$baseName (importée)',
+      name: '$baseName $importedSuffix',
       createdAt: now,
       updatedAt: now,
     );

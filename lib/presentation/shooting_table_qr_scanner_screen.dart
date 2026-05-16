@@ -65,7 +65,31 @@ class _ShootingTableQrScannerScreenState
                       ),
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: MobileScanner(onDetect: _handleDetect),
+                    child: MobileScanner(
+                      onDetect: _handleDetect,
+                      errorBuilder: (context, error) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.error_outline_rounded,
+                                color: Colors.white.withValues(alpha: 0.7),
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                strings.shootingTableQrScannerError,
+                                style: textStyles.bodyMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),

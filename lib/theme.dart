@@ -71,10 +71,10 @@ class AppShadows {
 
   // Premium card shadow: slightly stronger, still bottom-right oriented and less spread.
   static List<BoxShadow> cardPremium = [
-    BoxShadow(
+    const BoxShadow(
       color: Color(0x33000000),
       blurRadius: 9,
-      offset: const Offset(6, 8),
+      offset: Offset(6, 8),
       spreadRadius: -4,
     ),
   ];
@@ -144,13 +144,11 @@ ThemeData get lightTheme => ThemeData(
   brightness: Brightness.light,
   colorScheme: const ColorScheme.light(
     primary: LightColors.primary,
-    onPrimary: LightColors.onPrimary,
     secondary: LightColors.secondary,
     onSecondary: LightColors.onSecondary,
     surface: LightColors.surface,
     onSurface: LightColors.onSurface,
     error: LightColors.error,
-    onError: LightColors.onError,
     outline: LightColors.divider,
   ),
   scaffoldBackgroundColor: LightColors.background,

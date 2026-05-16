@@ -43,9 +43,9 @@ class DopePdfExporter {
               // Header
               pw.Container(
                 padding: const pw.EdgeInsets.only(bottom: 16),
-                decoration: pw.BoxDecoration(
+                decoration: const pw.BoxDecoration(
                   border: pw.Border(
-                    bottom: pw.BorderSide(color: PdfColors.grey400, width: 1),
+                    bottom: pw.BorderSide(color: PdfColors.grey400),
                   ),
                 ),
                 child: pw.Column(
@@ -53,7 +53,7 @@ class DopePdfExporter {
                   children: [
                     pw.Text(
                       table.name.trim().isEmpty
-                          ? _label('untitled_table', localeTag)
+                          ? strings.dopeLabelUntitledTable
                           : table.name,
                       style: pw.TextStyle(
                         fontSize: 18,
@@ -63,8 +63,8 @@ class DopePdfExporter {
                     ),
                     pw.SizedBox(height: 8),
                     pw.Text(
-                      '${_platformName(provider, table.platformId, localeTag, customPlatformName: table.customPlatformName)} / ${_ammoName(provider, table.ammoId, strings, localeTag)}',
-                      style: pw.TextStyle(
+                      '${_platformName(provider, table.platformId, strings, localeTag, customPlatformName: table.customPlatformName)} / ${_ammoName(provider, table.ammoId, strings, localeTag)}',
+                      style: const pw.TextStyle(
                         fontSize: 12,
                         color: PdfColors.grey700,
                       ),
@@ -72,7 +72,7 @@ class DopePdfExporter {
                     pw.SizedBox(height: 4),
                     pw.Text(
                       '${strings.dateLabel}: ${dateFormat.format(table.updatedAt)}',
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 10,
                         color: PdfColors.grey600,
                       ),
@@ -83,11 +83,11 @@ class DopePdfExporter {
               pw.SizedBox(height: 20),
               // Table
               pw.Table(
-                border: pw.TableBorder.all(color: PdfColors.black, width: 1),
+                border: pw.TableBorder.all(),
                 columnWidths: {
-                  0: const pw.FlexColumnWidth(1),
-                  1: const pw.FlexColumnWidth(1),
-                  2: const pw.FlexColumnWidth(1),
+                  0: const pw.FlexColumnWidth(),
+                  1: const pw.FlexColumnWidth(),
+                  2: const pw.FlexColumnWidth(),
                 },
                 children: [
                   // Header row
@@ -96,9 +96,9 @@ class DopePdfExporter {
                       color: PdfColors.grey200,
                     ),
                     children: [
-                      _tableCell(_label('distance', localeTag), isHeader: true),
-                      _tableCell(_label('drop', localeTag), isHeader: true),
-                      _tableCell(_label('wind', localeTag), isHeader: true),
+                      _tableCell(strings.dopeTableHeaderDistance, isHeader: true),
+                      _tableCell(strings.dopeTableHeaderDrop, isHeader: true),
+                      _tableCell(strings.dopeTableHeaderWind, isHeader: true),
                     ],
                   ),
                   // Data rows
@@ -122,13 +122,13 @@ class DopePdfExporter {
                   }),
                 ],
               ),
-              pw.Spacer(flex: 1),
+              pw.Spacer(),
               // Footer
               pw.Container(
                 padding: const pw.EdgeInsets.only(top: 16),
-                decoration: pw.BoxDecoration(
+                decoration: const pw.BoxDecoration(
                   border: pw.Border(
-                    top: pw.BorderSide(color: PdfColors.grey400, width: 1),
+                    top: pw.BorderSide(color: PdfColors.grey400),
                   ),
                 ),
                 child: pw.Row(
@@ -136,14 +136,14 @@ class DopePdfExporter {
                   children: [
                     pw.Text(
                       'THOT — DOPE Card',
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 10,
                         color: PdfColors.grey600,
                       ),
                     ),
                     pw.Text(
                       dateFormat.format(now),
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 10,
                         color: PdfColors.grey600,
                       ),
@@ -178,6 +178,7 @@ class DopePdfExporter {
   static String _platformName(
     ThotProvider provider,
     String platformId,
+    AppStrings strings,
     String localeTag, {
     String? customPlatformName,
   }) {
@@ -188,15 +189,13 @@ class DopePdfExporter {
       (p) => p.id == platformId,
       orElse: () => Platform(
         id: '',
-        name: _label('unknown', localeTag),
+        name: strings.dopeLabelUnknown,
         type: '',
         model: '',
         caliber: '',
         serialNumber: '',
         weight: 0,
         totalRounds: 0,
-        lastUsed: null,
-        comment: '',
         lastCleaned: DateTime.now(),
       ),
     );
@@ -214,98 +213,27 @@ class DopePdfExporter {
       (a) => a.id == ammoId,
       orElse: () => Ammo(
         id: '',
-        name: _label('unknown', localeTag),
+        name: strings.dopeLabelUnknown,
         brand: '',
         caliber: '',
-        projectileType: '',
         quantity: 0,
         lowStockThreshold: 0,
-        lastUsed: null,
-        comment: '',
       ),
     );
     return ammo.name;
   }
 
   static String _sanitizeFileName(String name) {
-    return name
+    // Defensive sanitiser. The previous version called .substring(0, 30)
+    // unconditionally which throws RangeError for any name shorter than
+    // 30 chars after stripping forbidden characters.
+    final cleaned = name
         .replaceAll(RegExp(r'[^\w\s-]'), '')
         .replaceAll(RegExp(r'\s+'), '_')
-        .substring(0, 30);
+        .trim();
+    if (cleaned.isEmpty) return 'table';
+    return cleaned.length <= 30 ? cleaned : cleaned.substring(0, 30);
   }
 
   static final DateFormat _dfFile = DateFormat('yyyyMMdd_HHmmss');
-
-  static String _label(String key, String localeTag) {
-    final lang = localeTag.split('-').first.split('_').first;
-    switch (key) {
-      case 'untitled_table':
-        switch (lang) {
-          case 'en':
-            return 'Untitled table';
-          case 'de':
-            return 'Unbenannte Tabelle';
-          case 'it':
-            return 'Tabella senza nome';
-          case 'es':
-            return 'Tabla sin nombre';
-          default:
-            return 'Table sans nom';
-        }
-      case 'distance':
-        switch (lang) {
-          case 'en':
-            return 'Distance';
-          case 'de':
-            return 'Entfernung';
-          case 'it':
-            return 'Distanza';
-          case 'es':
-            return 'Distancia';
-          default:
-            return 'Distance';
-        }
-      case 'drop':
-        switch (lang) {
-          case 'en':
-            return 'Drop';
-          case 'de':
-            return 'Abfall';
-          case 'it':
-            return 'Caduta';
-          case 'es':
-            return 'Caída';
-          default:
-            return 'Drop';
-        }
-      case 'wind':
-        switch (lang) {
-          case 'en':
-            return 'Wind';
-          case 'de':
-            return 'Drift';
-          case 'it':
-            return 'Deriva';
-          case 'es':
-            return 'Deriva';
-          default:
-            return 'Dérive';
-        }
-      case 'unknown':
-        switch (lang) {
-          case 'en':
-            return 'Unknown';
-          case 'de':
-            return 'Unbekannt';
-          case 'it':
-            return 'Sconosciuto';
-          case 'es':
-            return 'Desconocido';
-          default:
-            return 'Inconnu';
-        }
-      default:
-        return key;
-    }
-  }
 }

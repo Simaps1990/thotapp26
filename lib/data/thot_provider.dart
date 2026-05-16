@@ -6,9 +6,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/data/exercise_step.dart';
 import 'models.dart';
+import 'material_types.dart';
 import '../utils/achievement_definitions.dart';
 import '../utils/dashboard_widget_service.dart';
 import '../utils/maintenance_notifications.dart';
@@ -54,9 +56,6 @@ class DomainImportPreview {
 }
 
 class ThotProvider extends ChangeNotifier {
-  static const String _platformTypePistolSemiAuto = 'PA';
-  static const String _platformTypePistolSemiAutomatiqueLegacy =
-      'Pistolet semi-automatique';
   late final ThotPremiumService _premiumService = ThotPremiumService(
     onChanged: notifyListeners,
   );
@@ -107,7 +106,8 @@ class ThotProvider extends ChangeNotifier {
   // at the top of each helper — UI stays consistent that way.
   // ============================================================
 
-  static const bool _kFreeLimitsDisabled = true;
+  static const bool _kFreeLimitsDisabled = false;
+  static const bool _kForceFreeModeForTesting = true;
   bool get isFreeLimitsDisabled => _kFreeLimitsDisabled;
 
   /// Bump this when the JSON layout of `_buildDomainDataMap()` changes in a
@@ -120,6 +120,7 @@ class ThotProvider extends ChangeNotifier {
 
   // ----- Premium status -----
   bool get isPremium {
+    if (_kForceFreeModeForTesting) return false;
     if (_kFreeLimitsDisabled) return true;
     return _premiumService.isPremium;
   }
@@ -156,9 +157,7 @@ class ThotProvider extends ChangeNotifier {
       );
     }
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return const FlutterSecureStorage(
-        aOptions: AndroidOptions(resetOnError: true),
-      );
+      return const FlutterSecureStorage();
     }
     return const FlutterSecureStorage();
   }
@@ -616,9 +615,12 @@ class ThotProvider extends ChangeNotifier {
     final entry = PlatformHistoryEntry(
       id: 'piece-$idSeed',
       date: date,
-      type: 'piece',
-      label: 'Changement de pièce: $partName',
-      details: (comment ?? '').trim().isEmpty ? null : comment,
+      type: PlatformHistoryType.partReplacement,
+      data: {
+        PlatformHistoryDataKey.partName: partName,
+      },
+      // Comment is stored on PlatformReplacementPart itself; we leave the
+      // history entry's legacy details empty.
     );
     final part = PlatformReplacementPart(
       id: 'part-$idSeed',
@@ -644,10 +646,27 @@ class ThotProvider extends ChangeNotifier {
     if (index == -1) return;
     final current = _platforms[index];
     if (!current.replacementParts.any((p) => p.id == part.id)) return;
+
+    // Extract idSeed from partId ('part-$idSeed') to find linked history entry
+    final idSeed = part.id.startsWith('part-') ? part.id.substring(5) : '';
+    final historyId = 'piece-$idSeed';
+
+    // Update the part and sync the history entry with the new name
     _platforms[index] = current.copyWith(
       replacementParts: current.replacementParts
           .map((p) => p.id == part.id ? part : p)
           .toList(growable: false),
+      history: current.history.map((h) {
+        if (h.id == historyId) {
+          return h.copyWith(
+            data: {
+              ...h.data,
+              PlatformHistoryDataKey.partName: part.name,
+            },
+          );
+        }
+        return h;
+      }).toList(growable: false),
     );
     _scheduleSave();
     notifyListeners();
@@ -661,9 +680,18 @@ class ThotProvider extends ChangeNotifier {
     if (index == -1) return;
     final current = _platforms[index];
     if (!current.replacementParts.any((p) => p.id == partId)) return;
+
+    // Extract idSeed from partId ('part-$idSeed') to find linked history entry
+    final idSeed = partId.startsWith('part-') ? partId.substring(5) : '';
+    final historyId = 'piece-$idSeed';
+
     _platforms[index] = current.copyWith(
       replacementParts: current.replacementParts
           .where((p) => p.id != partId)
+          .toList(growable: false),
+      // Also remove the corresponding history entry
+      history: current.history
+          .where((h) => h.id != historyId)
           .toList(growable: false),
     );
     _scheduleSave();
@@ -738,9 +766,9 @@ class ThotProvider extends ChangeNotifier {
   }
 
   // User Profile & Preferences
-  String _userName = "";
-  String _licenseNumber = "";
-  String _userEmail = "";
+  String _userName = '';
+  String _licenseNumber = '';
+  String _userEmail = '';
   bool _useMetric = true;
   WeightUnit _weightUnit = WeightUnit.gram;
   DistanceUnit _distanceUnit = DistanceUnit.meter;
@@ -866,7 +894,34 @@ class ThotProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteUserDocument(String id) {
+  void deleteUserDocument(String id) async {
+    // Find document and delete physical file before removing from list
+    final doc = _userDocuments.firstWhere(
+      (d) => d.id == id,
+      orElse: () => UserDocument(
+        id: '',
+        name: '',
+        type: '',
+        filePath: '',
+        addedDate: DateTime.now(),
+      ),
+    );
+
+    // Delete physical file if it exists and we're not on web
+    if (doc.id.isNotEmpty &&
+        doc.filePath.isNotEmpty &&
+        !kIsWeb) {
+      try {
+        final file = File(doc.filePath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        // File may not exist or path may be invalid - log but don't fail
+        debugPrint('[deleteUserDocument] Failed to delete file: $e');
+      }
+    }
+
     _userDocuments.removeWhere((d) => d.id == id);
     _scheduleSave();
     notifyListeners();
@@ -1315,29 +1370,31 @@ class ThotProvider extends ChangeNotifier {
 
   String getLimitMessage(String type) {
     final strings = AppStrings.forLocale(appLocale ?? const Locale('fr'));
-    if (type == 'platform') {
-      return strings.premiumLimitMessage(
-        '$_activePlatformsCount',
-        '$maxPlatformsFree',
-        'plateformes',
-      );
-    } else if (type == 'ammo') {
-      return strings.premiumLimitMessage(
-        '$_activeAmmosCount',
-        '$maxAmmosFree',
-        'consommables',
-      );
-    } else if (type == 'accessory') {
-      return strings.premiumLimitMessage(
-        '$_activeAccessoriesCount',
-        '$maxAccessoriesFree',
-        'accessoires',
-      );
-    } else if (type == 'session') {
-      // Sessions are unlimited on the free plan.
-      return '';
+    switch (type) {
+      case 'platform':
+        return strings.premiumLimitMessage(
+          '$_activePlatformsCount',
+          '$maxPlatformsFree',
+          strings.premiumItemPlatforms,
+        );
+      case 'ammo':
+        return strings.premiumLimitMessage(
+          '$_activeAmmosCount',
+          '$maxAmmosFree',
+          strings.premiumItemAmmos,
+        );
+      case 'accessory':
+        return strings.premiumLimitMessage(
+          '$_activeAccessoriesCount',
+          '$maxAccessoriesFree',
+          strings.premiumItemAccessories,
+        );
+      case 'session':
+        // Sessions are unlimited on the free plan.
+        return '';
+      default:
+        return '';
     }
-    return '';
   }
 
   Future<void> restorePurchases() async {
@@ -1454,9 +1511,11 @@ class ThotProvider extends ChangeNotifier {
             PlatformHistoryEntry(
               id: '${session.id}-${exercise.id}-tir-${entry.key}',
               date: session.date,
-              type: 'tir',
-              label: 'Session : ${session.name}',
-              details: '${entry.value} coups',
+              type: PlatformHistoryType.shot,
+              data: {
+                PlatformHistoryDataKey.sessionName: session.name,
+                PlatformHistoryDataKey.shotCount: entry.value,
+              },
             ),
           ],
         );
@@ -1549,60 +1608,6 @@ class ThotProvider extends ChangeNotifier {
         roundsAtLastCleaning: updatedRoundsAtLastCleaning,
         roundsAtLastRevision: updatedRoundsAtLastRevision,
       );
-    }
-  }
-
-  void _recalculateLastUsedAfterSessionRemoval(Session removedSession) {
-    final impactedPlatformIds = removedSession.platformImpact.keys.toSet();
-    final impactedAmmoIds = removedSession.ammoImpact.keys.toSet();
-    final impactedAccessoryIds = removedSession.equipmentImpact.keys.toSet();
-
-    DateTime? latestForPlatform(String id) {
-      DateTime? latest;
-      for (final session in _sessions) {
-        if (session.id == removedSession.id) continue;
-        if (!session.platformImpact.containsKey(id)) continue;
-        if (latest == null || session.date.isAfter(latest))
-          latest = session.date;
-      }
-      return latest;
-    }
-
-    DateTime? latestForAmmo(String id) {
-      DateTime? latest;
-      for (final session in _sessions) {
-        if (session.id == removedSession.id) continue;
-        if (!session.ammoImpact.containsKey(id)) continue;
-        if (latest == null || session.date.isAfter(latest))
-          latest = session.date;
-      }
-      return latest;
-    }
-
-    DateTime? latestForAccessory(String id) {
-      DateTime? latest;
-      for (final session in _sessions) {
-        if (session.id == removedSession.id) continue;
-        if (!session.equipmentImpact.containsKey(id)) continue;
-        if (latest == null || session.date.isAfter(latest))
-          latest = session.date;
-      }
-      return latest;
-    }
-
-    for (final id in impactedPlatformIds) {
-      final index = _platforms.indexWhere((p) => p.id == id);
-      if (index != -1) _platforms[index].lastUsed = latestForPlatform(id);
-    }
-
-    for (final id in impactedAmmoIds) {
-      final index = _ammos.indexWhere((a) => a.id == id);
-      if (index != -1) _ammos[index].lastUsed = latestForAmmo(id);
-    }
-
-    for (final id in impactedAccessoryIds) {
-      final index = _accessories.indexWhere((a) => a.id == id);
-      if (index != -1) _accessories[index].lastUsed = latestForAccessory(id);
     }
   }
 
@@ -1749,12 +1754,20 @@ class ThotProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deletePlatform(String id) {
+  void deletePlatform(String id) async {
     final index = _platforms.indexWhere((w) => w.id == id);
     if (index == -1) return;
-    _platforms[index] = _platforms[index].copyWith(
-      name: _currentStrings.suffixDeleted(_platforms[index].name),
+    final platform = _platforms[index];
+
+    // Delete photo if exists
+    if (platform.photoPath != null && platform.photoPath!.isNotEmpty) {
+      await ImageStorage.deletePersisted(platform.photoPath);
+    }
+
+    _platforms[index] = platform.copyWith(
+      name: _currentStrings.suffixDeleted(platform.name),
       isHidden: true,
+      clearPhotoPath: true,
     );
     _scheduleSave();
     notifyListeners();
@@ -1782,7 +1795,6 @@ class ThotProvider extends ChangeNotifier {
       imageUrl: platform.imageUrl,
       category: platform.category,
       documents: platform.documents,
-      history: const [],
       photoPath: platform.photoPath,
       trackWear: platform.trackWear,
       trackCleanliness: platform.trackCleanliness,
@@ -1816,9 +1828,7 @@ class ThotProvider extends ChangeNotifier {
         PlatformHistoryEntry(
           id: 'entretien-${now.microsecondsSinceEpoch}',
           date: now,
-          type: 'entretien',
-          label: 'Entretien enregistré',
-          details: 'Compteur entretien remis à zéro',
+          type: PlatformHistoryType.cleaning,
         ),
       ],
     );
@@ -1844,9 +1854,7 @@ class ThotProvider extends ChangeNotifier {
         PlatformHistoryEntry(
           id: 'revision-${now.microsecondsSinceEpoch}',
           date: now,
-          type: 'revision',
-          label: 'Révision enregistrée',
-          details: 'Compteur révision remis à zéro',
+          type: PlatformHistoryType.revision,
         ),
       ],
     );
@@ -1937,12 +1945,20 @@ class ThotProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteAmmo(String id) {
+  void deleteAmmo(String id) async {
     final index = _ammos.indexWhere((a) => a.id == id);
     if (index == -1) return;
-    _ammos[index] = _ammos[index].copyWith(
-      name: _currentStrings.suffixDeleted(_ammos[index].name),
+    final ammo = _ammos[index];
+
+    // Delete photo if exists
+    if (ammo.photoPath != null && ammo.photoPath!.isNotEmpty) {
+      await ImageStorage.deletePersisted(ammo.photoPath);
+    }
+
+    _ammos[index] = ammo.copyWith(
+      name: _currentStrings.suffixDeleted(ammo.name),
       isHidden: true,
+      clearPhotoPath: true,
     );
     _scheduleSave();
     notifyListeners();
@@ -2029,12 +2045,20 @@ class ThotProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteAccessory(String id) {
+  void deleteAccessory(String id) async {
     final index = _accessories.indexWhere((a) => a.id == id);
     if (index == -1) return;
-    _accessories[index] = _accessories[index].copyWith(
-      name: _currentStrings.suffixDeletedMasc(_accessories[index].name),
+    final accessory = _accessories[index];
+
+    // Delete photo if exists
+    if (accessory.photoPath != null && accessory.photoPath!.isNotEmpty) {
+      await ImageStorage.deletePersisted(accessory.photoPath);
+    }
+
+    _accessories[index] = accessory.copyWith(
+      name: _currentStrings.suffixDeletedMasc(accessory.name),
       isHidden: true,
+      clearPhotoPath: true,
     );
     _scheduleSave();
     notifyListeners();
@@ -2055,7 +2079,6 @@ class ThotProvider extends ChangeNotifier {
       comment: accessory.comment,
       imageUrl: accessory.imageUrl,
       lastUsed: now,
-      totalRounds: 0,
       lastCleaned: now,
       lastRevised: now,
       trackWear: accessory.trackWear,
@@ -2460,8 +2483,10 @@ class ThotProvider extends ChangeNotifier {
                 name: w['name'] as String,
                 model: w['model'] as String,
                 comment: (w['comment'] ?? '') as String,
-                type: _migratePlatformType(
-                  (w['type'] ?? 'Plateforme') as String,
+                type: MaterialTypeMigration.resolve(
+                  (w['type'] ?? 'other') as String,
+                  MaterialTypeMigration.platform,
+                  PlatformTypeKey.all,
                 ),
                 caliber: w['caliber'] as String,
                 serialNumber: w['serialNumber'] as String,
@@ -2541,8 +2566,11 @@ class ThotProvider extends ChangeNotifier {
                 brand: a['brand'] as String,
                 caliber: a['caliber'] as String,
                 comment: (a['comment'] ?? '') as String,
-                projectileType:
-                    (a['projectileType'] ?? a['bulletType'] ?? '') as String,
+                projectileType: MaterialTypeMigration.resolve(
+                  (a['projectileType'] ?? a['bulletType'] ?? '') as String,
+                  MaterialTypeMigration.ammo,
+                  AmmoTypeKey.all,
+                ),
                 quantity: qty,
                 initialQuantity: effectiveInitial,
                 lastUsed: DateTime.tryParse(a['lastUsed'] as String? ?? ''),
@@ -2612,7 +2640,11 @@ class ThotProvider extends ChangeNotifier {
                 brand: (ac['brand'] ?? '') as String,
                 model: (ac['model'] ?? '') as String,
                 comment: (ac['comment'] ?? '') as String,
-                type: (ac['type'] ?? '') as String,
+                type: MaterialTypeMigration.resolve(
+                  (ac['type'] ?? '') as String,
+                  MaterialTypeMigration.accessory,
+                  AccessoryTypeKey.all,
+                ),
                 imageUrl: (ac['imageUrl'] ?? '') as String,
                 lastUsed: lastUsed,
                 totalRounds: totalRounds,
@@ -3263,11 +3295,8 @@ class ThotProvider extends ChangeNotifier {
     return totalRounds;
   }
 
-  String _migratePlatformType(String raw) {
-    if (raw == _platformTypePistolSemiAutomatiqueLegacy)
-      return _platformTypePistolSemiAuto;
-    return raw;
-  }
+  // Platform type migration is now handled by MaterialTypeMigration.resolve()
+  // in _loadDomainDataFromMap.
 
   Future<void> lockSession() async {
     await _securityService.lockSession();
@@ -3302,14 +3331,7 @@ class ThotProvider extends ChangeNotifier {
   double? getAmmoTotalShotCost(String ammoId) {
     final ammo = ammos.firstWhere(
       (a) => a.id == ammoId,
-      orElse: () => Ammo(
-        id: '',
-        name: '',
-        brand: '',
-        caliber: '',
-        quantity: 0,
-        lastUsed: null,
-      ),
+      orElse: () => Ammo(id: '', name: '', brand: '', caliber: '', quantity: 0),
     );
     if (ammo.unitPrice == null) return null;
 
@@ -3328,14 +3350,7 @@ class ThotProvider extends ChangeNotifier {
   double? getAmmoRemainingStockCost(String ammoId) {
     final ammo = ammos.firstWhere(
       (a) => a.id == ammoId,
-      orElse: () => Ammo(
-        id: '',
-        name: '',
-        brand: '',
-        caliber: '',
-        quantity: 0,
-        lastUsed: null,
-      ),
+      orElse: () => Ammo(id: '', name: '', brand: '', caliber: '', quantity: 0),
     );
     if (ammo.unitPrice == null) return null;
 
@@ -3363,14 +3378,8 @@ class ThotProvider extends ChangeNotifier {
       for (final entry in exercise.ammoShotImpact.entries) {
         final ammo = ammos.firstWhere(
           (a) => a.id == entry.key,
-          orElse: () => Ammo(
-            id: '',
-            name: '',
-            brand: '',
-            caliber: '',
-            quantity: 0,
-            lastUsed: null,
-          ),
+          orElse: () =>
+              Ammo(id: '', name: '', brand: '', caliber: '', quantity: 0),
         );
         if (ammo.unitPrice != null) {
           hasPricedAmmo = true;
@@ -3389,7 +3398,7 @@ class ThotProvider extends ChangeNotifier {
     final results = <Map<String, dynamic>>[];
 
     for (int i = lastNMonths - 1; i >= 0; i--) {
-      final monthStart = DateTime(now.year, now.month - i, 1);
+      final monthStart = DateTime(now.year, now.month - i);
       final monthEnd = i == 0
           ? now
           : DateTime(now.year, now.month - i + 1, 0)
@@ -3418,7 +3427,7 @@ class ThotProvider extends ChangeNotifier {
   /// Returns a map {ammoId: totalCost} sorted by cost descending.
   Map<String, double> getTopAmmosByCost(int months) {
     final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month - months + 1, 1);
+    final monthStart = DateTime(now.year, now.month - months + 1);
     final costs = <String, double>{};
 
     for (final session in sessions) {
@@ -3427,14 +3436,8 @@ class ThotProvider extends ChangeNotifier {
           for (final entry in exercise.ammoShotImpact.entries) {
             final ammo = ammos.firstWhere(
               (a) => a.id == entry.key,
-              orElse: () => Ammo(
-                id: '',
-                name: '',
-                brand: '',
-                caliber: '',
-                quantity: 0,
-                lastUsed: null,
-              ),
+              orElse: () =>
+                  Ammo(id: '', name: '', brand: '', caliber: '', quantity: 0),
             );
             if (ammo.unitPrice != null) {
               costs[entry.key] =

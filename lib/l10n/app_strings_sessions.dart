@@ -22,8 +22,13 @@ extension AppStringsSessions on AppStrings {
   String get sessionsFilterAll =>
       _pick(fr: 'Toutes', en: 'All', de: 'Alle', it: 'Tutte', es: 'Todas');
 
-  String get sessionsFilterMonth =>
-      _pick(fr: 'Mois', en: 'Month', de: 'Monat', it: 'Mese', es: 'Mes');
+  String get sessionsFilterMonth => _pick(
+    fr: 'Ce mois',
+    en: 'This month',
+    de: 'Dieser Monat',
+    it: 'Questo mese',
+    es: 'Este mes',
+  );
 
   String get sessionsFilter7Days => _pick(
     fr: '7 jours',
@@ -32,6 +37,12 @@ extension AppStringsSessions on AppStrings {
     it: '7 giorni',
     es: '7 días',
   );
+
+  String get sessionsSortDate =>
+      _pick(fr: 'Date', en: 'Date', de: 'Datum', it: 'Data', es: 'Fecha');
+
+  String get sessionsSortName =>
+      _pick(fr: 'Nom', en: 'Name', de: 'Name', it: 'Nome', es: 'Nombre');
 
   String get searchSessionsHint => _pick(
     fr: 'Rechercher une séance...',
@@ -81,6 +92,22 @@ extension AppStringsSessions on AppStrings {
     es: 'Eliminar',
   );
 
+  String get moveUp => _pick(
+    fr: 'Monter',
+    en: 'Move up',
+    de: 'Nach oben',
+    it: 'Sposta su',
+    es: 'Mover arriba',
+  );
+
+  String get moveDown => _pick(
+    fr: 'Descendre',
+    en: 'Move down',
+    de: 'Nach unten',
+    it: 'Sposta giù',
+    es: 'Mover abajo',
+  );
+
   String get cancelButton => _pick(
     fr: 'Annuler',
     en: 'Cancel',
@@ -93,7 +120,7 @@ extension AppStringsSessions on AppStrings {
     fr: 'Êtes-vous sûr de vouloir supprimer cette opération ? Le stock sera ajusté en conséquence.',
     en: 'Are you sure you want to delete this operation? The stock will be adjusted accordingly.',
     de: 'Sind Sie sicher, dass Sie diesen Vorgang löschen möchten? Der Lagerbestand wird entsprechend angepasst.',
-    it: "Sei sicuro di voler eliminare questa operazione? Lo stock verrà adeguato di conseguenza.",
+    it: 'Sei sicuro di voler eliminare questa operazione? Lo stock verrà adeguato di conseguenza.',
     es: '¿Está seguro de que desea eliminar esta operación? El stock se ajustará en consecuencia.',
   );
 

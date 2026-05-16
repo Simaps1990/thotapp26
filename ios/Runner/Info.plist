@@ -27,13 +27,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>THOT utilise l'appareil photo pour ajouter des photos à vos setups, consommables et cibles. L'accès est déclenché uniquement lorsque vous choisissez "Prendre une photo" dans le sélecteur de fichiers.</string>
+	<string>THOT utilise l'appareil photo pour ajouter des photos à vos setups, consommables et cibles, et pour scanner les QR codes de partage de tables de tir. L'accès est déclenché uniquement sur action explicite.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>THOT utilise Face ID pour protéger l'accès à vos données.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>THOT utilise le microphone uniquement dans le minuteur de tir pour détecter un départ sonore (sur action explicite de l’utilisateur). Aucun enregistrement audio n’est stocké ni envoyé.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>THOT utilise la bibliothèque photo pour ajouter une image à vos setup, consommables et cibles.</string>
+	<string>THOT utilise la bibliothèque photo pour ajouter une image à vos setups, consommables et cibles.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

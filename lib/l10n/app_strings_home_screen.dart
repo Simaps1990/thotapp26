@@ -455,7 +455,7 @@ extension AppStringsHomeScreen on AppStrings {
   );
 
   String get legalCguTitle => _pick(
-    fr: "Conditions Générales d’Utilisation (CGU)",
+    fr: 'Conditions Générales d’Utilisation (CGU)',
     en: 'Terms of Use',
     de: 'Nutzungsbedingungen',
     it: 'Condizioni generali di utilizzo',

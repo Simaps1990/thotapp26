@@ -48,6 +48,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   late Animation<double> _scaleAnimation;
   late final Ticker _targetFollowTicker;
   Rect? _trackedTargetRect;
+  Duration _lastTickTime = Duration.zero;
 
   @override
   void initState() {
@@ -64,7 +65,9 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       begin: 0.9,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    _targetFollowTicker = createTicker((_) {
+    _targetFollowTicker = createTicker((elapsed) {
+      if (elapsed - _lastTickTime < const Duration(milliseconds: 100)) return;
+      _lastTickTime = elapsed;
       _syncTrackedTargetRect();
     })..start();
     _controller.forward();

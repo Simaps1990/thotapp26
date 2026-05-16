@@ -11,22 +11,18 @@ Exercise _makeExercise({
   int distance = 25,
   double? precision,
   bool precisionEnabled = true,
-}) =>
-    Exercise(
-      id: id,
-      platformId: platformId,
-      ammoId: ammoId,
-      equipmentIds: equipmentIds,
-      shotsFired: shotsFired,
-      distance: distance,
-      precision: precision,
-      precisionEnabled: precisionEnabled,
-    );
+}) => Exercise(
+  id: id,
+  platformId: platformId,
+  ammoId: ammoId,
+  equipmentIds: equipmentIds,
+  shotsFired: shotsFired,
+  distance: distance,
+  precision: precision,
+  precisionEnabled: precisionEnabled,
+);
 
-Session _makeSession({
-  String id = 's1',
-  List<Exercise> exercises = const [],
-}) =>
+Session _makeSession({String id = 's1', List<Exercise> exercises = const []}) =>
     Session(
       id: id,
       name: 'Session test',
@@ -42,11 +38,13 @@ void main() {
     });
 
     test('sums shots across all exercises', () {
-      final s = _makeSession(exercises: [
-        _makeExercise(id: 'e1', shotsFired: 10),
-        _makeExercise(id: 'e2', shotsFired: 25),
-        _makeExercise(id: 'e3', shotsFired: 5),
-      ]);
+      final s = _makeSession(
+        exercises: [
+          _makeExercise(),
+          _makeExercise(id: 'e2', shotsFired: 25),
+          _makeExercise(id: 'e3', shotsFired: 5),
+        ],
+      );
       expect(s.totalRounds, 40);
     });
   });
@@ -57,26 +55,32 @@ void main() {
     });
 
     test('returns 0 when no exercise has counted precision', () {
-      final s = _makeSession(exercises: [
-        _makeExercise(precision: null),
-        _makeExercise(id: 'e2', precision: 80, precisionEnabled: false),
-      ]);
+      final s = _makeSession(
+        exercises: [
+          _makeExercise(),
+          _makeExercise(id: 'e2', precision: 80, precisionEnabled: false),
+        ],
+      );
       expect(s.averagePrecision, 0.0);
     });
 
     test('averages only counted precisions', () {
-      final s = _makeSession(exercises: [
-        _makeExercise(id: 'e1', precision: 80, precisionEnabled: true),
-        _makeExercise(id: 'e2', precision: 60, precisionEnabled: true),
-        _makeExercise(id: 'e3', precision: 90, precisionEnabled: false), // excluded
-      ]);
+      final s = _makeSession(
+        exercises: [
+          _makeExercise(precision: 80),
+          _makeExercise(id: 'e2', precision: 60),
+          _makeExercise(
+            id: 'e3',
+            precision: 90,
+            precisionEnabled: false,
+          ), // excluded
+        ],
+      );
       expect(s.averagePrecision, 70.0);
     });
 
     test('precision of 0 is counted when enabled', () {
-      final s = _makeSession(exercises: [
-        _makeExercise(precision: 0.0, precisionEnabled: true),
-      ]);
+      final s = _makeSession(exercises: [_makeExercise(precision: 0.0)]);
       expect(s.hasCountedPrecision, true);
       expect(s.averagePrecision, 0.0);
     });
@@ -84,13 +88,15 @@ void main() {
 
   group('Session.platformImpact', () {
     test('sums shots per platform, ignores none/borrowed', () {
-      final s = _makeSession(exercises: [
-        _makeExercise(id: 'e1', platformId: 'w1', shotsFired: 10),
-        _makeExercise(id: 'e2', platformId: 'w1', shotsFired: 5),
-        _makeExercise(id: 'e3', platformId: 'w2', shotsFired: 20),
-        _makeExercise(id: 'e4', platformId: 'none', shotsFired: 7),
-        _makeExercise(id: 'e5', platformId: 'borrowed', shotsFired: 3),
-      ]);
+      final s = _makeSession(
+        exercises: [
+          _makeExercise(),
+          _makeExercise(id: 'e2', shotsFired: 5),
+          _makeExercise(id: 'e3', platformId: 'w2', shotsFired: 20),
+          _makeExercise(id: 'e4', platformId: 'none', shotsFired: 7),
+          _makeExercise(id: 'e5', platformId: 'borrowed', shotsFired: 3),
+        ],
+      );
       expect(s.platformImpact['w1'], 15);
       expect(s.platformImpact['w2'], 20);
       expect(s.platformImpact.containsKey('none'), false);
@@ -100,11 +106,13 @@ void main() {
 
   group('Session.ammoImpact', () {
     test('sums shots per ammo, ignores none/borrowed', () {
-      final s = _makeSession(exercises: [
-        _makeExercise(id: 'e1', ammoId: 'a1', shotsFired: 50),
-        _makeExercise(id: 'e2', ammoId: 'a1', shotsFired: 30),
-        _makeExercise(id: 'e3', ammoId: 'none', shotsFired: 10),
-      ]);
+      final s = _makeSession(
+        exercises: [
+          _makeExercise(shotsFired: 50),
+          _makeExercise(id: 'e2', shotsFired: 30),
+          _makeExercise(id: 'e3', ammoId: 'none'),
+        ],
+      );
       expect(s.ammoImpact['a1'], 80);
       expect(s.ammoImpact.containsKey('none'), false);
     });
@@ -112,10 +120,12 @@ void main() {
 
   group('Session.equipmentImpact', () {
     test('sums shots per accessory across exercises', () {
-      final s = _makeSession(exercises: [
-        _makeExercise(id: 'e1', equipmentIds: ['acc1', 'acc2'], shotsFired: 10),
-        _makeExercise(id: 'e2', equipmentIds: ['acc1'], shotsFired: 5),
-      ]);
+      final s = _makeSession(
+        exercises: [
+          _makeExercise(equipmentIds: ['acc1', 'acc2']),
+          _makeExercise(id: 'e2', equipmentIds: ['acc1'], shotsFired: 5),
+        ],
+      );
       expect(s.equipmentImpact['acc1'], 15);
       expect(s.equipmentImpact['acc2'], 10);
     });

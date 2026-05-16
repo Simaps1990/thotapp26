@@ -11,13 +11,13 @@ extension AppStringsPro on AppStrings {
     es: 'Desbloquea todo tu potencial.',
   );
 
-  String get proTrialBanner => _pick(
-    fr: 'Essayez **gratuitement** pendant 3 jours',
-    en: 'Try **free** for 3 days',
-    de: '3 Tage **kostenlos** testen',
-    it: 'Prova **gratis** per 3 giorni',
-    es: 'Pruébalo **gratis** durante 3 días',
-  );
+String get proTrialBanner => _pick(
+    fr: 'Essayez **gratuitement** pendant 7 jours',
+   en: 'Try **free** for 7 days',
+   de: '7 Tage **kostenlos** testen',
+   it: 'Prova **gratis** per 7 giorni',
+    es: 'Pruébalo **gratis** durante 7 días',
+);
 
   String get proBenefitToolsTitle => _pick(
     fr: 'Accédez à tous les outils',
@@ -147,13 +147,13 @@ extension AppStringsPro on AppStrings {
     es: 'Cancelable en cualquier momento',
   );
 
-  String get proStartTrialCta => _pick(
-    fr: 'COMMENCER MON ESSAI GRATUIT',
-    en: 'START MY FREE TRIAL',
-    de: 'KOSTENLOSE TESTPHASE STARTEN',
-    it: 'INIZIA LA MIA PROVA GRATUITA',
-    es: 'INICIAR MI PRUEBA GRATUITA',
-  );
+String get proStartTrialCta => _pick(
+  fr: 'COMMENCER 7 JOURS GRATUITS',
+  en: 'START 7 DAYS FREE',
+  de: '7 TAGE GRATIS STARTEN',
+  it: 'INIZIA 7 GIORNI GRATIS',
+  es: 'INICIAR 7 DÍAS GRATIS',
+);
 
   String get proSubscribeNowCta => _pick(
     fr: 'M\'ABONNER MAINTENANT',
@@ -163,13 +163,13 @@ extension AppStringsPro on AppStrings {
     es: 'SUSCRIBIRME AHORA',
   );
 
-  String get proNoPaymentToday => _pick(
-    fr: 'Aucun paiement aujourd\'hui. Annulez quand vous voulez.',
-    en: 'No payment today. Cancel anytime.',
-    de: 'Heute keine Zahlung. Jederzeit kündbar.',
-    it: 'Nessun pagamento oggi. Annulla quando vuoi.',
-    es: 'Sin pago hoy. Cancela cuando quieras.',
-  );
+String get proNoPaymentToday => _pick(
+  fr: '7 jours gratuits, puis abonnement au tarif affiché. Annulable à tout moment.',
+  en: '7 days free, then subscription at the displayed price. Cancel anytime.',
+  de: '7 Tage kostenlos, danach Abo zum angezeigten Preis. Jederzeit kündbar.',
+  it: '7 giorni gratis, poi abbonamento al prezzo indicato. Annullabile in qualsiasi momento.',
+  es: '7 días gratis, luego suscripción al precio mostrado. Cancelable en cualquier momento.',
+);
 
   String get proPerMonthSuffix =>
       _pick(fr: '/mois', en: '/month', de: '/Monat', it: '/mese', es: '/mes');

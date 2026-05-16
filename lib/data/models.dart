@@ -116,34 +116,91 @@ class AmmoHistoryEntry {
   }
 }
 
+/// Stable type codes for [PlatformHistoryEntry.type]. Persisted on disk
+/// and used as switch keys for label generation — NEVER change a value
+/// without writing a migration.
+class PlatformHistoryType {
+  static const String shot = 'tir';
+  static const String cleaning = 'entretien';
+  static const String revision = 'revision';
+  static const String partReplacement = 'piece';
+}
+
+/// Data payload keys for [PlatformHistoryEntry.data]. Each `type` uses
+/// a different subset.
+class PlatformHistoryDataKey {
+  // shot
+  static const String sessionName = 'sessionName';
+  static const String shotCount = 'shotCount';
+  // partReplacement
+  static const String partName = 'partName';
+}
+
 class PlatformHistoryEntry {
   final String id;
   final DateTime date;
-  final String type; // tir | entretien | revision
-  final String label;
-  final String? details;
+  final String type; // PlatformHistoryType.*
+  /// Structured payload from which the localized label is derived at
+  /// display time. Never contains user-facing strings — only stable keys
+  /// and raw values.
+  final Map<String, dynamic> data;
+
+  /// LEGACY: pre-i18n entries stored their already-formatted label here.
+  /// Kept readable for backward compat; new entries leave it empty and
+  /// rely on [data] + AppStrings to generate the display label.
+  final String legacyLabel;
+
+  /// LEGACY: optional details line that used to be stored pre-formatted.
+  /// New entries leave it empty.
+  final String? legacyDetails;
 
   const PlatformHistoryEntry({
     required this.id,
     required this.date,
     required this.type,
-    required this.label,
-    this.details,
+    this.data = const {},
+    this.legacyLabel = '',
+    this.legacyDetails,
   });
+
+  /// Backward-compat constructor — accepts the old `label` / `details`
+  /// fields so existing code in the provider keeps compiling while we
+  /// migrate call sites one by one.
+  ///
+  /// New code should call the default constructor with [data] instead.
+  @Deprecated('Use the default constructor with data: {...} and let the '
+      'display layer build the label via AppStrings. Kept for migration.')
+  factory PlatformHistoryEntry.legacy({
+    required String id,
+    required DateTime date,
+    required String type,
+    required String label,
+    String? details,
+  }) {
+    return PlatformHistoryEntry(
+      id: id,
+      date: date,
+      type: type,
+      legacyLabel: label,
+      legacyDetails: details,
+    );
+  }
 
   PlatformHistoryEntry copyWith({
     String? id,
     DateTime? date,
     String? type,
-    String? label,
-    String? details,
+    Map<String, dynamic>? data,
+    String? legacyLabel,
+    String? legacyDetails,
   }) {
     return PlatformHistoryEntry(
       id: id ?? this.id,
       date: date ?? this.date,
       type: type ?? this.type,
-      label: label ?? this.label,
-      details: details ?? this.details,
+      data: data ?? this.data,
+      legacyLabel: legacyLabel ?? this.legacyLabel,
+      legacyDetails: legacyDetails ?? this.legacyDetails,
     );
   }
 
@@ -151,17 +208,29 @@ class PlatformHistoryEntry {
     'id': id,
     'date': date.toIso8601String(),
     'type': type,
-    'label': label,
-    'details': details,
+    'data': data,
+    // Only write legacy fields if they actually hold something so new
+    // entries produce clean JSON.
+    if (legacyLabel.isNotEmpty) 'label': legacyLabel,
+    if (legacyDetails != null && legacyDetails!.isNotEmpty)
+      'details': legacyDetails,
   };
 
   static PlatformHistoryEntry fromJson(dynamic json) {
+    final raw = (json as Map).cast<String, dynamic>();
+    final type = raw['type']?.toString() ?? '';
+    final rawData = raw['data'];
+    final data = rawData is Map
+        ? Map<String, dynamic>.from(rawData)
+        : const <String, dynamic>{};
     return PlatformHistoryEntry(
-      id: json['id'] as String,
-      date: DateTime.parse(json['date'] as String),
-      type: json['type'] as String,
-      label: json['label'] as String,
-      details: json['details'] as String?,
+      id: raw['id']?.toString() ?? '',
+      date:
+          DateTime.tryParse(raw['date']?.toString() ?? '') ?? DateTime.now(),
+      type: type,
+      data: data,
+      legacyLabel: raw['label']?.toString() ?? '',
+      legacyDetails: raw['details']?.toString(),
     );
   }
 }
@@ -341,6 +410,7 @@ class Platform {
     List<PlatformHistoryEntry>? history,
     List<PlatformReplacementPart>? replacementParts,
     String? photoPath,
+    bool clearPhotoPath = false,
     bool? trackWear,
     bool? trackCleanliness,
     bool? trackRounds,
@@ -369,7 +439,7 @@ class Platform {
       documents: documents ?? this.documents,
       history: history ?? this.history,
       replacementParts: replacementParts ?? this.replacementParts,
-      photoPath: photoPath ?? this.photoPath,
+      photoPath: clearPhotoPath ? null : (photoPath ?? this.photoPath),
       trackWear: trackWear ?? this.trackWear,
       trackCleanliness: trackCleanliness ?? this.trackCleanliness,
       trackRounds: trackRounds ?? this.trackRounds,
@@ -459,6 +529,7 @@ class Ammo {
     int? lowStockThreshold,
     List<ItemDocument>? documents,
     String? photoPath,
+    bool clearPhotoPath = false,
     List<AmmoHistoryEntry>? history,
     bool? isHidden,
     double? unitPrice,
@@ -478,7 +549,7 @@ class Ammo {
       trackStock: trackStock ?? this.trackStock,
       lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
       documents: documents ?? this.documents,
-      photoPath: photoPath ?? this.photoPath,
+      photoPath: clearPhotoPath ? null : (photoPath ?? this.photoPath),
       history: history ?? this.history,
       isHidden: isHidden ?? this.isHidden,
       unitPrice: unitPrice ?? this.unitPrice,
@@ -602,6 +673,7 @@ class Accessory {
     bool? trackBattery,
     List<ItemDocument>? documents,
     String? photoPath,
+    bool clearPhotoPath = false,
     bool? isHidden,
     List<String>? linkedPlatformIds,
   }) {
@@ -627,7 +699,7 @@ class Accessory {
       batteryChangedAt: batteryChangedAt ?? this.batteryChangedAt,
       trackBattery: trackBattery ?? this.trackBattery,
       documents: documents ?? this.documents,
-      photoPath: photoPath ?? this.photoPath,
+      photoPath: clearPhotoPath ? null : (photoPath ?? this.photoPath),
       isHidden: isHidden ?? this.isHidden,
       linkedPlatformIds: linkedPlatformIds ?? this.linkedPlatformIds,
     );
@@ -703,11 +775,18 @@ class ShootingAdjustmentEntry {
   };
 
   factory ShootingAdjustmentEntry.fromJson(Map<String, dynamic> json) {
-    final distanceUnitRaw = (json['distanceUnit'] ?? 'meter') as String;
-    final offsetUnitRaw = (json['offsetUnit'] ?? 'centimeter') as String;
+    // Defensive parsing: any incoming field may be missing, numeric, or
+    // string-shaped depending on producer (QR import, legacy backup,
+    // hand-crafted JSON). We use .toString() rather than `as String`
+    // to avoid TypeError on integer-shaped ids etc.
+    String asString(Object? v, [String fallback = '']) =>
+        v == null ? fallback : v.toString();
+
+    final distanceUnitRaw = asString(json['distanceUnit'], 'meter');
+    final offsetUnitRaw = asString(json['offsetUnit'], 'centimeter');
 
     return ShootingAdjustmentEntry(
-      id: (json['id'] ?? '') as String,
+      id: asString(json['id']),
       distance: (json['distance'] as num?)?.toDouble() ?? 0,
       distanceUnit: AdjustmentDistanceUnit.values.firstWhere(
         (u) => u.name == distanceUnitRaw,
@@ -719,14 +798,12 @@ class ShootingAdjustmentEntry {
         (u) => u.name == offsetUnitRaw,
         orElse: () => AdjustmentOffsetUnit.centimeter,
       ),
-      correction: (json['correction'] ?? '') as String,
-      note: (json['note'] ?? '') as String,
+      correction: asString(json['correction']),
+      note: asString(json['note']),
       createdAt:
-          DateTime.tryParse((json['createdAt'] ?? '') as String) ??
-          DateTime.now(),
+          DateTime.tryParse(asString(json['createdAt'])) ?? DateTime.now(),
       updatedAt:
-          DateTime.tryParse((json['updatedAt'] ?? '') as String) ??
-          DateTime.now(),
+          DateTime.tryParse(asString(json['updatedAt'])) ?? DateTime.now(),
     );
   }
 }

@@ -113,7 +113,6 @@ class _SplashScreenState extends State<SplashScreen>
           child: Stack(
             children: [
               Offstage(
-                offstage: true,
                 child: Column(
                   children: [
                     for (final p in _warmupSvgs)
@@ -148,7 +147,6 @@ class _SplashScreenState extends State<SplashScreen>
                         'assets/images/LOGO.svg',
                         width: 124,
                         height: 124,
-                        fit: BoxFit.contain,
                         colorFilter: const ColorFilter.mode(
                           Colors.white,
                           BlendMode.srcIn,

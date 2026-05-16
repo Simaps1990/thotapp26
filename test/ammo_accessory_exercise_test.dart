@@ -65,7 +65,6 @@ void main() {
         shotsFired: 1,
         distance: 1,
         precision: 50,
-        precisionEnabled: true,
       );
       expect(e1.isPrecisionCounted, true);
 
@@ -78,8 +77,6 @@ void main() {
         ammoId: 'a',
         shotsFired: 1,
         distance: 1,
-        precision: null,
-        precisionEnabled: true,
       );
       expect(e3.isPrecisionCounted, false);
     });

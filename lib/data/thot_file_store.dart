@@ -218,7 +218,7 @@ class _LegacyEncryptedReader {
     synchronizable: true,
   );
 
-  static const _androidOpts = AndroidOptions(resetOnError: true);
+  static const _androidOpts = AndroidOptions();
 
   bool get _isApple =>
       !kIsWeb &&

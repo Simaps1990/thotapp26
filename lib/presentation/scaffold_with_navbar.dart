@@ -99,7 +99,6 @@ class ScaffoldWithNavBar extends StatelessWidget {
               BoxShadow(
                 color: Color.fromRGBO(0, 0, 0, 0.07),
                 blurRadius: 14,
-                spreadRadius: 0,
                 offset: Offset(0, -3),
               ),
             ],

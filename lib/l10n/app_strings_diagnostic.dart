@@ -38,7 +38,7 @@ class AppStringsDiagnostic {
   }
 
   static String get diagnosticToolTitle => _pick(
-    fr: "DIAGNOSTIC D’INCIDENT",
+    fr: 'DIAGNOSTIC D’INCIDENT',
     en: 'INCIDENT DIAGNOSIS',
     de: 'STÖRUNGSDIAGNOSE',
     it: 'DIAGNOSI DELL’INCIDENTE',
@@ -46,7 +46,7 @@ class AppStringsDiagnostic {
   );
 
   static String get diagnosticToolSubtitle => _pick(
-    fr: "Analyse guidée pour identifier un incident, estimer l’origine probable et adopter la bonne conduite.",
+    fr: 'Analyse guidée pour identifier un incident, estimer l’origine probable et adopter la bonne conduite.',
     en: 'Guided analysis to identify an incident, estimate the likely origin, and adopt the right course of action.',
     de: 'Geführte Analyse zur Identifikation eines Vorfalls, zur Einschätzung der wahrscheinlichen Ursache und zur Wahl des richtigen Vorgehens.',
     it: 'Analisi guidata per identificare un incidente, stimarne l’origine probabile e adottare la condotta corretta.',
@@ -62,7 +62,7 @@ class AppStringsDiagnostic {
   );
 
   static String get diagnosticDisclaimerBody => _pick(
-    fr: "Cet outil aide à identifier un incident, à estimer l’origine probable et à orienter la suite à donner. Il ne remplace ni une vérification physique ni le contrôle d’un professionnel qualifié. En cas de doute, d’incident répété ou de comportement anormal, interrompez l’utilisation et faites contrôler la plateforme.",
+    fr: 'Cet outil aide à identifier un incident, à estimer l’origine probable et à orienter la suite à donner. Il ne remplace ni une vérification physique ni le contrôle d’un professionnel qualifié. En cas de doute, d’incident répété ou de comportement anormal, interrompez l’utilisation et faites contrôler la plateforme.',
     en: 'This tool helps identify an incident, estimate the likely origin, and guide next steps. It does not replace a physical check or an inspection by a qualified professional. In case of doubt, repeated incidents, or abnormal behavior, stop use and have the platform inspected.',
     de: 'Dieses Werkzeug hilft bei der Identifikation eines Vorfalls, der Einschätzung der wahrscheinlichen Ursache und der Orientierung für die nächsten Schritte. Es ersetzt weder eine physische Prüfung noch die Kontrolle durch eine qualifizierte Fachkraft. Bei Unsicherheit, wiederholten Vorfällen oder auffälligem Verhalten Nutzung stoppen und die Plattform prüfen lassen.',
     it: 'Questo strumento aiuta a identificare un incidente, stimarne l’origine probabile e orientare i passaggi successivi. Non sostituisce una verifica fisica né il controllo da parte di un professionista qualificato. In caso di dubbio, incidenti ripetuti o comportamento anomalo, interrompere l’uso e far controllare la piattaforma.',

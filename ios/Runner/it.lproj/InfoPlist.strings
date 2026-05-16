@@ -1,0 +1,5 @@
+/* Localized versions of Info.plist keys - Italian */
+"NSCameraUsageDescription" = "THOT utilizza la fotocamera per aggiungere foto ai tuoi setup, materiali di consumo e bersagli, e per scansionare i codici QR delle tabelle di tiro. L'accesso viene attivato solo su azione esplicita.";
+"NSFaceIDUsageDescription" = "THOT utilizza Face ID per proteggere l'accesso ai tuoi dati.";
+"NSMicrophoneUsageDescription" = "THOT utilizza il microfono solo nel timer di tiro per rilevare un inizio dello sparo (su azione esplicita dell'utente). Nessuna registrazione audio viene memorizzata o trasmessa.";
+"NSPhotoLibraryUsageDescription" = "THOT utilizza la libreria foto per aggiungere immagini ai tuoi setup, materiali di consumo e bersagli.";

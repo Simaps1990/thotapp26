@@ -103,7 +103,7 @@ class SessionExercisesScreen extends StatelessWidget {
     }
 
     final subtitle =
-        '${session.sessionType} • ${AppDateFormats.formatDateShort(context, session.date)} • ${AppDateFormats.formatTimeShort(context, session.date)}';
+        '${strings.sessionTypeDisplayName(session.sessionType)} • ${AppDateFormats.formatDateShort(context, session.date)} • ${AppDateFormats.formatTimeShort(context, session.date)}';
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -163,7 +163,6 @@ class SessionExercisesScreen extends StatelessWidget {
                           if (!context.mounted) return;
                           final confirmed = await showDialog<bool>(
                             context: context,
-                            useRootNavigator: true,
                             builder: (dialogContext) => AlertDialog(
                               title: Text(strings.confirmDeleteTitle),
                               content: Text(
@@ -281,6 +280,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
+    final strings = AppStrings.of(context);
 
     final topPadding = MediaQuery.paddingOf(context).top;
 
@@ -299,6 +299,7 @@ class _Header extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            tooltip: strings.back,
             onPressed: onBack,
             color: colors.onSurface,
           ),
@@ -731,7 +732,6 @@ class _ExerciseCard extends StatelessWidget {
     void openTargetPhoto(ExercisePhoto photo) {
       showDialog<void>(
         context: context,
-        barrierDismissible: true,
         builder: (ctx) {
           final dialogColors = Theme.of(ctx).colorScheme;
           return Dialog(
@@ -744,7 +744,6 @@ class _ExerciseCard extends StatelessWidget {
                   child: Container(
                     color: dialogColors.surface,
                     child: InteractiveViewer(
-                      minScale: 0.8,
                       maxScale: 4,
                       child: AspectRatio(
                         aspectRatio: 1,
@@ -761,6 +760,7 @@ class _ExerciseCard extends StatelessWidget {
                   right: 8,
                   child: IconButton(
                     icon: const Icon(Icons.close_rounded),
+                    tooltip: strings.close,
                     onPressed: () => Navigator.of(ctx).pop(),
                     color: dialogColors.onSurface,
                     style: IconButton.styleFrom(
@@ -1103,7 +1103,6 @@ class _ExerciseCard extends StatelessWidget {
                                 height: 120,
                                 child: CrossPlatformImage(
                                   filePath: primaryPhoto.path,
-                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
@@ -1259,8 +1258,8 @@ class _ProgressChart extends StatelessWidget {
             height: 180,
             child: LineChart(
               LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
+                gridData: const FlGridData(show: false),
+                titlesData: const FlTitlesData(show: false),
                 borderData: FlBorderData(show: false),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
@@ -1286,7 +1285,6 @@ class _ProgressChart extends StatelessWidget {
                     color: colors.primary,
                     barWidth: 3,
                     isStrokeCapRound: true,
-                    dotData: FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
                       color: colors.primary.withValues(alpha: 0.10),

@@ -20,6 +20,7 @@ import 'package:thot/presentation/statistics_screen.dart';
 import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/utils/exercise_display.dart';
+import 'package:thot/utils/thresholds.dart';
 import 'package:thot/l10n/app_strings.dart';
 import '../utils/achievement_definitions.dart';
 import 'package:thot/utils/app_date_formats.dart';
@@ -299,15 +300,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (provider.isFreeLimitsDisabled) {
       _hasShownDevSnackbar = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
-            "TEST: Mode Payant désactivé",
-            style: const TextStyle(fontSize: 12),
+            'TEST: Mode Payant désactivé',
+            style: TextStyle(fontSize: 12),
           ),
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          duration: const Duration(seconds: 4),
+          margin: EdgeInsets.only(bottom: 16, left: 16, right: 16),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
       );
     }
@@ -519,7 +519,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Wear & fouling alerts (platforms)
     for (final w in provider.platforms.where((p) => !p.isHidden)) {
-      if (w.trackCleanliness && w.cleaningProgress >= 0.8) {
+      if (w.trackCleanliness && w.cleaningProgress >= Thresholds.maintenanceWarningRatio) {
         final id = '${w.id}_fouling';
         if (!deleted.contains(id)) {
           fresh.add(
@@ -534,7 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       }
-      if (w.trackWear && w.revisionProgress >= 0.8) {
+      if (w.trackWear && w.revisionProgress >= Thresholds.maintenanceWarningRatio) {
         final id = '${w.id}_wear';
         if (!deleted.contains(id)) {
           fresh.add(
@@ -632,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Wear, fouling & document expiry alerts for accessories
     for (final acc in provider.accessories.where((a) => !a.isHidden)) {
-      if (acc.trackCleanliness && acc.cleaningProgress >= 0.8) {
+      if (acc.trackCleanliness && acc.cleaningProgress >= Thresholds.maintenanceWarningRatio) {
         final id = '${acc.id}_fouling';
         if (!deleted.contains(id)) {
           fresh.add(
@@ -647,7 +647,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       }
-      if (acc.trackWear && acc.revisionProgress >= 0.8) {
+      if (acc.trackWear && acc.revisionProgress >= Thresholds.maintenanceWarningRatio) {
         final id = '${acc.id}_wear';
         if (!deleted.contains(id)) {
           fresh.add(
@@ -825,11 +825,7 @@ class _HomeScreenState extends State<HomeScreen> {
       borderRadius: BorderRadius.circular(radius),
       border: isDark
           ? null
-          : Border.all(
-              color: LightColors.surfaceHighlight,
-              width: 1.35,
-              strokeAlign: BorderSide.strokeAlignInside,
-            ),
+          : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
       boxShadow: AppShadows.cardPremium,
     );
   }
@@ -858,7 +854,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SvgPicture.asset(
             'assets/images/LOGO.svg',
@@ -942,7 +937,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final strings = AppStrings.of(context);
     return Container(
       padding: AppSpacing.paddingLg,
-      decoration: _hardCardDecoration(colors, radius: 16),
+      decoration: _hardCardDecoration(colors),
       child: Row(
         children: [
           SizedBox(
@@ -991,9 +986,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final strings = AppStrings.of(context);
     return Container(
       padding: AppSpacing.paddingLg,
-      decoration: _hardCardDecoration(colors, radius: 16),
+      decoration: _hardCardDecoration(colors),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: 28,
@@ -1217,7 +1211,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return Container(
             height: 220,
             padding: AppSpacing.paddingLg,
-            decoration: _hardCardDecoration(colors, radius: 16),
+            decoration: _hardCardDecoration(colors),
             child: spots.isEmpty
                 ? Center(
                     child: Text(
@@ -1233,7 +1227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: LineChart(
                           LineChartData(
-                            gridData: FlGridData(show: false),
+                            gridData: const FlGridData(show: false),
                             lineTouchData: LineTouchData(
                               touchTooltipData: LineTouchTooltipData(
                                 getTooltipColor: (s) => Colors.grey.shade700,
@@ -1252,15 +1246,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
+                              leftTitles: const AxisTitles(),
+                              topTitles: const AxisTitles(),
+                              rightTitles: const AxisTitles(),
                               bottomTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
@@ -1296,7 +1284,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: colors.primary,
                                 barWidth: 3,
                                 isStrokeCapRound: true,
-                                dotData: FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
                                   color: colors.primary.withValues(alpha: 0.1),
@@ -1439,8 +1426,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: isDark
                           ? colors.outline.withValues(alpha: 0.3)
                           : LightColors.surfaceHighlight,
-                      width: 1,
-                      strokeAlign: BorderSide.strokeAlignInside,
                     ),
                     boxShadow: AppShadows.cardPremium,
                     image: DecorationImage(
@@ -1450,7 +1435,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             : 'assets/images/train.webp',
                       ),
                       fit: BoxFit.cover,
-                      alignment: Alignment.center,
                       colorFilter: const ColorFilter.mode(
                         Color.fromRGBO(0, 0, 0, 0.5),
                         BlendMode.darken,
@@ -1541,52 +1525,49 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Column(
                                   children: [
                                     AnimatedContainer(
-                                        duration: const Duration(
-                                          milliseconds: 220,
-                                        ),
-                                        curve: Curves.easeOut,
-                                        height: 30,
-                                        decoration: BoxDecoration(
+                                      duration: const Duration(
+                                        milliseconds: 220,
+                                      ),
+                                      curve: Curves.easeOut,
+                                      height: 30,
+                                      decoration: BoxDecoration(
+                                        color: isTrained
+                                            ? const Color(0xFF5CB85C)
+                                            : Colors.white.withValues(
+                                                alpha: 0.15,
+                                              ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
                                           color: isTrained
-                                              ? const Color(0xFF5CB85C)
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.75,
+                                                )
                                               : Colors.white.withValues(
-                                                  alpha: 0.15,
+                                                  alpha: 0.25,
                                                 ),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                          border: Border.all(
-                                            color: isTrained
-                                                ? Colors.white.withValues(
-                                                    alpha: 0.75,
-                                                  )
-                                                : Colors.white.withValues(
-                                                    alpha: 0.25,
-                                                  ),
-                                            width: 1,
-                                          ),
-                                          boxShadow: isTrained
-                                              ? [
-                                                  BoxShadow(
-                                                    color: LightColors.primary
-                                                        .withValues(alpha: 0.4),
-                                                    blurRadius: 8,
-                                                    spreadRadius: 1,
-                                                  ),
-                                                ]
-                                              : null,
                                         ),
-                                        child: Center(
-                                          child: Icon(
-                                            isTrained
-                                                ? Icons.check_rounded
-                                                : Icons.remove_rounded,
-                                            size: 16,
-                                            color: Colors.white.withValues(
-                                              alpha: isTrained ? 1 : 0.65,
-                                            ),
+                                        boxShadow: isTrained
+                                            ? [
+                                                BoxShadow(
+                                                  color: LightColors.primary
+                                                      .withValues(alpha: 0.4),
+                                                  blurRadius: 8,
+                                                  spreadRadius: 1,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          isTrained
+                                              ? Icons.check_rounded
+                                              : Icons.remove_rounded,
+                                          size: 16,
+                                          color: Colors.white.withValues(
+                                            alpha: isTrained ? 1 : 0.65,
                                           ),
                                         ),
+                                      ),
                                     ),
                                     const Gap(4),
                                     Text(
@@ -1641,7 +1622,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       padding: AppSpacing.paddingLg,
-      decoration: _hardCardDecoration(colors, radius: 16),
+      decoration: _hardCardDecoration(colors),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1671,7 +1652,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label:
                         '${strings.homeMaintenanceRevisionLabel}${mostWorn.name}',
                     value: (mostWorn.revisionProgress * 100).round(),
-                    valueUnit: "%",
+                    valueUnit: '%',
                     progress: mostWorn.revisionProgress.clamp(0.0, 1.0),
                     colors: colors,
                   );
@@ -1693,7 +1674,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label:
                         '${strings.homeMaintenanceCleaningLabel}${dirtiest.name}',
                     value: (dirtiest.cleaningProgress * 100).round(),
-                    valueUnit: "%",
+                    valueUnit: '%',
                     progress: dirtiest.cleaningProgress.clamp(0.0, 1.0),
                     colors: colors,
                   );
@@ -1748,7 +1729,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label:
                         '${strings.homeMaintenanceRevisionLabel}${mostWornAccessory.name}',
                     value: (mostWornAccessory.revisionProgress * 100).round(),
-                    valueUnit: "%",
+                    valueUnit: '%',
                     progress: mostWornAccessory.revisionProgress.clamp(
                       0.0,
                       1.0,
@@ -1772,7 +1753,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label:
                         '${strings.homeMaintenanceCleaningLabel}${dirtiestAccessory.name}',
                     value: (dirtiestAccessory.cleaningProgress * 100).round(),
-                    valueUnit: "%",
+                    valueUnit: '%',
                     progress: dirtiestAccessory.cleaningProgress.clamp(
                       0.0,
                       1.0,
@@ -1892,7 +1873,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _StatCard(
                     title: strings.homeStatSessions,
-                    value: "${provider.totalSessions}",
+                    value: '${provider.totalSessions}',
                     colors: colors,
                     textStyles: textStyles,
                   ),
@@ -1901,7 +1882,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _StatCard(
                     title: strings.homeStatShotsFired,
-                    value: "${provider.totalRoundsFired}",
+                    value: '${provider.totalRoundsFired}',
                     colors: colors,
                     textStyles: textStyles,
                   ),
@@ -1910,7 +1891,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _StatCard(
                     title: strings.homeStatPlatforms,
-                    value: "${provider.platforms.length}",
+                    value: '${provider.platforms.length}',
                     colors: colors,
                     textStyles: textStyles,
                   ),
@@ -1923,7 +1904,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _StatCard(
                     title: strings.statisticsAmmosLabel,
-                    value: "${provider.ammos.length}",
+                    value: '${provider.ammos.length}',
                     colors: colors,
                     textStyles: textStyles,
                   ),
@@ -1932,7 +1913,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _StatCard(
                     title: strings.statisticsAccessoriesLabel,
-                    value: "${provider.accessories.length}",
+                    value: '${provider.accessories.length}',
                     colors: colors,
                     textStyles: textStyles,
                   ),
@@ -2094,11 +2075,7 @@ class _HomeStandardActionCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       border: isDark
           ? null
-          : Border.all(
-              color: LightColors.surfaceHighlight,
-              width: 1.35,
-              strokeAlign: BorderSide.strokeAlignInside,
-            ),
+          : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
       boxShadow: AppShadows.cardPremium,
     );
   }
@@ -2106,7 +2083,7 @@ class _HomeStandardActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: _hardCardDecoration(colors, radius: 16),
+      decoration: _hardCardDecoration(colors),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -2115,7 +2092,6 @@ class _HomeStandardActionCard extends StatelessWidget {
           child: Padding(
             padding: AppSpacing.paddingLg,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(width: 28, child: Center(child: leading)),
                 const Gap(AppSpacing.md),
@@ -2425,11 +2401,7 @@ class _QuickActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Theme.of(context).brightness == Brightness.dark
                 ? null
-                : Border.all(
-                    color: LightColors.surfaceHighlight,
-                    width: 1.35,
-                    strokeAlign: BorderSide.strokeAlignInside,
-                  ),
+                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
             boxShadow: AppShadows.cardPremium,
           ),
           child: Center(
@@ -2513,7 +2485,7 @@ class _MaintenanceBar extends StatelessWidget {
                 ),
               ),
               Text(
-                "$value$valueUnit",
+                '$value$valueUnit',
                 style: (textTheme.labelSmall ?? const TextStyle()).copyWith(
                   color: valueColor,
                   fontWeight: FontWeight.bold,
@@ -2557,11 +2529,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Theme.of(context).brightness == Brightness.dark
             ? null
-            : Border.all(
-                color: LightColors.surfaceHighlight,
-                width: 1.35,
-                strokeAlign: BorderSide.strokeAlignInside,
-              ),
+            : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
         boxShadow: AppShadows.cardPremium,
       ),
       child: DefaultTextStyle.merge(
@@ -2611,8 +2579,8 @@ class _LastSessionCard extends StatelessWidget {
     final accuracy = session.averagePrecision.toStringAsFixed(0);
     final hasPrecision = session.hasCountedPrecision;
 
-    String platformName = "—";
-    String ammoName = "—";
+    String platformName = '—';
+    String ammoName = '—';
     if (session.exercises.isNotEmpty) {
       final firstEx = session.exercises.first;
       platformName = platformDisplayName(context, provider, firstEx);
@@ -2635,11 +2603,7 @@ class _LastSessionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Theme.of(context).brightness == Brightness.dark
                 ? null
-                : Border.all(
-                    color: LightColors.surfaceHighlight,
-                    width: 1.35,
-                    strokeAlign: BorderSide.strokeAlignInside,
-                  ),
+                : Border.all(color: LightColors.surfaceHighlight, width: 1.35),
             boxShadow: AppShadows.cardPremium,
           ),
           child: Column(
@@ -2696,7 +2660,6 @@ class _LastSessionCard extends StatelessWidget {
                         border: Border.all(
                           color: LightColors.surfaceHighlight,
                           width: 1.35,
-                          strokeAlign: BorderSide.strokeAlignInside,
                         ),
                       ),
                       child: Row(
@@ -2712,7 +2675,7 @@ class _LastSessionCard extends StatelessWidget {
                           ),
                           const Gap(4),
                           Text(
-                            "$accuracy%",
+                            '$accuracy%',
                             style: textStyles.labelLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colors.onPrimary,
@@ -2840,7 +2803,7 @@ class _LastSessionCard extends StatelessWidget {
                       ),
                     ),
                     label: strings.exercisesLabel,
-                    value: "${session.exercises.length}",
+                    value: '${session.exercises.length}',
                     colors: colors,
                     textStyles: textStyles,
                   ),
@@ -2856,7 +2819,7 @@ class _LastSessionCard extends StatelessWidget {
                       ),
                     ),
                     label: strings.shotsFiredLabel,
-                    value: "${session.totalRounds}",
+                    value: '${session.totalRounds}',
                     colors: colors,
                     textStyles: textStyles,
                   ),
@@ -2901,7 +2864,6 @@ class _SessionStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         icon,
         const Gap(4),
@@ -3117,7 +3079,6 @@ class _NotificationPanelState extends State<_NotificationPanel>
                         : Border.all(
                             color: LightColors.surfaceHighlight,
                             width: 1.35,
-                            strokeAlign: BorderSide.strokeAlignInside,
                           ),
                     boxShadow: [
                       BoxShadow(

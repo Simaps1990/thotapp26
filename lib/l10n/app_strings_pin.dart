@@ -51,12 +51,20 @@ extension AppStringsPin on AppStrings {
     es: 'Código PIN configurado correctamente',
   );
 
+  String get pinSetFailed => _pick(
+    fr: 'Échec de la configuration du PIN. Veuillez réessayer.',
+    en: 'Failed to set up PIN. Please try again.',
+    de: 'PIN-Einrichtung fehlgeschlagen. Bitte versuchen Sie es erneut.',
+    it: 'Configurazione del PIN non riuscita. Riprova.',
+    es: 'No se pudo configurar el PIN. Inténtalo de nuevo.',
+  );
+
   String get benefits => _pick(
     fr: 'AVANTAGES',
-    en: 'AVANTAGES',
-    de: 'AVANTAGES',
-    it: 'AVANTAGES',
-    es: 'AVANTAGES',
+    en: 'BENEFITS',
+    de: 'VORTEILE',
+    it: 'VANTAGGI',
+    es: 'VENTAJAS',
   );
 
   String get viewProOffers => _pick(
@@ -72,11 +80,37 @@ extension AppStringsPin on AppStrings {
     String max,
     String itemLabel,
   ) => _pick(
-    fr: 'Limite atteinte ($current/$max). Passez à Premium pour ajouter des $itemLabel illimitées.',
+    fr: 'Limite atteinte ($current/$max). Passez à Premium pour ajouter des $itemLabel illimités.',
     en: 'Limit reached ($current/$max). Upgrade to Premium to add unlimited $itemLabel.',
     de: 'Limit erreicht ($current/$max). Upgrade auf Premium, um unbegrenzte $itemLabel hinzuzufügen.',
     it: 'Limite raggiunto ($current/$max). Passa a Premium per aggiungere $itemLabel illimitati.',
     es: 'Límite alcanzado ($current/$max). Pasa a Premium para añadir $itemLabel ilimitados.',
+  );
+
+  // Item labels injected into [premiumLimitMessage]. They are dedicated
+  // because each language has its own gender/plural rules.
+  String get premiumItemPlatforms => _pick(
+    fr: 'plateformes',
+    en: 'platforms',
+    de: 'Plattformen',
+    it: 'piattaforme',
+    es: 'plataformas',
+  );
+
+  String get premiumItemAmmos => _pick(
+    fr: 'munitions',
+    en: 'ammos',
+    de: 'Munition',
+    it: 'munizioni',
+    es: 'municiones',
+  );
+
+  String get premiumItemAccessories => _pick(
+    fr: 'accessoires',
+    en: 'accessories',
+    de: 'Zubehör',
+    it: 'accessori',
+    es: 'accesorios',
   );
 
   String get restock => _pick(
@@ -182,18 +216,18 @@ extension AppStringsPin on AppStrings {
   );
 
   String get immobilizePlatformTitle => _pick(
-    fr: "IMMOBILISATION DE LA PLATEFORME",
+    fr: 'IMMOBILISATION DE LA PLATEFORME',
     en: 'PLATFORM IMMOBILIZATION',
     de: 'PLATTFORM STILLLEGEN',
-    it: "IMMOBILIZZAZIONE DELLA PIATTAFORMA",
+    it: 'IMMOBILIZZAZIONE DELLA PIATTAFORMA',
     es: 'INMOVILIZACIÓN DE LA PLATAFORMA',
   );
 
   String get immobilizePlatformMessage => _pick(
-    fr: "Risque élevé.\n\nImmobilisez la plateforme et faites contrôler par un professionnel qualifié avant toute réutilisation.",
+    fr: 'Risque élevé.\n\nImmobilisez la plateforme et faites contrôler par un professionnel qualifié avant toute réutilisation.',
     en: 'High risk.\n\nTake the platform out of service and have it checked by a qualified technician before any further use.',
     de: 'Hohes Risiko.\n\nPlattform stilllegen und vor weiterer Nutzung von einem qualifizierten Techniker prüfen lassen.',
-    it: "Rischio elevato.\n\nImmobilizza la piattaforma e falla controllare da un tecnico qualificato prima di riutilizzarla.",
+    it: 'Rischio elevato.\n\nImmobilizza la piattaforma e falla controllare da un tecnico qualificato prima di riutilizzarla.',
     es: 'Riesgo elevado.\n\nInmoviliza la plataforma y hazla revisar por un técnico cualificado antes de volver a usarla.',
   );
 
@@ -471,10 +505,10 @@ extension AppStringsPin on AppStrings {
   );
 
   String get accessoryCleaningTrackingLabel => _pick(
-    fr: "Suivi de salissure de la plateforme",
+    fr: 'Suivi de salissure de la plateforme',
     en: 'Platform fouling tracking',
     de: 'Verfolgung der Plattformverschmutzung',
-    it: "Monitoraggio dello sporco della piattaforma",
+    it: 'Monitoraggio dello sporco della piattaforma',
     es: 'Seguimiento de la suciedad de la plataforma',
   );
 
@@ -1287,7 +1321,7 @@ extension AppStringsPin on AppStrings {
     fr: "SUIVI D'UTILISATION",
     en: 'USAGE HISTORY',
     de: 'NUTZUNGSVERLAUF',
-    it: "STORICO DI UTILIZZO",
+    it: 'STORICO DI UTILIZZO',
     es: 'HISTORIAL DE USO',
   );
 
@@ -1883,5 +1917,225 @@ extension AppStringsPin on AppStrings {
     de: 'Später',
     it: 'Più tardi',
     es: 'Más tarde',
+  );
+
+  // ── Platform history labels ──────────────────────────────────────
+  // These build the user-facing rows in the platform history list.
+  // Stored data is always raw (sessionName, shotCount, partName);
+  // formatting is done here so the app honours the current locale.
+
+  String platformHistoryShotLabel(String sessionName) => _pick(
+    fr: 'Session : $sessionName',
+    en: 'Session: $sessionName',
+    de: 'Sitzung: $sessionName',
+    it: 'Sessione: $sessionName',
+    es: 'Sesión: $sessionName',
+  );
+
+  String platformHistoryShotDetails(int count) => _pick(
+    fr: '$count coups',
+    en: '$count shots',
+    de: '$count Schüsse',
+    it: '$count colpi',
+    es: '$count disparos',
+  );
+
+  String get platformHistoryCleaningLabel => _pick(
+    fr: 'Entretien enregistré',
+    en: 'Cleaning logged',
+    de: 'Reinigung erfasst',
+    it: 'Pulizia registrata',
+    es: 'Limpieza registrada',
+  );
+
+  String get platformHistoryCleaningDetails => _pick(
+    fr: 'Compteur entretien remis à zéro',
+    en: 'Cleaning counter reset to zero',
+    de: 'Reinigungszähler auf null zurückgesetzt',
+    it: 'Contatore pulizia azzerato',
+    es: 'Contador de limpieza puesto a cero',
+  );
+
+  String get platformHistoryRevisionLabel => _pick(
+    fr: 'Révision enregistrée',
+    en: 'Service logged',
+    de: 'Inspektion erfasst',
+    it: 'Revisione registrata',
+    es: 'Revisión registrada',
+  );
+
+  String get platformHistoryRevisionDetails => _pick(
+    fr: 'Compteur révision remis à zéro',
+    en: 'Service counter reset to zero',
+    de: 'Inspektionszähler auf null zurückgesetzt',
+    it: 'Contatore revisione azzerato',
+    es: 'Contador de revisión puesto a cero',
+  );
+
+  String platformHistoryPartReplacementLabel(String partName) => _pick(
+    fr: 'Changement de pièce : $partName',
+    en: 'Part replacement: $partName',
+    de: 'Teilwechsel: $partName',
+    it: 'Sostituzione pezzo: $partName',
+    es: 'Sustitución de pieza: $partName',
+  );
+
+  // ── Unsaved changes dialog ───────────────────────────────────────
+  // Shown when user tries to leave a form with unsaved data.
+
+  String get unsavedChangesTitle => _pick(
+    fr: 'Quitter sans sauvegarder ?',
+    en: 'Leave without saving?',
+    de: 'Ohne Speichern verlassen?',
+    it: 'Uscire senza salvare?',
+    es: '¿Salir sin guardar?',
+  );
+
+  String get unsavedChangesMessage => _pick(
+    fr: 'Les modifications non enregistrées seront perdues.',
+    en: 'Unsaved changes will be lost.',
+    de: 'Nicht gespeicherte Änderungen gehen verloren.',
+    it: 'Le modifiche non salvate andranno perse.',
+    es: 'Se perderán los cambios no guardados.',
+  );
+
+  String get unsavedChangesDiscard => _pick(
+    fr: 'Quitter',
+    en: 'Leave',
+    de: 'Verlassen',
+    it: 'Uscire',
+    es: 'Salir',
+  );
+
+  String get unsavedChangesKeep => _pick(
+    fr: 'Continuer',
+    en: 'Continue',
+    de: 'Fortfahren',
+    it: 'Continua',
+    es: 'Continuar',
+  );
+
+  // Inventory status badges
+  String get statusCleaningSoon => _pick(
+    fr: 'Nettoyage bientôt',
+    en: 'Cleaning soon',
+    de: 'Reinigung bald fällig',
+    it: 'Pulizia in arrivo',
+    es: 'Limpieza próxima',
+  );
+
+  String get statusRevisionSoon => _pick(
+    fr: 'Révision bientôt',
+    en: 'Service soon',
+    de: 'Inspektion bald fällig',
+    it: 'Revisione in arrivo',
+    es: 'Revisión próxima',
+  );
+
+  String get statusInactive => _pick(
+    fr: 'Inactif',
+    en: 'Inactive',
+    de: 'Inaktiv',
+    it: 'Inattivo',
+    es: 'Inactivo',
+  );
+
+  String get statusLowStock => _pick(
+    fr: 'Stock bas',
+    en: 'Low stock',
+    de: 'Niedriger Bestand',
+    it: 'Scorte basse',
+    es: 'Stock bajo',
+  );
+
+  String get statusOutOfStock => _pick(
+    fr: 'Épuisé',
+    en: 'Out of stock',
+    de: 'Ausverkauft',
+    it: 'Esaurito',
+    es: 'Agotado',
+  );
+
+  // --- Validators ---
+
+  String get fieldRequired => _pick(
+    fr: 'Ce champ est requis',
+    en: 'This field is required',
+    de: 'Dieses Feld ist erforderlich',
+    it: 'Questo campo è obbligatorio',
+    es: 'Este campo es obligatorio',
+  );
+
+  String get fieldInvalidNumber => _pick(
+    fr: 'Nombre invalide',
+    en: 'Invalid number',
+    de: 'Ungültige Zahl',
+    it: 'Numero non valido',
+    es: 'Número no válido',
+  );
+
+  String get fieldMustBePositive => _pick(
+    fr: 'Doit être un nombre positif',
+    en: 'Must be a positive number',
+    de: 'Muss eine positive Zahl sein',
+    it: 'Deve essere un numero positivo',
+    es: 'Debe ser un número positivo',
+  );
+
+  String get fieldMustBeInteger => _pick(
+    fr: 'Doit être un nombre entier',
+    en: 'Must be a whole number',
+    de: 'Muss eine ganze Zahl sein',
+    it: 'Deve essere un numero intero',
+    es: 'Debe ser un número entero',
+  );
+
+  String get fieldMustBeBetween0And100 => _pick(
+    fr: 'Doit être entre 0 et 100',
+    en: 'Must be between 0 and 100',
+    de: 'Muss zwischen 0 und 100 liegen',
+    it: 'Deve essere tra 0 e 100',
+    es: 'Debe estar entre 0 y 100',
+  );
+
+  // DOPE Table strings
+  String get dopeTableHeaderDistance => _pick(
+    fr: 'Distance',
+    en: 'Distance',
+    de: 'Entfernung',
+    it: 'Distanza',
+    es: 'Distancia',
+  );
+
+  String get dopeTableHeaderDrop => _pick(
+    fr: 'Drop',
+    en: 'Drop',
+    de: 'Abfall',
+    it: 'Caduta',
+    es: 'Caída',
+  );
+
+  String get dopeTableHeaderWind => _pick(
+    fr: 'Dérive',
+    en: 'Wind',
+    de: 'Drift',
+    it: 'Deriva',
+    es: 'Deriva',
+  );
+
+  String get dopeLabelUntitledTable => _pick(
+    fr: 'Table sans nom',
+    en: 'Untitled table',
+    de: 'Unbenannte Tabelle',
+    it: 'Tabella senza nome',
+    es: 'Tabla sin nombre',
+  );
+
+  String get dopeLabelUnknown => _pick(
+    fr: 'Inconnu',
+    en: 'Unknown',
+    de: 'Unbekannt',
+    it: 'Sconosciuto',
+    es: 'Desconocido',
   );
 }

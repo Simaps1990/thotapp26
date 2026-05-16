@@ -19,6 +19,9 @@
     <string name="widget_maintenance_wear">Wear %s • %s</string>
     <string name="widget_maintenance_fouling">Fouling %s • %s</string>
     <string name="widget_maintenance_stock">Stock %s • %s</string>
+    <string name="widget_level_critical">CRITICAL</string>
+    <string name="widget_level_warning">WARNING</string>
+    <string name="widget_level_ok">OK</string>
 
     <string name="widget_documents_title">Document reminders</string>
     <string name="widget_documents_count">%d to check</string>

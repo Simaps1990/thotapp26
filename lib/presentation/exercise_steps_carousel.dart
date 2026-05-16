@@ -44,7 +44,7 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
     if (widget.steps.isEmpty) return const SizedBox.shrink();
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 0),
+      constraints: const BoxConstraints(),
       child: Stack(
         children: [
           Container(
@@ -209,6 +209,7 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
               child: _ArrowButton(
                 enabled: _index > 0,
                 icon: Icons.chevron_left_rounded,
+                tooltip: strings.previous,
                 onPressed: () => _controller.previousPage(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOut,
@@ -223,6 +224,7 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
               child: _ArrowButton(
                 enabled: _index < widget.steps.length - 1,
                 icon: Icons.chevron_right_rounded,
+                tooltip: strings.next,
                 onPressed: () => _controller.nextPage(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOut,
@@ -239,11 +241,13 @@ class _ExerciseStepsCarouselState extends State<ExerciseStepsCarousel> {
 class _ArrowButton extends StatelessWidget {
   final bool enabled;
   final IconData icon;
+  final String tooltip;
   final VoidCallback onPressed;
 
   const _ArrowButton({
     required this.enabled,
     required this.icon,
+    required this.tooltip,
     required this.onPressed,
   });
 
@@ -258,6 +262,7 @@ class _ArrowButton extends StatelessWidget {
         child: IconButton(
           onPressed: onPressed,
           icon: Icon(icon),
+          tooltip: tooltip,
           color: colors.onSurface,
           style: IconButton.styleFrom(
             backgroundColor: colors.surface.withValues(alpha: 0.9),

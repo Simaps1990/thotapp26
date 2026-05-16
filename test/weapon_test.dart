@@ -32,7 +32,6 @@ void main() {
         lastCleaned: DateTime.parse('2026-01-01T00:00:00.000Z'),
         lastUsed: DateTime.parse('2026-01-02T00:00:00.000Z'),
         roundsAtLastCleaning: 100,
-        cleaningRoundsThreshold: 500,
       );
 
       expect(w.roundsSinceCleaning, 500);
@@ -51,7 +50,6 @@ void main() {
         lastCleaned: DateTime.parse('2026-01-01T00:00:00.000Z'),
         lastUsed: DateTime.parse('2026-01-02T00:00:00.000Z'),
         roundsAtLastCleaning: 100,
-        cleaningRoundsThreshold: 500,
         trackCleanliness: false,
       );
 

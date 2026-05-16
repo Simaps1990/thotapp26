@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
@@ -20,7 +21,9 @@ import '../data/models.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/data/material_types.dart';
 import 'package:thot/utils/native_picker.dart';
+import 'package:thot/utils/platform_history_label.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final String itemId;
@@ -115,8 +118,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.of(ctx).pop<int>(null),
+                      onPressed: () => Navigator.of(ctx).pop<int>(),
                       icon: const Icon(Icons.close_rounded),
+                      tooltip: strings.close,
                       color: colors.onSurfaceVariant,
                       style: IconButton.styleFrom(
                         backgroundColor: colors.surfaceContainerHighest,
@@ -185,7 +189,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
                 const Gap(AppSpacing.sm),
                 OutlinedButton(
-                  onPressed: () => Navigator.of(ctx).pop<int>(null),
+                  onPressed: () => Navigator.of(ctx).pop<int>(),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
                     shape: RoundedRectangleBorder(
@@ -307,6 +311,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 decoration: InputDecoration(
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.clear_rounded, size: 18),
+                    tooltip: strings.clear,
                     onPressed: () => nameController.clear(),
                   ),
                 ),
@@ -319,7 +324,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               ),
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 style: textStyles.bodyMedium?.copyWith(
                   color: colors.onSurface,
                   fontWeight: FontWeight.w400,
@@ -429,7 +434,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
                 const Gap(8),
                 DropdownButtonFormField<int>(
-                  value: selectedNotifyDays > 0 ? selectedNotifyDays : 0,
+                  initialValue: selectedNotifyDays > 0 ? selectedNotifyDays : 0,
                   style: textStyles.bodyMedium?.copyWith(
                     color: colors.onSurface,
                     fontWeight: FontWeight.w400,
@@ -474,24 +479,24 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
             FilledButton(
               onPressed: () async {
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
                 final remindersReady = await provider
                     .ensureDocumentReminderEnabled(
                       notifyBeforeDays: selectedNotifyDays,
                     );
                 if (!remindersReady) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(strings.documentPushPermissionDenied),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(strings.documentPushPermissionDenied),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
                   return;
                 }
 
                 final name = nameController.text.trim();
-                Navigator.pop(context, (
+                navigator.pop((
                   name.isEmpty ? strings.itemDefaultDocumentName : name,
                   selectedType,
                   expiryDate,
@@ -918,6 +923,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         IconButton(
                           onPressed: () => Navigator.of(ctx).pop(false),
                           icon: const Icon(Icons.close_rounded),
+                          tooltip: strings.close,
                         ),
                       ],
                     ),
@@ -1163,7 +1169,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       }
     } else if (_selectedPeriod == 'month') {
       for (int i = 5; i >= 0; i--) {
-        final date = DateTime(now.year, now.month - i, 1);
+        final date = DateTime(now.year, now.month - i);
         final key = DateFormat.MMM(localeTag).format(date);
         history[key] = 0;
       }
@@ -1349,7 +1355,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 filePath: photoPath,
                                 width: double.infinity,
                                 height: double.infinity,
-                                fit: BoxFit.cover,
                               ),
                             ),
                     ),
@@ -1363,6 +1368,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           IconButton(
                             icon: const Icon(Icons.arrow_back_ios_new_rounded),
                             onPressed: () => context.pop(),
+                            tooltip: strings.close,
                             color: colors.onSurface,
                             style: IconButton.styleFrom(
                               backgroundColor: colors.surface.withValues(
@@ -1372,6 +1378,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.edit_rounded),
+                            tooltip: strings.edit,
                             onPressed: () => context.push(
                               '/inventory/add?itemId=${widget.itemId}&itemType=$itemType',
                             ),
@@ -1500,7 +1507,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                         ),
                                       ),
                                       Text(
-                                        "${platform.totalRounds}",
+                                        '${platform.totalRounds}',
                                         style: textStyles.bodyMedium?.copyWith(
                                           fontWeight: FontWeight.w600,
                                           color: colors.onSurface,
@@ -1557,7 +1564,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 16,
-                                                    vertical: 0,
                                                   ),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
@@ -1659,7 +1665,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 16,
-                                                    vertical: 0,
                                                   ),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
@@ -1826,7 +1831,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                     ),
                                   ),
                                   Text(
-                                    "${ammo.quantity}",
+                                    '${ammo.quantity}',
                                     style: textStyles.titleLarge?.copyWith(
                                       fontWeight: FontWeight.w900,
                                       color: ammo.quantity < 100
@@ -1918,7 +1923,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                         Brightness.dark
                                     ? colors.outline
                                     : LightColors.surfaceHighlight,
-                                width: 1.2,
+                                width: 1.35,
                               ),
                             ),
                             child: Column(
@@ -1960,13 +1965,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           child: Builder(
                             builder: (context) {
                               final acc = accessory!;
-                              final maintenanceEnabledTypes = {
-                                'SUPP',
-                                'Compensateurs',
-                                'Détentes',
-                                'Pièces internes',
-                              };
-                              final maintenanceEnabled = maintenanceEnabledTypes
+                              final maintenanceEnabled = AccessoryTypeKey.maintenanceEnabled
                                   .contains(acc.type);
 
                               if (maintenanceEnabled) {
@@ -2005,7 +2004,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                   ),
                                             ),
                                             Text(
-                                              "${acc.totalRounds}",
+                                              '${acc.totalRounds}',
                                               style: textStyles.titleLarge
                                                   ?.copyWith(
                                                     fontWeight: FontWeight.w900,
@@ -2066,7 +2065,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                     padding:
                                                         const EdgeInsets.symmetric(
                                                           horizontal: 16,
-                                                          vertical: 0,
                                                         ),
                                                     shape: RoundedRectangleBorder(
                                                       borderRadius:
@@ -2132,15 +2130,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                               strings
                                                                   .maintenanceRecordedSuccess,
                                                             ),
-                                                            duration: Duration(
-                                                              seconds: 3,
-                                                            ),
+                                                            duration:
+                                                                const Duration(
+                                                                  seconds: 3,
+                                                                ),
                                                           ),
                                                         );
                                                       }
                                                     }
                                                   },
-                                                  child: const Text('Nettoyer'),
+                                                  child: Text(strings.clean),
                                                 ),
                                               ),
                                             ],
@@ -2172,7 +2171,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                     padding:
                                                         const EdgeInsets.symmetric(
                                                           horizontal: 16,
-                                                          vertical: 0,
                                                         ),
                                                     shape: RoundedRectangleBorder(
                                                       borderRadius:
@@ -2238,9 +2236,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                               strings
                                                                   .revisionRecordedSuccess,
                                                             ),
-                                                            duration: Duration(
-                                                              seconds: 3,
-                                                            ),
+                                                            duration:
+                                                                const Duration(
+                                                                  seconds: 3,
+                                                                ),
                                                           ),
                                                         );
                                                       }
@@ -2283,7 +2282,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                   _InfoRowSvg(
                                     assetPath: 'assets/images/hit.svg',
                                     label: strings.shotsFired,
-                                    value: "${acc.totalRounds}",
+                                    value: '${acc.totalRounds}',
                                   ),
                                   if (acc.batteryChangedAt != null) ...[
                                     const Gap(12),
@@ -2346,7 +2345,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                           border: Border.all(
                             color:
-                                Theme.of(context).brightness == Brightness.dark
+                                Theme.of(context).brightness ==
+                                    Brightness.dark
                                 ? colors.outline
                                 : LightColors.surfaceHighlight,
                             width: 1.35,
@@ -2375,7 +2375,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 _InfoRow(
                                   icon: Icons.scale_rounded,
                                   label: strings.emptyWeightLabel,
-                                  value: "${platform.weight} g",
+                                  value: '${platform.weight} g',
                                 ),
                                 _InfoRow(
                                   icon: Icons.cleaning_services_rounded,
@@ -2408,7 +2408,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                   icon: Icons.inventory_2_rounded,
                                   label: strings.currentStock,
                                   value:
-                                      "${ammo.quantity} ${strings.cartridges}",
+                                      '${ammo.quantity} ${strings.cartridges}',
                                 ),
                               ] else ...[
                                 _InfoRow(
@@ -2433,7 +2433,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 _InfoRowSvg(
                                   assetPath: 'assets/images/hit.svg',
                                   label: strings.shotsFired,
-                                  value: "${accessory.totalRounds}",
+                                  value: '${accessory.totalRounds}',
                                 ),
                                 if (accessory.batteryChangedAt != null)
                                   _InfoRow(
@@ -3121,10 +3121,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                       ),
                                       const Gap(8),
                                       IconButton(
-                                        icon: Icon(
+                                        icon: const Icon(
                                           Icons.delete_rounded,
                                           size: 18,
                                         ),
+                                        tooltip: strings.deleteButton,
                                         onPressed: () async {
                                           final confirm = await showDialog<bool>(
                                             context: context,
@@ -3311,23 +3312,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                 },
                                           ),
                                         ),
-                                        gridData: FlGridData(show: false),
+                                        gridData: const FlGridData(show: false),
                                         titlesData: FlTitlesData(
-                                          leftTitles: AxisTitles(
-                                            sideTitles: SideTitles(
-                                              showTitles: false,
-                                            ),
-                                          ),
-                                          rightTitles: AxisTitles(
-                                            sideTitles: SideTitles(
-                                              showTitles: false,
-                                            ),
-                                          ),
-                                          topTitles: AxisTitles(
-                                            sideTitles: SideTitles(
-                                              showTitles: false,
-                                            ),
-                                          ),
+                                          leftTitles: const AxisTitles(),
+                                          rightTitles: const AxisTitles(),
+                                          topTitles: const AxisTitles(),
                                           bottomTitles: AxisTitles(
                                             sideTitles: SideTitles(
                                               showTitles: true,
@@ -3506,24 +3495,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                 },
                                           ),
                                         ),
-                                        gridData: FlGridData(show: false),
+                                        gridData: const FlGridData(show: false),
                                         borderData: FlBorderData(show: false),
                                         titlesData: FlTitlesData(
-                                          leftTitles: AxisTitles(
-                                            sideTitles: SideTitles(
-                                              showTitles: false,
-                                            ),
-                                          ),
-                                          rightTitles: AxisTitles(
-                                            sideTitles: SideTitles(
-                                              showTitles: false,
-                                            ),
-                                          ),
-                                          topTitles: AxisTitles(
-                                            sideTitles: SideTitles(
-                                              showTitles: false,
-                                            ),
-                                          ),
+                                          leftTitles: const AxisTitles(),
+                                          rightTitles: const AxisTitles(),
+                                          topTitles: const AxisTitles(),
                                           bottomTitles: AxisTitles(
                                             sideTitles: SideTitles(
                                               showTitles: true,
@@ -3658,10 +3635,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final strings = AppStrings.of(context);
     try {
       if (kIsWeb && pdfPath.startsWith('data:')) {
-        await WebDocumentOpener.openDataUrlInNewTab(
-          pdfPath,
-          windowName: '_blank',
-        );
+        await WebDocumentOpener.openDataUrlInNewTab(pdfPath);
         return;
       }
 
@@ -3730,7 +3704,7 @@ class _StatusBar extends StatelessWidget {
                 ),
               ),
               Text(
-                "${(percent * 100).toInt()}%",
+                '${(percent * 100).toInt()}%',
                 style: textStyles.labelSmall?.copyWith(
                   color: colors.onSurface,
                   fontWeight: FontWeight.bold,
@@ -3920,6 +3894,7 @@ class _PlatformHistoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
+    final strings = AppStrings.of(context);
 
     IconData icon;
     Color iconColor;
@@ -3963,27 +3938,34 @@ class _PlatformHistoryRow extends StatelessWidget {
         ),
         const Gap(16),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                entry.label,
-                style: textStyles.bodyMedium?.copyWith(
-                  color: colors.onSurface,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (entry.details != null && entry.details!.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    entry.details!,
-                    style: textStyles.bodySmall?.copyWith(
-                      color: colors.secondary,
+          child: Builder(
+            builder: (context) {
+              final display =
+                  PlatformHistoryDisplay.from(entry, strings);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    display.label,
+                    style: textStyles.bodyMedium?.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-            ],
+                  if (display.details != null &&
+                      display.details!.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        display.details!,
+                        style: textStyles.bodySmall?.copyWith(
+                          color: colors.secondary,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ),
         const Gap(12),
@@ -4065,7 +4047,6 @@ class _DocItem extends StatelessWidget {
             Opacity(
               opacity: isLocked ? 0.45 : 1,
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(
                     _DocItem._isImagePath(path)

@@ -45,9 +45,6 @@ class MaintenanceNotifications {
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
-      defaultPresentAlert: true,
-      defaultPresentBadge: true,
-      defaultPresentSound: true,
     );
     await _plugin.initialize(
       settings: const InitializationSettings(
@@ -267,7 +264,7 @@ class MaintenanceNotifications {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
         category: AndroidNotificationCategory.reminder,
         visibility: NotificationVisibility.public,
       );
@@ -421,7 +418,7 @@ class MaintenanceNotifications {
       importance: Importance.high,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
-      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
     );

@@ -1031,30 +1031,38 @@ class _ColorPodScreenState extends State<ColorPodScreen> {
     }) {
       final isTriangle = id == 'triangle';
       IconData icon;
+      String semanticLabel;
       switch (id) {
         case 'circle':
           icon = Icons.circle;
+          semanticLabel = 'Circle';
           break;
         case 'square':
           icon = Icons.square;
+          semanticLabel = 'Square';
           break;
         case 'heart':
           icon = Icons.favorite;
+          semanticLabel = 'Heart';
           break;
         case 'triangle':
           icon = Icons.play_arrow_rounded;
+          semanticLabel = 'Triangle';
           break;
         case 'star':
           icon = Icons.star;
+          semanticLabel = 'Star';
           break;
         default:
           icon = Icons.circle;
+          semanticLabel = 'Circle';
       }
 
       final widget = Icon(
         icon,
         color: color,
         size: isTriangle ? size * 1.35 : size,
+        semanticLabel: semanticLabel,
       );
 
       if (!isTriangle) return widget;
@@ -1998,7 +2006,6 @@ class _ColorPodExerciseScreenState extends State<_ColorPodExerciseScreen>
                 right: 14,
                 bottom: 6,
                 child: SafeArea(
-                  minimum: const EdgeInsets.only(bottom: 0),
                   child: Text(
                     '$remainSec',
                     style: TextStyle(
@@ -2112,7 +2119,10 @@ class _LandscapeWrapperState extends State<_LandscapeWrapper> {
   @override
   void dispose() {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top],
+    );
     super.dispose();
   }
 

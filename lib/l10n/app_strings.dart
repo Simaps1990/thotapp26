@@ -28,6 +28,8 @@ part 'app_strings_pin.dart';
 part 'app_strings_colorpod.dart';
 part 'app_strings_misc.dart';
 part 'app_strings_legal.dart';
+part 'app_strings_material_types.dart';
+part 'app_strings_pdf.dart';
 
 /// Simple in-app string provider for manual i18n.
 ///

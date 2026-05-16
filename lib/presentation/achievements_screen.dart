@@ -497,10 +497,7 @@ class _AchievementCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: color.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
+                      border: Border.all(color: color.withValues(alpha: 0.2)),
                     ),
                     child: Center(
                       child: _GradientAchievementIcon(
@@ -516,7 +513,6 @@ class _AchievementCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Text(

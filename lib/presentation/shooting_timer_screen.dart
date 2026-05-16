@@ -374,6 +374,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
   Future<void> _startNoiseListening() async {
     _stopNoiseListening();
     _noiseMeter ??= NoiseMeter();
+    final timerMicrophoneError = AppStrings.of(context).timerMicrophoneError;
 
     try {
       _noiseSubscription = _noiseMeter!.noise.listen(
@@ -440,8 +441,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
         },
         onError: (error) {
           _stopNoiseListening();
-          final strings = AppStrings.of(context);
-          _showTimerSnack(strings.timerMicrophoneError);
+          _showTimerSnack(timerMicrophoneError);
         },
         cancelOnError: true,
       );
@@ -1313,7 +1313,6 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
                 _buildNumberField(
                   label: strings.timerRepetitionsLabel,
                   value: _repetitions,
-                  unitSuffix: '',
                   onChanged: (v) {
                     setState(() => _repetitions = v);
                   },
@@ -1442,7 +1441,6 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
                       0.0,
                       _dbThresholdMax - _dbThresholdMin,
                     ),
-                    min: 0,
                     max: _dbThresholdMax - _dbThresholdMin,
                     divisions: ((_dbThresholdMax - _dbThresholdMin) * 2)
                         .round(), // 0.5 dB steps
@@ -1753,9 +1751,9 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
                         child: Container(
                           width: 120,
                           height: 120,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF171717),
+                            color: Color(0xFF171717),
                           ),
                         ),
                       ),
@@ -2249,6 +2247,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
             IconButton(
               onPressed: () => onChanged((value - 1.0).clamp(min, max)),
               icon: const Icon(Icons.remove_circle_outline_rounded),
+              tooltip: AppStrings.of(context).decreaseValue,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: iconConstraints,
@@ -2281,6 +2280,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
             IconButton(
               onPressed: () => onChanged((value + 1.0).clamp(min, max)),
               icon: const Icon(Icons.add_circle_outline_rounded),
+              tooltip: AppStrings.of(context).increaseValue,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: iconConstraints,
@@ -2322,6 +2322,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
             IconButton(
               onPressed: () => onChanged((value - 1).clamp(min, max)),
               icon: const Icon(Icons.remove_circle_outline_rounded),
+              tooltip: AppStrings.of(context).decreaseValue,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: iconConstraints,
@@ -2377,6 +2378,7 @@ class _ShootingTimerScreenState extends State<ShootingTimerScreen>
             IconButton(
               onPressed: () => onChanged((value + 1).clamp(min, max)),
               icon: const Icon(Icons.add_circle_outline_rounded),
+              tooltip: AppStrings.of(context).increaseValue,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: iconConstraints,

@@ -22,6 +22,10 @@
     <string name="widget_maintenance_wear">Usure %s • %s</string>
     <string name="widget_maintenance_fouling">Encrass. %s • %s</string>
     <string name="widget_maintenance_stock">Stock %s • %s</string>
+    <!-- Level labels for maintenance widget -->
+    <string name="widget_level_critical">CRITIQUE</string>
+    <string name="widget_level_warning">ATTENTION</string>
+    <string name="widget_level_ok">OK</string>
 
     <!-- Documents widget -->
     <string name="widget_documents_title">Rappels documents</string>

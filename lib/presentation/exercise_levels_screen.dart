@@ -322,10 +322,11 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
                         return Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.star_rounded,
                               color: Colors.orange,
                               size: 14,
+                              semanticLabel: 'Star',
                             ),
                             const Gap(2),
                             Text(
@@ -405,6 +406,8 @@ class _ExerciseLevelsScreenState extends State<ExerciseLevelsScreen> {
         childAspectRatio: 0.82,
       ),
       itemCount: kTotalLevels,
+      addRepaintBoundaries: true,
+      cacheExtent: 200,
       itemBuilder: (ctx, index) {
         final level = index + 1;
         final isUnlocked = level <= unlockedUpTo;
@@ -617,6 +620,7 @@ class _LevelTile extends StatelessWidget {
           color: filled
               ? const Color(0xFFFFC107)
               : colors.onSurface.withValues(alpha: 0.2),
+          semanticLabel: filled ? 'Filled star' : 'Empty star',
         );
       }),
     );

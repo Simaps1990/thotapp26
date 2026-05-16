@@ -553,7 +553,7 @@ class _MilliemeTabState extends State<_MilliemeTab> {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    final provider = Provider.of<ThotProvider>(context, listen: true);
+    final provider = Provider.of<ThotProvider>(context);
 
     final presets = _presets(context);
 
@@ -618,7 +618,6 @@ class _MilliemeTabState extends State<_MilliemeTab> {
                 controller: _frontController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
-                  signed: false,
                 ),
                 onChanged: (_) => setState(() {}),
                 decoration: fieldDecoration.copyWith(
@@ -723,7 +722,6 @@ class _MilliemeTabState extends State<_MilliemeTab> {
                 controller: _milliemeController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
-                  signed: false,
                 ),
                 onChanged: (_) => setState(() {}),
                 decoration: fieldDecoration.copyWith(
@@ -761,7 +759,6 @@ class _MilliemeTabState extends State<_MilliemeTab> {
                 controller: _distanceController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
-                  signed: false,
                 ),
                 onChanged: (_) => setState(() {}),
                 decoration: fieldDecoration.copyWith(
@@ -866,7 +863,6 @@ class _MilliemePresetButton extends StatelessWidget {
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1159,7 +1155,7 @@ class _HitFactorTabState extends State<_HitFactorTab> {
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.sm,
                     ),
-                    title: Text('Major / Minor'),
+                    title: const Text('Major / Minor'),
                     subtitle: Text(_isMajor ? 'Major' : 'Minor'),
                     value: _isMajor,
                     onChanged: (value) => setState(() => _isMajor = value),

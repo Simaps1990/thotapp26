@@ -573,11 +573,11 @@ extension AppStringsReflexes on AppStrings {
   );
 
   String get reflexesModeMathDescription => _pick(
-    fr: 'Une opération mathématique simple va apparaître à l\'écran (**addition, soustraction, multiplication** ou **division**).\nSaisissez le résultat le plus rapidement possible.\nLe **temps de réponse** et la **précision** sont mesurés à chaque essai.\nLa difficulté augmente progressivement.',
-    en: 'A simple math operation will appear on screen (**addition, subtraction, multiplication**, or **division**).\nEnter the result as quickly as possible.\n**Response time** and **accuracy** are measured on each trial.\nDifficulty increases progressively.',
-    de: 'Eine einfache mathematische Operation erscheint auf dem Bildschirm (**Addition, Subtraktion, Multiplikation** oder **Division**).\nGeben Sie das Ergebnis so schnell wie möglich ein.\n**Reaktionszeit** und **Genauigkeit** werden bei jedem Durchgang gemessen.\nDer Schwierigkeitsgrad steigt schrittweise an.',
-    it: 'Sullo schermo apparirà un\'operazione matematica semplice (**addizione, sottrazione, moltiplicazione** o **divisione**).\nInserisci il risultato il più rapidamente possibile.\nIl **tempo di risposta** e la **precisione** vengono misurati a ogni prova.\nLa difficoltà aumenta progressivamente.',
-    es: 'Aparecerá en pantalla una operación matemática simple (**suma, resta, multiplicación** o **división**).\nIntroduce el resultado lo más rápido posible.\nEl **tiempo de respuesta** y la **precisión** se miden en cada intento.\nLa dificultad aumenta progresivamente.',
+    fr: 'Une opération mathématique va apparaître à l\'écran. Les opérations et la complexité varient selon la difficulté (**additions/soustractions** en facile, **multiplication** en moyen, **division** en difficile).\nSaisissez le résultat le plus rapidement possible.\nLe **temps de réponse** et la **précision** sont mesurés à chaque essai.',
+    en: 'A math operation will appear on screen. Operations and complexity vary by difficulty (**addition/subtraction** in easy, **multiplication** in medium, **division** in hard).\nEnter the result as quickly as possible.\n**Response time** and **accuracy** are measured on each trial.',
+    de: 'Eine mathematische Operation erscheint auf dem Bildschirm. Operationen und Komplexität variieren je nach Schwierigkeit (**Addition/Subtraktion** bei einfach, **Multiplikation** bei mittel, **Division** bei schwer).\nGeben Sie das Ergebnis so schnell wie möglich ein.\n**Reaktionszeit** und **Genauigkeit** werden bei jedem Durchgang gemessen.',
+    it: 'Sullo schermo apparirà un\'operazione matematica. Le operazioni e la complessità variano in base alla difficoltà (**addizione/sottrazione** in facile, **moltiplicazione** in medio, **divisione** in difficile).\nInserisci il risultato il più rapidamente possibile.\nIl **tempo di risposta** e la **precisione** vengono misurati a ogni prova.',
+    es: 'Aparecerá en pantalla una operación matemática. Las operaciones y la complejidad varían según la dificultad (**suma/resta** en fácil, **multiplicación** en medio, **división** en difícil).\nIntroduce el resultado lo más rápido posible.\nEl **tiempo de respuesta** y la **precisión** se miden en cada intento.',
   );
 
   String get reflexesModeMathCardDescription => _pick(
@@ -597,11 +597,11 @@ extension AppStringsReflexes on AppStrings {
   );
 
   String get reflexesModeMemoryDescription => _pick(
-    fr: 'Une **séquence de chiffres** va s\'afficher brièvement à l\'écran.\nMémorisez-la, puis reproduisez-la dans le **bon ordre** en tapant sur le clavier numérique.\nLa **longueur de la séquence** augmente à chaque réussite.\nL\'exercice s\'arrête après **deux erreurs consécutives**.',
-    en: 'A **sequence of digits** will briefly appear on screen.\nMemorize it, then reproduce it in the **correct order** using the numeric keypad.\nThe **sequence length** increases after each success.\nThe exercise stops after **two consecutive errors**.',
-    de: 'Eine **Ziffernfolge** wird kurz auf dem Bildschirm angezeigt.\nMerken Sie sie sich und geben Sie sie anschließend in der **richtigen Reihenfolge** über das Zahlenfeld ein.\nDie **Sequenzlänge** steigt nach jedem Erfolg.\nDie Übung endet nach **zwei aufeinanderfolgenden Fehlern**.',
-    it: 'Una **sequenza di cifre** apparirà brevemente sullo schermo.\nMemorizzala, poi riproducila nell\'**ordine corretto** digitando sul tastierino numerico.\nLa **lunghezza della sequenza** aumenta a ogni risposta corretta.\nL\'esercizio termina dopo **due errori consecutivi**.',
-    es: 'Una **secuencia de dígitos** aparecerá brevemente en pantalla.\nMemorízala y luego reprodúcela en el **orden correcto** usando el teclado numérico.\nLa **longitud de la secuencia** aumenta con cada acierto.\nEl ejercicio termina tras **dos errores consecutivos**.',
+    fr: 'Une **séquence de chiffres** va s\'afficher brièvement à l\'écran.\nMémorisez-la, puis reproduisez-la dans le **bon ordre** en tapant sur le clavier numérique.\nLa longueur de la séquence est fixe selon la difficulté (**4 chiffres** en facile, **6 chiffres** en moyen, **8 chiffres** en difficile).\nL\'exercice s\'arrête après **deux erreurs consécutives**.',
+    en: 'A **sequence of digits** will briefly appear on screen.\nMemorize it, then reproduce it in the **correct order** using the numeric keypad.\nThe sequence length is fixed by difficulty (**4 digits** in easy, **6 digits** in medium, **8 digits** in hard).\nThe exercise stops after **two consecutive errors**.',
+    de: 'Eine **Ziffernfolge** wird kurz auf dem Bildschirm angezeigt.\nMerken Sie sie sich und geben Sie sie anschließend in der **richtigen Reihenfolge** über das Zahlenfeld ein.\nDie Sequenzlänge ist je nach Schwierigkeit fest (**4 Ziffern** bei einfach, **6 Ziffern** bei mittel, **8 Ziffern** bei schwer).\nDie Übung endet nach **zwei aufeinanderfolgenden Fehlern**.',
+    it: 'Una **sequenza di cifre** apparirà brevemente sullo schermo.\nMemorizzala, poi riproducila nell\'**ordine corretto** digitando sul tastierino numerico.\nLa lunghezza della sequenza è fissa in base alla difficoltà (**4 cifre** in facile, **6 cifre** in medio, **8 cifre** in difficile).\nL\'esercizio termina dopo **due errori consecutivi**.',
+    es: 'Una **secuencia de dígitos** aparecerá brevemente en pantalla.\nMemorízala y luego reprodúcela en el **orden correcto** usando el teclado numérico.\nLa longitud de la secuencia es fija según la dificultad (**4 dígitos** en fácil, **6 dígitos** en medio, **8 dígitos** en difícil).\nEl ejercicio termina tras **dos errores consecutivos**.',
   );
 
   String get reflexesModeMemoryCardDescription => _pick(
@@ -840,5 +840,45 @@ extension AppStringsReflexes on AppStrings {
     de: 'Standardabweichung',
     it: 'Deviazione standard',
     es: 'Desviación estándar',
+  );
+
+  String get reflexesPenaltyReasonSpeed => _pick(
+    fr: 'Lenteur',
+    en: 'Slowness',
+    de: 'Langsamkeit',
+    it: 'Lentezza',
+    es: 'Lentitud',
+  );
+
+  String get reflexesPenaltyReasonErrors => _pick(
+    fr: 'Faux départs',
+    en: 'False starts',
+    de: 'Fehlstarts',
+    it: 'False partenze',
+    es: 'Salidas falsas',
+  );
+
+  String get reflexesPenaltyReasonAccuracy => _pick(
+    fr: 'Précision',
+    en: 'Accuracy',
+    de: 'Genauigkeit',
+    it: 'Precisione',
+    es: 'Precisión',
+  );
+
+  String get reflexesPenaltyReasonMissed => _pick(
+    fr: 'Stimuli manqués',
+    en: 'Missed stimuli',
+    de: 'Verpasste Reize',
+    it: 'Stimoli mancati',
+    es: 'Estímulos perdidos',
+  );
+
+  String get reflexesPenaltyReasonTimeout => _pick(
+    fr: 'Temps dépassé',
+    en: 'Timeout',
+    de: 'Zeitüberschreitung',
+    it: 'Tempo scaduto',
+    es: 'Tiempo agotado',
   );
 }

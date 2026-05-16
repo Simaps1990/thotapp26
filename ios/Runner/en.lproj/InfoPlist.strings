@@ -1,0 +1,5 @@
+/* Localized versions of Info.plist keys - English */
+"NSCameraUsageDescription" = "THOT uses the camera to add photos to your setups, consumables and targets, and to scan shooting table QR codes. Access is triggered only by explicit action.";
+"NSFaceIDUsageDescription" = "THOT uses Face ID to protect access to your data.";
+"NSMicrophoneUsageDescription" = "THOT uses the microphone only in the shot timer to detect a shot start (on explicit user action). No audio recording is stored or transmitted.";
+"NSPhotoLibraryUsageDescription" = "THOT uses the photo library to add images to your setups, consumables and targets.";

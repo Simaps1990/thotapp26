@@ -60,24 +60,47 @@ class _SetPinScreenState extends State<SetPinScreen> {
   }
 
   void _verifyMatch() async {
-    if (_enteredPin == _confirmPin) {
-      final provider = Provider.of<ThotProvider>(context, listen: false);
-      await provider.setPinCode(_enteredPin);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppStrings.of(context).pinSetSuccess),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        context.pop();
-      }
-    } else {
+    if (_enteredPin != _confirmPin) {
       setState(() {
         _isError = true;
         _confirmPin = '';
       });
+      return;
+    }
+
+    final strings = AppStrings.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = GoRouter.of(context);
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+
+    try {
+      await provider.setPinCode(_enteredPin);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(strings.pinSetSuccess),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      navigator.pop();
+    } catch (e) {
+      // PIN setup actually failed (storage write error, etc.). Reset the
+      // confirmation state and let the user retry rather than silently
+      // pretending success and locking them out at next launch.
+      if (!mounted) return;
+      setState(() {
+        _isConfirming = false;
+        _enteredPin = '';
+        _confirmPin = '';
+        _isError = true;
+      });
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(strings.pinSetFailed),
+          duration: const Duration(seconds: 4),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -119,6 +142,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back_rounded),
+                      tooltip: strings.back,
                       color: colors.onSurface,
                       onPressed: () => context.pop(),
                     ),

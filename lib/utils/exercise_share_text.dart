@@ -3,6 +3,7 @@ import 'package:thot/data/models.dart';
 import 'package:thot/data/exercise_step.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/l10n/app_strings.dart';
+import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/utils/exercise_display.dart';
 import 'package:thot/utils/unit_converter.dart';
 
@@ -24,7 +25,7 @@ String generateExerciseShareText({
   if (exercise.steps == null || exercise.steps!.isEmpty) {
     final buffer = StringBuffer();
     buffer.writeln('${strings.exerciseShareSimpleHeader} — $exerciseName');
-    buffer.writeln('📅 ${session.date.toLocal()} · ${session.sessionType}');
+    buffer.writeln('📅 ${AppDateFormats.formatDateTimeShort(context, session.date)} · ${strings.sessionTypeDisplayName(session.sessionType)}');
     buffer.writeln(
       '🔫 $platformName · $ammoName${target.isEmpty ? '' : ' · $target'}',
     );
@@ -43,7 +44,7 @@ String generateExerciseShareText({
   final steps = exercise.steps!;
   final buffer = StringBuffer();
   buffer.writeln('${strings.exerciseShareDetailedHeader} — $exerciseName');
-  buffer.writeln('📅 ${session.date.toLocal()} · ${session.sessionType}');
+  buffer.writeln('📅 ${AppDateFormats.formatDateTimeShort(context, session.date)} · ${strings.sessionTypeDisplayName(session.sessionType)}');
   buffer.writeln('🔫 $platformName · $ammoName');
   buffer.writeln();
   buffer.writeln(strings.exerciseShareSteps);

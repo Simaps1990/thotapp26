@@ -123,6 +123,19 @@ extension AppStringsNewSession on AppStrings {
     es: 'Competición',
   );
 
+  /// Returns the localized display name for a stored session type key.
+  String sessionTypeDisplayName(String typeKey) {
+    switch (typeKey) {
+      case 'Professionnel':
+        return sessionTypeProfessional;
+      case 'Compétition':
+        return sessionTypeCompetition;
+      case 'Personnel':
+      default:
+        return sessionTypePersonal;
+    }
+  }
+
   String get sessionSummaryTitle => _pick(
     fr: 'Résumé session',
     en: 'Session summary',
@@ -140,7 +153,7 @@ extension AppStringsNewSession on AppStrings {
   );
 
   String get exerciseDetailsTitle => _pick(
-    fr: "Détails plateforme & équipement",
+    fr: 'Détails plateforme & équipement',
     en: 'Platform & gear details',
     de: 'Plattform- & Ausrüstungsdetails',
     it: 'Dettagli piattaforma e attrezzatura',
@@ -1480,7 +1493,7 @@ extension AppStringsNewSession on AppStrings {
   );
 
   String get createExerciseTemplateTitle => _pick(
-    fr: "CRÉER UN MODÈLE",
+    fr: 'CRÉER UN MODÈLE',
     en: 'CREATE A TEMPLATE',
     de: 'VORLAGE ERSTELLEN',
     it: 'CREA UN MODELLO',

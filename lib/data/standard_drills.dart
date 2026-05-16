@@ -184,7 +184,7 @@ class StandardDrills {
           shots: 2,
           target: s.standardDrillElPresidenteStep10Target,
         ),
-        ExerciseStep(
+        const ExerciseStep(
           id: 'std_el_presidente_step_11',
           type: StepType.transition,
         ),
@@ -196,7 +196,7 @@ class StandardDrills {
           shots: 2,
           target: s.standardDrillElPresidenteStep12Target,
         ),
-        ExerciseStep(
+        const ExerciseStep(
           id: 'std_el_presidente_step_13',
           type: StepType.transition,
         ),
@@ -422,7 +422,10 @@ class StandardDrills {
           shots: 4,
           target: s.standardDrillBillStep3Target,
         ),
-        ExerciseStep(id: 'std_hackathorn_step_3', type: StepType.transition),
+        const ExerciseStep(
+          id: 'std_hackathorn_step_3',
+          type: StepType.transition,
+        ),
         ExerciseStep(
           id: 'std_hackathorn_step_4',
           type: StepType.tir,
@@ -431,7 +434,10 @@ class StandardDrills {
           shots: 4,
           target: s.standardDrillBillStep3Target,
         ),
-        ExerciseStep(id: 'std_hackathorn_step_5', type: StepType.transition),
+        const ExerciseStep(
+          id: 'std_hackathorn_step_5',
+          type: StepType.transition,
+        ),
         ExerciseStep(
           id: 'std_hackathorn_step_6',
           type: StepType.tir,

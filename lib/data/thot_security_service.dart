@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart'
     show VoidCallback, debugPrint, kDebugMode;
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:pointycastle/key_derivators/api.dart' show Pbkdf2Parameters;
@@ -12,6 +13,7 @@ import 'package:pointycastle/key_derivators/pbkdf2.dart';
 import 'package:pointycastle/macs/hmac.dart' as pc_hmac;
 import 'package:pointycastle/digests/sha256.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/thresholds.dart';
 
 class ThotSecurityService {
   ThotSecurityService({
@@ -23,8 +25,8 @@ class ThotSecurityService {
        _onChanged = onChanged;
 
   static const int pinLength = 6;
-  static const int maxPinAttempts = 5;
-  static const Duration pinLockDuration = Duration(minutes: 30);
+  static const int maxPinAttempts = Thresholds.pinMaxAttempts;
+  static const Duration pinLockDuration = Duration(minutes: Thresholds.pinLockoutMinutes);
   static const int _pbkdf2Iterations = 100000;
   static const int _pbkdf2KeyLength = 32;
   // Storage keys for the PBKDF2-derived hash. Old SHA-256 hash uses
@@ -222,38 +224,85 @@ class ThotSecurityService {
     }
   }
 
+  /// Atomically persist a new PIN. The order matters:
+  ///
+  /// 1. Validate input.
+  /// 2. Write the new hash + salt to secure storage. If either write
+  ///    fails, the state is unchanged (no half-broken PIN).
+  /// 3. Flip `pinEnabled = true` in plain prefs LAST so that, if the
+  ///    process dies between steps 2 and 3, the user is not locked out:
+  ///    the legacy/v2 hash may exist on disk but `pinEnabled` will still
+  ///    read false at next launch → user lands on the normal app flow,
+  ///    not a lock screen that demands a hash we can't verify.
+  /// 4. Clean up the legacy v1 hash AFTER the new one is fully active.
+  ///
+  /// Throws [PinSetupException] on failure so the UI can show a real
+  /// error instead of silently accepting an invalid state.
   Future<void> setPinCode(String pin) async {
+    final normalized = pin.trim();
+
+    if (normalized.length != pinLength || int.tryParse(normalized) == null) {
+      throw PinSetupException(PinSetupError.invalidFormat);
+    }
+
+    final salt = _generateSalt();
+    final hashedPin = _hashPin(normalized, salt);
+
+    // Snapshot what's on disk so we can roll back if step 3 fails.
+    final previousHash = await _secureStorage.read(key: _pinHashKey);
+    final previousSalt = await _secureStorage.read(key: _pinSaltKey);
+
     try {
-      final normalized = pin.trim();
-
-      if (normalized.length != pinLength || int.tryParse(normalized) == null) {
-        throw ArgumentError(
-          'Le PIN doit contenir exactement $pinLength chiffres.',
-        );
-      }
-
-      final salt = _generateSalt();
-      final hashedPin = _hashPin(normalized, salt);
-
-      // Write the new PBKDF2 hash and clean up any legacy SHA-256 hash.
+      // Step 2: write new credentials. If one of these throws, the catch
+      // block below restores the previous state.
       await _secureStorage.write(key: _pinHashKey, value: hashedPin);
       await _secureStorage.write(key: _pinSaltKey, value: salt);
-      await _secureStorage.delete(key: _legacyPinHashKey);
-      await _secureStorage.delete(key: _legacyPinSaltKey);
 
-      _pinEnabled = true;
-      _isAuthenticated = true;
-
+      // Step 3: flip the enabled flag and reset lockout counters.
+      // This is the "commit" line — after this, the PIN is officially set.
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('pinEnabled', true);
       await prefs.setInt('pin_failed_attempts', 0);
       await prefs.remove('pin_locked_until');
 
+      _pinEnabled = true;
+      _isAuthenticated = true;
+
+      // Step 4: best-effort cleanup of legacy v1 hash. Failures here are
+      // non-fatal (worst case: a stale legacy key sits in keychain and
+      // gets ignored by verifyPin which prefers v2 anyway).
+      try {
+        await _secureStorage.delete(key: _legacyPinHashKey);
+        await _secureStorage.delete(key: _legacyPinSaltKey);
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('Non-fatal: failed to clean legacy PIN hash: $e');
+        }
+      }
+
       _onChanged();
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error setting PIN.');
+      // Roll back step 2 writes so we don't leave a half-written PIN.
+      try {
+        if (previousHash != null) {
+          await _secureStorage.write(key: _pinHashKey, value: previousHash);
+        } else {
+          await _secureStorage.delete(key: _pinHashKey);
+        }
+        if (previousSalt != null) {
+          await _secureStorage.write(key: _pinSaltKey, value: previousSalt);
+        } else {
+          await _secureStorage.delete(key: _pinSaltKey);
+        }
+      } catch (_) {
+        // If rollback itself fails there's not much we can do — the
+        // user's next launch will fall through to the "no PIN" path
+        // because pinEnabled was never set to true.
       }
+      if (kDebugMode) {
+        debugPrint('Error setting PIN: $e');
+      }
+      throw PinSetupException(PinSetupError.storageFailure, cause: e);
     }
   }
 
@@ -373,4 +422,20 @@ class ThotSecurityService {
     final derived = pbkdf2.process(Uint8List.fromList(pinBytes));
     return base64Encode(derived);
   }
+}
+
+/// Reason a PIN setup attempt failed. Use this in the UI to show a
+/// localized message instead of a generic "something went wrong".
+enum PinSetupError {
+  invalidFormat,
+  storageFailure,
+}
+
+class PinSetupException implements Exception {
+  PinSetupException(this.error, {this.cause});
+  final PinSetupError error;
+  final Object? cause;
+
+  @override
+  String toString() => 'PinSetupException($error${cause == null ? '' : ', cause: $cause'})';
 }

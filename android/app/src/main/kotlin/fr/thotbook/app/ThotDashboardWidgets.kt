@@ -56,6 +56,24 @@ private fun prefString(widgetData: android.content.SharedPreferences, key: Strin
     }
 }
 
+/**
+ * Map a stable level code coming from Dart ("critical" / "warning" / "ok")
+ * to a localized label via strings.xml. Falls back to the "ok" label for unknown
+ * codes. Legacy fallback handles old app versions that sent French
+ * uppercase labels — remove after one or two releases.
+ */
+private fun localizeLevel(context: Context, code: String): String {
+    return when (code.lowercase(Locale.getDefault())) {
+        "critical" -> context.getString(R.string.widget_level_critical)
+        "warning" -> context.getString(R.string.widget_level_warning)
+        "ok" -> context.getString(R.string.widget_level_ok)
+        // Legacy: old app versions sent French uppercase
+        "critique" -> context.getString(R.string.widget_level_critical)
+        "attention" -> context.getString(R.string.widget_level_warning)
+        else -> context.getString(R.string.widget_level_ok)
+    }
+}
+
 private fun pct(value: Double): String {
     val percent = (value * 100.0).coerceIn(0.0, 100.0)
     return String.format(Locale.getDefault(), "%.0f%%", percent)
@@ -125,9 +143,13 @@ class ThotMaintenanceWidgetProvider : HomeWidgetProvider() {
             val fouling = prefDouble(widgetData, "widget_fouling_avg", 0.0)
             val stock = prefDouble(widgetData, "widget_stock_avg", 0.0)
 
-            val wearLevel = prefString(widgetData, "widget_wear_level", "OK")
-            val foulingLevel = prefString(widgetData, "widget_fouling_level", "OK")
-            val stockLevel = prefString(widgetData, "widget_stock_level", "OK")
+            // The Dart side sends stable codes ("critical" / "warning" / "ok")
+            // — we map them to the localized label here via strings.xml.
+            // Anything else falls through to the "ok" label so older app
+            // versions that still send "OK" / "CRITIQUE" don't break.
+            val wearLevel = localizeLevel(context, prefString(widgetData, "widget_wear_level", "ok"))
+            val foulingLevel = localizeLevel(context, prefString(widgetData, "widget_fouling_level", "ok"))
+            val stockLevel = localizeLevel(context, prefString(widgetData, "widget_stock_level", "ok"))
 
             views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_maintenance_title))
             views.setTextViewText(
