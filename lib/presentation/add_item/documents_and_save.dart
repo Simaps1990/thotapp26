@@ -154,6 +154,14 @@ extension _AddItemDocumentsAndSave on _AddItemScreenState {
     if (_selectedCategory == 'PLATEFORME') {
       if (_caliberController.text.trim().isEmpty) {
         setState(() => _caliberError = true);
+        if (_caliberFieldKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _caliberFieldKey.currentContext!,
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOut,
+            alignment: 0.15,
+          );
+        }
         return;
       }
       final platform = Platform(
@@ -178,6 +186,18 @@ extension _AddItemDocumentsAndSave on _AddItemScreenState {
       );
       _isEditMode ? provider.updatePlatform(platform) : provider.addPlatform(platform);
     } else if (_selectedCategory == 'CONSOMMABLE') {
+      if (_caliberController.text.trim().isEmpty) {
+        setState(() => _caliberError = true);
+        if (_caliberFieldKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _caliberFieldKey.currentContext!,
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOut,
+            alignment: 0.15,
+          );
+        }
+        return;
+      }
       final quantity = int.tryParse(_quantityController.text.trim()) ?? 0;
       final ammo = Ammo(
         id: id,

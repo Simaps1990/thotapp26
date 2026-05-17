@@ -54,7 +54,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(
@@ -66,7 +66,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _targetFollowTicker = createTicker((elapsed) {
-      if (elapsed - _lastTickTime < const Duration(milliseconds: 100)) return;
+      if (elapsed - _lastTickTime < const Duration(milliseconds: 16)) return;
       _lastTickTime = elapsed;
       _syncTrackedTargetRect();
     })..start();
@@ -82,14 +82,16 @@ class _TutorialOverlayState extends State<TutorialOverlay>
 
   void _nextStep() {
     if (_currentStep < widget.steps.length - 1) {
-      _controller.reset();
-      setState(() {
-        _currentStep++;
-        _trackedTargetRect = null;
+      _controller.reverse().then((_) {
+        if (!mounted) return;
+        setState(() {
+          _currentStep++;
+          _trackedTargetRect = null;
+        });
+        widget.onStepChanged?.call(_currentStep);
+        _scrollToTarget(widget.steps[_currentStep].targetKey, _currentStep);
+        _controller.forward();
       });
-      widget.onStepChanged?.call(_currentStep);
-      _scrollToTarget(widget.steps[_currentStep].targetKey, _currentStep);
-      _controller.forward();
     } else {
       widget.onComplete?.call();
     }
@@ -108,7 +110,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     Scrollable.ensureVisible(
       context,
       alignment: alignment,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
   }

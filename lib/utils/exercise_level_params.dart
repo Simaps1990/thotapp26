@@ -179,8 +179,8 @@ dissociationLevelParams(int level) {
   // Tempo: 1200ms -> 550ms (faster = harder)
   final tempoMs = (1200 - (t * 650)).round().clamp(550, 1200);
 
-  // Tempo tolerance: 260ms -> 110ms (stricter = harder)
-  final tempoToleranceMs = (260 - (t * 150)).round().clamp(110, 260);
+  // Tempo tolerance: 450ms -> 150ms (stricter = harder)
+  final tempoToleranceMs = (450 - (t * 300)).round().clamp(150, 450);
 
   // Stimulus delays: 1800-3200ms -> 650-1300ms (faster = harder)
   final stimulusMinDelayMs = (1800 - (t * 1150)).round().clamp(650, 1800);

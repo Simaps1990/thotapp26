@@ -179,6 +179,19 @@ class _DrillCardState extends State<_DrillCard>
                                         : (widget.isSelected
                                               ? Colors.white
                                               : widget.colors.onSurface),
+                                    shadows: widget.backgroundImage != null
+                                        ? const [
+                                            Shadow(
+                                              color: Colors.black,
+                                              blurRadius: 8,
+                                            ),
+                                            Shadow(
+                                              color: Colors.black87,
+                                              blurRadius: 16,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ]
+                                        : null,
                                   ),
                                 ),
                               ),
@@ -219,12 +232,15 @@ class _DrillCardState extends State<_DrillCard>
                                         ? Colors.white.withValues(alpha: 0.8)
                                         : widget.colors.secondary),
                               shadows: widget.backgroundImage != null
-                                  ? [
+                                  ? const [
                                       Shadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.85,
-                                        ),
+                                        color: Colors.black,
                                         blurRadius: 8,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black87,
+                                        blurRadius: 16,
+                                        offset: Offset(0, 2),
                                       ),
                                     ]
                                   : null,

@@ -1010,6 +1010,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
 
   void _onTrainingHistoryUpdate() {
     if (mounted) {
+      context.read<ThotProvider>().checkAchievements();
       setState(() {});
     }
   }

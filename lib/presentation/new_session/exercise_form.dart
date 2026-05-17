@@ -19,6 +19,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
   final _formKey = GlobalKey<FormState>();
   final _exerciseNameController = TextEditingController();
   final _exerciseScrollController = ScrollController();
+  final _nameFieldKey = GlobalKey();
   final _platformFieldKey = GlobalKey();
   final _ammoFieldKey = GlobalKey();
   final _shotsFieldKey = GlobalKey();
@@ -27,6 +28,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
   bool _detailedMode = false;
   final List<ExerciseStep> _steps = [];
 
+  bool _nameError = false;
   bool _platformError = false;
   bool _ammoError = false;
   bool _shotsError = false;
@@ -375,6 +377,21 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     final strings = AppStrings.of(context);
     final baseBackground = Theme.of(context).scaffoldBackgroundColor;
 
+    final needsGlobalPlatform = !_detailedMode ||
+        _steps.any(
+          (s) =>
+              s.type == StepType.tir &&
+              (s.shots ?? 0) > 0 &&
+              (s.usedPlatformId ?? '').trim().isEmpty,
+        );
+    final needsGlobalAmmo = !_detailedMode ||
+        _steps.any(
+          (s) =>
+              s.type == StepType.tir &&
+              (s.shots ?? 0) > 0 &&
+              (s.usedAmmoId ?? '').trim().isEmpty,
+        );
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Container(
@@ -457,7 +474,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                         ),
                         const Gap(8),
                         Text(
-                          strings.exerciseNameLabel.toUpperCase(),
+                          '${strings.exerciseNameLabel.toUpperCase()} *',
                           style: textStyles.labelLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                             color: colors.onSurface,
@@ -468,37 +485,46 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                     ),
                     const Gap(AppSpacing.sm),
 
-                    TextField(
-                      controller: _exerciseNameController,
-                      textInputAction: TextInputAction.next,
-                      onTap: () =>
-                          _exerciseNameController.selection = TextSelection(
-                            baseOffset: 0,
-                            extentOffset: _exerciseNameController.text.length,
+                    Container(
+                      key: _nameFieldKey,
+                      child: TextField(
+                        controller: _exerciseNameController,
+                        textInputAction: TextInputAction.next,
+                        onTap: () =>
+                            _exerciseNameController.selection = TextSelection(
+                              baseOffset: 0,
+                              extentOffset: _exerciseNameController.text.length,
+                            ),
+                        onChanged: (_) {
+                          if (_nameError && _exerciseNameController.text.trim().isNotEmpty) {
+                            setState(() => _nameError = false);
+                          }
+                        },
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'.*')),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: strings.exerciseNameHint,
+                          errorText: _nameError ? strings.requiredFieldError : null,
+                          hintStyle: textStyles.bodyMedium?.copyWith(
+                            color: colors.onSurface.withAlpha(100),
                           ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'.*')),
-                      ],
-                      decoration: InputDecoration(
-                        hintText: strings.exerciseNameHint,
-                        hintStyle: textStyles.bodyMedium?.copyWith(
-                          color: colors.onSurface.withAlpha(100),
-                        ),
-                        filled: true,
-                        fillColor: colors.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide(color: colors.outline),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide(color: colors.outline),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: BorderSide(
-                            color: colors.primary,
-                            width: 1.6,
+                          filled: true,
+                          fillColor: colors.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(color: colors.outline),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(color: colors.outline),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            borderSide: BorderSide(
+                              color: colors.primary,
+                              width: 1.6,
+                            ),
                           ),
                         ),
                       ),
@@ -519,7 +545,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                         ),
                         const Gap(8),
                         Text(
-                          strings.platformTitle.toUpperCase(),
+                          '${strings.platformTitle.toUpperCase()}${needsGlobalPlatform ? " *" : ""}',
                           style: textStyles.labelLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                             color: colors.onSurface,
@@ -534,7 +560,10 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: colors.outline),
+                        border: Border.all(
+                          color: _platformError ? colors.error : colors.outline,
+                          width: _platformError ? 1.6 : 1.0,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,6 +896,18 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                         ],
                       ),
                     ),
+                    if (_platformError) ...[
+                      const Gap(6),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          strings.requiredFieldError,
+                          style: textStyles.bodySmall?.copyWith(
+                            color: colors.error,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Gap(AppSpacing.lg),
 
                     // Consommable Section
@@ -883,7 +924,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                         ),
                         const Gap(8),
                         Text(
-                          strings.ammoTitle.toUpperCase(),
+                          '${strings.ammoTitle.toUpperCase()}${needsGlobalAmmo ? " *" : ""}',
                           style: textStyles.labelLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                             color: colors.onSurface,
@@ -898,7 +939,10 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: colors.outline),
+                        border: Border.all(
+                          color: _ammoError ? colors.error : colors.outline,
+                          width: _ammoError ? 1.6 : 1.0,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1119,6 +1163,18 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                         ],
                       ),
                     ),
+                    if (_ammoError) ...[
+                      const Gap(6),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          strings.requiredFieldError,
+                          style: textStyles.bodySmall?.copyWith(
+                            color: colors.error,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Gap(AppSpacing.lg),
 
                     // DÉROULÉ Section
@@ -1184,8 +1240,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                                           ),
                                           const Gap(6),
                                           Text(
-                                            strings.shotsCountLabel
-                                                .toUpperCase(),
+                                            '${strings.shotsCountLabel.toUpperCase()} *',
                                             style: textStyles.labelLarge
                                                 ?.copyWith(
                                                   fontWeight: FontWeight.w900,
@@ -1306,7 +1361,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
                                           ),
                                           const Gap(6),
                                           Text(
-                                            strings.distanceLabel.toUpperCase(),
+                                            '${strings.distanceLabel.toUpperCase()} *',
                                             style: textStyles.labelLarge
                                                 ?.copyWith(
                                                   fontWeight: FontWeight.w900,
@@ -2235,6 +2290,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
         );
 
     setState(() {
+      _nameError = _exerciseNameController.text.trim().isEmpty;
       _platformError =
           needsGlobalPlatform &&
           _platformSource == 'inventory' &&
@@ -2250,6 +2306,16 @@ class _ExerciseFormState extends State<_ExerciseForm> {
           ? (_steps.isEmpty || (hasTirStep && computedDistance <= 0))
           : (distance == null || distance <= 0);
     });
+
+    if (_nameError) {
+      await Scrollable.ensureVisible(
+        _nameFieldKey.currentContext!,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOut,
+        alignment: 0.15,
+      );
+      return;
+    }
 
     if (_platformError) {
       await Scrollable.ensureVisible(

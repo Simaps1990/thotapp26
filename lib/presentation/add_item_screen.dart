@@ -466,7 +466,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             const Icon(Icons.edit_note_rounded, size: 18),
                             const Gap(8),
                             Text(
-                              _primaryNameLabel().toUpperCase(),
+                              '${_primaryNameLabel().toUpperCase()} *',
                               style: textStyles.labelLarge?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: colors.onSurface,
@@ -500,12 +500,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                 color: colors.onSurface.withAlpha(100),
                               ),
                               counterText: '', // Hide character counter
-                              helperText: _primaryNameError
+                              errorText: _primaryNameError
                                   ? strings.requiredFieldError
                                   : null,
-                              helperStyle: textStyles.bodySmall?.copyWith(
-                                color: colors.error,
-                              ),
                               filled: true,
                               fillColor: colors.surface,
                               border: OutlineInputBorder(
@@ -632,7 +629,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                         ),
                                         const Gap(8),
                                         Text(
-                                          strings.caliberLabel.toUpperCase(),
+                                          '${strings.caliberLabel.toUpperCase()} *',
                                           style: textStyles.labelLarge
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w900,
@@ -643,59 +640,60 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                       ],
                                     ),
                                     const Gap(8),
-                                    TextField(
-                                      controller: _caliberController,
-                                      onChanged: (_) {
-                                        if (_caliberError &&
-                                            _caliberController.text
-                                                .trim()
-                                                .isNotEmpty) {
-                                          setState(() => _caliberError = false);
-                                        }
-                                      },
-                                      decoration: InputDecoration(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 10,
-                                            ),
-                                        hintText: strings.itemCaliberHint,
-                                        hintStyle: textStyles.bodyMedium
-                                            ?.copyWith(
-                                              color: colors.onSurface.withAlpha(
-                                                100,
+                                    Container(
+                                      key: _caliberFieldKey,
+                                      child: TextField(
+                                        controller: _caliberController,
+                                        onChanged: (_) {
+                                          if (_caliberError &&
+                                              _caliberController.text
+                                                  .trim()
+                                                  .isNotEmpty) {
+                                            setState(() => _caliberError = false);
+                                          }
+                                        },
+                                        decoration: InputDecoration(
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 10,
                                               ),
+                                          hintText: strings.itemCaliberHint,
+                                          hintStyle: textStyles.bodyMedium
+                                              ?.copyWith(
+                                                color: colors.onSurface.withAlpha(
+                                                  100,
+                                                ),
+                                              ),
+                                          errorText: _caliberError
+                                              ? strings.requiredFieldError
+                                              : null,
+                                          filled: true,
+                                          fillColor: colors.surface,
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.lg,
                                             ),
-                                        helperText: _caliberError
-                                            ? strings.requiredFieldError
-                                            : null,
-                                        helperStyle: textStyles.bodySmall
-                                            ?.copyWith(color: colors.error),
-                                        filled: true,
-                                        fillColor: colors.surface,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.lg,
+                                            borderSide: BorderSide(
+                                              color: colors.outline,
+                                            ),
                                           ),
-                                          borderSide: BorderSide(
-                                            color: colors.outline,
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.lg,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: colors.outline,
+                                            ),
                                           ),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.lg,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colors.outline,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.lg,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colors.primary,
-                                            width: 1.6,
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.lg,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: colors.primary,
+                                              width: 1.6,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -715,7 +713,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               ),
                               const Gap(8),
                               Text(
-                                strings.typeLabel.toUpperCase(),
+                                '${strings.typeLabel.toUpperCase()} *',
                                 style: textStyles.labelLarge?.copyWith(
                                   fontWeight: FontWeight.w900,
                                   color: colors.onSurface,
@@ -730,12 +728,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             child: DropdownButtonFormField<String>(
                               initialValue: _selectedPlatformType,
                               decoration: InputDecoration(
-                                helperText: _platformTypeError
+                                errorText: _platformTypeError
                                     ? strings.requiredFieldError
                                     : null,
-                                helperStyle: textStyles.bodySmall?.copyWith(
-                                  color: colors.error,
-                                ),
                                 filled: true,
                                 fillColor: colors.surface,
                                 border: OutlineInputBorder(
@@ -1034,7 +1029,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                         ),
                                         const Gap(8),
                                         Text(
-                                          strings.caliberLabel.toUpperCase(),
+                                          '${strings.caliberLabel.toUpperCase()} *',
                                           style: textStyles.labelLarge
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w900,
@@ -1045,64 +1040,65 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                       ],
                                     ),
                                     const Gap(8),
-                                    TextField(
-                                      controller: _caliberController,
-                                      maxLength: 50,
-                                      inputFormatters: [
-                                        LengthLimitingTextInputFormatter(50),
-                                      ],
-                                      onChanged: (_) {
-                                        if (_caliberError &&
-                                            _caliberController.text
-                                                .trim()
-                                                .isNotEmpty) {
-                                          setState(() => _caliberError = false);
-                                        }
-                                      },
-                                      decoration: InputDecoration(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 10,
-                                            ),
-                                        hintText: strings.itemCaliberHint,
-                                        counterText: '',
-                                        hintStyle: textStyles.bodyMedium
-                                            ?.copyWith(
-                                              color: colors.onSurface.withAlpha(
-                                                100,
+                                    Container(
+                                      key: _caliberFieldKey,
+                                      child: TextField(
+                                        controller: _caliberController,
+                                        maxLength: 50,
+                                        inputFormatters: [
+                                          LengthLimitingTextInputFormatter(50),
+                                        ],
+                                        onChanged: (_) {
+                                          if (_caliberError &&
+                                              _caliberController.text
+                                                  .trim()
+                                                  .isNotEmpty) {
+                                            setState(() => _caliberError = false);
+                                          }
+                                        },
+                                        decoration: InputDecoration(
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 10,
                                               ),
+                                          hintText: strings.itemCaliberHint,
+                                          counterText: '',
+                                          hintStyle: textStyles.bodyMedium
+                                              ?.copyWith(
+                                                color: colors.onSurface.withAlpha(
+                                                  100,
+                                                ),
+                                              ),
+                                          errorText: _caliberError
+                                              ? strings.requiredFieldError
+                                              : null,
+                                          filled: true,
+                                          fillColor: colors.surface,
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.lg,
                                             ),
-                                        helperText: _caliberError
-                                            ? strings.requiredFieldError
-                                            : null,
-                                        helperStyle: textStyles.bodySmall
-                                            ?.copyWith(color: colors.error),
-                                        filled: true,
-                                        fillColor: colors.surface,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.lg,
+                                            borderSide: BorderSide(
+                                              color: colors.outline,
+                                            ),
                                           ),
-                                          borderSide: BorderSide(
-                                            color: colors.outline,
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.lg,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: colors.outline,
+                                            ),
                                           ),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.lg,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colors.outline,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.lg,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colors.primary,
-                                            width: 1.6,
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.lg,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: colors.primary,
+                                              width: 1.6,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1122,7 +1118,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               ),
                               const Gap(8),
                               Text(
-                                strings.typeLabel.toUpperCase(),
+                                '${strings.typeLabel.toUpperCase()} *',
                                 style: textStyles.labelLarge?.copyWith(
                                   fontWeight: FontWeight.w900,
                                   color: colors.onSurface,
@@ -1525,7 +1521,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                         ),
                                         const Gap(8),
                                         Text(
-                                          strings.typeLabel.toUpperCase(),
+                                          '${strings.typeLabel.toUpperCase()} *',
                                           style: textStyles.labelLarge
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w900,
@@ -1578,11 +1574,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                               .toList();
                                         },
                                         decoration: InputDecoration(
-                                          helperText: _accessoryTypeError
+                                          errorText: _accessoryTypeError
                                               ? strings.requiredFieldError
                                               : null,
-                                          helperStyle: textStyles.bodySmall
-                                              ?.copyWith(color: colors.error),
                                           filled: true,
                                           fillColor: colors.surface,
                                           border: OutlineInputBorder(

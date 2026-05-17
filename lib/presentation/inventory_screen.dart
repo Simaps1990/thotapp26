@@ -319,37 +319,34 @@ class _InventoryScreenState extends State<InventoryScreen>
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            key: _menuSearchKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    AppSpacing.lg,
-                                    20,
-                                    AppSpacing.lg,
-                                    10,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                            ),
+                            child: Container(
+                              key: _menuSearchKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 20,
+                                      bottom: 10,
+                                    ),
+                                    child: _SlidingSegmentedSelector(
+                                      selectedIndex: _tabController.index,
+                                      labels: [
+                                        strings.platformsTab,
+                                        strings.ammosTab,
+                                        strings.accessoriesTab,
+                                      ],
+                                      onSelected: (index) {
+                                        _tabController.animateTo(index);
+                                      },
+                                    ),
                                   ),
-                                  child: _SlidingSegmentedSelector(
-                                    selectedIndex: _tabController.index,
-                                    labels: [
-                                      strings.platformsTab,
-                                      strings.ammosTab,
-                                      strings.accessoriesTab,
-                                    ],
-                                    onSelected: (index) {
-                                      _tabController.animateTo(index);
-                                    },
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    AppSpacing.lg,
-                                    0,
-                                    AppSpacing.lg,
-                                    8,
-                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
                                   child: TextField(
                                     controller: _searchController,
                                     style: Theme.of(context)
@@ -424,7 +421,8 @@ class _InventoryScreenState extends State<InventoryScreen>
                               ],
                             ),
                           ),
-                        ],
+                        ),
+                      ],
                       ),
                     ),
                   ),

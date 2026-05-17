@@ -391,6 +391,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final rootOverlay = Overlay.of(context, rootOverlay: true);
     rootOverlay.insert(_tutorialOverlayEntry!);
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onTutorialStepChanged(int stepIndex) {
@@ -402,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _statsKey,
       _rewardsKey,
     ];
-    final stepAlignments = <double>[0.12, 0.12, 0.12, 0.05, 0.12, 0.12];
+    final stepAlignments = <double>[0.4, 0.4, 0.4, 0.4, 0.4, 0.4];
     if (stepIndex < 0 || stepIndex >= stepKeys.length) return;
 
     final contextForStep = stepKeys[stepIndex].currentContext;
@@ -412,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted || stepKeys[stepIndex].currentContext == null) return;
       Scrollable.ensureVisible(
         stepKeys[stepIndex].currentContext!,
-        duration: const Duration(milliseconds: 420),
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
         alignment: stepAlignments[stepIndex],
       );
@@ -429,7 +433,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onTrainingHistoryUpdate() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      context.read<ThotProvider>().checkAchievements();
+      setState(() {});
+    }
   }
 
   Future<void> _loadTrainingHistory() async {
@@ -2045,7 +2052,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              if (_tutorialOverlayEntry != null) const SizedBox(height: 160),
+              if (_tutorialOverlayEntry != null) const SizedBox(height: 300),
               const Gap(AppSpacing.lg),
             ],
           ),

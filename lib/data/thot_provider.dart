@@ -753,9 +753,15 @@ class ThotProvider extends ChangeNotifier {
     }
   }
 
+  @override
+  void notifyListeners() {
+    _checkAchievements();
+    super.notifyListeners();
+  }
+
   void checkAchievements() {
     _checkAchievements();
-    notifyListeners();
+    super.notifyListeners();
   }
 
   void _checkAchievements() {
@@ -768,8 +774,6 @@ class ThotProvider extends ChangeNotifier {
         }
       }
     }
-    // No need to notifyListeners immediately here since `_checkAchievements()`
-    // is called right before `notifyListeners()` during state mutations or init.
   }
 
   // User Profile & Preferences
@@ -2919,9 +2923,6 @@ class ThotProvider extends ChangeNotifier {
         }
         return;
       }
-
-      // Check recent achievements
-      _checkAchievements();
 
       // Save achievements
       await prefs.setStringList(

@@ -427,52 +427,49 @@ class _SessionListScreenState extends State<SessionListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            key: _menuSearchKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    AppSpacing.lg,
-                                    20,
-                                    AppSpacing.lg,
-                                    10,
-                                  ),
-                                  child: SizedBox(
-                                    height: 44,
-                                    child: _SlidingSegmentedSelector(
-                                      selectedIndex: _selectedIndex,
-                                      labels: [
-                                        strings.sessionsFilterAll,
-                                        strings.sessionsFilterMonth,
-                                        strings.sessionsFilter7Days,
-                                      ],
-                                      onSelected: (index) {
-                                        setState(() {
-                                          switch (index) {
-                                            case 0:
-                                              _selectedFilter = 'all';
-                                              break;
-                                            case 1:
-                                              _selectedFilter = 'month';
-                                              break;
-                                            case 2:
-                                              _selectedFilter = '7days';
-                                              break;
-                                          }
-                                        });
-                                      },
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                            ),
+                            child: Container(
+                              key: _menuSearchKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 20,
+                                      bottom: 10,
+                                    ),
+                                    child: SizedBox(
+                                      height: 44,
+                                      child: _SlidingSegmentedSelector(
+                                        selectedIndex: _selectedIndex,
+                                        labels: [
+                                          strings.sessionsFilterAll,
+                                          strings.sessionsFilterMonth,
+                                          strings.sessionsFilter7Days,
+                                        ],
+                                        onSelected: (index) {
+                                          setState(() {
+                                            switch (index) {
+                                              case 0:
+                                                _selectedFilter = 'all';
+                                                break;
+                                              case 1:
+                                                _selectedFilter = 'month';
+                                                break;
+                                              case 2:
+                                                _selectedFilter = '7days';
+                                                break;
+                                            }
+                                          });
+                                        },
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    AppSpacing.lg,
-                                    0,
-                                    AppSpacing.lg,
-                                    8,
-                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
                                   child: TextField(
                                     controller: _searchController,
                                     style: Theme.of(context)
@@ -547,7 +544,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
                               ],
                             ),
                           ),
-                        ],
+                        ),
+                      ],
                       ),
                     ),
                   ),

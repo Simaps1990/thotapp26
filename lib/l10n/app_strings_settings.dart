@@ -632,12 +632,12 @@ extension AppStringsSettings on AppStrings {
   );
 
   String get proHeroUnlockTitle => _pick(
-    fr: 'Tout ton arsenal, sans limite',
-    en: 'Your full arsenal, no limits',
-    de: 'Dein gesamtes Arsenal, ohne Grenzen',
-    it: 'Tutto il tuo arsenale, senza limiti',
-    es: 'Todo tu arsenal, sin límites',
-  );
+fr: 'Tout ton matériel, sans limite',
+en: 'All your gear, without limits',
+de: 'Deine gesamte Ausrüstung, ohne Limit',
+it: 'Tutta la tua attrezzatura, senza limiti',
+es: 'Todo tu equipo, sin límites',
+);
 
   String get proHeroUnlockSubtitle => _pick(
     fr: 'Le carnet de tir conçu pour les professionnels.',

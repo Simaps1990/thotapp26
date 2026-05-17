@@ -192,7 +192,11 @@ class _DissociationRunScreenState extends State<_DissociationRunScreen>
     });
 
     // Schedule first stimulus
-    _scheduleNextStimulus();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && !_showResults) {
+        _scheduleNextStimulus();
+      }
+    });
 
     // Rule switching timer (if enabled)
     if (widget.enableRuleSwitch) {
@@ -614,21 +618,25 @@ class _DissociationRunScreenState extends State<_DissociationRunScreen>
     if (_handlingTempoTap) return;
     _handlingTempoTap = true;
 
-    final now = DateTime.now();
-    final expected = _lastTempoExpectedTime;
+    if (_shouldTapLeft) {
+      // Valid tempo tap
+      _tempoTapCount++;
+      _validTempoTapCount++;
+      _tempoHitThisBeat = true;
 
-    if (expected != null) {
-      final diff = now.difference(expected).inMilliseconds.abs();
-      if (diff <= widget.tempoToleranceMs) {
-        // Valid tempo tap
-        _tempoTapCount++;
-        _validTempoTapCount++;
+      final expected = _lastTempoExpectedTime;
+      if (expected != null) {
+        final diff = DateTime.now().difference(expected).inMilliseconds.abs();
         _tempoDeviations.add(diff);
-        _tempoHitThisBeat = true;
-      } else {
-        // Off-beat tap (error)
-        _tempoErrors++;
       }
+
+      setState(() {
+        _shouldTapLeft = false;
+        _tempoPulseValue = 0.0;
+      });
+    } else {
+      // Off-beat tap (error)
+      _tempoErrors++;
     }
 
     Future.delayed(const Duration(milliseconds: 50), () {
@@ -675,6 +683,7 @@ class _DissociationRunScreenState extends State<_DissociationRunScreen>
       }
 
       _clearStimulus();
+      _scheduleNextStimulus();
     }
 
     Future.delayed(const Duration(milliseconds: 50), () {
@@ -1199,25 +1208,7 @@ class _DissociationRunScreenState extends State<_DissociationRunScreen>
                                           ],
                                         ),
                                       ),
-                                      child: Center(
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 150),
-                                          width: 70 + (_tempoPulseValue * 40),
-                                          height: 70 + (_tempoPulseValue * 40),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.white.withValues(
-                                              alpha: 0.1 + (_tempoPulseValue * 0.3),
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.3 + (_tempoPulseValue * 0.4),
-                                              ),
-                                              width: 2,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
+                                      child: const SizedBox(),
                                     ),
                                   ),
                                 ),

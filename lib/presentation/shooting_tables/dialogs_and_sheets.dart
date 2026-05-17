@@ -265,52 +265,63 @@ extension _ShootingTablesDialogsAndSheets on _ShootingTablesScreenState {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              strings.shootingTableImportDescription,
-                              style: textStyles.bodyMedium?.copyWith(
-                                color: colors.secondary,
-                                height: 1.35,
-                              ),
+                      Text(
+                        strings.shootingTableImportDescription,
+                        style: textStyles.bodyMedium?.copyWith(
+                          color: colors.secondary,
+                          height: 1.35,
+                        ),
+                      ),
+                      const Gap(AppSpacing.lg),
+                      Center(
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor:
+                                colors.primary.withValues(alpha: 0.1),
+                            foregroundColor: colors.primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
                           ),
-                          const Gap(AppSpacing.md),
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor:
-                                  colors.primary.withValues(alpha: 0.1),
-                              foregroundColor: colors.primary,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.qr_code_scanner_rounded,
-                              size: 20,
-                            ),
-                            label: Text(strings.shootingTableImportScanQr),
-                            onPressed: () async {
-                              final code = await Navigator.of(
-                                context,
-                              ).push<String>(
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) =>
-                                          const ShootingTableQrScannerScreen(),
-                                ),
-                              );
-                              if (code != null && code.trim().isNotEmpty) {
-                                controller.text = code.trim();
-                              }
-                            },
+                          icon: const Icon(
+                            Icons.qr_code_scanner_rounded,
+                            size: 20,
                           ),
-                        ],
+                          label: Text(strings.shootingTableImportScanQr),
+                          onPressed: () async {
+                            final code = await Navigator.of(
+                              context,
+                            ).push<String>(
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => const ShootingTableQrScannerScreen(),
+                              ),
+                            );
+                            if (code != null && code.trim().isNotEmpty) {
+                              controller.text = code.trim();
+                            }
+                          },
+                        ),
                       ),
                       const Gap(AppSpacing.md),
+                      Center(
+                        child: Text(
+                          strings.orWord.toUpperCase(),
+                          style: textStyles.labelMedium?.copyWith(
+                            color: colors.secondary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSpacing.md),
+                      Text(
+                        strings.shootingTableImportPasteCode,
+                        style: textStyles.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Gap(AppSpacing.sm),
                       SizedBox(
                         height: 150,
                         child: TextField(

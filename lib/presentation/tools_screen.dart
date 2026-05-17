@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:thot/widgets/tutorial_overlay.dart';
 
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/l10n/app_strings.dart';
@@ -44,12 +47,95 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
   bool _hasAutoOpenedTool = false;
 
+  final GlobalKey _trainingKey = GlobalKey();
+  final GlobalKey _calculationKey = GlobalKey();
+  final GlobalKey _maintenanceKey = GlobalKey();
+  OverlayEntry? _tutorialOverlayEntry;
+  static const _tutorialNeverShowAgainKey =
+      'tools_tutorial_never_show_again_v1';
+  bool _tutorialDismissedThisSession = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowTutorial();
       _handleInitialOpenTool();
     });
+  }
+
+  Future<void> _checkAndShowTutorial() async {
+    if (_tutorialDismissedThisSession) return;
+    final prefs = await SharedPreferences.getInstance();
+    final neverShowAgain = prefs.getBool(_tutorialNeverShowAgainKey) ?? false;
+    if (!neverShowAgain && mounted && _tutorialOverlayEntry == null) {
+      _showTutorial();
+    }
+  }
+
+  void _showTutorial() {
+    final strings = AppStrings.of(context);
+    final steps = [
+      TutorialStep(
+        title: strings.tutorialToolsIntroTitle,
+        description: strings.tutorialToolsIntroDescription,
+      ),
+      TutorialStep(
+        targetKey: _trainingKey,
+        title: strings.tutorialToolsTrainingTitle,
+        description: strings.tutorialToolsTrainingDescription,
+      ),
+      TutorialStep(
+        targetKey: _calculationKey,
+        title: strings.tutorialToolsCalculationTitle,
+        description: strings.tutorialToolsCalculationDescription,
+      ),
+      TutorialStep(
+        targetKey: _maintenanceKey,
+        title: strings.tutorialToolsMaintenanceTitle,
+        description: strings.tutorialToolsMaintenanceDescription,
+      ),
+    ];
+
+    _tutorialOverlayEntry = OverlayEntry(
+      builder: (_) => TutorialOverlay(
+        steps: steps,
+        onComplete: () {
+          _hideTutorial();
+        },
+        onSkip: () {
+          _hideTutorial();
+        },
+        onNeverShowAgain: () async {
+          _hideTutorial();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(_tutorialNeverShowAgainKey, true);
+        },
+      ),
+    );
+
+    final rootOverlay = Overlay.of(context, rootOverlay: true);
+    if (rootOverlay == null) return;
+    rootOverlay.insert(_tutorialOverlayEntry!);
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _hideTutorial() {
+    _tutorialOverlayEntry?.remove();
+    _tutorialOverlayEntry = null;
+    _tutorialDismissedThisSession = true;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _tutorialOverlayEntry?.remove();
+    super.dispose();
   }
 
   @override
@@ -354,61 +440,91 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      toolSectionTitle(strings.toolsTrainingSectionTitle),
-                      toolButton(
-                        icon: Icons.timer_rounded,
-                        title: strings.homeTimerTitle,
-                        subtitle: strings.homeTimerSubtitle,
-                        onTap: _openTimer,
-                        iconColors: const [_timerColor],
-                      ),
-                      const Gap(AppSpacing.md),
-                      toolButton(
-                        icon: Icons.palette_rounded,
-                        title: strings.visualStimulusToolTitle,
-                        subtitle: strings.visualStimulusToolSubtitle,
-                        onTap: () => _openVisualStimulus(provider),
-                        iconColors: const [_visualStimuliColor],
-                      ),
-                      const Gap(AppSpacing.md),
-                      toolButton(
-                        icon: Icons.bolt_rounded,
-                        title: strings.reflexesToolTitle,
-                        subtitle: strings.reflexesToolSubtitle,
-                        onTap: () => _openReflexes(provider),
-                        iconColors: const [_reflexesColor],
-                      ),
-                      const Gap(AppSpacing.lg),
-                      toolSectionTitle(strings.toolsCalculationSectionTitle),
-                      toolButton(
-                        icon: Icons.calculate_rounded,
-                        title: strings.calculationsToolTitle,
-                        subtitle: strings.calculationsToolSubtitle,
-                        onTap: _openCalculations,
-                        iconColors: const [_calculationsColor],
-                      ),
-                      const Gap(AppSpacing.md),
-                      toolButton(
-                        icon: Icons.table_chart_outlined,
-                        title: strings.shootingTablesToolTitle,
-                        subtitle: strings.shootingTablesToolSubtitle,
-                        onTap: () => _openShootingTables(provider),
-                        isLocked: provider.isToolLockedForFree(
-                          'shooting_tables',
+                      Container(
+                        key: _trainingKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            toolSectionTitle(strings.toolsTrainingSectionTitle),
+                            toolButton(
+                              icon: Icons.timer_rounded,
+                              title: strings.homeTimerTitle,
+                              subtitle: strings.homeTimerSubtitle,
+                              onTap: _openTimer,
+                              iconColors: const [_timerColor],
+                            ),
+                            const Gap(AppSpacing.md),
+                            toolButton(
+                              icon: Icons.palette_rounded,
+                              title: strings.visualStimulusToolTitle,
+                              subtitle: strings.visualStimulusToolSubtitle,
+                              onTap: () => _openVisualStimulus(provider),
+                              iconColors: const [_visualStimuliColor],
+                            ),
+                            const Gap(AppSpacing.md),
+                            toolButton(
+                              icon: Icons.bolt_rounded,
+                              title: strings.reflexesToolTitle,
+                              subtitle: strings.reflexesToolSubtitle,
+                              onTap: () => _openReflexes(provider),
+                              iconColors: const [_reflexesColor],
+                            ),
+                          ],
                         ),
-                        iconColors: const [_tablesColor],
                       ),
                       const Gap(AppSpacing.lg),
-                      toolSectionTitle(strings.toolsMaintenanceSectionTitle),
-                      toolButton(
-                        icon: Icons.medical_services_outlined,
-                        title: strings.homeDiagnosticTitle,
-                        subtitle: strings.homeDiagnosticSubtitle,
-                        onTap: () => _openDiagnostic(provider),
-                        isLocked: provider.isToolLockedForFree('diagnostics'),
-                        iconColors: const [_diagnosticColor],
+                      Container(
+                        key: _calculationKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            toolSectionTitle(
+                              strings.toolsCalculationSectionTitle,
+                            ),
+                            toolButton(
+                              icon: Icons.calculate_rounded,
+                              title: strings.calculationsToolTitle,
+                              subtitle: strings.calculationsToolSubtitle,
+                              onTap: _openCalculations,
+                              iconColors: const [_calculationsColor],
+                            ),
+                            const Gap(AppSpacing.md),
+                            toolButton(
+                              icon: Icons.table_chart_outlined,
+                              title: strings.shootingTablesToolTitle,
+                              subtitle: strings.shootingTablesToolSubtitle,
+                              onTap: () => _openShootingTables(provider),
+                              isLocked: provider.isToolLockedForFree(
+                                'shooting_tables',
+                              ),
+                              iconColors: const [_tablesColor],
+                            ),
+                          ],
+                        ),
                       ),
-                      const Gap(40),
+                      const Gap(AppSpacing.lg),
+                      Container(
+                        key: _maintenanceKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            toolSectionTitle(
+                              strings.toolsMaintenanceSectionTitle,
+                            ),
+                            toolButton(
+                              icon: Icons.medical_services_outlined,
+                              title: strings.homeDiagnosticTitle,
+                              subtitle: strings.homeDiagnosticSubtitle,
+                              onTap: () => _openDiagnostic(provider),
+                              isLocked: provider.isToolLockedForFree(
+                                'diagnostics',
+                              ),
+                              iconColors: const [_diagnosticColor],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Gap(_tutorialOverlayEntry != null ? 300 : 40),
                     ],
                   ),
                 ),

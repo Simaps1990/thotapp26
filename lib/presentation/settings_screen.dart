@@ -112,6 +112,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final rootOverlay = Overlay.of(context, rootOverlay: true);
     rootOverlay.insert(_tutorialOverlayEntry!);
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _hideTutorial() {
@@ -1570,7 +1574,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         provider: provider,
                         colors: colors,
                       ),
-                      const Gap(AppSpacing.xl),
+                      Gap(_tutorialOverlayEntry != null ? 300 : AppSpacing.xl),
                     ],
                   ),
                 ),

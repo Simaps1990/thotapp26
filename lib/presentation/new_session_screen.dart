@@ -577,7 +577,7 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
           height: 18,
           colorFilter: ColorFilter.mode(colors.primary, BlendMode.srcIn),
         ),
-        title: strings.exercisesSectionTitle,
+        title: '${strings.exercisesSectionTitle} *',
       ),
       const Gap(AppSpacing.sm),
       Row(

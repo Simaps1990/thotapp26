@@ -482,11 +482,18 @@ extension AppStringsShootingTables on AppStrings {
     es: 'Importa una tabla de ajuste creada por otra persona para una plataforma. Ideal para compartir ajustes en material colectivo.',
   );
   String get shootingTableImportPasteCode => _pick(
-    fr: 'Coller un code',
-    en: 'Paste a code',
-    de: 'Code einfügen',
-    it: 'Incolla un codice',
-    es: 'Pegar un código',
+    fr: 'Coller le code d\'import',
+    en: 'Paste the import code',
+    de: 'Importcode einfügen',
+    it: 'Incolla il codice di importazione',
+    es: 'Pegar el código de importación',
+  );
+  String get orWord => _pick(
+    fr: 'OU',
+    en: 'OR',
+    de: 'ODER',
+    it: 'O',
+    es: 'O',
   );
   String get shootingTableImportScanQr => _pick(
     fr: 'Scanner un QR',
