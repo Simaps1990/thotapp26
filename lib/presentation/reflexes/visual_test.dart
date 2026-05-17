@@ -80,11 +80,13 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
   _ReflexSessionRecord? _currentResult;
 
   int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
+    final strings = AppStrings.of(context);
     return _scoredValue(
       b.mode,
       b.primaryScore,
       b.stats,
-    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats));
+      strings,
+    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats, strings));
   }
 
   String _formatDate(DateTime dt) {
@@ -526,147 +528,157 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _AnimatedLevelStarsBlock(
-                          level: widget.level,
-                          score: _scoredValue(
+                        Builder(builder: (ctx) {
+                          final stoppedEarly = _currentResult!.stats['_stopped_early'] == '1';
+                          final computedScore = _scoredValue(
                             _currentResult!.mode,
                             _currentResult!.primaryScore,
                             _currentResult!.stats,
-                          ),
-                          stars: _starsForScore(
-                            _scoredValue(
-                              _currentResult!.mode,
-                              _currentResult!.primaryScore,
-                              _currentResult!.stats,
+                            strings,
+                          );
+                          return _AnimatedLevelStarsBlock(
+                            level: widget.level,
+                            score: stoppedEarly ? 0 : computedScore,
+                            stars: stoppedEarly ? 0 : _starsForScore(computedScore),
+                          );
+                        }),
+                        const Gap(AppSpacing.lg),
+                        if (_currentResult!.stats['_stopped_early'] != '1')
+                          Container(
+                            padding: AppSpacing.paddingLg,
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: colors.outline),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  strings.reflexesPerformance,
+                                  style: texts.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.secondary,
+                                  ),
+                                ),
+                                const Gap(AppSpacing.md),
+                                _ScoreEquationBlock(
+                                  mode: _currentResult!.mode,
+                                  primaryScore: _currentResult!.primaryScore,
+                                  stats: _currentResult!.stats,
+                                ),
+                                const Gap(AppSpacing.md),
+                                _buildStatRow(
+                                  texts,
+                                  colors,
+                                  strings.reflexesStimuliCountLabel,
+                                  _currentResult!.stats[strings
+                                          .reflexesStimuliCountLabel] ??
+                                      '',
+                                ),
+                                _buildStatRow(
+                                  texts,
+                                  colors,
+                                  strings.reflexesAvgReactionTime,
+                                  '${_currentResult!.stats[strings.reflexesAvgReactionTime] ?? ''} ms',
+                                ),
+                                _buildStatRow(
+                                  texts,
+                                  colors,
+                                  strings.reflexesStdDevReactionTime,
+                                  '${_currentResult!.stats[strings.reflexesStdDevReactionTime] ?? ''} ms',
+                                ),
+                                _buildStatRow(
+                                  texts,
+                                  colors,
+                                  strings.reflexesMinReactionTime,
+                                  '${_currentResult!.stats[strings.reflexesMinReactionTime] ?? ''} ms',
+                                ),
+                                _buildStatRow(
+                                  texts,
+                                  colors,
+                                  strings.reflexesMaxReactionTime,
+                                  '${_currentResult!.stats[strings.reflexesMaxReactionTime] ?? ''} ms',
+                                ),
+                                _buildStatRow(
+                                  texts,
+                                  colors,
+                                  strings.reflexesFalseStarts,
+                                  _currentResult!.stats[strings
+                                          .reflexesFalseStarts] ??
+                                      '',
+                                ),
+                              ],
                             ),
                           ),
-                        ),
                         const Gap(AppSpacing.lg),
-                        Container(
-                          padding: AppSpacing.paddingLg,
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: colors.outline),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                strings.reflexesPerformance,
-                                style: texts.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: colors.secondary,
-                                ),
-                              ),
-                              const Gap(AppSpacing.md),
-                              _ScoreEquationBlock(
-                                mode: _currentResult!.mode,
-                                primaryScore: _currentResult!.primaryScore,
-                                stats: _currentResult!.stats,
-                              ),
-                              const Gap(AppSpacing.md),
-                              _buildStatRow(
-                                texts,
-                                colors,
-                                strings.reflexesStimuliCountLabel,
-                                _currentResult!.stats[strings
-                                        .reflexesStimuliCountLabel] ??
-                                    '',
-                              ),
-                              _buildStatRow(
-                                texts,
-                                colors,
-                                strings.reflexesAvgReactionTime,
-                                '${_currentResult!.stats[strings.reflexesAvgReactionTime] ?? ''} ms',
-                              ),
-                              _buildStatRow(
-                                texts,
-                                colors,
-                                strings.reflexesStdDevReactionTime,
-                                '${_currentResult!.stats[strings.reflexesStdDevReactionTime] ?? ''} ms',
-                              ),
-                              _buildStatRow(
-                                texts,
-                                colors,
-                                strings.reflexesMinReactionTime,
-                                '${_currentResult!.stats[strings.reflexesMinReactionTime] ?? ''} ms',
-                              ),
-                              _buildStatRow(
-                                texts,
-                                colors,
-                                strings.reflexesMaxReactionTime,
-                                '${_currentResult!.stats[strings.reflexesMaxReactionTime] ?? ''} ms',
-                              ),
-                              _buildStatRow(
-                                texts,
-                                colors,
-                                strings.reflexesFalseStarts,
-                                _currentResult!.stats[strings
-                                        .reflexesFalseStarts] ??
-                                    '',
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Gap(AppSpacing.lg),
-                        SizedBox(
-                          height: 52,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: () {
-                                    widget.onResultSaved?.call(_currentResult!);
-                                    setState(() {
-                                      _showResults = false;
-                                      _currentResult = null;
-                                    });
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                          if (mounted) _startCountdown();
-                                        });
-                                  },
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor:
-                                        colors.surfaceContainerHighest,
-                                    foregroundColor: colors.onSurfaceVariant,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                        Builder(builder: (context) {
+                          final earnedStars = _currentResult!.stats['_stopped_early'] == '1' ? 0 : _starsForScore(_scoredValue(
+                            _currentResult!.mode,
+                            _currentResult!.primaryScore,
+                            _currentResult!.stats,
+                            strings,
+                          ));
+                          return SizedBox(
+                            height: 52,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: () {
+                                      widget.onResultSaved?.call(_currentResult!);
+                                      setState(() {
+                                        _showResults = false;
+                                        _currentResult = null;
+                                      });
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                            if (mounted) _startCountdown();
+                                          });
+                                    },
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor:
+                                          colors.surfaceContainerHighest,
+                                      foregroundColor: colors.onSurfaceVariant,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.replay_rounded,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      strings.colorPodRestart.toUpperCase(),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  icon: const Icon(
-                                    Icons.replay_rounded,
-                                    size: 20,
-                                  ),
-                                  label: Text(
-                                    strings.colorPodRestart.toUpperCase(),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                 ),
-                              ),
-                              const Gap(AppSpacing.sm),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: _nextLevel,
-                                  style: FilledButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                if (earnedStars > 0) ...[  
+                                  const Gap(AppSpacing.sm),
+                                  Expanded(
+                                    child: FilledButton.icon(
+                                      onPressed: _nextLevel,
+                                      style: FilledButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
+                                      label: Text(
+                                        strings.colorPodNext.toUpperCase(),
+                                      ),
+                                      iconAlignment: IconAlignment.end,
                                     ),
                                   ),
-                                  icon: const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20,
-                                  ),
-                                  label: Text(
-                                    strings.colorPodNext.toUpperCase(),
-                                  ),
-                                  iconAlignment: IconAlignment.end,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }),
                         const Gap(AppSpacing.lg),
                         Container(
                           padding: AppSpacing.paddingLg,
@@ -728,7 +740,7 @@ class _ReactionRunScreenState extends State<_ReactionRunScreen>
                                         const Gap(AppSpacing.sm),
                                         Expanded(
                                           child: Text(
-                                            '${_scoredValue(record.mode, record.primaryScore, record.stats).toStringAsFixed(0)} pts',
+                                            '${_scoredValue(record.mode, record.primaryScore, record.stats, strings).toStringAsFixed(0)} pts',
                                             style: texts.bodyMedium?.copyWith(
                                               fontWeight: FontWeight.w700,
                                             ),

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:path_provider/path_provider.dart';
 
 /// Persists user-picked images into the app's sandbox so they survive
@@ -18,7 +18,6 @@ abstract final class ImageStorage {
   /// Returns null if the source file is missing.
   static Future<String?> persistFromPath(String? sourcePath) async {
     if (sourcePath == null || sourcePath.trim().isEmpty) return sourcePath;
-    if (kIsWeb) return sourcePath;
     if (sourcePath.startsWith('data:')) return sourcePath;
 
     try {
@@ -49,7 +48,7 @@ abstract final class ImageStorage {
   /// Deletes a previously-persisted image (only files inside the sandbox
   /// photos dir are touched).
   static Future<void> deletePersisted(String? path) async {
-    if (path == null || path.isEmpty || kIsWeb) return;
+    if (path == null || path.isEmpty) return;
     if (path.startsWith('data:')) return;
     try {
       final docsDir = await getApplicationDocumentsDirectory();
@@ -64,7 +63,6 @@ abstract final class ImageStorage {
 
   /// Wipes the entire sandbox photos dir. Used by "delete all data".
   static Future<void> wipeAll() async {
-    if (kIsWeb) return;
     try {
       final docsDir = await getApplicationDocumentsDirectory();
       final photosDir = Directory('${docsDir.path}/$_photosSubdir');
@@ -79,7 +77,6 @@ abstract final class ImageStorage {
   /// Wipes the user_documents dir (PDFs uploaded by the user). Used by
   /// "delete all data".
   static Future<void> wipeUserDocuments() async {
-    if (kIsWeb) return;
     try {
       final docsDir = await getApplicationDocumentsDirectory();
       final userDocsDir = Directory('${docsDir.path}/user_documents');

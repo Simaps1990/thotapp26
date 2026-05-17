@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart'
-    show kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
+    show debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:pointycastle/export.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -47,8 +47,6 @@ class ThotFileStore {
   }
 
   Future<void> writeDomainData(String rawJson) async {
-    if (kIsWeb) return;
-
     final file = await _getAppDataFile();
     final tempFile = await _getAppDataTempFile();
     final backupFile = await _getAppDataBackupFile();
@@ -78,8 +76,6 @@ class ThotFileStore {
   }
 
   Future<Map<String, dynamic>?> readDomainData() async {
-    if (kIsWeb) return null;
-
     final file = await _getAppDataFile();
 
     if (!await file.exists()) {
@@ -141,8 +137,6 @@ class ThotFileStore {
   }
 
   Future<void> clearDomainData() async {
-    if (kIsWeb) return;
-
     final file = await _getAppDataFile();
     final tempFile = await _getAppDataTempFile();
     final backupFile = await _getAppDataBackupFile();
@@ -221,12 +215,11 @@ class _LegacyEncryptedReader {
   static const _androidOpts = AndroidOptions();
 
   bool get _isApple =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.iOS ||
-          defaultTargetPlatform == TargetPlatform.macOS);
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS;
 
   bool get _isAndroid =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      defaultTargetPlatform == TargetPlatform.android;
 
   String _obfuscate(String b64) {
     final bytes = base64Decode(b64);

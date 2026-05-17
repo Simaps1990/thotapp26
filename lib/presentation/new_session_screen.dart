@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, debugPrint;
+    show defaultTargetPlatform, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -855,64 +855,65 @@ class _NewSessionScreenState extends State<NewSessionScreen> {
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
         child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: GestureDetector(
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          child: SafeArea(
-            top: false,
-            bottom: false,
-            child: Column(
-              children: [
-                _buildHeader(
-                  colors: colors,
-                  textStyles: textStyles,
-                  topInset: MediaQuery.paddingOf(context).top,
-                ),
+          resizeToAvoidBottomInset: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: SafeArea(
+              top: false,
+              bottom: false,
+              child: Column(
+                children: [
+                  _buildHeader(
+                    colors: colors,
+                    textStyles: textStyles,
+                    topInset: MediaQuery.paddingOf(context).top,
+                  ),
 
-                Expanded(
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    controller: _sessionScrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ..._buildGeneralInfoSection(
-                            context: context,
-                            colors: colors,
-                            textStyles: textStyles,
-                          ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      controller: _sessionScrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ..._buildGeneralInfoSection(
+                              context: context,
+                              colors: colors,
+                              textStyles: textStyles,
+                            ),
 
-                          ..._buildWeatherSection(
-                            colors: colors,
-                            textStyles: textStyles,
-                            converter: converter,
-                          ),
+                            ..._buildWeatherSection(
+                              colors: colors,
+                              textStyles: textStyles,
+                              converter: converter,
+                            ),
 
-                          ..._buildExercisesSection(
-                            colors: colors,
-                            textStyles: textStyles,
-                            provider: provider,
-                          ),
+                            ..._buildExercisesSection(
+                              colors: colors,
+                              textStyles: textStyles,
+                              provider: provider,
+                            ),
 
-                          ..._buildSummarySection(
-                            colors: colors,
-                            provider: provider,
-                          ),
+                            ..._buildSummarySection(
+                              colors: colors,
+                              provider: provider,
+                            ),
 
-                          ..._buildSaveSection(colors: colors),
-                          SizedBox(height: MediaQuery.paddingOf(context).bottom),
-                        ],
+                            ..._buildSaveSection(colors: colors),
+                            SizedBox(height: MediaQuery.paddingOf(context).bottom),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),

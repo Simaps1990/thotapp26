@@ -639,167 +639,165 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _AnimatedLevelStarsBlock(
-                          level: widget.level,
-                          score:
-                              double.tryParse(
-                                _currentResult!['_score_final'] ?? '0',
-                              ) ??
-                              0,
-                          stars: _starsForScore(
-                            double.tryParse(
-                                  _currentResult!['_score_final'] ?? '0',
-                                ) ??
-                                0,
-                          ),
-                        ),
+                        Builder(builder: (ctx) {
+                          final stoppedEarly = _currentResult!['_stopped_early'] == '1';
+                          final computedScore = double.tryParse(
+                            _currentResult!['_score_final'] ?? '0',
+                          ) ?? 0;
+                          return _AnimatedLevelStarsBlock(
+                            level: widget.level,
+                            score: stoppedEarly ? 0 : computedScore,
+                            stars: stoppedEarly ? 0 : _starsForScore(computedScore),
+                          );
+                        }),
                         const Gap(AppSpacing.lg),
-                        Container(
-                          padding: AppSpacing.paddingLg,
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: colors.outline),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                strings.reflexesPerformance,
-                                style: texts.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: colors.secondary,
+                        if (_currentResult!['_stopped_early'] != '1')
+                          Container(
+                            padding: AppSpacing.paddingLg,
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: colors.outline),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  strings.reflexesPerformance,
+                                  style: texts.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.secondary,
+                                  ),
                                 ),
-                              ),
-                              const Gap(AppSpacing.md),
-                              _ScoreEquationBlock(
-                                mode: _ReflexesMode.stroop,
-                                primaryScore:
-                                    double.tryParse(
-                                      _currentResult!['_score_final'] ?? '',
-                                    ) ??
-                                    0,
-                                stats: _currentResult!,
-                              ),
-                              const Gap(AppSpacing.md),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      strings.cognitiveDrillResultsStimuliCount,
-                                      style: texts.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                const Gap(AppSpacing.md),
+                                _ScoreEquationBlock(
+                                  mode: _ReflexesMode.stroop,
+                                  primaryScore:
+                                      double.tryParse(
+                                        _currentResult!['_score_final'] ?? '',
+                                      ) ??
+                                      0,
+                                  stats: _currentResult!,
+                                ),
+                                const Gap(AppSpacing.md),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        strings.cognitiveDrillResultsStimuliCount,
+                                        style: texts.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Text(
-                                    _currentResult![strings
-                                            .cognitiveDrillResultsStimuliCount] ??
-                                        '0',
-                                    style: texts.titleMedium?.copyWith(
-                                      color: colors.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(AppSpacing.md),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      strings.reflexesAvgReactionTime,
-                                      style: texts.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                    Text(
+                                      _currentResult![strings
+                                              .cognitiveDrillResultsStimuliCount] ??
+                                          '0',
+                                      style: texts.titleMedium?.copyWith(
+                                        color: colors.primary,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
-                                  ),
-                                  Text(
-                                    _currentResult![strings
-                                            .reflexesAvgReactionTime] ??
-                                        '—',
-                                    style: texts.titleMedium?.copyWith(
-                                      color: colors.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(AppSpacing.md),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      strings.reflexesMathCorrectAnswers,
-                                      style: texts.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                  ],
+                                ),
+                                const Gap(AppSpacing.md),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        strings.reflexesAvgReactionTime,
+                                        style: texts.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Text(
-                                    _currentResult![strings
-                                            .reflexesMathCorrectAnswers] ??
-                                        '0',
-                                    style: texts.titleMedium?.copyWith(
-                                      color: colors.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(AppSpacing.md),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      strings.reflexesMathWrongAnswers,
-                                      style: texts.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                    Text(
+                                      _currentResult![strings
+                                              .reflexesAvgReactionTime] ??
+                                          '—',
+                                      style: texts.titleMedium?.copyWith(
+                                        color: colors.primary,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
-                                  ),
-                                  Text(
-                                    _currentResult![strings
-                                            .reflexesMathWrongAnswers] ??
-                                        '0',
-                                    style: texts.titleMedium?.copyWith(
-                                      color: colors.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(AppSpacing.md),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      strings.reflexesDifficultyLabel,
-                                      style: texts.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                  ],
+                                ),
+                                const Gap(AppSpacing.md),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        strings.reflexesMathCorrectAnswers,
+                                        style: texts.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Text(
-                                    widget.difficulty == _StroopDifficulty.easy
-                                        ? strings.reflexesDifficultyEasy
-                                        : widget.difficulty ==
-                                              _StroopDifficulty.medium
-                                        ? strings.reflexesDifficultyMedium
-                                        : strings.reflexesDifficultyHard,
-                                    style: texts.titleMedium?.copyWith(
-                                      color: colors.primary,
-                                      fontWeight: FontWeight.w800,
+                                    Text(
+                                      _currentResult![strings
+                                              .reflexesMathCorrectAnswers] ??
+                                          '0',
+                                      style: texts.titleMedium?.copyWith(
+                                        color: colors.primary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                                const Gap(AppSpacing.md),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        strings.reflexesMathWrongAnswers,
+                                        style: texts.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      _currentResult![strings
+                                              .reflexesMathWrongAnswers] ??
+                                          '0',
+                                      style: texts.titleMedium?.copyWith(
+                                        color: colors.primary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Gap(AppSpacing.md),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        strings.reflexesDifficultyLabel,
+                                        style: texts.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      widget.difficulty == _StroopDifficulty.easy
+                                          ? strings.reflexesDifficultyEasy
+                                          : widget.difficulty ==
+                                                _StroopDifficulty.medium
+                                          ? strings.reflexesDifficultyMedium
+                                          : strings.reflexesDifficultyHard,
+                                      style: texts.titleMedium?.copyWith(
+                                        color: colors.primary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                         const Gap(AppSpacing.lg),
                         Builder(builder: (context) {
-                          final earnedStars = _starsForScore(
+                          final earnedStars = _currentResult!['_stopped_early'] == '1' ? 0 : _starsForScore(
                             double.tryParse(
                                   _currentResult!['_score_final'] ?? '0',
                                 ) ??

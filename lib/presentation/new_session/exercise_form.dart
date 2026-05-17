@@ -333,14 +333,7 @@ class _ExerciseFormState extends State<_ExerciseForm> {
     final picked = await NativePicker.pick(context, mode: PickerMode.photoOnly);
     if (!mounted || picked.isCancelled) return;
 
-    String? path;
-    if (kIsWeb) {
-      if (picked.bytes == null) return;
-      final ext = (picked.name ?? 'jpg').split('.').last;
-      path = 'data:image/$ext;base64,${base64Encode(picked.bytes!)}';
-    } else {
-      path = picked.path;
-    }
+    final path = picked.path;
     if (path == null || path.isEmpty) return;
 
     final id =

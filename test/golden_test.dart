@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thot/data/models.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/l10n/app_strings.dart';
-import 'package:thot/presentation/home_screen.dart';
 import 'package:thot/presentation/inventory_screen.dart';
 
 void main() {

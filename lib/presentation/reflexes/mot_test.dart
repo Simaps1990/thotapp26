@@ -78,11 +78,13 @@ class _MotRunScreenState extends State<_MotRunScreen>
   final _repaintNotifier = ValueNotifier<int>(0);
 
   int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
+    final strings = AppStrings.of(context);
     return _scoredValue(
       b.mode,
       b.primaryScore,
       b.stats,
-    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats));
+      strings,
+    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats, strings));
   }
 
   String _formatDate(DateTime dt) {
@@ -216,8 +218,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
     _phaseTimer?.cancel();
     _blinkTimer?.cancel();
     _disposeAnimationTicker();
-    _restorePortrait();
-    Navigator.of(context).pop();
+    _finish(stoppedEarly: true);
   }
 
   void _disposeAnimationTicker() {
@@ -464,7 +465,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
     });
   }
 
-  Future<void> _finish() async {
+  Future<void> _finish({bool stoppedEarly = false}) async {
     final strings = AppStrings.of(context);
     final totalPossible = widget.trials * widget.targetCount;
     final totalCorrect = _trialScores.fold<int>(0, (a, b) => a + b);
@@ -492,6 +493,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
         strings.reflexesMotAvgScore: avgScore.toStringAsFixed(2),
         strings.reflexesMotSuccessRate: '${successRate.toStringAsFixed(1)} %',
         if (widget.level != null) '_level': widget.level.toString(),
+        if (stoppedEarly) '_stopped_early': '1',
       },
     );
     await _restorePortrait();
@@ -867,147 +869,155 @@ class _MotRunScreenState extends State<_MotRunScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _AnimatedLevelStarsBlock(
-                        level: widget.level,
-                        score: _scoredValue(
+                      Builder(builder: (ctx) {
+                        final stoppedEarly = _currentResult!.stats['_stopped_early'] == '1';
+                        final computedScore = _scoredValue(
                           _currentResult!.mode,
                           _currentResult!.primaryScore,
                           _currentResult!.stats,
-                        ),
-                        stars: _starsForScore(
-                          _scoredValue(
-                            _currentResult!.mode,
-                            _currentResult!.primaryScore,
-                            _currentResult!.stats,
-                          ),
-                        ),
-                      ),
+                          strings,
+                        );
+                        return _AnimatedLevelStarsBlock(
+                          level: widget.level,
+                          score: stoppedEarly ? 0 : computedScore,
+                          stars: stoppedEarly ? 0 : _starsForScore(computedScore),
+                        );
+                      }),
                       const Gap(AppSpacing.lg),
-                      Container(
-                        padding: AppSpacing.paddingLg,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: colors.outline),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              strings.reflexesPerformance,
-                              style: textStyles.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: colors.secondary,
+                      if (_currentResult!.stats['_stopped_early'] != '1')
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: colors.outline),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                strings.reflexesPerformance,
+                                style: textStyles.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.secondary,
+                                ),
                               ),
-                            ),
-                            const Gap(AppSpacing.md),
-                            _ScoreEquationBlock(
-                              mode: _currentResult!.mode,
-                              primaryScore: _currentResult!.primaryScore,
-                              stats: _currentResult!.stats,
-                            ),
-                            const Gap(AppSpacing.md),
-                            ..._currentResult!.stats.entries
-                                .where((e) => !e.key.startsWith('_'))
-                                .map(
-                                  (e) => Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: AppSpacing.md,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            e.key,
-                                            style: textStyles.bodyMedium
+                              const Gap(AppSpacing.md),
+                              _ScoreEquationBlock(
+                                mode: _currentResult!.mode,
+                                primaryScore: _currentResult!.primaryScore,
+                                stats: _currentResult!.stats,
+                              ),
+                              const Gap(AppSpacing.md),
+                              ..._currentResult!.stats.entries
+                                  .where((e) => !e.key.startsWith('_'))
+                                  .map(
+                                    (e) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: AppSpacing.md,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              e.key,
+                                              style: textStyles.bodyMedium
+                                                  ?.copyWith(
+                                                    color: colors.secondary,
+                                                  ),
+                                            ),
+                                          ),
+                                          const Gap(AppSpacing.md),
+                                          Text(
+                                            e.value,
+                                            style: textStyles.titleMedium
                                                 ?.copyWith(
-                                                  color: colors.secondary,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: colors.onSurface,
                                                 ),
                                           ),
-                                        ),
-                                        const Gap(AppSpacing.md),
-                                        Text(
-                                          e.value,
-                                          style: textStyles.titleMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: colors.onSurface,
-                                              ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
                       const Gap(AppSpacing.lg),
-                      SizedBox(
-                        height: 52,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: () {
-                                  widget.onResultSaved?.call(_currentResult!);
-                                  SystemChrome.setPreferredOrientations([
-                                    DeviceOrientation.landscapeLeft,
-                                    DeviceOrientation.landscapeRight,
-                                  ]);
-                                  SystemChrome.setEnabledSystemUIMode(
-                                    SystemUiMode.immersiveSticky,
-                                  );
-                                  setState(() {
-                                    _showResults = false;
-                                    _currentResult = null;
-                                    _gameZoneSize = null;
-                                  });
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    if (mounted) _startCountdown();
-                                  });
-                                },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor:
-                                      colors.surfaceContainerHighest,
-                                  foregroundColor: colors.onSurfaceVariant,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                      Builder(builder: (context) {
+                        final earnedStars = _currentResult!.stats['_stopped_early'] == '1' ? 0 : _starsForScore(_scoredValue(
+                          _currentResult!.mode,
+                          _currentResult!.primaryScore,
+                          _currentResult!.stats,
+                          strings,
+                        ));
+                        return SizedBox(
+                          height: 52,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    widget.onResultSaved?.call(_currentResult!);
+                                    SystemChrome.setPreferredOrientations([
+                                      DeviceOrientation.landscapeLeft,
+                                      DeviceOrientation.landscapeRight,
+                                    ]);
+                                    SystemChrome.setEnabledSystemUIMode(
+                                      SystemUiMode.immersiveSticky,
+                                    );
+                                    setState(() {
+                                      _showResults = false;
+                                      _currentResult = null;
+                                      _gameZoneSize = null;
+                                    });
+                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      if (mounted) _startCountdown();
+                                    });
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        colors.surfaceContainerHighest,
+                                    foregroundColor: colors.onSurfaceVariant,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.replay_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    strings.colorPodRestart.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                icon: const Icon(
-                                  Icons.replay_rounded,
-                                  size: 20,
-                                ),
-                                label: Text(
-                                  strings.colorPodRestart.toUpperCase(),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
                               ),
-                            ),
-                            const Gap(AppSpacing.sm),
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: _nextLevel,
-                                style: FilledButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                              if (earnedStars > 0) ...[  
+                                const Gap(AppSpacing.sm),
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: _nextLevel,
+                                    style: FilledButton.styleFrom(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 20,
+                                    ),
+                                    label: Text(strings.colorPodNext.toUpperCase()),
+                                    iconAlignment: IconAlignment.end,
                                   ),
                                 ),
-                                icon: const Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 20,
-                                ),
-                                label: Text(strings.colorPodNext.toUpperCase()),
-                                iconAlignment: IconAlignment.end,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
                       const Gap(AppSpacing.lg),
                       Container(
                         padding: AppSpacing.paddingLg,

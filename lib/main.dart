@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, defaultTargetPlatform, TargetPlatform;
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -27,23 +27,19 @@ void main() {
     await _configureRevenueCatSafely();
     await MaintenanceNotifications.init();
 
-    if (!kIsWeb) {
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-      ]);
-      await SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual,
-        overlays: [SystemUiOverlay.top],
-      );
-    }
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top],
+    );
 
     runApp(const MyApp());
   });
 }
 
 Future<String> _loadRevenueCatApiKey() async {
-  if (kIsWeb) return '';
-
   const channel = MethodChannel('thot/config');
 
   try {
@@ -57,8 +53,6 @@ Future<String> _loadRevenueCatApiKey() async {
 }
 
 Future<void> _configureRevenueCatSafely() async {
-  if (kIsWeb) return;
-
   try {
     final revenueCatApiKey = await _loadRevenueCatApiKey();
 
@@ -127,7 +121,7 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
   }
 
   Future<void> _consumeInitialWidgetRoute() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       final route = await _configChannel.invokeMethod<String>(
         'consumeWidgetRoute',
@@ -242,7 +236,7 @@ class _ViewportResyncAppState extends State<_ViewportResyncApp>
 
           final appChild = child ?? const SizedBox();
           final shouldScaleIosUi =
-              !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+              defaultTargetPlatform == TargetPlatform.iOS;
 
           final scaledAppChild = shouldScaleIosUi
               ? MediaQuery(

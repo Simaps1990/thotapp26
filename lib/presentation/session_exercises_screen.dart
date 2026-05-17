@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -19,7 +18,6 @@ import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/utils/session_text_exporter.dart';
 import 'package:thot/widgets/cross_platform_image.dart';
 import 'package:thot/l10n/app_strings.dart';
-import 'session_list_screen.dart';
 
 BoxDecoration _sessionCardDecoration(
   BuildContext context, {
@@ -139,25 +137,13 @@ class SessionExercisesScreen extends StatelessWidget {
                           converter: converter,
                         );
 
-                        if (kIsWeb) {
-                          await showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            showDragHandle: true,
-                            builder: (_) => SessionShareSheet(
-                              session: session,
-                              summary: summary,
-                            ),
-                          );
-                        } else {
-                          await SharePlus.instance.share(
-                            ShareParams(
-                              text: summary,
-                              subject:
-                                  '${strings.sessionShareSubjectPrefix}${session.name}',
-                            ),
-                          );
-                        }
+                        await SharePlus.instance.share(
+                          ShareParams(
+                            text: summary,
+                            subject:
+                                '${strings.sessionShareSubjectPrefix}${session.name}',
+                          ),
+                        );
                       } else if (value == 'delete') {
                         Future<void>.delayed(Duration.zero, () async {
                           if (!context.mounted) return;

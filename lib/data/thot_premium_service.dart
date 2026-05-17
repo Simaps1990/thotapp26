@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart'
-    show VoidCallback, kDebugMode, kIsWeb, debugPrint;
+    show VoidCallback, kDebugMode, debugPrint;
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,8 +47,6 @@ class ThotPremiumService {
   Future<void> purchaseMonthly() => _purchase(PackageType.monthly);
 
   Future<void> _purchase(PackageType type) async {
-    if (kIsWeb) return;
-
     try {
       _purchaseError = null;
       _purchasePending = true;
@@ -92,8 +90,8 @@ class ThotPremiumService {
     return DateTime.now().difference(date) < _premiumGracePeriod;
   }
 
-  bool get isPremium =>
-      _isPremium || (_allowGracePeriodFallback && _isWithinGracePeriod());
+  // TEMPORARY: Free plan limit disabled - always returns true
+  bool get isPremium => true;
 
   void loadMetadataFromPrefs(SharedPreferences prefs) {
     _lastPremiumValidationAt = prefs.getString(_lastPremiumValidationAtKey);
@@ -103,11 +101,6 @@ class ThotPremiumService {
 
   Future<void> init() async {
     try {
-      if (kIsWeb) {
-        _purchaseAvailable = false;
-        _onChanged();
-        return;
-      }
 
       _purchaseAvailable = true;
 
@@ -191,11 +184,6 @@ class ThotPremiumService {
 
   Future<void> _loadCurrentOfferingPrices() async {
     try {
-      if (kIsWeb) {
-        _yearlyPrice = null;
-        _monthlyPrice = null;
-        return;
-      }
 
       final offerings = await Purchases.getOfferings();
       final current = offerings.current;

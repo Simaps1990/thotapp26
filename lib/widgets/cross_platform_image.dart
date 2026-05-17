@@ -1,9 +1,7 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'dart:io';
 
-/// A widget that displays images from file paths in a cross-platform way.
-/// Works on both web and mobile platforms.
+/// A widget that displays images from local file paths.
 class CrossPlatformImage extends StatelessWidget {
   final String? filePath;
   final double? width;
@@ -28,39 +26,18 @@ class CrossPlatformImage extends StatelessWidget {
       return placeholder ?? _buildDefaultPlaceholder();
     }
 
-    if (kIsWeb) {
-      // On web, use Image.network for web paths or memory for file picker results
-      // FilePicker on web returns bytes, not paths, so we handle both cases
-      return Image.network(
-        filePath!,
+    try {
+      return Image.file(
+        File(filePath!),
         width: width,
         height: height,
         fit: fit,
         errorBuilder: (context, error, stackTrace) {
-          // If network image fails, it might be a local file path
-          // In that case, show the error widget
           return errorWidget ?? _buildErrorWidget();
         },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return placeholder ?? _buildDefaultPlaceholder();
-        },
       );
-    } else {
-      // On mobile, use Image.file
-      try {
-        return Image.file(
-          File(filePath!),
-          width: width,
-          height: height,
-          fit: fit,
-          errorBuilder: (context, error, stackTrace) {
-            return errorWidget ?? _buildErrorWidget();
-          },
-        );
-      } catch (e) {
-        return errorWidget ?? _buildErrorWidget();
-      }
+    } catch (e) {
+      return errorWidget ?? _buildErrorWidget();
     }
   }
 

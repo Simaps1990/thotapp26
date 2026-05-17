@@ -18,7 +18,6 @@ import 'package:thot/utils/timer_sound.dart';
 import 'package:thot/utils/exercise_level_params.dart';
 import 'package:thot/data/training_history.dart';
 import 'package:thot/data/thot_provider.dart';
-import 'package:thot/widgets/pro_badge.dart';
 import 'package:thot/widgets/exercise_countdown_background.dart';
 import 'package:thot/presentation/pro_screen.dart';
 
@@ -31,8 +30,9 @@ part 'reflexes/math_test.dart';
 part 'reflexes/memory_test.dart';
 part 'reflexes/stroop_test.dart';
 part 'reflexes/mot_test.dart';
+part 'reflexes/dissociation_test.dart';
 
-enum _ReflexesMode { visual, auditory, math, memory, stroop, mot }
+enum _ReflexesMode { visual, auditory, math, memory, stroop, mot, dissociation }
 
 enum _ReactionDifficulty { easy, medium, hard }
 
@@ -68,7 +68,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
   static const _historyKey = 'reflexes_benchmark_history_v1';
 
   late final TabController _tabController =
-      TabController(length: 6, vsync: this)..addListener(() {
+      TabController(length: 7, vsync: this)..addListener(() {
         if (_tabController.indexIsChanging) return;
         setState(() => _mode = _ReflexesMode.values[_tabController.index]);
       });
@@ -133,6 +133,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         return strings.cognitiveDrillModeStroopDescription;
       case _ReflexesMode.mot:
         return strings.reflexesModeMotDescription;
+      case _ReflexesMode.dissociation:
+        return strings.reflexesModeDissociationDescription;
       case null:
         return '';
     }
@@ -152,6 +154,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         return strings.cognitiveDrillModeStroopInfoTooltip;
       case _ReflexesMode.mot:
         return strings.reflexesModeMotInfoTooltip;
+      case _ReflexesMode.dissociation:
+        return strings.reflexesModeDissociationInfoTooltip;
       case null:
         return '';
     }
@@ -227,6 +231,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           return strings.reflexesModeMemoryInfoTooltip;
         case _ReflexesMode.mot:
           return strings.reflexesModeMotInfoTooltip;
+        case _ReflexesMode.dissociation:
+          return strings.reflexesModeDissociationInfoTooltip;
         default:
           return strings.reflexesToolSubtitle;
       }
@@ -245,6 +251,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         return strings.reflexesModeMemoryInfoTooltip;
       case _ReflexesMode.mot:
         return strings.reflexesModeMotInfoTooltip;
+      case _ReflexesMode.dissociation:
+        return strings.reflexesModeDissociationInfoTooltip;
       default:
         return strings.reflexesToolSubtitle;
     }
@@ -264,6 +272,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         return strings.cognitiveDrillModeStroopHeader;
       case _ReflexesMode.mot:
         return strings.reflexesModeMotHeader;
+      case _ReflexesMode.dissociation:
+        return strings.reflexesModeDissociationHeader;
       case null:
         return '';
     }
@@ -283,6 +293,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         return strings.cognitiveDrillModeStroop;
       case _ReflexesMode.mot:
         return strings.reflexesModeMot;
+      case _ReflexesMode.dissociation:
+        return strings.reflexesModeDissociation;
       case null:
         return '';
     }
@@ -301,6 +313,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         return _stroopDifficulty.label(strings);
       case _ReflexesMode.mot:
         return _motDifficulty.label(strings);
+      case _ReflexesMode.dissociation:
+        return strings.reflexesDifficultyLabel;
       case null:
         return '';
     }
@@ -324,6 +338,9 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       case _ReflexesMode.mot:
         _showMotDifficultyDialog(context, strings);
         break;
+      case _ReflexesMode.dissociation:
+        // Uses 50-levels grid, no difficulty dialog needed
+        break;
       case null:
         break;
     }
@@ -331,6 +348,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
 
   List<_ReflexSessionRecord> _topModeRecords() {
     if (_mode == null) return const <_ReflexSessionRecord>[];
+    final strings = AppStrings.of(context);
     var records = [
       ...(_historyByMode[_mode!.name] ?? const <_ReflexSessionRecord>[]),
     ];
@@ -346,7 +364,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
         b.mode,
         b.primaryScore,
         b.stats,
-      ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats)),
+        strings,
+      ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats, strings)),
     );
 
     return records;
@@ -454,6 +473,20 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           isDark: isDark,
           backgroundImage: 'assets/images/MOT.webp',
           mode: _ReflexesMode.mot,
+        ),
+        const Gap(AppSpacing.md),
+        _DrillCard(
+          title: strings.reflexesModeDissociation,
+          description: strings.reflexesModeDissociationCardDescription,
+          icon: Icons.sync_alt_rounded,
+          onTap: () => _openLevelsPanelForMode(_ReflexesMode.dissociation),
+          isSelected: false,
+          isLocked: provider.isReflexesModeLockedForFree('dissociation'),
+          colors: colors,
+          textStyles: textStyles,
+          isDark: isDark,
+          backgroundImage: 'assets/images/dissociation.webp',
+          mode: _ReflexesMode.dissociation,
         ),
         const Gap(AppSpacing.xl),
       ],
@@ -567,6 +600,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           _ReflexesMode.stroop,
           score,
           stroopResult.stats,
+          strings,
         );
         return (
           score: finalScore.isFinite ? finalScore : null,
@@ -604,9 +638,18 @@ class _ReflexesScreenState extends State<ReflexesScreen>
           ),
         );
         break;
+      case _ReflexesMode.dissociation:
+        result = await _startDissociationTestLevel(
+          context: context,
+          level: level,
+          historyByMode: _historyByMode,
+          onResultSaved: _appendHistory,
+        );
+        break;
     }
 
     if (result == null) return (score: null, closeAll: false, nextLevel: false);
+    final strings = AppStrings.of(context);
     final stoppedEarly = result.stats['_stopped_early'] == '1';
     final closeAll = result.stats['_close_all'] == '1';
     final nextLevel = result.stats['_next_level'] == '1';
@@ -619,7 +662,7 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       await TrainingHistory.recordExerciseCompletion(mode.name);
     }
     return (
-      score: _scoredValue(mode, result.primaryScore, result.stats),
+      score: _scoredValue(mode, result.primaryScore, result.stats, strings),
       closeAll: closeAll,
       nextLevel: nextLevel,
     );
@@ -724,6 +767,8 @@ class _ReflexesScreenState extends State<ReflexesScreen>
       case _ReflexesMode.memory:
         return (s) => '${s.toStringAsFixed(0)} pts';
       case _ReflexesMode.mot:
+        return (s) => '${s.toStringAsFixed(0)} pts';
+      case _ReflexesMode.dissociation:
         return (s) => '${s.toStringAsFixed(0)} pts';
     }
   }

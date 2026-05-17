@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
@@ -17,7 +17,6 @@ import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/utils/exercise_display.dart';
 import 'package:thot/utils/session_text_exporter.dart';
 import 'package:thot/utils/unit_converter.dart';
-import 'package:thot/utils/web_text_exporter.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/widgets/tutorial_overlay.dart';
@@ -78,6 +77,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
   void _showTutorial() {
     final strings = AppStrings.of(context);
     final steps = [
+      TutorialStep(
+        title: strings.tutorialSessionsIntroTitle,
+        description: strings.tutorialSessionsIntroDescription,
+      ),
       TutorialStep(
         targetKey: _templatesKey,
         title: strings.tutorialSessionsTemplatesTitle,
@@ -1082,16 +1085,6 @@ class _SessionCard extends StatelessWidget {
       converter: converter,
     );
 
-    if (kIsWeb) {
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (_) => SessionShareSheet(session: session, summary: summary),
-      );
-      return;
-    }
-
     try {
       await SharePlus.instance.share(
         ShareParams(
@@ -1229,75 +1222,38 @@ class SessionShareSheet extends StatelessWidget {
                 ),
                 const Gap(AppSpacing.sm),
                 Expanded(
-                  child: kIsWeb
-                      ? OutlinedButton.icon(
-                          onPressed: () async {
-                            final safeName = session.name.trim().isEmpty
-                                ? 'seance'
-                                : session.name.trim();
-                            final filename = 'THOT_$safeName.txt'.replaceAll(
-                              RegExp(r'[^a-zA-Z0-9_\-\.]+'),
-                              '_',
-                            );
-                            try {
-                              await WebTextExporter.downloadTextFile(
-                                filename: filename,
-                                content: summary,
-                              );
-                            } catch (e) {
-                              debugPrint('Failed to export text file: $e');
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(strings.downloadFailedSnack),
-                                  duration: const Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          },
-                          icon: Icon(
-                            Icons.download_rounded,
-                            color: colors.primary,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      try {
+                        await SharePlus.instance.share(
+                          ShareParams(
+                            text: summary,
+                            subject:
+                                '${strings.sessionShareSubjectPrefix}${session.name}',
                           ),
-                          label: Text(
-                            strings.actionDownloadTxt,
-                            style: textStyles.labelLarge?.copyWith(
-                              color: colors.primary,
-                            ),
+                        );
+                      } catch (e) {
+                        debugPrint('Failed to share session (sheet): $e');
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(strings.shareUnavailableSnack),
+                            duration: const Duration(seconds: 3),
                           ),
-                        )
-                      : OutlinedButton.icon(
-                          onPressed: () async {
-                            try {
-                              await SharePlus.instance.share(
-                                ShareParams(
-                                  text: summary,
-                                  subject:
-                                      '${strings.sessionShareSubjectPrefix}${session.name}',
-                                ),
-                              );
-                            } catch (e) {
-                              debugPrint('Failed to share session (sheet): $e');
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(strings.shareUnavailableSnack),
-                                  duration: const Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          },
-                          icon: Icon(
-                            Icons.share_rounded,
-                            color: colors.primary,
-                          ),
-                          label: Text(
-                            strings.sessionMenuShare,
-                            style: textStyles.labelLarge?.copyWith(
-                              color: colors.primary,
-                            ),
-                          ),
-                        ),
+                        );
+                      }
+                    },
+                    icon: Icon(
+                      Icons.share_rounded,
+                      color: colors.primary,
+                    ),
+                    label: Text(
+                      strings.sessionMenuShare,
+                      style: textStyles.labelLarge?.copyWith(
+                        color: colors.primary,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

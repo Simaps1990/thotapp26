@@ -881,4 +881,286 @@ extension AppStringsReflexes on AppStrings {
     it: 'Tempo scaduto',
     es: 'Tiempo agotado',
   );
+
+  // --- Dissociation Mode ---
+
+  String get reflexesModeDissociation => _pick(
+    fr: 'Test de Dissociation',
+    en: 'Dissociation test',
+    de: 'Dissoziationstest',
+    it: 'Test di dissociazione',
+    es: 'Test de disociación',
+  );
+
+  String get reflexesModeDissociationHeader => _pick(
+    fr: 'TEST DE DISSOCIATION',
+    en: 'DISSOCIATION TEST',
+    de: 'DISSOZIATIONSTEST',
+    it: 'TEST DI DISSOCIAZIONE',
+    es: 'TEST DE DISOCIACIÓN',
+  );
+
+  String get reflexesModeDissociationCardDescription => _pick(
+    fr: 'Travaillez la coordination dissociée, le rythme et la prise de décision sous charge.',
+    en: 'Train dissociated coordination, rhythm and decision-making under load.',
+    de: 'Trainiere dissoziierte Koordination, Rhythmus und Entscheidungsfindung unter Belastung.',
+    it: 'Allena coordinazione dissociata, ritmo e decisione sotto carico.',
+    es: 'Entrena coordinación disociada, ritmo y toma de decisiones bajo carga.',
+  );
+
+  String get reflexesModeDissociationDescription => _pick(
+    fr: 'Maintenez un **rythme régulier** avec une zone tout en répondant à des **stimuli visuels** sur l\'autre zone.\nLes niveaux avancés ajoutent des **signaux à ignorer**, des **changements de règle** et une charge cognitive croissante.\nL\'objectif est de rester stable, précis et réactif malgré la dissociation des actions.',
+    en: 'Maintain a **steady rhythm** on one zone while responding to **visual stimuli** on the other zone.\nAdvanced levels add **signals to ignore**, **rule switches** and increasing cognitive load.\nThe goal is to stay stable, accurate and reactive while actions are dissociated.',
+    de: 'Halte in einer Zone einen **gleichmäßigen Rhythmus**, während du in der anderen Zone auf **visuelle Reize** reagierst.\nFortgeschrittene Stufen fügen **zu ignorierende Signale**, **Regelwechsel** und steigende kognitive Belastung hinzu.\nZiel ist es, trotz dissoziierter Aktionen stabil, präzise und reaktionsschnell zu bleiben.',
+    it: 'Mantieni un **ritmo regolare** in una zona mentre rispondi a **stimoli visivi** nell\'altra.\nI livelli avanzati aggiungono **segnali da ignorare**, **cambi di regola** e un carico cognitivo crescente.\nL\'obiettivo è restare stabile, preciso e reattivo nonostante la dissociazione delle azioni.',
+    es: 'Mantén un **ritmo regular** en una zona mientras respondes a **estímulos visuales** en la otra.\nLos niveles avanzados añaden **señales que deben ignorarse**, **cambios de regla** y una carga cognitiva creciente.\nEl objetivo es mantener estabilidad, precisión y reacción pese a la disociación de acciones.',
+  );
+
+  String get reflexesModeDissociationInfoTooltip => _pick(
+    fr: 'Exercice inspiré des paradigmes de **double tâche**, de **coordination motrice dissociée** et de **task switching** utilisés en psychologie cognitive, performance sportive, aviation et entraînement sous charge attentionnelle.\nIl sollicite l\'**attention divisée**, l\'**inhibition**, la stabilité du rythme et l\'adaptation rapide aux changements de règle.\nCet exercice ne constitue pas un dispositif médical et ne remplace aucune évaluation clinique.',
+    en: 'Exercise inspired by **dual-task**, **dissociated motor coordination** and **task switching** paradigms used in cognitive psychology, sport performance, aviation and attention-load training.\nIt trains **divided attention**, **inhibition**, rhythm stability and fast adaptation to rule changes.\nThis exercise is not a medical device and does not replace any clinical evaluation.',
+    de: 'Übung, inspiriert von **Dual-Task**-, **dissoziierter motorischer Koordination**- und **Task-Switching**-Paradigmen aus kognitiver Psychologie, Sportleistung, Luftfahrt und Training unter Aufmerksamkeitsbelastung.\nSie trainiert **geteilte Aufmerksamkeit**, **Inhibition**, Rhythmusstabilität und schnelle Anpassung an Regelwechsel.\nDiese Übung ist kein Medizinprodukt und ersetzt keine klinische Beurteilung.',
+    it: 'Esercizio ispirato ai paradigmi di **dual-task**, **coordinazione motoria dissociata** e **task switching** usati in psicologia cognitiva, performance sportiva, aviazione e allenamento sotto carico attentivo.\nAllena **attenzione divisa**, **inibizione**, stabilità del ritmo e rapido adattamento ai cambi di regola.\nQuesto esercizio non è un dispositivo medico e non sostituisce alcuna valutazione clinica.',
+    es: 'Ejercicio inspirado en paradigmas de **doble tarea**, **coordinación motora disociada** y **task switching** usados en psicología cognitiva, rendimiento deportivo, aviación y entrenamiento bajo carga atencional.\nEntrena **atención dividida**, **inhibición**, estabilidad del ritmo y adaptación rápida a cambios de regla.\nEste ejercicio no constituye un producto sanitario ni sustituye ninguna evaluación clínica.',
+  );
+
+  String get reflexesDissociationTapRhythm => _pick(
+    fr: 'RYTHME',
+    en: 'RHYTHM',
+    de: 'RHYTHMUS',
+    it: 'RITMO',
+    es: 'RITMO',
+  );
+
+  String get reflexesDissociationTapStimulus => _pick(
+    fr: 'STIMULUS',
+    en: 'STIMULUS',
+    de: 'STIMULUS',
+    it: 'STIMOLO',
+    es: 'ESTÍMULO',
+  );
+
+  String get reflexesDissociationRuleNormal => _pick(
+    fr: 'Règle normale',
+    en: 'Normal rule',
+    de: 'Normale Regel',
+    it: 'Regola normale',
+    es: 'Regla normal',
+  );
+
+  String get reflexesDissociationRuleInverted => _pick(
+    fr: 'RÈGLE INVERSÉE',
+    en: 'INVERTED RULE',
+    de: 'UMGEKEHRTE REGEL',
+    it: 'REGOLA INVERTITA',
+    es: 'REGLA INVERTIDA',
+  );
+
+  String get reflexesDissociationInstruction => _pick(
+    fr: 'Gardez le rythme à gauche. Réagissez au bon signal à droite.',
+    en: 'Keep the rhythm on the left. React to the correct signal on the right.',
+    de: 'Halte links den Rhythmus. Reagiere rechts auf das richtige Signal.',
+    it: 'Mantieni il ritmo a sinistra. Reagisci al segnale corretto a destra.',
+    es: 'Mantén el ritmo a la izquierda. Reacciona a la señal correcta a la derecha.',
+  );
+
+  String get reflexesDissociationInstructionInverted => _pick(
+    fr: 'Règle inversée : ignorez le signal habituel, réagissez à l\'autre.',
+    en: 'Inverted rule: ignore the usual signal, react to the other one.',
+    de: 'Umgekehrte Regel: Ignoriere das übliche Signal, reagiere auf das andere.',
+    it: 'Regola invertita: ignora il segnale abituale, reagisci all\'altro.',
+    es: 'Regla invertida: ignora la señal habitual y reacciona a la otra.',
+  );
+
+  String get reflexesDissociationDuration => _pick(
+    fr: 'Durée',
+    en: 'Duration',
+    de: 'Dauer',
+    it: 'Durata',
+    es: 'Duración',
+  );
+
+  String get reflexesDissociationTempoAccuracy => _pick(
+    fr: 'Précision du rythme',
+    en: 'Rhythm accuracy',
+    de: 'Rhythmusgenauigkeit',
+    it: 'Precisione del ritmo',
+    es: 'Precisión del ritmo',
+  );
+
+  String get reflexesDissociationAvgTempoDeviation => _pick(
+    fr: 'Écart moyen au rythme',
+    en: 'Average rhythm deviation',
+    de: 'Durchschnittliche Rhythmusabweichung',
+    it: 'Scarto medio dal ritmo',
+    es: 'Desviación media del ritmo',
+  );
+
+  String get reflexesDissociationAvgReactionTime => _pick(
+    fr: 'Temps de réaction moyen',
+    en: 'Average reaction time',
+    de: 'Durchschnittliche Reaktionszeit',
+    it: 'Tempo di reazione medio',
+    es: 'Tiempo de reacción medio',
+  );
+
+  String get reflexesDissociationTempoErrors => _pick(
+    fr: 'Erreurs de rythme',
+    en: 'Rhythm errors',
+    de: 'Rhythmusfehler',
+    it: 'Errori di ritmo',
+    es: 'Errores de ritmo',
+  );
+
+  String get reflexesDissociationMissedStimuli => _pick(
+    fr: 'Stimuli manqués',
+    en: 'Missed stimuli',
+    de: 'Verpasste Stimuli',
+    it: 'Stimoli mancati',
+    es: 'Estímulos fallidos',
+  );
+
+  String get reflexesDissociationImpulseErrors => _pick(
+    fr: 'Erreurs d\'impulsivité',
+    en: 'Impulse errors',
+    de: 'Impulsfehler',
+    it: 'Errori di impulsività',
+    es: 'Errores de impulsividad',
+  );
+
+  String get reflexesDissociationRuleSwitchErrors => _pick(
+    fr: 'Erreurs de changement de règle',
+    en: 'Rule-switch errors',
+    de: 'Fehler beim Regelwechsel',
+    it: 'Errori di cambio regola',
+    es: 'Errores de cambio de regla',
+  );
+
+  String get reflexesDissociationFeedbackOnTempo => _pick(
+    fr: 'Dans le rythme !',
+    en: 'On tempo!',
+    de: 'Im Rhythmus!',
+    it: 'A tempo!',
+    es: '¡En el ritmo!',
+  );
+
+  String get reflexesDissociationFeedbackOffTempo => _pick(
+    fr: 'HORS RYTHME',
+    en: 'OFF RHYTHM',
+    de: 'AUSSER RHYTHMUS',
+    it: 'FUORI RITMO',
+    es: 'FUERA DE RITMO',
+  );
+
+  String get reflexesDissociationFeedbackGoodSignal => _pick(
+    fr: 'BON SIGNAL',
+    en: 'GOOD SIGNAL',
+    de: 'RICHTIGES SIGNAL',
+    it: 'SEGNALE CORRETTO',
+    es: 'SEÑAL CORRECTA',
+  );
+
+  String get reflexesDissociationFeedbackWrongSignal => _pick(
+    fr: 'MAUVAIS SIGNAL',
+    en: 'WRONG SIGNAL',
+    de: 'FALSCHES SIGNAL',
+    it: 'SEGNALE ERRATO',
+    es: 'SEÑAL INCORRECTA',
+  );
+
+  String get reflexesDissociationFeedbackMissed => _pick(
+    fr: 'MANQUÉ',
+    en: 'MISSED',
+    de: 'VERPASST',
+    it: 'MANCATO',
+    es: 'FALLADO',
+  );
+
+  String get reflexesScoreScaleDissociationScore => _pick(
+    fr: 'Base : 1000 pts. Le score valorise la stabilité du rythme, la précision des réponses et l\'adaptation aux changements de règle.',
+    en: 'Base: 1000 pts. The score rewards rhythm stability, response accuracy and adaptation to rule changes.',
+    de: 'Basis: 1000 Punkte. Die Punktzahl belohnt Rhythmusstabilität, Antwortgenauigkeit und Anpassung an Regelwechsel.',
+    it: 'Base: 1000 punti. Il punteggio premia stabilità del ritmo, precisione delle risposte e adattamento ai cambi di regola.',
+    es: 'Base: 1000 pts. La puntuación premia estabilidad del ritmo, precisión de respuesta y adaptación a cambios de regla.',
+  );
+
+  String get reflexesScoreScaleDissociationPenalty => _pick(
+    fr: 'Erreurs de rythme, stimuli manqués et réponses impulsives réduisent fortement le score.',
+    en: 'Rhythm errors, missed stimuli and impulsive responses strongly reduce the score.',
+    de: 'Rhythmusfehler, verpasste Stimuli und impulsive Antworten senken die Punktzahl deutlich.',
+    it: 'Errori di ritmo, stimoli mancati e risposte impulsive riducono molto il punteggio.',
+    es: 'Los errores de ritmo, estímulos fallidos y respuestas impulsivas reducen mucho la puntuación.',
+  );
+
+  String get reflexesCountdownGo => _pick(
+    fr: 'GO !',
+    en: 'GO!',
+    de: 'LOS!',
+    it: 'VIA!',
+    es: '¡VAMOS!',
+  );
+
+  String get reflexesDissociationGo => _pick(
+    fr: 'GO',
+    en: 'GO',
+    de: 'GO',
+    it: 'VAI',
+    es: 'GO',
+  );
+
+  String get reflexesDissociationNoGo => _pick(
+    fr: 'NO-GO',
+    en: 'NO-GO',
+    de: 'NEIN',
+    it: 'NO-GO',
+    es: 'NO-GO',
+  );
+
+  String get reflexesDissociationTap => _pick(
+    fr: 'TAPPER',
+    en: 'TAP',
+    de: 'TIPPEN',
+    it: 'TAPPA',
+    es: 'TOCAR',
+  );
+
+  String get reflexesDissociationWaiting => _pick(
+    fr: 'ATTENTE',
+    en: 'WAITING',
+    de: 'WARTEN',
+    it: 'ATTESA',
+    es: 'ESPERANDO',
+  );
+
+  String reflexesDissociationRhythmErrors(String count) => _pick(
+    fr: 'Rythme: $count erreurs',
+    en: 'Rhythm: $count errors',
+    de: 'Rhythmus: $count Fehler',
+    it: 'Ritmo: $count errori',
+    es: 'Ritmo: $count errores',
+  );
+
+  String get reflexesDissociationExpectedPulses => _pick(
+    fr: 'Pulses attendus',
+    en: 'Expected pulses',
+    de: 'Erwartete Pulse',
+    it: 'Pulsi attesi',
+    es: 'Pulsos esperados',
+  );
+
+  String get reflexesDissociationValidTaps => _pick(
+    fr: 'Taps valides',
+    en: 'Valid taps',
+    de: 'Gültige Taps',
+    it: 'Tap validi',
+    es: 'Toques válidos',
+  );
+
+  String get reflexesDissociationMissedPulses => _pick(
+    fr: 'Pulses manqués',
+    en: 'Missed pulses',
+    de: 'Verpasste Pulse',
+    it: 'Pulsi mancati',
+    es: 'Pulsos fallidos',
+  );
 }

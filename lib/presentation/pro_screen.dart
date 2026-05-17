@@ -44,8 +44,8 @@ class _ProScreenState extends State<ProScreen>
       parent: _closeButtonAnimationController,
       curve: Curves.easeOut,
     );
-    // Show close button after 7 seconds
-    Future.delayed(const Duration(seconds: 7), () {
+    // Show close button after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() => _showCloseButton = true);
         _closeButtonAnimationController.forward();
@@ -240,9 +240,7 @@ class _ProScreenState extends State<ProScreen>
                             horizontal: AppSpacing.lg,
                           ),
                           child: _ProCtaButton(
-                            label: _yearlySelected
-                                ? strings.proSubscribeNowCta
-                                : strings.proStartTrialCta,
+                            label: strings.proStartTrialCta,
                             onTap: () => _handleCta(context, provider),
                             kakiOlive: _kakiOlive,
                           ),

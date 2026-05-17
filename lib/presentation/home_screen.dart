@@ -336,6 +336,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final strings = AppStrings.of(context);
     final steps = [
       TutorialStep(
+        title: strings.tutorialHomeWelcomeTitle,
+        description: strings.tutorialHomeWelcomeDescription,
+      ),
+      TutorialStep(
         targetKey: _bellKey,
         title: strings.tutorialHomeBellTitle,
         description: strings.tutorialHomeBellDescription,

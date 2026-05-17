@@ -527,11 +527,11 @@ extension AppStringsHomeScreen on AppStrings {
   );
 
   String get quickActionLabelReactionExercises => _pick(
-    fr: 'Entraînement individuel',
-    en: 'Individual training',
-    de: 'Einzeltraining',
-    it: 'Allenamento individuale',
-    es: 'Entrenamiento individual',
+    fr: 'Exercices',
+    en: 'Exercises',
+    de: 'Übungen',
+    it: 'Esercizi',
+    es: 'Ejercicios',
   );
 
   String get quickActionLabelCalculationTools => _pick(

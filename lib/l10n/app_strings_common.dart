@@ -366,4 +366,12 @@ extension AppStringsCommon on AppStrings {
     it: 'Successivo',
     es: 'Siguiente',
   );
+
+  String get back => _pick(
+    fr: 'Retour',
+    en: 'Back',
+    de: 'Zurück',
+    it: 'Indietro',
+    es: 'Atrás',
+  );
 }

@@ -85,11 +85,11 @@ extension AppStringsHome on AppStrings {
   );
 
   String get homeDiagnosticSubtitle => _pick(
-    fr: 'Identifiez un incident de tir',
-    en: 'Identify a firing issue',
-    de: 'Störung erkennen',
-    it: 'Identifica un problema di tiro',
-    es: 'Identifica una incidencia de tiro',
+    fr: 'Identifiez un incident de tir.',
+    en: 'Identify a firing issue.',
+    de: 'Störung erkennen.',
+    it: 'Identifica un problema di tiro.',
+    es: 'Identifica una incidencia de tiro.',
   );
 
   String get homeQuickAccessTitle => _pick(
@@ -420,11 +420,11 @@ extension AppStringsHome on AppStrings {
   );
 
   String get homeTimerSubtitle => _pick(
-    fr: 'Séquences, bip et détection sonore',
-    en: 'Sequences, beep and sound detection',
-    de: 'Sequenzen, Signalton und Geräuscherkennung',
-    it: 'Sequenze, bip e rilevamento sonoro',
-    es: 'Secuencias, pitido y detección de sonido',
+    fr: 'Séquences, bip et détection sonore.',
+    en: 'Sequences, beep and sound detection.',
+    de: 'Sequenzen, Signalton und Geräuscherkennung.',
+    it: 'Sequenze, bip e rilevamento sonoro.',
+    es: 'Secuencias, pitido y detección de sonido.',
   );
 
   String get quickActionLabelSession => _pick(

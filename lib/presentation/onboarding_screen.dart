@@ -34,6 +34,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       precacheImage(AssetImage(asset), context);
     }
     _didPrecacheBackgrounds = true;
+
+    // Restore saved page index
+    final provider = Provider.of<ThotProvider>(context, listen: false);
+    final savedPage = provider.onboardingPageIndex;
+    if (savedPage > 0 && savedPage < _backgroundAssets.length) {
+      _currentPage = savedPage;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(savedPage);
+        }
+      });
+    }
   }
 
   @override
@@ -42,20 +54,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _onNext() {
+  void _onNext() async {
     if (_currentPage < 2) {
+      final nextPage = _currentPage + 1;
+      // Save progress before navigating
+      final provider = Provider.of<ThotProvider>(context, listen: false);
+      await provider.setOnboardingPageIndex(nextPage);
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      // Sur la dernière page, on démarre simplement l'app
-      // sans marquer l'onboarding comme "vu pour toujours".
       final provider = Provider.of<ThotProvider>(context, listen: false);
-      provider.dismissOnboardingForSession();
-      if (context.mounted) {
-        context.go('/');
-      }
+      await provider.completeOnboarding();
+      if (mounted) context.go('/');
     }
   }
 

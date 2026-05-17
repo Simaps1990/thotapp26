@@ -9,7 +9,6 @@ import '../data/thot_provider.dart';
 import '../l10n/app_strings.dart';
 import 'pdf_export_options.dart';
 import 'document_hash.dart';
-import 'platform_history_label.dart';
 
 /// Génère et partage un PDF complet avec toutes les données THOT.
 /// Fonctionnalité réservée aux abonnés Pro.

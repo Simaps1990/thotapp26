@@ -250,11 +250,21 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: textStyles.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: textStyles.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (isLocked) ...[
+                            const ProBadge(compact: true),
+                            const Gap(8),
+                          ],
+                        ],
                       ),
                       const Gap(2),
                       Text(
@@ -266,7 +276,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     ],
                   ),
                 ),
-                if (isLocked) ...[const ProBadge(compact: true), const Gap(8)],
                 Icon(Icons.chevron_right_rounded, color: colors.secondary),
               ],
             ),

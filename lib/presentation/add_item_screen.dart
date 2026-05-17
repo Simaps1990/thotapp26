@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform, Uint8List;
+    show defaultTargetPlatform, TargetPlatform, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,7 +20,6 @@ import 'package:thot/l10n/app_strings.dart';
 import 'package:thot/data/material_types.dart';
 import 'package:thot/utils/app_date_formats.dart';
 import 'package:thot/utils/image_storage.dart';
-import 'package:thot/utils/web_document_opener.dart';
 import 'package:thot/utils/validators.dart';
 
 part 'add_item/models.dart';

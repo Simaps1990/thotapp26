@@ -233,6 +233,12 @@ class PlatformHistoryEntry {
       legacyDetails: raw['details']?.toString(),
     );
   }
+
+  /// Display label for this history entry.
+  /// Returns the legacy label if available, otherwise derives from data.
+  String get label => legacyLabel.isNotEmpty
+      ? legacyLabel
+      : data['label']?.toString() ?? '';
 }
 
 class PlatformReplacementPart {
@@ -1005,6 +1011,8 @@ class Exercise {
   final List<ExerciseStep>? steps;
   final List<ExercisePlatformAssignment> platformAssignments;
   final List<ExerciseShotAllocation> shotAllocations;
+  final String? standardDrillId;
+  final Duration? duration;
 
   Exercise({
     required this.id,
@@ -1024,6 +1032,8 @@ class Exercise {
     this.steps,
     this.platformAssignments = const [],
     this.shotAllocations = const [],
+    this.standardDrillId,
+    this.duration,
   });
 
   bool get isPrecisionCounted => precision != null && precisionEnabled;
@@ -1149,6 +1159,8 @@ class Exercise {
     List<ExerciseStep>? steps,
     List<ExercisePlatformAssignment>? platformAssignments,
     List<ExerciseShotAllocation>? shotAllocations,
+    String? standardDrillId,
+    Duration? duration,
   }) {
     return Exercise(
       id: id ?? this.id,
@@ -1168,6 +1180,8 @@ class Exercise {
       steps: steps ?? this.steps,
       platformAssignments: platformAssignments ?? this.platformAssignments,
       shotAllocations: shotAllocations ?? this.shotAllocations,
+      standardDrillId: standardDrillId ?? this.standardDrillId,
+      duration: duration ?? this.duration,
     );
   }
 }

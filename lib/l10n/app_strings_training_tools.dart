@@ -362,11 +362,11 @@ extension AppStringsTrainingTools on AppStrings {
   );
 
   String get visualStimulusToolSubtitle => _pick(
-    fr: 'Réaction visuelle, mémorisation, identification',
-    en: 'Visual reaction, memorization, identification',
-    de: 'Visuelle Reaktion, Merken, Identifikation',
-    it: 'Reazione visiva, memorizzazione, identificazione',
-    es: 'Reacción visual, memorización, identificación',
+    fr: 'Dynamisez vos séances avec cet outil de génération de stimuli.',
+    en: 'Energize your sessions with this stimulus generation tool.',
+    de: 'Gestalten Sie Ihre Einheiten dynamischer mit diesem Tool zur Stimulus-Erzeugung.',
+    it: 'Rendi più dinamiche le tue sessioni con questo strumento di generazione di stimoli.',
+    es: 'Dinamiza tus sesiones con esta herramienta de generación de estímulos.',
   );
 
   String get cognitiveDrillsToolTitle => _pick(
@@ -410,11 +410,11 @@ extension AppStringsTrainingTools on AppStrings {
   );
 
   String get calculationsToolSubtitle => _pick(
-    fr: 'Millième, Hit Factor, Power Factor',
-    en: 'Mil, Hit Factor, Power Factor',
-    de: 'Mil, Hit Factor, Power Factor',
-    it: 'Mil, Hit Factor, Power Factor',
-    es: 'Mil, Hit Factor, Power Factor',
+    fr: 'Millième, Hit Factor, Power Factor.',
+    en: 'Mil, Hit Factor, Power Factor.',
+    de: 'Mil, Hit Factor, Power Factor.',
+    it: 'Mil, Hit Factor, Power Factor.',
+    es: 'Mil, Hit Factor, Power Factor.',
   );
 
   String get toolsTrainingSectionTitle => _pick(

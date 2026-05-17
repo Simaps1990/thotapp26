@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,7 +26,6 @@ class AppUpdateService {
   static AppUpdateInfo? _cachedUpdate;
 
   static Future<AppUpdateInfo?> checkForUpdate({bool force = false}) async {
-    if (kIsWeb) return null;
 
     if (!force && _lastCheckAt != null) {
       final elapsed = DateTime.now().difference(_lastCheckAt!);

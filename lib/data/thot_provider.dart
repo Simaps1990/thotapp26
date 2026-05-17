@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'
-    show kDebugMode, kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
+    show kDebugMode, debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
@@ -72,7 +72,7 @@ class ThotProvider extends ChangeNotifier {
   /// Only fires after domain data has been loaded (to avoid empty syncs)
   /// and ignores errors silently (e.g. in test environment).
   void _scheduleWidgetSync() {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     if (!_domainDataLoadCompleted) return;
     _widgetSyncDebounce?.cancel();
     _widgetSyncDebounce = Timer(const Duration(milliseconds: 600), () {
@@ -106,8 +106,9 @@ class ThotProvider extends ChangeNotifier {
   // at the top of each helper — UI stays consistent that way.
   // ============================================================
 
-  static const bool _kFreeLimitsDisabled = false;
-  static const bool _kForceFreeModeForTesting = true;
+  // TEMPORARY: Free plan limits disabled - all users get premium access
+  static const bool _kFreeLimitsDisabled = true;
+  static const bool _kForceFreeModeForTesting = false;
   bool get isFreeLimitsDisabled => _kFreeLimitsDisabled;
 
   /// Bump this when the JSON layout of `_buildDomainDataMap()` changes in a
@@ -146,18 +147,14 @@ class ThotProvider extends ChangeNotifier {
 
   // Security
   static FlutterSecureStorage _buildSecureStorage() {
-    if (!kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.iOS ||
-            defaultTargetPlatform == TargetPlatform.macOS)) {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
       return const FlutterSecureStorage(
         iOptions: IOSOptions(
           accessibility: KeychainAccessibility.first_unlock,
           synchronizable: true,
         ),
       );
-    }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return const FlutterSecureStorage();
     }
     return const FlutterSecureStorage();
   }
@@ -705,8 +702,18 @@ class ThotProvider extends ChangeNotifier {
   bool _onboardingDismissedForSession = false;
   bool get onboardingDismissedForSession => _onboardingDismissedForSession;
 
+  int _onboardingPageIndex = 0;
+  int get onboardingPageIndex => _onboardingPageIndex;
+
   void dismissOnboardingForSession() {
     _onboardingDismissedForSession = true;
+    notifyListeners();
+  }
+
+  Future<void> setOnboardingPageIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    _onboardingPageIndex = index;
+    await prefs.setInt('thot_onboarding_page_index', index);
     notifyListeners();
   }
 
@@ -909,8 +916,7 @@ class ThotProvider extends ChangeNotifier {
 
     // Delete physical file if it exists and we're not on web
     if (doc.id.isNotEmpty &&
-        doc.filePath.isNotEmpty &&
-        !kIsWeb) {
+        doc.filePath.isNotEmpty) {
       try {
         final file = File(doc.filePath);
         if (await file.exists()) {
@@ -1344,7 +1350,7 @@ class ThotProvider extends ChangeNotifier {
   }
 
   /// Reflexes / training drills free: visual only.
-  /// Pro: auditory, math, memory, stroop, mot.
+  /// Pro: auditory, math, memory, stroop, mot, dissociation.
   bool isReflexesModeLockedForFree(String modeName) {
     if (_kFreeLimitsDisabled || isPremium) return false;
     const free = {'visual'};
@@ -2948,11 +2954,7 @@ class ThotProvider extends ChangeNotifier {
       final data = _buildDomainDataMap();
       final rawJson = jsonEncode(data);
 
-      if (kIsWeb) {
-        await prefs.setString('thot_domain_data', rawJson);
-      } else {
-        await _domainStore.writeDomainData(rawJson);
-      }
+      await _domainStore.writeDomainData(rawJson);
 
       unawaited(_syncDocumentExpiryReminders());
       unawaited(
@@ -3014,6 +3016,7 @@ class ThotProvider extends ChangeNotifier {
 
       // Petits réglages
       _hasSeenOnboarding = prefs.getBool('thot_has_seen_onboarding') ?? false;
+      _onboardingPageIndex = prefs.getInt('thot_onboarding_page_index') ?? 0;
       _userName = prefs.getString('userName') ?? '';
       _licenseNumber = prefs.getString('licenseNumber') ?? '';
       _userEmail = prefs.getString('userEmail') ?? '';
@@ -3055,21 +3058,7 @@ class ThotProvider extends ChangeNotifier {
 
       Map<String, dynamic>? domainData;
 
-      if (kIsWeb) {
-        final raw = prefs.getString('thot_domain_data');
-        if (raw != null && raw.isNotEmpty) {
-          try {
-            final decoded = jsonDecode(raw);
-            if (decoded is Map<String, dynamic>) {
-              domainData = decoded;
-            }
-          } catch (_) {
-            domainData = null;
-          }
-        }
-      } else {
-        domainData = await _domainStore.readDomainData();
-      }
+      domainData = await _domainStore.readDomainData();
 
       if (domainData != null) {
         _loadDomainDataFromMap(domainData);
@@ -3169,7 +3158,6 @@ class ThotProvider extends ChangeNotifier {
   }
 
   Future<bool> _migrateItemPhotoPaths() async {
-    if (kIsWeb) return false;
     var changed = false;
 
     for (var i = 0; i < _platforms.length; i++) {

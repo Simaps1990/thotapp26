@@ -36,13 +36,14 @@ double _scoredValue(
   _ReflexesMode mode,
   double primaryScore,
   Map<String, String> stats,
+  AppStrings strings,
 ) {
   final stored = double.tryParse(stats['_score_final'] ?? '');
   if (stored != null && stored.isFinite) return stored;
   switch (mode) {
     case _ReflexesMode.visual:
     case _ReflexesMode.auditory:
-      final falseStarts = _statNumber(stats, 'Faux départs');
+      final falseStarts = _statNumber(stats, strings.reflexesFalseStarts);
       return _boundedScore(
         1000 - max(0, primaryScore - 180) * 1.35 - falseStarts * 180,
       );
@@ -51,8 +52,8 @@ double _scoredValue(
     case _ReflexesMode.memory:
       return _boundedScore(primaryScore);
     case _ReflexesMode.stroop:
-      final correct = _statNumber(stats, 'Bonnes réponses');
-      final wrong = _statNumber(stats, 'Mauvaises réponses');
+      final correct = _statNumber(stats, strings.reflexesMathCorrectAnswers);
+      final wrong = _statNumber(stats, strings.reflexesMathWrongAnswers);
       final total = max(1, correct + wrong);
       final accuracy = correct / total;
       return _boundedScore(
@@ -60,6 +61,8 @@ double _scoredValue(
       );
     case _ReflexesMode.mot:
       return _boundedScore(primaryScore * 10);
+    case _ReflexesMode.dissociation:
+      return _boundedScore(primaryScore);
   }
 }
 
@@ -547,6 +550,12 @@ List<InlineSpan> _scoreScaleSpans(BuildContext context, _ReflexesMode mode) {
         strings.reflexesScoreScaleMotPenalty,
         strings.reflexesScoreScaleStarsRule,
       );
+    case _ReflexesMode.dissociation:
+      return (
+        strings.reflexesScoreScaleDissociationScore,
+        strings.reflexesScoreScaleDissociationPenalty,
+        strings.reflexesScoreScaleStarsRule,
+      );
   }
 }
 
@@ -644,7 +653,7 @@ class _ScoreEquationBlock extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final texts = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    final finalScore = _scoredValue(mode, primaryScore, stats);
+    final finalScore = _scoredValue(mode, primaryScore, stats, strings);
     final base = _num('_score_base');
     // Keyed penalties — each line tells the user WHY they lost points.
     // The key after '_score_penalty_' identifies the source (speed,

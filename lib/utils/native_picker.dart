@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:thot/l10n/app_strings.dart';
@@ -65,7 +65,7 @@ abstract final class NativePicker {
     AppStrings strings,
     PickerMode mode,
   ) async {
-    final isIOS = !kIsWeb && Platform.isIOS;
+    final isIOS = Platform.isIOS;
 
     if (isIOS) {
       return showCupertinoModalPopup<_PickSource?>(
@@ -131,10 +131,6 @@ abstract final class NativePicker {
       final picker = ImagePicker();
       final file = await picker.pickImage(source: ImageSource.camera);
       if (file == null) return PickedFile.cancelled;
-      if (kIsWeb) {
-        final bytes = await file.readAsBytes();
-        return PickedFile._(bytes: bytes, name: file.name, isImage: true);
-      }
       final persisted = await ImageStorage.persistFromPath(file.path);
       return PickedFile._(path: persisted, name: file.name, isImage: true);
     } catch (e) {
@@ -148,10 +144,6 @@ abstract final class NativePicker {
       final picker = ImagePicker();
       final file = await picker.pickImage(source: ImageSource.gallery);
       if (file == null) return PickedFile.cancelled;
-      if (kIsWeb) {
-        final bytes = await file.readAsBytes();
-        return PickedFile._(bytes: bytes, name: file.name, isImage: true);
-      }
       final persisted = await ImageStorage.persistFromPath(file.path);
       return PickedFile._(path: persisted, name: file.name, isImage: true);
     } catch (e) {
@@ -165,7 +157,7 @@ abstract final class NativePicker {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic'],
-        withData: kIsWeb,
+        withData: false,
       );
       if (result == null || result.files.isEmpty) return PickedFile.cancelled;
       final f = result.files.single;
@@ -177,8 +169,7 @@ abstract final class NativePicker {
         'heic',
       ].contains((f.extension ?? '').toLowerCase());
       return PickedFile._(
-        path: kIsWeb ? null : f.path,
-        bytes: kIsWeb ? f.bytes : null,
+        path: f.path,
         name: f.name,
         isImage: isImage,
       );

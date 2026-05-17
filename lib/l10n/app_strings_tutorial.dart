@@ -133,6 +133,22 @@ extension AppStringsTutorial on AppStrings {
     es: 'No mostrar de nuevo',
   );
 
+  String get tutorialHomeWelcomeTitle => _pick(
+    fr: 'Bienvenue',
+    en: 'Welcome',
+    de: 'Willkommen',
+    it: 'Benvenuto',
+    es: 'Bienvenido',
+  );
+
+  String get tutorialHomeWelcomeDescription => _pick(
+    fr: 'THOT est votre carnet de tir numérique. Suivez vos entraînements, gérez votre arsenal et analysez vos performances pour progresser efficacement.',
+    en: 'THOT is your digital shooting log. Track your training sessions, manage your arsenal and analyze your performance to progress effectively.',
+    de: 'THOT ist Ihr digitales Schießtagebuch. Verfolgen Sie Ihre Trainingseinheiten, verwalten Sie Ihr Arsenal und analysieren Sie Ihre Leistung, um effektiv zu verbessern.',
+    it: 'THOT è il vostro diario di tiro digitale. Tracciate le vostre sessioni di allenamento, gestite il vostro arsenale e analizzate le vostre prestazioni per progredire efficacemente.',
+    es: 'THOT es su cuaderno de tiro digital. Siga sus sesiones de entrenamiento, gestione su arsenal y analice su rendimiento para progresar eficazmente.',
+  );
+
   String get tutorialHomeBellTitle => _pick(
     fr: 'Alertes',
     en: 'Alerts',
@@ -229,6 +245,22 @@ extension AppStringsTutorial on AppStrings {
     es: 'Consulta tus trofeos y tu progreso de desbloqueo.',
   );
 
+  String get tutorialSessionsIntroTitle => _pick(
+    fr: 'Vos sessions de tir',
+    en: 'Your shooting sessions',
+    de: 'Ihre Trainingssitzungen',
+    it: 'Le vostre sessioni di tiro',
+    es: 'Sus sesiones de tiro',
+  );
+
+  String get tutorialSessionsIntroDescription => _pick(
+    fr: 'Cette page regroupe toutes vos sessions passées et vos modèles préenregistrés. Créez une nouvelle session à chaque entraînement pour suivre vos performances et votre progression au fil du temps.',
+    en: 'This page brings together all your past sessions and your pre-registered templates. Create a new session for each workout to track your performance and progress over time.',
+    de: 'Diese Seite fasst alle Ihre vergangenen Sitzungen und Ihre voreingetragenen Vorlagen zusammen. Erstellen Sie für jedes Training eine neue Sitzung, um Ihre Leistung und Ihren Fortschritt im Laufe der Zeit zu verfolgen.',
+    it: 'Questa pagina raccoglie tutte le sessioni passate e i modelli pre-registrati. Crea una nuova sessione per ogni allenamento per monitorare le tue prestazioni e i tuoi progressi nel tempo.',
+    es: 'Esta página reúne todas sus sesiones pasadas y sus plantillas pre-registradas. Cree una nueva sesión para cada entrenamiento para seguir su rendimiento y su progreso a lo largo del tiempo.',
+  );
+
   String get tutorialSessionsTemplatesTitle => _pick(
     fr: 'Mes modèles',
     en: 'My templates',
@@ -254,11 +286,27 @@ extension AppStringsTutorial on AppStrings {
   );
 
   String get tutorialSessionsMenuSearchDescription => _pick(
-    fr: 'Filtrez vos sessions et cherchez rapidement par nom, date ou équipement.',
-    en: 'Filter your sessions and search quickly by name, date or equipment.',
-    de: 'Filtern Sie Ihre Sitzungen und suchen Sie schnell nach Name, Datum oder Ausrüstung.',
-    it: 'Filtra le tue sessioni e cerca rapidamente per nome, data o attrezzatura.',
-    es: 'Filtra tus sesiones y busca rápidamente por nombre, fecha o equipo.',
+    fr: 'Trois menus pour naviguer : Toutes vos sessions, uniquement les favoris, ou vos modèles prédéfinis.',
+    en: 'Three menus to navigate: All your sessions, favorites only, or your predefined templates.',
+    de: 'Drei Menüs zum Navigieren: Alle Ihre Sitzungen, nur Favoriten oder Ihre vordefinierten Vorlagen.',
+    it: 'Tre menu per navigare: Tutte le sessioni, solo i preferiti, o i modelli predefiniti.',
+    es: 'Tres menús para navegar: Todas sus sesiones, solo favoritos, o sus plantillas predefinidas.',
+  );
+
+  String get tutorialInventoryIntroTitle => _pick(
+    fr: 'Votre arsenal',
+    en: 'Your arsenal',
+    de: 'Ihr Arsenal',
+    it: 'Il vostro arsenale',
+    es: 'Su arsenal',
+  );
+
+  String get tutorialInventoryIntroDescription => _pick(
+    fr: 'Cette page recense tout votre matériel : plateformes de tir, munitions, optiques, accessoires et consommables. Gardez un inventaire complet et retrouvez rapidement chaque équipement.',
+    en: 'This page lists all your equipment: shooting platforms, ammunition, optics, accessories and consumables. Keep a complete inventory and quickly find each piece of equipment.',
+    de: 'Diese Seite listet Ihre gesamte Ausrüstung auf: Schusswaffen, Munition, Optik, Zubehör und Verbrauchsmaterial. Führen Sie ein vollständiges Inventar und finden Sie jedes Equipment schnell wieder.',
+    it: 'Questa pagina elenca tutta la vostra attrezzatura: piattaforme di tiro, munizioni, ottiche, accessori e consumabili. Tenete un inventario completo e ritrovate rapidamente ogni equipaggiamento.',
+    es: 'Esta página enumera todo su equipo: plataformas de tiro, municiones, ópticas, accesorios y consumibles. Mantenga un inventario completo y encuentre rápidamente cada equipo.',
   );
 
   String get tutorialInventoryMenuSearchTitle => _pick(
@@ -270,11 +318,11 @@ extension AppStringsTutorial on AppStrings {
   );
 
   String get tutorialInventoryMenuSearchDescription => _pick(
-    fr: 'Naviguez entre vos équipements et filtrez rapidement par nom.',
-    en: 'Navigate between your equipment and filter quickly by name.',
-    de: 'Navigieren Sie zwischen Ihrer Ausrüstung und filtern Sie schnell nach Namen.',
-    it: 'Naviga tra le tue attrezzature e filtra rapidamente per nome.',
-    es: 'Navega entre tus equipos y filtra rápidamente por nombre.',
+    fr: 'Trois menus pour naviguer : Toutes vos armes, uniquement les favoris, ou vos consommables.',
+    en: 'Three menus to navigate: All your weapons, favorites only, or your consumables.',
+    de: 'Drei Menüs zum Navigieren: Alle Ihre Waffen, nur Favoriten oder Ihr Verbrauchsmaterial.',
+    it: 'Tre menu per navigare: Tutte le armi, solo i preferiti, o i consumabili.',
+    es: 'Tres menús para navegar: Todas sus armas, solo favoritos, o sus consumibles.',
   );
 
   String get tutorialSettingsProfileTitle => _pick(

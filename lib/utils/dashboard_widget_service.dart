@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:thot/data/models.dart';
 
@@ -23,8 +22,6 @@ class DashboardWidgetService {
     required List<Accessory> accessories,
     required List<UserDocument> userDocuments,
   }) async {
-    if (kIsWeb) return;
-
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final weekStart = todayStart.subtract(const Duration(days: 6));

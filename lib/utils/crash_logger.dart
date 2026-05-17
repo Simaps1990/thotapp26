@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'
+    show FlutterError, FlutterErrorDetails, debugPrint,
+    defaultTargetPlatform, kReleaseMode, kProfileMode, PlatformDispatcher;
 import 'package:path_provider/path_provider.dart';
 
 /// Lightweight crash logger that persists Flutter framework errors and
@@ -67,9 +69,6 @@ abstract final class CrashLogger {
 
   static Future<File> _getLogFile() async {
     if (_logFile != null) return _logFile!;
-    if (kIsWeb) {
-      throw UnsupportedError('CrashLogger not supported on web');
-    }
     final dir = await getApplicationSupportDirectory();
     _logFile = File('${dir.path}/crash_log.jsonl');
     return _logFile!;
@@ -82,10 +81,6 @@ abstract final class CrashLogger {
     String library = '',
     String context = '',
   }) async {
-    if (kIsWeb) {
-      debugPrint('[CrashLogger:$type] $error\n$stackTrace');
-      return;
-    }
     try {
       final entry = <String, dynamic>{
         'ts': DateTime.now().toUtc().toIso8601String(),
@@ -120,7 +115,6 @@ abstract final class CrashLogger {
   }
 
   static Future<String> readLog() async {
-    if (kIsWeb) return '';
     try {
       final file = await _getLogFile();
       if (!await file.exists()) return '';
@@ -131,7 +125,6 @@ abstract final class CrashLogger {
   }
 
   static Future<String?> get logFilePath async {
-    if (kIsWeb) return null;
     try {
       final file = await _getLogFile();
       return file.path;
@@ -141,7 +134,6 @@ abstract final class CrashLogger {
   }
 
   static Future<void> clear() async {
-    if (kIsWeb) return;
     try {
       final file = await _getLogFile();
       if (await file.exists()) {

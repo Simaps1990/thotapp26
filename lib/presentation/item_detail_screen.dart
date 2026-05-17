@@ -1,9 +1,6 @@
-import 'dart:convert';
-
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -13,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:thot/utils/web_document_opener.dart';
 import 'package:thot/presentation/add_item_screen.dart';
 import '../theme.dart';
 import '../data/thot_provider.dart';
@@ -57,13 +53,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
   }
 
-  static const List<String> _documentTypes = [
-    'Facture',
-    'Révision',
-    'Manuel',
-    'Garantie',
-    'Autre',
-  ];
 
   Future<void> _showRestockSheet(Ammo ammo, ThotProvider provider) async {
     final colors = Theme.of(context).colorScheme;
@@ -237,27 +226,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   PlatformFile? _normalizePickedPdf(PlatformFile file) {
-    if (kIsWeb) {
-      if (file.bytes == null) return null;
-      final ext = (file.extension ?? '').toLowerCase();
-      final isPdf = ext == 'pdf';
-      final mime = isPdf
-          ? 'application/pdf'
-          : (ext == 'png'
-                ? 'image/png'
-                : (ext == 'jpg' || ext == 'jpeg')
-                ? 'image/jpeg'
-                : 'application/octet-stream');
-      final base64Data = base64Encode(file.bytes!);
-      final dataUrl = 'data:$mime;base64,$base64Data';
-      return PlatformFile(
-        name: file.name,
-        size: file.size,
-        path: dataUrl,
-        bytes: file.bytes,
-      );
-    }
-
     if (file.path == null) return null;
     return file;
   }
@@ -286,9 +254,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       text: initialName.isEmpty ? strings.itemDefaultDocumentName : initialName,
     );
     int selectedNotifyDays = initialNotifyDays;
-    String selectedType = _documentTypes.contains(initialType)
+    String selectedType = DocumentTypeKey.all.contains(initialType)
         ? initialType!
-        : _documentTypes.first;
+        : DocumentTypeKey.invoice;
     DateTime? expiryDate = initialExpiryDate;
 
     return showDialog<(String, String, DateTime?, int)?>(
@@ -330,11 +298,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   fontWeight: FontWeight.w400,
                 ),
                 decoration: const InputDecoration(),
-                items: _documentTypes
+                items: DocumentTypeKey.all
                     .map(
-                      (t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(strings.itemDocumentTypeLabelForValue(t)),
+                      (key) => DropdownMenuItem(
+                        value: key,
+                        child: Text(strings.documentTypeLabel(key)),
                       ),
                     )
                     .toList(),
@@ -536,22 +504,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
     if (!mounted || picked.isCancelled) return null;
 
-    final String? resolvedPath;
-    if (kIsWeb) {
-      if (picked.bytes == null) return null;
-      final ext = (picked.name ?? 'file').split('.').last.toLowerCase();
-      final isPdf = ext == 'pdf';
-      final mime = isPdf
-          ? 'application/pdf'
-          : (ext == 'png'
-                ? 'image/png'
-                : (ext == 'jpg' || ext == 'jpeg')
-                ? 'image/jpeg'
-                : 'application/octet-stream');
-      resolvedPath = 'data:$mime;base64,${base64Encode(picked.bytes!)}';
-    } else {
-      resolvedPath = picked.path;
-    }
+    final resolvedPath = picked.path;
     if (resolvedPath == null || resolvedPath.isEmpty) return null;
 
     final details = await _askDocumentDetails(
@@ -2086,11 +2039,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                     final confirm = await showDialog<bool>(
                                                       context: context,
                                                       builder: (ctx) => AlertDialog(
-                                                        title: const Text(
-                                                          'Confirmation',
+                                                        title: Text(
+                                                          strings.confirmation,
                                                         ),
-                                                        content: const Text(
-                                                          'Voulez-vous vraiment enregistrer un nettoyage complet pour cet accessoire ? Le compteur d\'entretien sera remis à zéro.',
+                                                        content: Text(
+                                                          strings.accessoryConfirmCleaningMessage,
                                                         ),
                                                         actions: [
                                                           TextButton(
@@ -2099,8 +2052,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                                   ctx,
                                                                   false,
                                                                 ),
-                                                            child: const Text(
-                                                              'ANNULER',
+                                                            child: Text(
+                                                              strings.cancel,
                                                             ),
                                                           ),
                                                           FilledButton(
@@ -2109,8 +2062,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                                   ctx,
                                                                   true,
                                                                 ),
-                                                            child: const Text(
-                                                              'CONFIRMER',
+                                                            child: Text(
+                                                              strings.confirm,
                                                             ),
                                                           ),
                                                         ],
@@ -2154,7 +2107,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                               Expanded(
                                                 child: _MaintenanceChip(
                                                   icon: Icons.handyman_rounded,
-                                                  label: 'Révision',
+                                                  label: strings.revision,
                                                   value:
                                                       '${acc.roundsSinceRevision} / ${acc.wearRoundsThreshold} coups',
                                                   color:
@@ -2192,11 +2145,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                     final confirm = await showDialog<bool>(
                                                       context: context,
                                                       builder: (ctx) => AlertDialog(
-                                                        title: const Text(
-                                                          'Confirmation',
+                                                        title: Text(
+                                                          strings.confirmation,
                                                         ),
-                                                        content: const Text(
-                                                          'Voulez-vous vraiment enregistrer une révision complète pour cet accessoire ? Le compteur de révision sera remis à zéro.',
+                                                        content: Text(
+                                                          strings.accessoryConfirmRevisionMessage,
                                                         ),
                                                         actions: [
                                                           TextButton(
@@ -2205,8 +2158,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                                   ctx,
                                                                   false,
                                                                 ),
-                                                            child: const Text(
-                                                              'ANNULER',
+                                                            child: Text(
+                                                              strings.cancel,
                                                             ),
                                                           ),
                                                           FilledButton(
@@ -2215,8 +2168,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                                                   ctx,
                                                                   true,
                                                                 ),
-                                                            child: const Text(
-                                                              'CONFIRMER',
+                                                            child: Text(
+                                                              strings.confirm,
                                                             ),
                                                           ),
                                                         ],
@@ -3634,11 +3587,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Future<void> _openPdf(String pdfPath) async {
     final strings = AppStrings.of(context);
     try {
-      if (kIsWeb && pdfPath.startsWith('data:')) {
-        await WebDocumentOpener.openDataUrlInNewTab(pdfPath);
-        return;
-      }
-
       if (pdfPath.startsWith('http://') || pdfPath.startsWith('https://')) {
         final uri = Uri.parse(pdfPath);
         final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);

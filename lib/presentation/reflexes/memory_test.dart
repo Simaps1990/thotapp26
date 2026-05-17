@@ -182,11 +182,13 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
   String? _expectedSequenceStr;
 
   int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
+    final strings = AppStrings.of(context);
     return _scoredValue(
       b.mode,
       b.primaryScore,
       b.stats,
-    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats));
+      strings,
+    ).compareTo(_scoredValue(a.mode, a.primaryScore, a.stats, strings));
   }
 
   String _formatDate(DateTime dt) {
@@ -494,135 +496,145 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _AnimatedLevelStarsBlock(
-                          level: widget.level,
-                          score: _scoredValue(
+                        Builder(builder: (ctx) {
+                          final stoppedEarly = _currentResult!.stats['_stopped_early'] == '1';
+                          final computedScore = _scoredValue(
                             _currentResult!.mode,
                             _currentResult!.primaryScore,
                             _currentResult!.stats,
-                          ),
-                          stars: _starsForScore(
-                            _scoredValue(
-                              _currentResult!.mode,
-                              _currentResult!.primaryScore,
-                              _currentResult!.stats,
-                            ),
-                          ),
-                        ),
+                            strings,
+                          );
+                          return _AnimatedLevelStarsBlock(
+                            level: widget.level,
+                            score: stoppedEarly ? 0 : computedScore,
+                            stars: stoppedEarly ? 0 : _starsForScore(computedScore),
+                          );
+                        }),
                         const Gap(AppSpacing.lg),
-                        Container(
-                          padding: AppSpacing.paddingLg,
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: colors.outline),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                strings.reflexesModeMemory,
-                                style: texts.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: colors.secondary,
+                        if (_currentResult!.stats['_stopped_early'] != '1')
+                          Container(
+                            padding: AppSpacing.paddingLg,
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: colors.outline),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  strings.reflexesModeMemory,
+                                  style: texts.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colors.secondary,
+                                  ),
                                 ),
-                              ),
-                              const Gap(AppSpacing.md),
-                              _ScoreEquationBlock(
-                                mode: _currentResult!.mode,
-                                primaryScore: _currentResult!.primaryScore,
-                                stats: _currentResult!.stats,
-                              ),
-                              const Gap(AppSpacing.md),
-                              ..._currentResult!.stats.entries
-                                  .where((e) => !e.key.startsWith('_'))
-                                  .map(
-                                    (e) => Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: AppSpacing.md,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              e.key,
-                                              style: texts.bodyMedium?.copyWith(
-                                                fontWeight: FontWeight.w700,
+                                const Gap(AppSpacing.md),
+                                _ScoreEquationBlock(
+                                  mode: _currentResult!.mode,
+                                  primaryScore: _currentResult!.primaryScore,
+                                  stats: _currentResult!.stats,
+                                ),
+                                const Gap(AppSpacing.md),
+                                ..._currentResult!.stats.entries
+                                    .where((e) => !e.key.startsWith('_'))
+                                    .map(
+                                      (e) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: AppSpacing.md,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                e.key,
+                                                style: texts.bodyMedium?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          Text(
-                                            e.value,
-                                            style: texts.titleMedium?.copyWith(
-                                              color: colors.primary,
-                                              fontWeight: FontWeight.w800,
+                                            Text(
+                                              e.value,
+                                              style: texts.titleMedium?.copyWith(
+                                                color: colors.primary,
+                                                fontWeight: FontWeight.w800,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                         const Gap(AppSpacing.lg),
-                        SizedBox(
-                          height: 52,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: () {
-                                    widget.onResultSaved?.call(_currentResult!);
-                                    setState(() {
-                                      _showResults = false;
-                                      _currentResult = null;
-                                    });
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                          if (mounted) _restartRun();
-                                        });
-                                  },
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor:
-                                        colors.surfaceContainerHighest,
-                                    foregroundColor: colors.onSurfaceVariant,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                        Builder(builder: (context) {
+                          final earnedStars = _currentResult!.stats['_stopped_early'] == '1' ? 0 : _starsForScore(_scoredValue(
+                            _currentResult!.mode,
+                            _currentResult!.primaryScore,
+                            _currentResult!.stats,
+                            strings,
+                          ));
+                          return SizedBox(
+                            height: 52,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: () {
+                                      widget.onResultSaved?.call(_currentResult!);
+                                      setState(() {
+                                        _showResults = false;
+                                        _currentResult = null;
+                                      });
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                            if (mounted) _restartRun();
+                                          });
+                                    },
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor:
+                                          colors.surfaceContainerHighest,
+                                      foregroundColor: colors.onSurfaceVariant,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.replay_rounded,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      strings.colorPodRestart.toUpperCase(),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  icon: const Icon(
-                                    Icons.replay_rounded,
-                                    size: 20,
-                                  ),
-                                  label: Text(
-                                    strings.colorPodRestart.toUpperCase(),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                 ),
-                              ),
-                              const Gap(AppSpacing.sm),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: _nextLevel,
-                                  style: FilledButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                if (earnedStars > 0) ...[  
+                                  const Gap(AppSpacing.sm),
+                                  Expanded(
+                                    child: FilledButton.icon(
+                                      onPressed: _nextLevel,
+                                      style: FilledButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
+                                      label: Text(
+                                        strings.colorPodNext.toUpperCase(),
+                                      ),
+                                      iconAlignment: IconAlignment.end,
                                     ),
                                   ),
-                                  icon: const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20,
-                                  ),
-                                  label: Text(
-                                    strings.colorPodNext.toUpperCase(),
-                                  ),
-                                  iconAlignment: IconAlignment.end,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }),
                         const Gap(AppSpacing.lg),
                         _ResultTopThreeCard(
                           records: _topRecords(),
@@ -635,6 +647,7 @@ class _MemoryRunScreenState extends State<_MemoryRunScreen>
                                   record.mode,
                                   record.primaryScore,
                                   record.stats,
+                                  strings,
                                 ).toStringAsFixed(0),
                               ),
                           dateTextBuilder: _formatDate,

@@ -1,13 +1,6 @@
 part of '../add_item_screen.dart';
 
 extension _AddItemDocumentsAndSave on _AddItemScreenState {
-  static const List<String> _documentTypeOptions = [
-    'Facture',
-    'Révision',
-    'Manuel',
-    'Garantie',
-    'Autre',
-  ];
 
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
@@ -29,7 +22,7 @@ extension _AddItemDocumentsAndSave on _AddItemScreenState {
       _documents.add(
         _ItemDocumentDraft(
           name: file.name,
-          type: _documentTypeOptions.last,
+          type: DocumentTypeKey.other,
           file: file,
         ),
       );
@@ -38,10 +31,6 @@ extension _AddItemDocumentsAndSave on _AddItemScreenState {
 
   Future<void> _openDocumentPath(String path) async {
     if (path.trim().isEmpty) return;
-    if (kIsWeb && path.startsWith('data:')) {
-      await WebDocumentOpener.openDataUrlInNewTab(path);
-      return;
-    }
     final uri = Uri.tryParse(path);
     if (uri != null && uri.hasScheme) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -80,9 +69,9 @@ extension _AddItemDocumentsAndSave on _AddItemScreenState {
 
   Future<void> _editDocument(_ItemDocumentDraft doc) async {
     final nameController = TextEditingController(text: doc.name);
-    var selectedType = _documentTypeOptions.contains(doc.type)
+    var selectedType = DocumentTypeKey.all.contains(doc.type)
         ? doc.type
-        : _documentTypeOptions.last;
+        : DocumentTypeKey.other;
     final updated = await showDialog<_ItemDocumentDraft>(
       context: context,
       builder: (context) => AlertDialog(
@@ -94,8 +83,11 @@ extension _AddItemDocumentsAndSave on _AddItemScreenState {
             const Gap(12),
             DropdownButtonFormField<String>(
               value: selectedType,
-              items: _documentTypeOptions
-                  .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+              items: DocumentTypeKey.all
+                  .map((key) => DropdownMenuItem(
+                        value: key,
+                        child: Text(AppStrings.of(context).documentTypeLabel(key)),
+                      ))
                   .toList(),
               onChanged: (value) {
                 if (value != null) selectedType = value;

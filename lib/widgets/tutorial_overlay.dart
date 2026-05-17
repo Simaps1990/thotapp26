@@ -7,13 +7,13 @@ import '../theme.dart';
 import '../l10n/app_strings.dart';
 
 class TutorialStep {
-  final GlobalKey targetKey;
+  final GlobalKey? targetKey;
   final String title;
   final String description;
   final Alignment? tooltipAlignment;
 
   const TutorialStep({
-    required this.targetKey,
+    this.targetKey,
     required this.title,
     required this.description,
     this.tooltipAlignment,
@@ -95,7 +95,8 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     }
   }
 
-  void _scrollToTarget(GlobalKey key, int stepIndex) {
+  void _scrollToTarget(GlobalKey? key, int stepIndex) {
+    if (key == null) return;
     final context = key.currentContext;
     if (context == null) return;
 
@@ -120,7 +121,8 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     widget.onNeverShowAgain?.call();
   }
 
-  Rect? _resolveTargetRect(GlobalKey key) {
+  Rect? _resolveTargetRect(GlobalKey? key) {
+    if (key == null) return null;
     final renderObject = key.currentContext?.findRenderObject();
     if (renderObject is! RenderBox || !renderObject.hasSize) {
       return null;
@@ -179,7 +181,10 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       widget.onStepChanged?.call(_currentStep);
-      _scrollToTarget(widget.steps[_currentStep].targetKey, _currentStep);
+      final key = widget.steps[_currentStep].targetKey;
+      if (key != null) {
+        _scrollToTarget(key, _currentStep);
+      }
     });
   }
 }

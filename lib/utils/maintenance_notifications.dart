@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'package:flutter/material.dart' show Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:crypto/crypto.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import '../data/models.dart';
+import '../l10n/app_strings.dart';
 
 class MaintenanceNotifications {
   static final _plugin = FlutterLocalNotificationsPlugin();
@@ -25,7 +27,7 @@ class MaintenanceNotifications {
   static const _firedDocIdsKey = 'fired_document_notification_ids_v1';
 
   static Future<void> init() async {
-    if (kIsWeb || _initialized) return;
+    if (_initialized) return;
 
     if (!_timezoneInitialized) {
       tz_data.initializeTimeZones();
@@ -67,39 +69,14 @@ class MaintenanceNotifications {
   }
 
   static String _getChannelName(String? localeCode) {
-    final locale = (localeCode ?? '').toLowerCase();
-    switch (locale) {
-      case 'en':
-        return 'Document reminders';
-      case 'de':
-        return 'Dokumenterinnerungen';
-      case 'it':
-        return 'Promemoria documenti';
-      case 'es':
-        return 'Recordatorios de documentos';
-      default:
-        return 'Rappels documents';
-    }
+    return AppStrings.forLocale(Locale(localeCode ?? 'fr')).notificationChannelDocumentsName;
   }
 
   static String _getChannelDescription(String? localeCode) {
-    final locale = (localeCode ?? '').toLowerCase();
-    switch (locale) {
-      case 'en':
-        return 'Document expiry reminders (permits, warranties...)';
-      case 'de':
-        return 'Erinnerungen an Dokumentabläufe (Erlaubnisse, Garantien...)';
-      case 'it':
-        return 'Promemoria scadenza documenti (permessi, garanzie...)';
-      case 'es':
-        return 'Recordatorios de vencimiento de documentos (permisos, garantías...)';
-      default:
-        return 'Rappels d\'expiration de documents (permis, garanties...)';
-    }
+    return AppStrings.forLocale(Locale(localeCode ?? 'fr')).notificationChannelDocumentsDescription;
   }
 
   static Future<bool> requestPermission() async {
-    if (kIsWeb) return false;
     await init();
 
     var granted = true;
@@ -137,7 +114,6 @@ class MaintenanceNotifications {
     required List<Accessory> accessories,
     required List<UserDocument> userDocuments,
   }) async {
-    if (kIsWeb) return;
     await init();
     if (!_initialized) return;
 
@@ -380,7 +356,7 @@ class MaintenanceNotifications {
   }
 
   static Future<void> cancelDocumentReminders() async {
-    if (kIsWeb || !_initialized) return;
+    if (!_initialized) return;
     await _cancelScheduledDocumentReminders();
   }
 
@@ -388,7 +364,6 @@ class MaintenanceNotifications {
   /// end-to-end pipeline (permission, channel, icon) is working.
   /// Returns true if the notification was emitted without error.
   static Future<bool> showTestNotification({String? localeCode}) async {
-    if (kIsWeb) return false;
     await init();
     if (!_initialized) return false;
 
@@ -452,47 +427,22 @@ class MaintenanceNotifications {
   }
 
   static String _getTestNotificationTitle(String? localeCode) {
-    final locale = (localeCode ?? '').toLowerCase();
-    switch (locale) {
-      case 'en':
-        return 'THOT test notification';
-      case 'de':
-        return 'THOT-Testbenachrichtigung';
-      case 'it':
-        return 'Notifica di test THOT';
-      case 'es':
-        return 'Notificación de prueba THOT';
-      default:
-        return 'Test de notification THOT';
-    }
+    return AppStrings.forLocale(Locale(localeCode ?? 'fr')).notificationTestTitle;
   }
 
   static String _getTestNotificationBody(String? localeCode) {
-    final locale = (localeCode ?? '').toLowerCase();
-    switch (locale) {
-      case 'en':
-        return 'If you see this message, notifications are working correctly.';
-      case 'de':
-        return 'Wenn Sie diese Nachricht sehen, funktionieren Benachrichtigungen korrekt.';
-      case 'it':
-        return 'Se vedi questo messaggio, le notifiche funzionano correttamente.';
-      case 'es':
-        return 'Si ve este mensaje, las notificaciones funcionan correctamente.';
-      default:
-        return 'Si vous voyez ce message, les notifications fonctionnent correctement.';
-    }
+    return AppStrings.forLocale(Locale(localeCode ?? 'fr')).notificationTestBody;
   }
 
   /// Annule toutes les notifications de maintenance
   static Future<void> cancelAll() async {
-    if (kIsWeb || !_initialized) return;
+    if (!_initialized) return;
     await _plugin.cancelAll();
   }
 
   /// Returns the list of currently pending (scheduled) notifications.
   /// Useful for debugging – call this after syncDocumentExpiryReminders.
   static Future<List<PendingNotificationRequest>> pendingNotifications() async {
-    if (kIsWeb) return [];
     await init();
     if (!_initialized) return [];
     return _plugin.pendingNotificationRequests();
@@ -507,18 +457,12 @@ class MaintenanceNotifications {
         0x7FFFFFFF;
   }
 
-  static String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$day/$month/$year';
-  }
 
   static String _documentReminderTitle(
     String? localeCode,
     String documentType,
   ) {
-    final locale = (localeCode ?? '').toLowerCase();
+    final strings = AppStrings.forLocale(Locale(localeCode ?? 'fr'));
     final type = documentType.toLowerCase();
 
     // Permis et certificats - messages plus personnels
@@ -528,49 +472,16 @@ class MaintenanceNotifications {
         type.contains('license') ||
         type.contains('certificat') ||
         type.contains('certificate')) {
-      switch (locale) {
-        case 'en':
-          return 'Permit reminder';
-        case 'de':
-          return 'Erlaubnis-Erinnerung';
-        case 'it':
-          return 'Promemoria permesso';
-        case 'es':
-          return 'Recordatorio de permiso';
-        default:
-          return 'Rappel permis';
-      }
+      return strings.notificationDocumentTitlePermit;
     }
 
     // Garanties
     if (type.contains('garantie') || type.contains('warranty')) {
-      switch (locale) {
-        case 'en':
-          return 'Warranty reminder';
-        case 'de':
-          return 'Garantie-Erinnerung';
-        case 'it':
-          return 'Promemoria garanzia';
-        case 'es':
-          return 'Recordatorio de garantía';
-        default:
-          return 'Rappel garantie';
-      }
+      return strings.notificationDocumentTitleWarranty;
     }
 
     // Messages génériques pour autres types
-    switch (locale) {
-      case 'en':
-        return 'Document reminder';
-      case 'de':
-        return 'Dokument-Erinnerung';
-      case 'it':
-        return 'Promemoria documento';
-      case 'es':
-        return 'Recordatorio de documento';
-      default:
-        return 'Rappel document';
-    }
+    return strings.notificationDocumentTitleGeneric;
   }
 
   static String _documentReminderBody(
@@ -583,38 +494,14 @@ class MaintenanceNotifications {
     // The document name is already used as the notification title, so the
     // body focuses on the expiry date only — this avoids redundant text and
     // keeps the preview concise on small screens.
-    final locale = (localeCode ?? '').toLowerCase();
-    final date = _formatDate(expiryDate);
-
-    switch (locale) {
-      case 'en':
-        return 'Expires on $date';
-      case 'de':
-        return 'Läuft am $date ab';
-      case 'it':
-        return 'Scade il $date';
-      case 'es':
-        return 'Vence el $date';
-      default:
-        return 'Expire le $date';
-    }
+    final strings = AppStrings.forLocale(Locale(localeCode ?? 'fr'));
+    return strings.notificationDocumentBody(expiryDate);
   }
 
   /// Localized prefix used in the notification title, followed by the
   /// document's custom name: e.g. "Le document : Permis de chasse 2027".
   static String _documentReminderPrefix(String? localeCode) {
-    switch ((localeCode ?? '').toLowerCase()) {
-      case 'en':
-        return 'Document:';
-      case 'de':
-        return 'Dokument:';
-      case 'it':
-        return 'Documento:';
-      case 'es':
-        return 'Documento:';
-      default:
-        return 'Le document :';
-    }
+    return AppStrings.forLocale(Locale(localeCode ?? 'fr')).notificationDocumentPrefix;
   }
 
   static Future<Set<int>> _getFiredDocIds() async {

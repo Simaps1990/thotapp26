@@ -964,6 +964,24 @@ extension AppStringsSettings on AppStrings {
     es: 'Ningún fallo registrado',
   );
 
+  // --- Sharing texts ---
+
+  String get shareBackupText => _pick(
+    fr: 'Sauvegarde THOT',
+    en: 'THOT backup',
+    de: 'THOT-Sicherung',
+    it: 'Backup THOT',
+    es: 'Copia de seguridad THOT',
+  );
+
+  String get shareCrashLogText => _pick(
+    fr: 'Journal de crash THOT',
+    en: 'THOT crash log',
+    de: 'THOT-Crash-Log',
+    it: 'Log crash THOT',
+    es: 'Registro de fallos THOT',
+  );
+
   // --- PIN disable confirmation ---
 
   String get pinDisableConfirmTitle => _pick(
@@ -1134,5 +1152,86 @@ extension AppStringsSettings on AppStrings {
     de: '• $count ${count == 1 ? 'Schusstabelle' : 'Schusstabellen'}',
     it: '• $count ${count == 1 ? 'tabella di tiro' : 'tabelle di tiro'}',
     es: '• $count ${count == 1 ? 'tabla de tiro' : 'tablas de tiro'}',
+  );
+
+  // ═══════════════════════════════════════
+  // NOTIFICATIONS (localized strings for maintenance_notifications.dart)
+  // ═══════════════════════════════════════
+
+  String get notificationChannelDocumentsName => _pick(
+    fr: 'Rappels documents',
+    en: 'Document reminders',
+    de: 'Dokumenterinnerungen',
+    it: 'Promemoria documenti',
+    es: 'Recordatorios de documentos',
+  );
+
+  String get notificationChannelDocumentsDescription => _pick(
+    fr: "Rappels d'expiration de documents (permis, garanties...)",
+    en: 'Document expiry reminders (permits, warranties...)',
+    de: 'Erinnerungen an Dokumentabläufe (Erlaubnisse, Garantien...)',
+    it: 'Promemoria scadenza documenti (permessi, garanzie...)',
+    es: 'Recordatorios de vencimiento de documentos (permisos, garantías...)',
+  );
+
+  String get notificationDocumentTitlePermit => _pick(
+    fr: 'Rappel permis',
+    en: 'Permit reminder',
+    de: 'Erlaubnis-Erinnerung',
+    it: 'Promemoria permesso',
+    es: 'Recordatorio de permiso',
+  );
+
+  String get notificationDocumentTitleWarranty => _pick(
+    fr: 'Rappel garantie',
+    en: 'Warranty reminder',
+    de: 'Garantie-Erinnerung',
+    it: 'Promemoria garanzia',
+    es: 'Recordatorio de garantía',
+  );
+
+  String get notificationDocumentTitleGeneric => _pick(
+    fr: 'Rappel document',
+    en: 'Document reminder',
+    de: 'Dokument-Erinnerung',
+    it: 'Promemoria documento',
+    es: 'Recordatorio de documento',
+  );
+
+  String notificationDocumentBody(DateTime expiryDate) {
+    final day = expiryDate.day.toString().padLeft(2, '0');
+    final month = expiryDate.month.toString().padLeft(2, '0');
+    final year = expiryDate.year.toString();
+    return _pick(
+      fr: 'Expire le $day/$month/$year',
+      en: 'Expires on $day/$month/$year',
+      de: 'Läuft am $day.$month.$year ab',
+      it: 'Scade il $day/$month/$year',
+      es: 'Vence el $day/$month/$year',
+    );
+  }
+
+  String get notificationDocumentPrefix => _pick(
+    fr: 'Le document :',
+    en: 'Document:',
+    de: 'Dokument:',
+    it: 'Documento:',
+    es: 'Documento:',
+  );
+
+  String get notificationTestTitle => _pick(
+    fr: 'Test de notification THOT',
+    en: 'THOT test notification',
+    de: 'THOT-Testbenachrichtigung',
+    it: 'Notifica di test THOT',
+    es: 'Notificación de prueba THOT',
+  );
+
+  String get notificationTestBody => _pick(
+    fr: 'Si vous voyez ce message, les notifications fonctionnent correctement.',
+    en: 'If you see this message, notifications are working correctly.',
+    de: 'Wenn Sie diese Nachricht sehen, funktionieren Benachrichtigungen korrekt.',
+    it: 'Se vedi questo messaggio, le notifiche funzionano correttamente.',
+    es: 'Si ve este mensaje, las notificaciones funcionan correctamente.',
   );
 }

@@ -69,7 +69,7 @@ class _DrillCardState extends State<_DrillCard>
   @override
   Widget build(BuildContext context) {
     return Opacity(
-      opacity: widget.isLocked ? 0.5 : 1.0,
+      opacity: widget.isLocked ? 0.75 : 1.0,
       child: InkWell(
         onTap: widget.onTap,
         borderRadius: BorderRadius.circular(16),
@@ -167,21 +167,48 @@ class _DrillCardState extends State<_DrillCard>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.title,
-                            style: widget.textStyles.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: widget.backgroundImage != null
-                                  ? Colors.white
-                                  : (widget.isSelected
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  widget.title,
+                                  style: widget.textStyles.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: widget.backgroundImage != null
                                         ? Colors.white
-                                        : widget.colors.onSurface),
-                            ),
+                                        : (widget.isSelected
+                                              ? Colors.white
+                                              : widget.colors.onSurface),
+                                  ),
+                                ),
+                              ),
+                              if (widget.isLocked) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'PRO',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          if (widget.isLocked) ...[
-                            const Gap(8),
-                            const ProBadge(compact: true),
-                          ],
                           const Gap(4),
                           Text(
                             widget.description,
@@ -399,6 +426,8 @@ class _ReflexSessionRecord {
         return '${strings.hitFactorScoreLabel}: ${primaryScore.toStringAsFixed(1)}';
       case _ReflexesMode.mot:
         return '${strings.reflexesMotSuccessRate}: ${primaryScore.toStringAsFixed(1)} %';
+      case _ReflexesMode.dissociation:
+        return '${strings.reflexesDissociationTempoAccuracy}: ${stats[strings.reflexesDissociationTempoAccuracy] ?? '0'}';
     }
   }
 }

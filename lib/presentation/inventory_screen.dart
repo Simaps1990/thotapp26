@@ -64,6 +64,10 @@ class _InventoryScreenState extends State<InventoryScreen>
     final strings = AppStrings.of(context);
     final steps = [
       TutorialStep(
+        title: strings.tutorialInventoryIntroTitle,
+        description: strings.tutorialInventoryIntroDescription,
+      ),
+      TutorialStep(
         targetKey: _menuSearchKey,
         title: strings.tutorialInventoryMenuSearchTitle,
         description: strings.tutorialInventoryMenuSearchDescription,

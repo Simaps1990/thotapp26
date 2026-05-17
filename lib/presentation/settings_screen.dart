@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:provider/provider.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
@@ -19,7 +19,6 @@ import 'package:thot/data/training_history.dart';
 import 'package:thot/theme.dart';
 import 'package:thot/presentation/pro_screen.dart';
 import 'package:thot/utils/app_date_formats.dart';
-import 'package:thot/utils/web_document_opener.dart';
 import 'package:thot/utils/pdf_exporter.dart';
 import 'package:thot/utils/pdf_export_options.dart';
 import 'package:thot/l10n/app_strings.dart';
@@ -239,7 +238,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
     try {
-      await Share.shareXFiles([XFile(path)], text: 'THOT crash log');
+      await Share.shareXFiles([XFile(path)], text: strings.shareCrashLogText);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -289,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final dir = await getApplicationSupportDirectory();
       final file = File('${dir.path}/thot_backup.json');
       await file.writeAsString(jsonStr, flush: true);
-      await Share.shareXFiles([XFile(file.path)], text: 'THOT backup');
+      await Share.shareXFiles([XFile(file.path)], text: strings.shareBackupText);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -826,34 +825,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required TextTheme textStyles,
   }) {
     final strings = AppStrings.of(context);
-    final yearlyPrice = provider.yearlyPrice;
-    final monthlyPrice = provider.monthlyPrice;
 
-    String buildBannerPrice() {
-      final hasYearly = yearlyPrice != null && yearlyPrice.trim().isNotEmpty;
-      final hasMonthly = monthlyPrice != null && monthlyPrice.trim().isNotEmpty;
-
-      if (hasYearly && hasMonthly) {
-        return '$yearlyPrice • $monthlyPrice';
-      } else if (hasYearly) {
-        return yearlyPrice.trim();
-      } else if (hasMonthly) {
-        return monthlyPrice.trim();
-      }
-
-      return strings.premiumBannerPrice;
-    }
+    // Paywall color scheme from pro_screen.dart
+    const bgDark = Color(0xFF0E0F0A);
+    const cardBg = Color(0xFF1A1C12);
+    const cardBorder = Color(0xFF2D3320);
+    const kakiOlive = LightColors.primary;
+    const kakiOliveLight = Color(0xFFB8B07A);
+    const creamWhite = Color(0xFFE5E0CD);
+    const mutedText = Color(0xFFB5B097);
 
     if (!provider.isPremium) {
       return Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.lg),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF3F4A30), Color(0xFF6E7C4A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: cardBg,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cardBorder, width: 1.5),
           boxShadow: const [
             BoxShadow(
               color: Colors.black26,
@@ -868,35 +856,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => showProModal(context),
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header with icon and title
                   Row(
                     children: [
-                      const Icon(
-                        Icons.workspace_premium_rounded,
-                        size: 40,
-                        color: Colors.white,
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: kakiOlive.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.workspace_premium_rounded,
+                          size: 24,
+                          color: kakiOliveLight,
+                        ),
                       ),
-                      const Gap(16),
+                      const Gap(12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               strings.premiumBannerTitle,
-                              style: textStyles.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
+                              style: textStyles.titleMedium?.copyWith(
+                                color: creamWhite,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
                               ),
                             ),
-                            const Gap(4),
+                            const Gap(2),
                             Text(
-                              buildBannerPrice(),
-                              style: textStyles.titleMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontWeight: FontWeight.bold,
+                              strings.proHeaderTagline,
+                              style: textStyles.bodySmall?.copyWith(
+                                color: mutedText,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
@@ -904,56 +902,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const Icon(
                         Icons.arrow_forward_rounded,
-                        color: Colors.white,
-                        size: 28,
+                        color: kakiOliveLight,
+                        size: 24,
                       ),
                     ],
                   ),
                   const Gap(16),
+                  // Benefits card matching paywall style
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colors.onPrimary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      color: bgDark,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: cardBorder, width: 1),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _PremiumFeature(
-                          strings.proBenefitUnlimitedSessionsTitle,
+                        _SettingsProBenefit(
+                          icon: const Icon(
+                            Icons.all_inclusive,
+                            color: kakiOliveLight,
+                            size: 20,
+                          ),
+                          title: strings.proBenefitCreateTitle,
+                          subtitle: strings.proBenefitCreateSubtitle,
+                          creamWhite: creamWhite,
+                          mutedText: mutedText,
+                          textStyles: textStyles,
                         ),
-                        _PremiumFeature(
-                          strings.proBenefitUnlimitedEquipmentTitle,
+                        const Divider(color: cardBorder, height: 16),
+                        _SettingsProBenefit(
+                          icon: const Icon(
+                            Icons.auto_fix_high_rounded,
+                            color: kakiOliveLight,
+                            size: 20,
+                          ),
+                          title: strings.proBenefitToolsTitle,
+                          subtitle: strings.proBenefitToolsSubtitle,
+                          creamWhite: creamWhite,
+                          mutedText: mutedText,
+                          textStyles: textStyles,
                         ),
-                        _PremiumFeature(strings.proBenefitTimerTitle),
-                        _PremiumFeature(strings.proBenefitDiagnosticTitle),
-                        _PremiumFeature(strings.proBenefitMilliemeTitle),
-                        _PremiumFeature(strings.proBenefitLogbookExportTitle),
-                        _PremiumFeature(
-                          strings.proBenefitUnlimitedDocumentsTitle,
+                        const Divider(color: cardBorder, height: 16),
+                        _SettingsProBenefit(
+                          icon: const Icon(
+                            Icons.inventory_2_rounded,
+                            color: kakiOliveLight,
+                            size: 20,
+                          ),
+                          title: strings.proBenefitStoreTitle,
+                          subtitle: strings.proBenefitStoreSubtitle,
+                          creamWhite: creamWhite,
+                          mutedText: mutedText,
+                          textStyles: textStyles,
                         ),
                       ],
                     ),
                   ),
-                  const Gap(8),
+                  const Gap(12),
+                  // Footer with restore button
                   Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     child: TextButton.icon(
                       onPressed: () => _restorePurchases(context, provider),
                       icon: const Icon(
                         Icons.refresh_rounded,
-                        color: Colors.white,
+                        color: mutedText,
+                        size: 18,
                       ),
                       label: Text(
                         strings.proRestorePurchases,
-                        style: textStyles.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                        style: textStyles.bodySmall?.copyWith(
+                          color: mutedText,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(),
+                        foregroundColor: mutedText,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                     ),
                   ),
@@ -2126,36 +2153,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (!context.mounted || picked.isCancelled) return;
 
-      final String resolvedPathOrDataUrl;
       final String fileName = picked.name ?? 'document';
 
-      if (kIsWeb) {
-        if (picked.bytes == null) return;
-        final ext = fileName.contains('.')
-            ? fileName.split('.').last.toLowerCase()
-            : 'bin';
-        final isPdf = ext == 'pdf';
-        final mime = isPdf
-            ? 'application/pdf'
-            : (ext == 'png'
-                  ? 'image/png'
-                  : (ext == 'jpg' || ext == 'jpeg' || ext == 'heic')
-                  ? 'image/jpeg'
-                  : 'application/octet-stream');
-        resolvedPathOrDataUrl =
-            'data:$mime;base64,${base64Encode(picked.bytes!)}';
+      if (picked.path == null) return;
+      // Images are already persisted by NativePicker in Documents/photos/.
+      // Non-image documents (PDFs) need to be copied to user_documents/.
+      final String resolvedPathOrDataUrl;
+      if (picked.isImage) {
+        resolvedPathOrDataUrl = picked.path!;
       } else {
-        if (picked.path == null) return;
-        // Images are already persisted by NativePicker in Documents/photos/.
-        // Non-image documents (PDFs) need to be copied to user_documents/.
-        if (picked.isImage) {
-          resolvedPathOrDataUrl = picked.path!;
-        } else {
-          resolvedPathOrDataUrl = await _persistPickedDocumentFromPath(
-            picked.path!,
-            fileName,
-          );
-        }
+        resolvedPathOrDataUrl = await _persistPickedDocumentFromPath(
+          picked.path!,
+          fileName,
+        );
       }
 
       if (resolvedPathOrDataUrl.trim().isEmpty) {
@@ -2893,6 +2903,57 @@ class _ShortcutToggle extends StatelessWidget {
   }
 }
 
+class _SettingsProBenefit extends StatelessWidget {
+  final Widget icon;
+  final String title;
+  final String subtitle;
+  final Color creamWhite;
+  final Color mutedText;
+  final TextTheme textStyles;
+
+  const _SettingsProBenefit({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.creamWhite,
+    required this.mutedText,
+    required this.textStyles,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        icon,
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: textStyles.bodyMedium?.copyWith(
+                  color: creamWhite,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Gap(2),
+              Text(
+                subtitle,
+                style: textStyles.bodySmall?.copyWith(
+                  color: mutedText,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _PremiumFeature extends StatelessWidget {
   final String text;
 
@@ -2969,26 +3030,6 @@ class _DocumentItem extends StatelessWidget {
     try {
       final path = document.filePath;
       if (path.trim().isEmpty) throw Exception('Empty filePath');
-
-      if (kIsWeb) {
-        if (path.startsWith('data:')) {
-          await WebDocumentOpener.openDataUrlInNewTab(path);
-          return;
-        }
-
-        if (path.startsWith('blob:') ||
-            path.startsWith('http://') ||
-            path.startsWith('https://')) {
-          final ok = await launchUrl(
-            Uri.parse(path),
-            webOnlyWindowName: '_blank',
-          );
-          if (!ok) throw Exception('launchUrl failed (web)');
-          return;
-        }
-
-        throw Exception('Unsupported document reference on web: $path');
-      }
 
       if (path.startsWith('http://') || path.startsWith('https://')) {
         final ok = await launchUrl(
