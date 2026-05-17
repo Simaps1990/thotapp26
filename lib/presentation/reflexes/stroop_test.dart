@@ -1,5 +1,15 @@
 part of '../reflexes_screen.dart';
 
+// Paramètres interpolés sur 50 niveaux (cohérent avec les autres tests réflexes).
+int _stroopStimuliCount(int level) =>
+    (12 + level * 0.5).round().clamp(12, 40);
+
+double _stroopDisplayMs(int level) =>
+    (1500 - level * 18).clamp(600, 1500).toDouble();
+
+double _stroopCongruentRatio(int level) =>
+    (0.65 - level * 0.008).clamp(0.25, 0.65);
+
 class _StroopRunScreen extends StatefulWidget {
   const _StroopRunScreen({
     required this.difficulty,
@@ -84,6 +94,7 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
               e.mode,
               e.primaryScore,
               e.stats,
+              strings,
             ).toStringAsFixed(3),
             ...e.stats,
           },
@@ -112,11 +123,14 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
     return items.take(3).toList();
   }
 
-  int _getCount() => widget.difficulty == _StroopDifficulty.easy
-      ? 15
-      : widget.difficulty == _StroopDifficulty.medium
-      ? 20
-      : 25;
+  int _getCount() {
+    if (widget.level != null) return _stroopStimuliCount(widget.level!);
+    return widget.difficulty == _StroopDifficulty.easy
+        ? 15
+        : widget.difficulty == _StroopDifficulty.medium
+        ? 20
+        : 25;
+  }
 
   void _closeToTools() {
     final current = _currentResult;
@@ -218,11 +232,13 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
     final avgMsLabel = avgMs.isFinite ? '${avgMs.toStringAsFixed(0)} ms' : '—';
     final total = max(1, _correctAnswers + _wrongAnswers);
     final accuracy = _correctAnswers / total;
-    final targetMs = switch (widget.difficulty) {
-      _StroopDifficulty.easy => 1400.0,
-      _StroopDifficulty.medium => 1200.0,
-      _StroopDifficulty.hard => 1050.0,
-    };
+    final targetMs = widget.level != null
+        ? _stroopDisplayMs(widget.level!)
+        : switch (widget.difficulty) {
+            _StroopDifficulty.easy => 1400.0,
+            _StroopDifficulty.medium => 1200.0,
+            _StroopDifficulty.hard => 1050.0,
+          };
     final speedPenalty = avgMs.isFinite
         ? max(0.0, avgMs - targetMs) * 0.45
         : 300.0;
@@ -313,11 +329,13 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
   (_StroopInkColor, _StroopInkColor, bool) _pick(int i) {
     // Ratio de congruence selon difficulté :
     // Easy 60% congruents, Medium 50%, Hard 30%
-    final congruentRatio = widget.difficulty == _StroopDifficulty.easy
-        ? 0.60
-        : widget.difficulty == _StroopDifficulty.medium
-        ? 0.50
-        : 0.30;
+    final congruentRatio = widget.level != null
+        ? _stroopCongruentRatio(widget.level!)
+        : (widget.difficulty == _StroopDifficulty.easy
+            ? 0.60
+            : widget.difficulty == _StroopDifficulty.medium
+            ? 0.50
+            : 0.30);
     final congruent = _random.nextDouble() < congruentRatio;
     final ink = _StroopInkColor.values[_random.nextInt(4)];
     if (congruent) return (ink, ink, true);
@@ -570,16 +588,20 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
                             context,
                           ).pop(_recordFromCurrent(_currentResult!)),
                           child: Container(
-                            width: 36,
-                            height: 36,
+                            width: 42,
+                            height: 42,
                             decoration: BoxDecoration(
-                              color: LightColors.primary,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey.shade300
+                                  : LightColors.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.arrow_back_rounded,
-                              color: Colors.white,
-                              size: 20,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.black
+                                  : Colors.white,
+                              size: 22,
                             ),
                           ),
                         ),
@@ -776,85 +798,95 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
                           ),
                         ),
                         const Gap(AppSpacing.lg),
-                        SizedBox(
-                          height: 52,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      _showResults = false;
-                                      _currentResult = null;
-                                      _aborted = false;
-                                      _countdown = 3;
-                                      _running = false;
-                                      _word = null;
-                                      _ink = null;
-                                      _responded = false;
-                                      _responses = 0;
-                                      _correctAnswers = 0;
-                                      _wrongAnswers = 0;
-                                      _reactionTimes.clear();
-                                      _cong.clear();
-                                      _conf.clear();
-                                      _wordCounts.updateAll((key, value) => 0);
-                                      _inkCounts.updateAll((key, value) => 0);
-                                    });
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                          if (mounted) _loop();
-                                        });
-                                  },
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor:
-                                        colors.surfaceContainerHighest,
-                                    foregroundColor: colors.onSurfaceVariant,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  icon: const Icon(
-                                    Icons.replay_rounded,
-                                    size: 20,
-                                  ),
-                                  label: Text(
-                                    strings.colorPodRestart.toUpperCase(),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              const Gap(AppSpacing.sm),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: () {
-                                    final current = _currentResult;
-                                    if (current == null) return;
-                                    Navigator.of(context).pop(
-                                      _recordFromCurrent(
-                                        Map<String, String>.from(current)
-                                          ..['_next_level'] = '1',
+                        Builder(builder: (context) {
+                          final earnedStars = _starsForScore(
+                            double.tryParse(
+                                  _currentResult!['_score_final'] ?? '0',
+                                ) ??
+                                0,
+                          );
+                          return SizedBox(
+                            height: 52,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _showResults = false;
+                                        _currentResult = null;
+                                        _aborted = false;
+                                        _countdown = 3;
+                                        _running = false;
+                                        _word = null;
+                                        _ink = null;
+                                        _responded = false;
+                                        _responses = 0;
+                                        _correctAnswers = 0;
+                                        _wrongAnswers = 0;
+                                        _reactionTimes.clear();
+                                        _cong.clear();
+                                        _conf.clear();
+                                        _wordCounts.updateAll((key, value) => 0);
+                                        _inkCounts.updateAll((key, value) => 0);
+                                      });
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                            if (mounted) _loop();
+                                          });
+                                    },
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor:
+                                          colors.surfaceContainerHighest,
+                                      foregroundColor: colors.onSurfaceVariant,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
-                                    );
-                                  },
-                                  style: FilledButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.replay_rounded,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      strings.colorPodRestart.toUpperCase(),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  icon: const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20,
-                                  ),
-                                  label: Text(
-                                    strings.colorPodNext.toUpperCase(),
-                                  ),
-                                  iconAlignment: IconAlignment.end,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                if (earnedStars > 0) ...[
+                                  const Gap(AppSpacing.sm),
+                                  Expanded(
+                                    child: FilledButton.icon(
+                                      onPressed: () {
+                                        final current = _currentResult;
+                                        if (current == null) return;
+                                        Navigator.of(context).pop(
+                                          _recordFromCurrent(
+                                            Map<String, String>.from(current)
+                                              ..['_next_level'] = '1',
+                                          ),
+                                        );
+                                      },
+                                      style: FilledButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
+                                      label: Text(
+                                        strings.colorPodNext.toUpperCase(),
+                                      ),
+                                      iconAlignment: IconAlignment.end,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }),
                         const Gap(AppSpacing.lg),
                         Container(
                           padding: AppSpacing.paddingLg,
@@ -948,7 +980,10 @@ class _StroopRunScreenState extends State<_StroopRunScreen>
     }
 
     Color _getHardModeBackground() {
-      if (widget.difficulty != _StroopDifficulty.hard) return Colors.black;
+      final isHard = widget.level != null
+          ? widget.level! >= 40
+          : widget.difficulty == _StroopDifficulty.hard;
+      if (!isHard) return Colors.black;
       if (_ink == null) return Colors.black;
       final allColors = [
         const Color(0xFFE53935), // red
