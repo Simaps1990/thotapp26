@@ -962,6 +962,14 @@ es: 'Todo tu equipo, sin límites',
     fr: 'Texte', en: 'Text', de: 'Text', it: 'Testo', es: 'Texto',
   );
 
+  String get documentExpiresOn => _pick(
+    fr: 'Expire le',
+    en: 'Expires',
+    de: 'Läuft ab am',
+    it: 'Scade il',
+    es: 'Vence el',
+  );
+
   // --- Crash Log ---
 
   String get exportCrashLogLabel => _pick(

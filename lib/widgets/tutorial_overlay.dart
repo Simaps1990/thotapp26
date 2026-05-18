@@ -99,20 +99,23 @@ class _TutorialOverlayState extends State<TutorialOverlay>
 
   void _scrollToTarget(GlobalKey? key, int stepIndex) {
     if (key == null) return;
-    final context = key.currentContext;
-    if (context == null) return;
 
-    double alignment = 0.5;
-    if (stepIndex == 1) {
-      alignment = 0.3;
+    double alignment = 0.4;
+    if (stepIndex >= 3) {
+      alignment = 0.1;
     }
 
-    Scrollable.ensureVisible(
-      context,
-      alignment: alignment,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ctx = key.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        alignment: alignment,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   void _skip() {

@@ -406,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _statsKey,
       _rewardsKey,
     ];
-    final stepAlignments = <double>[0.4, 0.4, 0.4, 0.4, 0.4, 0.4];
+    final stepAlignments = <double>[0.4, 0.4, 0.4, 0.1, 0.1, 0.1];
     if (stepIndex < 0 || stepIndex >= stepKeys.length) return;
 
     final contextForStep = stepKeys[stepIndex].currentContext;

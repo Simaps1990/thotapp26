@@ -3082,7 +3082,7 @@ class _DocumentItem extends StatelessWidget {
     final baseTypeLabel = _humanizeDocumentType(document.type, strings);
     final expiryLabel = document.expiryDate == null
         ? null
-        : 'Expire le ${AppDateFormats.formatDateShort(context, document.expiryDate!)}';
+        : '${strings.documentExpiresOn} ${AppDateFormats.formatDateShort(context, document.expiryDate!)}';
     final subtitle = expiryLabel == null
         ? baseTypeLabel
         : '$baseTypeLabel • $expiryLabel';
