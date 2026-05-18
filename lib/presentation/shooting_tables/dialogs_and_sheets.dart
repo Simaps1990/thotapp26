@@ -457,17 +457,19 @@ extension _ShootingTablesDialogsAndSheets on _ShootingTablesScreenState {
     if (_editorPlatformId == null) return;
     final selected = Set<String>.from(_editorAccessoryIds);
     final customNames = List<String>.from(_editorCustomAccessoryNames);
+    final customController = TextEditingController();
 
-    final result = await showModalBottomSheet<_AccessoryPickerResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final colors = Theme.of(sheetContext).colorScheme;
-        final textStyles = Theme.of(sheetContext).textTheme;
-        final localSelected = Set<String>.from(selected);
-        final localCustomNames = List<String>.from(customNames);
-        final customController = TextEditingController();
+    _AccessoryPickerResult? result;
+    try {
+      result = await showModalBottomSheet<_AccessoryPickerResult>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) {
+          final colors = Theme.of(sheetContext).colorScheme;
+          final textStyles = Theme.of(sheetContext).textTheme;
+          final localSelected = Set<String>.from(selected);
+          final localCustomNames = List<String>.from(customNames);
 
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -679,9 +681,18 @@ extension _ShootingTablesDialogsAndSheets on _ShootingTablesScreenState {
       },
     );
 
+    } finally {
+      unawaited(
+        Future<void>.delayed(
+          const Duration(milliseconds: 350),
+          customController.dispose,
+        ),
+      );
+    }
+
     if (!mounted || result == null) return;
     setState(() {
-      _editorAccessoryIds = result.accessoryIds;
+      _editorAccessoryIds = result!.accessoryIds;
       _editorCustomAccessoryNames = result.customAccessoryNames;
       _editorAccessoriesCustomized = true;
     });
