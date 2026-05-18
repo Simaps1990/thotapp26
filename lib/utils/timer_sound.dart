@@ -21,6 +21,11 @@ class TimerSound {
   static Future<void> warmUp() async {
     if (_warmUpDone) return;
     try {
+      // iOS: bypass silent switch — un test auditif DOIT jouer même en silencieux.
+      // respectSilence: false (défaut) → AVAudioSessionCategory.playback.
+      await _player.setAudioContext(
+        AudioContextConfig(respectSilence: false).build(),
+      );
       await _player.setSource(AssetSource(_assetPath));
       _warmUpDone = true;
       _setDebug('TimerSound warmUp OK: $_assetPath');
