@@ -75,6 +75,7 @@ class _MotRunScreenState extends State<_MotRunScreen>
       );
   Size? _gameZoneSize;
   bool _retryStartTrialScheduled = false;
+  bool _abortedByBackground = false;
   final _repaintNotifier = ValueNotifier<int>(0);
 
   int _compareScores(_ReflexSessionRecord a, _ReflexSessionRecord b) {
@@ -219,6 +220,19 @@ class _MotRunScreenState extends State<_MotRunScreen>
     _blinkTimer?.cancel();
     _disposeAnimationTicker();
     _finish(stoppedEarly: true);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (!_showResults && !_isCountingDown) {
+        _abortedByBackground = true;
+        _stop();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      _abortedByBackground = false;
+    }
   }
 
   void _disposeAnimationTicker() {
