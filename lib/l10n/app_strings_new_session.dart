@@ -1699,4 +1699,23 @@ extension AppStringsNewSession on AppStrings {
     it: 'OFFLINE',
     es: 'SIN CONEXIÓN',
   );
+
+  String get today =>
+      _pick(fr: "Aujourd'hui", en: 'Today', de: 'Heute', it: 'Oggi', es: 'Hoy');
+
+  String daysAgo(int days) {
+    switch (languageCode) {
+      case 'en':
+        return '${days}d ago';
+      case 'de':
+        return 'vor $days T';
+      case 'it':
+        return '$days g fa';
+      case 'es':
+        return 'hace ${days}d';
+      case 'fr':
+      default:
+        return '$days j';
+    }
+  }
 }

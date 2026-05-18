@@ -565,13 +565,13 @@ class _InventoryList extends StatelessWidget {
     required this.provider,
     required this.searchQuery,
   });
-  String _formatLastUse(DateTime? lastUsed) {
+  String _formatLastUse(DateTime? lastUsed, AppStrings strings) {
     if (lastUsed == null) return '—';
 
     final days = DateTime.now().difference(lastUsed).inDays;
-    if (days <= 0) return 'Aujourd’hui';
-    if (days == 1) return 'Hier';
-    return '$days j';
+    if (days <= 0) return strings.today;
+    if (days == 1) return strings.yesterday;
+    return strings.daysAgo(days);
   }
 
   bool _isInactive(DateTime? lastUsed) {
@@ -834,7 +834,7 @@ class _InventoryList extends StatelessWidget {
             // Show the localized platform type in the grey badge (top-right).
             category: strings.itemPlatformTypeLabel(w.type),
             isLow: false,
-            lastUse: _formatLastUse(w.lastUsed),
+            lastUse: _formatLastUse(w.lastUsed, strings),
             badges: _platformBadges(w, strings),
             typeAccentColor: _typeAccentColor('platform'),
             svgIconAsset: 'assets/images/tube.svg',
@@ -870,9 +870,9 @@ class _InventoryList extends StatelessWidget {
             // Show projectile type in the grey badge (top-right).
             category: a.projectileType.isNotEmpty
                 ? a.projectileType
-                : 'Consommable',
+                : strings.quickActionLabelAmmo,
             isLow: a.quantity < 100,
-            lastUse: _formatLastUse(a.lastUsed),
+            lastUse: _formatLastUse(a.lastUsed, strings),
             badges: _ammoBadges(a, strings),
             typeAccentColor: _typeAccentColor('ammo'),
             svgIconAsset: 'assets/images/pointe.svg',
@@ -915,7 +915,7 @@ class _InventoryList extends StatelessWidget {
             category: strings.itemAccessoryTypeLabel(ac.type),
             // Accessories should not appear as critical indicators.
             isLow: false,
-            lastUse: _formatLastUse(ac.lastUsed),
+            lastUse: _formatLastUse(ac.lastUsed, strings),
             badges: _accessoryBadges(ac, strings),
             typeAccentColor: _typeAccentColor('accessory'),
             icon: Icons.inventory_2_rounded,
