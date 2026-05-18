@@ -14,6 +14,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:thot/data/models.dart';
+import 'package:thot/data/material_types.dart';
 import 'package:thot/data/thot_provider.dart';
 import 'package:thot/data/training_history.dart';
 import 'package:thot/theme.dart';
@@ -2226,18 +2227,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     final nameController = TextEditingController(text: fileName);
     final strings = AppStrings.of(context);
-    String selectedType = strings.settingsDocumentTypeHuntingPermit;
+    String selectedType = UserDocumentTypeKey.huntingPermit;
     DateTime? expiryDate;
     int selectedNotifyDays = 0;
 
-    final documentTypes = [
-      strings.settingsDocumentTypeHuntingPermit,
-      strings.settingsDocumentTypeFftLicense,
-      strings.settingsDocumentTypeIdCard,
-      strings.settingsDocumentTypePlatformPermit,
-      strings.settingsDocumentTypeMedicalCertificate,
-      strings.settingsDocumentTypeOther,
-    ];
+    final documentTypes = UserDocumentTypeKey.all;
 
     showDialog(
       context: context,
@@ -2310,10 +2304,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
-                items: documentTypes.map((type) {
+                items: documentTypes.map((key) {
                   return DropdownMenuItem<String>(
-                    value: type,
-                    child: Text(type),
+                    value: key,
+                    child: Text(strings.userDocumentTypeLabel(key)),
                   );
                 }).toList(),
                 onChanged: (String? value) {
@@ -2999,35 +2993,35 @@ class _DocumentItem extends StatelessWidget {
 
   IconData _getDocumentIcon(String type) {
     switch (type) {
-      case 'Permis de chasse':
+      case UserDocumentTypeKey.huntingPermit:
         return Icons.badge_outlined;
-      case 'Licence FFT':
+      case UserDocumentTypeKey.fftLicense:
         return Icons.card_membership_outlined;
-      case "Carte d'identité":
+      case UserDocumentTypeKey.idCard:
         return Icons.credit_card_outlined;
-      case 'Autorisation de port de plateforme':
+      case UserDocumentTypeKey.platformPermit:
         return Icons.gavel_outlined;
-      case 'Certificat médical':
+      case UserDocumentTypeKey.medicalCertificate:
         return Icons.medical_services_outlined;
       default:
         return Icons.description_outlined;
     }
   }
 
-  String _humanizeDocumentType(String rawType) {
+  String _humanizeDocumentType(String rawType, AppStrings strings) {
     final t = rawType.trim();
-    if (t.isEmpty) return 'Document';
+    if (t.isEmpty) return strings.fileTypeDocument;
 
     if (t.contains('/')) {
       final normalized = t.toLowerCase();
       if (normalized.contains('pdf')) return 'PDF';
-      if (normalized.startsWith('image/')) return 'Image';
+      if (normalized.startsWith('image/')) return strings.fileTypeImage;
       if (normalized.contains('json')) return 'JSON';
-      if (normalized.contains('text')) return 'Texte';
-      return 'Document';
+      if (normalized.contains('text')) return strings.fileTypeText;
+      return strings.fileTypeDocument;
     }
 
-    return t;
+    return strings.userDocumentTypeLabel(t);
   }
 
   Future<void> _openDocument(BuildContext context) async {
@@ -3085,7 +3079,7 @@ class _DocumentItem extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final strings = AppStrings.of(context);
-    final baseTypeLabel = _humanizeDocumentType(document.type);
+    final baseTypeLabel = _humanizeDocumentType(document.type, strings);
     final expiryLabel = document.expiryDate == null
         ? null
         : 'Expire le ${AppDateFormats.formatDateShort(context, document.expiryDate!)}';

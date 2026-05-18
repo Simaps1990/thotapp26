@@ -100,6 +100,25 @@ abstract final class DocumentTypeKey {
   static const List<String> all = [invoice, service, manual, warranty, other];
 }
 
+/// Clés canoniques pour les documents utilisateur (Permis, licences, certificats).
+abstract final class UserDocumentTypeKey {
+  static const String huntingPermit       = 'hunting_permit';
+  static const String fftLicense          = 'fft_license';
+  static const String idCard              = 'id_card';
+  static const String platformPermit      = 'platform_permit';
+  static const String medicalCertificate  = 'medical_certificate';
+  static const String other               = 'other';
+
+  static const List<String> all = [
+    huntingPermit,
+    fftLicense,
+    idCard,
+    platformPermit,
+    medicalCertificate,
+    other,
+  ];
+}
+
 /// Migration FR legacy → clé canonique.
 abstract final class MaterialTypeMigration {
   static const Map<String, String> platform = {
@@ -164,6 +183,40 @@ abstract final class MaterialTypeMigration {
     'Manuel': 'manual',
     'Garantie': 'warranty',
     'Autre': 'other',
+  };
+
+  /// Migration legacy (toutes langues) → clé canonique UserDocument.
+  static const Map<String, String> userDocument = {
+    'Permis de chasse': 'hunting_permit',
+    'Hunting permit': 'hunting_permit',
+    'Jagdschein': 'hunting_permit',
+    'Permesso di caccia': 'hunting_permit',
+    'Permiso de caza': 'hunting_permit',
+    'Licence FFT': 'fft_license',
+    'FFT license': 'fft_license',
+    'FFT-Lizenz': 'fft_license',
+    'Licenza FFT': 'fft_license',
+    'Licencia FFT': 'fft_license',
+    "Carte d'identité": 'id_card',
+    'ID card': 'id_card',
+    'Personalausweis': 'id_card',
+    "Carta d'identità": 'id_card',
+    'Documento de identidad': 'id_card',
+    'Autorisation de port de plateforme': 'platform_permit',
+    'Platform carry permit': 'platform_permit',
+    'Konfigurationsmitführungsgenehmigung': 'platform_permit',
+    'Autorizzazione al porto di configurazione': 'platform_permit',
+    'Permiso de porte de configuración': 'platform_permit',
+    'Certificat médical': 'medical_certificate',
+    'Medical certificate': 'medical_certificate',
+    'Ärztliches Attest': 'medical_certificate',
+    'Certificato medico': 'medical_certificate',
+    'Certificado médico': 'medical_certificate',
+    'Autre': 'other',
+    'Other': 'other',
+    'Andere': 'other',
+    'Altro': 'other',
+    'Otro': 'other',
   };
 
   /// Résout une valeur stockée vers sa clé canonique.

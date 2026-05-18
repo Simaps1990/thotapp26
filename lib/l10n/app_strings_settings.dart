@@ -938,6 +938,30 @@ es: 'Todo tu equipo, sin límites',
   String get settingsDocumentTypeOther =>
       _pick(fr: 'Autre', en: 'Other', de: 'Andere', it: 'Altro', es: 'Otro');
 
+  String userDocumentTypeLabel(String key) {
+    switch (key) {
+      case 'hunting_permit':      return settingsDocumentTypeHuntingPermit;
+      case 'fft_license':         return settingsDocumentTypeFftLicense;
+      case 'id_card':             return settingsDocumentTypeIdCard;
+      case 'platform_permit':     return settingsDocumentTypePlatformPermit;
+      case 'medical_certificate': return settingsDocumentTypeMedicalCertificate;
+      case 'other':               return settingsDocumentTypeOther;
+      default:                    return key;
+    }
+  }
+
+  String get fileTypeDocument => _pick(
+    fr: 'Document', en: 'Document', de: 'Dokument', it: 'Documento', es: 'Documento',
+  );
+
+  String get fileTypeImage => _pick(
+    fr: 'Image', en: 'Image', de: 'Bild', it: 'Immagine', es: 'Imagen',
+  );
+
+  String get fileTypeText => _pick(
+    fr: 'Texte', en: 'Text', de: 'Text', it: 'Testo', es: 'Texto',
+  );
+
   // --- Crash Log ---
 
   String get exportCrashLogLabel => _pick(

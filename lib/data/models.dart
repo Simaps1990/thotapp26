@@ -1,4 +1,5 @@
 import 'exercise_step.dart';
+import 'material_types.dart';
 
 class ItemDocument {
   final String path;
@@ -1424,10 +1425,18 @@ class UserDocument {
         : null;
     final notifyBeforeDays = (json['notifyBeforeDays'] as int?) ?? 0;
 
+    String rawType = json['type'] as String;
+    rawType = MaterialTypeMigration.resolve(
+      rawType,
+      MaterialTypeMigration.userDocument,
+      UserDocumentTypeKey.all,
+      fallback: rawType,
+    );
+
     return UserDocument(
       id: json['id'] as String,
       name: json['name'] as String,
-      type: json['type'] as String,
+      type: rawType,
       filePath: json['filePath'] as String,
       addedDate: DateTime.parse(json['addedDate'] as String),
       expiryDate: expiryDate,
