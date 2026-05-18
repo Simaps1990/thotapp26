@@ -39,3 +39,10 @@ android/key.properties
 *.p12
 *.jks
 *.mobileprovision
+
+# Backup files
+*.backup
+*.bak
+*.orig
+*.rej
+*~
